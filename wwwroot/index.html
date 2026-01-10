@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="Light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Tutor</title>
     <base href="/" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="themes.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="Tutor.styles.css" />
     <link rel="icon" href="data:,">
@@ -36,15 +37,52 @@
                 element.style.height = 'auto';
             }
         }
-        function setupTextareaEnterHandler(element, dotNetRef) {
+        function setupTextareaEnterHandler(element, dotNetRef, enterToSend) {
             if (element) {
                 element.addEventListener('keydown', async function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === 'Enter' && !e.shiftKey && enterToSend) {
                         e.preventDefault();
                         await dotNetRef.invokeMethodAsync('SendFromJs');
                     }
                 });
             }
+        }
+        function scrollToBottom(element) {
+            if (element) {
+                element.scrollTop = element.scrollHeight;
+            }
+        }
+        function focusElement(element) {
+            if (element) {
+                element.focus();
+            }
+        }
+        function setupTabFocus(element) {
+            if (element) {
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab' && !e.shiftKey && document.activeElement !== element) {
+                        e.preventDefault();
+                        element.focus();
+                    }
+                });
+            }
+        }
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        function getTheme() {
+            return document.documentElement.getAttribute('data-theme') || 'Light';
+        }
+        
+        // Term click handler for clickable bold terms
+        var termClickDotNetRef = null;
+        function setupTermClickHandler(dotNetRef) {
+            termClickDotNetRef = dotNetRef;
+            window.askAboutTerm = function(term) {
+                if (termClickDotNetRef) {
+                    termClickDotNetRef.invokeMethodAsync('AskAboutTerm', term);
+                }
+            };
         }
     </script>
 

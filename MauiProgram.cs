@@ -18,6 +18,7 @@ namespace Tutor
 
             builder.Services.AddMauiBlazorWebView();
 
+
             // Register OpenAI configuration and service
             builder.Services.AddSingleton(new OpenAIOptions
             {
@@ -30,6 +31,15 @@ namespace Tutor
 
             // Instructions service
             builder.Services.AddSingleton<InstructionsService>();
+
+            // Settings service
+            builder.Services.AddSingleton<SettingsService>();
+
+            // Theme service
+            builder.Services.AddSingleton<ThemeService>();
+
+            // Learning Resource service
+            builder.Services.AddSingleton<Tutor.Services.LearningResourceService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

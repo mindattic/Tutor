@@ -5,6 +5,9 @@ using Tutor.Components;
 
 public record ChatReply(string Text, string FullJson);
 
+// Simple message interface for the service
+public record ChatMessageDto(string Role, string Text);
+
 public sealed class OpenAIService
 {
     private readonly HttpClient http;
@@ -16,7 +19,7 @@ public sealed class OpenAIService
         this.opt = opt;
     }
 
-    public async Task<ChatReply> GetReplyAsync(IEnumerable<ChatGptPanel.ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
+    public async Task<ChatReply> GetReplyAsync(IEnumerable<Chat.ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
     {
         var apiKey = await opt.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey))

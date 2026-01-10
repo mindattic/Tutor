@@ -1,5 +1,24 @@
 ﻿@page "/chat"
+@using Tutor.Services
+@using Tutor.Models
+@inject LearningResourceService LearningResourceService
 
-<div class="page-title">Chat</div>
+@if (activeCurriculum != null)
+{
+    <div class="page-title">Chat: @activeCurriculum.Name</div>
+}
+else
+{
+    <div class="page-title">Chat</div>
+}
 
-<ChatGptPanel />
+<Tutor.Components.Chat />
+
+@code {
+    private Curriculum? activeCurriculum;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeCurriculum = await LearningResourceService.GetActiveCurriculumAsync();
+    }
+}

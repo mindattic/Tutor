@@ -1,61 +1,410 @@
 ﻿@page "/settings"
 @using Microsoft.Maui.Storage
+@using Microsoft.JSInterop
 @inject NavigationManager Nav
+@inject ThemeService ThemeService
+@inject SettingsService SettingsService
+@inject IJSRuntime JS
 
 <div class="page-title">Settings</div>
 
 <div style="max-width: 720px;">
-    <label>API Key</label>
-
-    <input type="password"
-           @bind="apiKey"
-           placeholder="sk-..."
-           style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);" />
-
-    <div style="margin-top: 10px; display: flex; gap: 10px;">
-        <button @onclick="SaveAsync" disabled="@isBusy">Save</button>
-        <button @onclick="LoadAsync" disabled="@isBusy">Load</button>
-        <button @onclick="ClearAsync" disabled="@isBusy">Clear</button>
-        <button @onclick="GoToChat" disabled="@isBusy">Go To Chat</button>
+    <div class="tabs">
+        <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
+        <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
+        <button class="tab @(activeTab == "ChatGPT" ? "active" : "")" @onclick="@(() => activeTab = "ChatGPT")">ChatGPT</button>
+        <button class="tab @(activeTab == "Claude" ? "active" : "")" @onclick="@(() => activeTab = "Claude")">Claude</button>
+        <button class="tab @(activeTab == "Gemini" ? "active" : "")" @onclick="@(() => activeTab = "Gemini")">Gemini</button>
+        <button class="tab @(activeTab == "About" ? "active" : "")" @onclick="@(() => activeTab = "About")">About</button>
     </div>
 
-    <p style="margin-top: 12px;">@status</p>
+    <div class="tab-content">
+        @if (activeTab == "General")
+        {
+            <div class="settings-section">
+                <h4>Theme</h4>
+                <select class="theme-select" @bind="selectedTheme" @bind:after="SaveThemeAsync">
+                    @foreach (var theme in ThemeService.AvailableThemes)
+                    {
+                        <option value="@theme">@theme</option>
+                    }
+                </select>
+                <p>Choose a color theme for the application.</p>
+            </div>
 
-    @if (!string.IsNullOrWhiteSpace(currentKeyPreview))
+            <div class="settings-section">
+                <h4>Active AI Model</h4>
+                <select class="theme-select" @bind="selectedModel" @bind:after="SaveSelectedModelAsync">
+                    <option value="ChatGPT">ChatGPT (OpenAI)</option>
+                    <option value="Claude">Claude (Anthropic)</option>
+                    <option value="Gemini">Gemini (Google)</option>
+                </select>
+                <p>Select which AI model to use for chat.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Chat Behavior</h4>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="enterToSend" @bind="enterToSend" @bind:after="SaveEnterToSendAsync" style="width: 18px; height: 18px;" />
+                    <label for="enterToSend">Press Enter to send message</label>
+                </div>
+                <p>When enabled, press Enter to send. Use Shift+Enter for new line.</p>
+            </div>
+        }
+        else if (activeTab == "Quiz")
+        {
+            <div class="settings-section">
+                <h4>Number of Quiz Questions</h4>
+                <select class="theme-select" @bind="quizQuestionCount" @bind:after="SaveQuizQuestionCountAsync">
+                    <option value="3">3 questions</option>
+                    <option value="5">5 questions</option>
+                    <option value="10">10 questions</option>
+                    <option value="15">15 questions</option>
+                    <option value="20">20 questions</option>
+                </select>
+                <p>Select how many questions to include in each quiz.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Grading Scale</h4>
+                <select class="theme-select" @bind="gradingScale" @bind:after="SaveGradingScaleAsync">
+                    <option value="Standard">Standard (A=90%, B=80%, C=70%, D=60%)</option>
+                    <option value="PlusMinus">Plus/Minus (A+, A, A-, B+, etc.)</option>
+                    <option value="Lenient">Lenient (A=85%, B=75%, C=65%, D=55%)</option>
+                    <option value="Strict">Strict (A=95%, B=85%, C=75%, D=65%)</option>
+                </select>
+                <p>Choose the grading scale for quiz results.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Grading Scale Preview</h4>
+                <div class="grading-preview">
+                    @foreach (var grade in GetGradingPreview())
+                    {
+                        <div class="grade-item">
+                            <span class="grade-letter">@grade.Letter</span>
+                            <span class="grade-range">@grade.Range</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "ChatGPT")
+        {
+            <div class="settings-section">
+                <h4>OpenAI API Key</h4>
+                <input type="password"
+                       class="settings-input"
+                       @bind="chatGptApiKey"
+                       placeholder="sk-..." />
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button class="settings-btn" @onclick="SaveChatGptKeyAsync" disabled="@isBusy">Save</button>
+                    <button class="settings-btn" @onclick="ClearChatGptKeyAsync" disabled="@isBusy">Clear</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(chatGptKeyPreview))
+                {
+                    <p>Stored key: <code>@chatGptKeyPreview</code></p>
+                }
+                <p>Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Model</h4>
+                <select class="theme-select" @bind="chatGptModel" @bind:after="SaveChatGptModelAsync">
+                    <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                    <option value="gpt-4.1">GPT-4.1</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                </select>
+                <p>Select which ChatGPT model to use.</p>
+            </div>
+        }
+        else if (activeTab == "Claude")
+        {
+            <div class="settings-section">
+                <h4>Anthropic API Key</h4>
+                <input type="password"
+                       class="settings-input"
+                       @bind="claudeApiKey"
+                       placeholder="sk-ant-..." />
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button class="settings-btn" @onclick="SaveClaudeKeyAsync" disabled="@isBusy">Save</button>
+                    <button class="settings-btn" @onclick="ClearClaudeKeyAsync" disabled="@isBusy">Clear</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(claudeKeyPreview))
+                {
+                    <p>Stored key: <code>@claudeKeyPreview</code></p>
+                }
+                <p>⚠️ Claude integration coming soon</p>
+                <p>Get your API key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a></p>
+            </div>
+        }
+        else if (activeTab == "Gemini")
+        {
+            <div class="settings-section">
+                <h4>Google AI API Key</h4>
+                <input type="password"
+                       class="settings-input"
+                       @bind="geminiApiKey"
+                       placeholder="AIza..." />
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button class="settings-btn" @onclick="SaveGeminiKeyAsync" disabled="@isBusy">Save</button>
+                    <button class="settings-btn" @onclick="ClearGeminiKeyAsync" disabled="@isBusy">Clear</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(geminiKeyPreview))
+                {
+                    <p>Stored key: <code>@geminiKeyPreview</code></p>
+                }
+                <p>⚠️ Gemini integration coming soon</p>
+                <p>Get your API key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+            </div>
+        }
+        else if (activeTab == "About")
+        {
+            <div class="settings-section">
+                <h4>Tutor</h4>
+                <p>Version 1.0.0</p>
+                <p>A multi-model AI chat application built with .NET MAUI Blazor.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Supported Models</h4>
+                <p>• ChatGPT (OpenAI) - Active</p>
+                <p>• Claude (Anthropic) - Coming Soon</p>
+                <p>• Gemini (Google) - Coming Soon</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Links</h4>
+                <p><a href="https://github.com/mindattic/Tutor" target="_blank">GitHub Repository</a></p>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(status))
     {
-        <p>Stored key (preview): <code>@currentKeyPreview</code></p>
+        <p style="color: var(--text-secondary); margin-top: 16px;">@status</p>
     }
 </div>
 
 @code
 {
-    private const string StorageKeyName = "OPENAI_API_KEY";
+    private const string SelectedModelKey = "SELECTED_MODEL";
+    private const string ChatGptApiKeyName = "OPENAI_API_KEY";
+    private const string ClaudeApiKeyName = "CLAUDE_API_KEY";
+    private const string GeminiApiKeyName = "GEMINI_API_KEY";
+    private const string EnterToSendKey = "ENTER_TO_SEND";
+    private const string ChatGptModelKey = "CHATGPT_MODEL";
 
-    private string apiKey = "";
+    private string activeTab = "General";
+    private string selectedTheme = "Light";
+    private string selectedModel = "ChatGPT";
+    private string chatGptModel = "gpt-4.1-mini";
+    private string chatGptApiKey = "";
+    private string claudeApiKey = "";
+    private string geminiApiKey = "";
+    private string chatGptKeyPreview = "";
+    private string claudeKeyPreview = "";
+    private string geminiKeyPreview = "";
     private string status = "";
-    private string currentKeyPreview = "";
     private bool isBusy;
+    private bool enterToSend = true;
+    
+    // Quiz settings
+    private int quizQuestionCount = 3;
+    private GradingScale gradingScale = GradingScale.Standard;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAsync();
+        selectedTheme = await ThemeService.GetThemeAsync();
+        await LoadSelectedModelAsync();
+        await LoadAllApiKeysAsync();
+        await LoadEnterToSendAsync();
+        await LoadChatGptModelAsync();
+        await LoadQuizSettingsAsync();
     }
 
-    private async Task SaveAsync()
+    private async Task LoadQuizSettingsAsync()
     {
-        var trimmed = (apiKey ?? "").Trim();
+        quizQuestionCount = await SettingsService.GetQuizQuestionCountAsync();
+        gradingScale = await SettingsService.GetGradingScaleAsync();
+    }
+
+    private async Task SaveQuizQuestionCountAsync()
+    {
+        await SettingsService.SetQuizQuestionCountAsync(quizQuestionCount);
+        status = $"Quiz will have {quizQuestionCount} questions.";
+    }
+
+    private async Task SaveGradingScaleAsync()
+    {
+        await SettingsService.SetGradingScaleAsync(gradingScale);
+        status = $"Grading scale set to {gradingScale}.";
+    }
+
+    private List<(string Letter, string Range)> GetGradingPreview()
+    {
+        return gradingScale switch
+        {
+            GradingScale.Standard => new List<(string, string)>
+            {
+                ("A", "90-100%"), ("B", "80-89%"), ("C", "70-79%"), ("D", "60-69%"), ("F", "0-59%")
+            },
+            GradingScale.PlusMinus => new List<(string, string)>
+            {
+                ("A+", "97-100%"), ("A", "93-96%"), ("A-", "90-92%"),
+                ("B+", "87-89%"), ("B", "83-86%"), ("B-", "80-82%"),
+                ("C+", "77-79%"), ("C", "73-76%"), ("C-", "70-72%"),
+                ("D+", "67-69%"), ("D", "63-66%"), ("D-", "60-62%"),
+                ("F", "0-59%")
+            },
+            GradingScale.Lenient => new List<(string, string)>
+            {
+                ("A", "85-100%"), ("B", "75-84%"), ("C", "65-74%"), ("D", "55-64%"), ("F", "0-54%")
+            },
+            GradingScale.Strict => new List<(string, string)>
+            {
+                ("A", "95-100%"), ("B", "85-94%"), ("C", "75-84%"), ("D", "65-74%"), ("F", "0-64%")
+            },
+            _ => new List<(string, string)>()
+        };
+    }
+
+    private async Task SaveThemeAsync()
+    {
+        await ThemeService.SetThemeAsync(selectedTheme);
+        await JS.InvokeVoidAsync("setTheme", selectedTheme);
+        status = $"Theme changed to {selectedTheme}.";
+    }
+
+    private async Task LoadSelectedModelAsync()
+    {
+        try
+        {
+            var model = await SecureStorage.GetAsync(SelectedModelKey);
+            if (!string.IsNullOrEmpty(model))
+            {
+                selectedModel = model;
+            }
+        }
+        catch { }
+    }
+
+    private async Task SaveSelectedModelAsync()
+    {
+        try
+        {
+            await SecureStorage.SetAsync(SelectedModelKey, selectedModel);
+            status = $"{selectedModel} selected as active model.";
+        }
+        catch (Exception ex)
+        {
+            status = "Failed to save selection: " + ex.Message;
+        }
+    }
+
+    private async Task LoadChatGptModelAsync()
+    {
+        try
+        {
+            var model = await SecureStorage.GetAsync(ChatGptModelKey);
+            if (!string.IsNullOrEmpty(model))
+            {
+                chatGptModel = model;
+            }
+        }
+        catch { }
+    }
+
+    private async Task SaveChatGptModelAsync()
+    {
+        try
+        {
+            await SecureStorage.SetAsync(ChatGptModelKey, chatGptModel);
+            status = $"ChatGPT model set to {chatGptModel}.";
+        }
+        catch (Exception ex)
+        {
+            status = "Failed to save model: " + ex.Message;
+        }
+    }
+
+    private async Task LoadAllApiKeysAsync()
+    {
+        chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
+        claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
+        geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
+    }
+
+    private async Task<string> LoadKeyPreviewAsync(string keyName)
+    {
+        try
+        {
+            var key = await SecureStorage.GetAsync(keyName);
+            return string.IsNullOrWhiteSpace(key) ? "" : MaskKey(key);
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private async Task SaveChatGptKeyAsync()
+    {
+        await SaveApiKeyAsync(ChatGptApiKeyName, chatGptApiKey, "ChatGPT");
+        chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
+        chatGptApiKey = "";
+    }
+
+    private async Task ClearChatGptKeyAsync()
+    {
+        await ClearApiKeyAsync(ChatGptApiKeyName, "ChatGPT");
+        chatGptKeyPreview = "";
+        chatGptApiKey = "";
+    }
+
+    private async Task SaveClaudeKeyAsync()
+    {
+        await SaveApiKeyAsync(ClaudeApiKeyName, claudeApiKey, "Claude");
+        claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
+        claudeApiKey = "";
+    }
+
+    private async Task ClearClaudeKeyAsync()
+    {
+        await ClearApiKeyAsync(ClaudeApiKeyName, "Claude");
+        claudeKeyPreview = "";
+        claudeApiKey = "";
+    }
+
+    private async Task SaveGeminiKeyAsync()
+    {
+        await SaveApiKeyAsync(GeminiApiKeyName, geminiApiKey, "Gemini");
+        geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
+        geminiApiKey = "";
+    }
+
+    private async Task ClearGeminiKeyAsync()
+    {
+        await ClearApiKeyAsync(GeminiApiKeyName, "Gemini");
+        geminiKeyPreview = "";
+        geminiApiKey = "";
+    }
+
+    private async Task SaveApiKeyAsync(string keyName, string keyValue, string modelName)
+    {
+        var trimmed = (keyValue ?? "").Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
         {
-            status = "API key is empty.";
+            status = $"{modelName} API key is empty.";
             return;
         }
 
         isBusy = true;
         try
         {
-            await SecureStorage.SetAsync(StorageKeyName, trimmed);
-            status = "Saved to SecureStorage.";
-            await LoadAsync();
+            await SecureStorage.SetAsync(keyName, trimmed);
+            status = $"{modelName} API key saved.";
         }
         catch (Exception ex)
         {
@@ -67,44 +416,13 @@
         }
     }
 
-    private async Task LoadAsync()
+    private async Task ClearApiKeyAsync(string keyName, string modelName)
     {
         isBusy = true;
         try
         {
-            var key = await SecureStorage.GetAsync(StorageKeyName);
-
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                status = "No key stored yet.";
-                currentKeyPreview = "";
-                return;
-            }
-
-            // Do not auto-fill the input, just show a safe preview
-            status = "Key loaded from SecureStorage.";
-            currentKeyPreview = MaskKey(key);
-        }
-        catch (Exception ex)
-        {
-            status = "Load failed: " + ex.Message;
-            currentKeyPreview = "";
-        }
-        finally
-        {
-            isBusy = false;
-        }
-    }
-
-    private async Task ClearAsync()
-    {
-        isBusy = true;
-        try
-        {
-            SecureStorage.Remove(StorageKeyName);
-            apiKey = "";
-            currentKeyPreview = "";
-            status = "Key cleared from SecureStorage.";
+            SecureStorage.Remove(keyName);
+            status = $"{modelName} API key cleared.";
         }
         catch (Exception ex)
         {
@@ -114,16 +432,37 @@
         {
             isBusy = false;
         }
+        await Task.CompletedTask;
     }
 
-    private void GoToChat()
+    private async Task LoadEnterToSendAsync()
     {
-        Nav.NavigateTo("/chat");
+        try
+        {
+            var value = await SecureStorage.GetAsync(EnterToSendKey);
+            enterToSend = string.IsNullOrEmpty(value) || value == "true";
+        }
+        catch
+        {
+            enterToSend = true;
+        }
+    }
+
+    private async Task SaveEnterToSendAsync()
+    {
+        try
+        {
+            await SecureStorage.SetAsync(EnterToSendKey, enterToSend.ToString().ToLower());
+            status = enterToSend ? "Enter to send enabled." : "Enter to send disabled.";
+        }
+        catch (Exception ex)
+        {
+            status = "Save failed: " + ex.Message;
+        }
     }
 
     private static string MaskKey(string key)
     {
-        // Show first 6 and last 4 chars if long enough
         if (key.Length <= 12) return new string('*', key.Length);
 
         var start = key.Substring(0, 6);

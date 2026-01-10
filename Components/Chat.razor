@@ -1,0 +1,853 @@
+@using System.Text
+@using System.Text.RegularExpressions
+@using Microsoft.JSInterop
+@using Tutor.Services
+@using Tutor.Models
+@inject OpenAIService Ai
+@inject InstructionsService Instructions
+@inject SettingsService Settings
+@inject LearningResourceService LearningResources
+@implements IDisposable
+
+<div style="display: inline-flex">
+
+
+@if (activeCurriculum != null && !isQuizMode && !isLessonMode)
+{
+    <button class="curriculum-action-btn start-lesson" style="margin: 0px 5px 5px 0px" @onclick="StartLesson" disabled="@isSending" title="Start the lesson">
+        <span class="icon-teach"></span>
+        Start Lesson
+    </button>
+}
+@if (activeCurriculum != null && !isQuizMode && !isLessonMode)
+{
+        <button class="curriculum-action-btn quiz" style="margin: 0px 5px 5px 0px"  @onclick="StartQuizMe" disabled="@isSending" title="Take a quiz">
+        <span class="icon-quiz"></span>
+        Quiz Me
+    </button>
+}
+</div>
+
+@* Mode indicators at the top *@
+@if (isQuizMode)
+{
+    <div class="mode-indicator quiz">
+        <span class="mode-icon icon-quiz-white"></span>
+        <span class="mode-label">Quiz Mode</span>
+        <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
+        <button class="mode-exit-btn" @onclick="EndQuiz" title="End Quiz">? End</button>
+    </div>
+}
+else if (isLessonMode && lessonTopics.Count > 0)
+{
+    <div class="mode-indicator lesson">
+        <span class="mode-icon icon-teach-white"></span>
+        <span class="mode-label">Lesson Mode</span>
+        <span class="mode-detail">Topic @(currentLessonIndex + 1) of @lessonTopics.Count</span>
+        @if (currentLessonIndex < lessonTopics.Count)
+        {
+            <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
+        }
+        <button class="mode-exit-btn" @onclick="EndLesson" title="End Lesson">? End</button>
+    </div>
+}
+
+
+
+<div class="chat-shell">
+    <div class="chat-log" @ref="chatLogRef">
+        @{
+            var messageIndex = 0;
+        }
+        @foreach (var m in messages)
+        {
+            var idx = messageIndex;
+            var isLastAssistantMessage = m.Role == "assistant" && idx == GetLastAssistantMessageIndex();
+
+            <div class="msg @(m.Role)">
+                <div class="msg-header">
+                    <span class="role">@m.Role</span>
+                    <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                </div>
+                <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.Text))</div>
+
+                @* Show navigation buttons in assistant messages during lesson mode *@
+                @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
+                {
+                    <div class="msg-nav-buttons">
+                        <button class="msg-nav-btn quiz-inline" @onclick="StartQuizAtCurrentPoint" title="Quiz me on what I've learned so far">
+                            <span class="icon-quiz-small"></span>
+                            Quiz Me
+                        </button>
+                        <div class="msg-nav-spacer"></div>
+                        <button class="msg-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0)" title="Go to previous topic">
+                            <span class="icon-previous"></span>
+                            Previous
+                        </button>
+                        <button class="msg-nav-btn continue" @onclick="ContinueLesson" title="@(hasStartedLearning ? "Continue to next topic" : "Begin the lesson")">
+                            <span class="icon-continue"></span>
+                            @(hasStartedLearning ? "Continue" : "Begin")
+                        </button>
+                    </div>
+                }
+
+                @* Show Go Back button for term exploration *@
+                @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
+                {
+                    <div class="msg-nav-buttons">
+                        <button class="msg-nav-btn go-back" @onclick="BackToLesson" title="Return to the lesson">
+                            <span class="icon-back"></span>
+                            Go Back
+                        </button>
+                    </div>
+                }
+            </div>
+            messageIndex++;
+        }
+
+        @if (isSending)
+        {
+            <div class="msg assistant">
+                <div class="msg-header">
+                    <span class="role">assistant</span>
+                </div>
+                <div class="content">Thinking...</div>
+            </div>
+        }
+    </div>
+
+    <div class="chat-input">
+        <textarea @ref="textareaRef"
+                  @bind="prompt"
+                  @bind:event="oninput"
+                  @bind:after="AutoGrow"
+                  rows="1"
+                  disabled="@isSending"
+                  placeholder="@placeholderText"></textarea>
+
+        <div class="chat-actions-row">
+            <div class="actions-spacer"></div>
+            @if (isSending)
+            {
+                <button class="action-btn cancel" @onclick="CancelRequest" title="Cancel">
+                    <span class="bi bi-stop-fill"></span>
+                    Cancel
+                </button>
+            }
+            <button class="action-btn send" @onclick="SendAsync" disabled="@(isSending || string.IsNullOrWhiteSpace(prompt))" title="Send">
+                <span class="bi bi-send-fill"></span>
+                Send
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Full Response</span>
+                <button class="close-btn" @onclick="CloseModal">×</button>
+            </div>
+            <div class="modal-body">
+                <pre>@modalContent</pre>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<ChatMessage> messages = new();
+    private string prompt = "";
+    private bool isSending;
+    private bool showModal;
+    private string modalContent = "";
+    private ElementReference textareaRef;
+    private ElementReference chatLogRef;
+    private DotNetObjectReference<Chat>? dotNetRef;
+    private CancellationTokenSource? cts;
+    private bool enterToSend = true;
+    private string placeholderText = "Ask a question...";
+
+    // Curriculum state
+    private Curriculum? activeCurriculum;
+
+    // Lesson state
+    private bool isLessonMode;
+    private bool hasStartedLearning; // True after first "Begin" click
+    private int currentLessonIndex;
+    private List<string> lessonTopics = new();
+    private List<string> learnedConcepts = new();
+    private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
+
+    // Term exploration state
+    private bool isTermExploration;
+    private int messageIndexBeforeExploration;
+
+    // Quiz state
+    private bool isQuizMode;
+    private int totalQuestions;
+    private int currentQuestionNumber;
+    private int correctAnswers;
+    private GradingScale gradingScale;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCurriculumState();
+    }
+
+    private async Task LoadCurriculumState()
+    {
+        activeCurriculum = await LearningResources.GetActiveCurriculumAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            enterToSend = await Settings.GetEnterToSendAsync();
+            UpdatePlaceholder();
+            StateHasChanged();
+
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupTextareaEnterHandler", textareaRef, dotNetRef, enterToSend);
+            await JS.InvokeVoidAsync("setupTabFocus", textareaRef);
+            await JS.InvokeVoidAsync("setupTermClickHandler", dotNetRef);
+            await FocusTextarea();
+        }
+    }
+
+    private int GetLastAssistantMessageIndex()
+    {
+        for (int i = messages.Count - 1; i >= 0; i--)
+        {
+            if (messages[i].Role == "assistant")
+                return i;
+        }
+        return -1;
+    }
+
+    private void UpdatePlaceholder()
+    {
+        placeholderText = enterToSend
+            ? "Ask a question... (Enter to send, Shift+Enter for new line)"
+            : "Ask a question... (Click Send button to submit)";
+    }
+
+    private async Task FocusTextarea()
+    {
+        await JS.InvokeVoidAsync("focusElement", textareaRef);
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await JS.InvokeVoidAsync("scrollToBottom", chatLogRef);
+    }
+
+    private void CancelRequest()
+    {
+        cts?.Cancel();
+    }
+
+    // Lesson functionality
+    private async Task StartLesson()
+    {
+        if (activeCurriculum == null) return;
+
+        var resources = await LearningResources.GetCurriculumResourcesAsync(activeCurriculum.Id);
+        if (resources.Count == 0)
+        {
+            messages.Add(new ChatMessage("assistant", "This curriculum has no resources yet. Please add some learning resources first.", "No resources in curriculum."));
+            StateHasChanged();
+            return;
+        }
+
+        // Initialize lesson mode
+        isLessonMode = true;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+
+        // First, get the topics from the curriculum
+        var topicsPrompt = @"Based on the curriculum resources, list the main topics/concepts in logical learning order.
+Return ONLY a numbered list of topic names, one per line, like:
+1. Topic Name
+2. Topic Name
+etc.
+Keep it to 5-10 main topics.";
+
+        prompt = topicsPrompt;
+        await SendAsyncInternal(captureTopics: true);
+    }
+
+    private async Task ContinueLesson()
+    {
+        if (!isLessonMode || activeCurriculum == null) return;
+
+        // If this is the first time clicking (Begin), teach the first topic
+        if (!hasStartedLearning)
+        {
+            hasStartedLearning = true;
+            visitedTopicIndices.Add(currentLessonIndex);
+            await TeachCurrentTopic();
+            return;
+        }
+
+        // Mark current topic as learned
+        if (currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!learnedConcepts.Contains(currentTopic))
+            {
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        currentLessonIndex++;
+
+        if (currentLessonIndex >= lessonTopics.Count)
+        {
+            messages.Add(new ChatMessage("assistant", "?? **Congratulations!** You've completed all the topics in this lesson. You can use the **Previous** button to review any topic, or take a **Quiz** to test your knowledge!", "Lesson completed"));
+            StateHasChanged();
+            await ScrollToBottom();
+            return;
+        }
+
+        // Check if we've visited this topic before (spiral learning)
+        var enrichWithLearned = visitedTopicIndices.Contains(currentLessonIndex);
+        visitedTopicIndices.Add(currentLessonIndex);
+
+        await TeachCurrentTopic(enrichWithLearned);
+    }
+
+    private async Task PreviousLesson()
+    {
+        if (!isLessonMode || currentLessonIndex <= 0) return;
+
+        // Mark current topic as learned before going back
+        if (currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!learnedConcepts.Contains(currentTopic))
+            {
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        currentLessonIndex--;
+
+        // Going back always enriches with learned concepts (spiral learning)
+        await TeachCurrentTopic(enrichWithLearned: true);
+    }
+
+    private async Task TeachCurrentTopic(bool enrichWithLearned = false)
+    {
+        if (currentLessonIndex >= lessonTopics.Count) return;
+
+        var topic = lessonTopics[currentLessonIndex];
+
+        string teachPrompt;
+        if (enrichWithLearned && learnedConcepts.Count > 0)
+        {
+            var learnedList = string.Join(", ", learnedConcepts);
+            teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
+
+IMPORTANT CONTEXT - SPIRAL LEARNING:
+The student has already learned these concepts: {learnedList}
+
+Since the student is REVISITING this topic after learning more advanced concepts, you must:
+1. Connect ""{topic}"" to the concepts they already know
+2. Show how ""{topic}"" relates to and supports their existing knowledge
+3. Provide deeper insights now that they have more context
+4. Use examples that reference the other concepts they've learned
+
+This is spiral learning - enrich the explanation with their accumulated knowledge.
+
+Explain clearly and ask if they understand before we continue.";
+        }
+        else
+        {
+            teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
+Explain the key concepts clearly, as if you're a tutor.
+After explaining, ask if I understand or have questions before we continue.";
+        }
+
+        prompt = teachPrompt;
+        await SendAsync();
+    }
+
+    private void BackToLesson()
+    {
+        if (!isTermExploration) return;
+
+        // Remove messages added during exploration
+        while (messages.Count > messageIndexBeforeExploration)
+        {
+            messages.RemoveAt(messages.Count - 1);
+        }
+
+        isTermExploration = false;
+        StateHasChanged();
+    }
+
+    private void EndLesson()
+    {
+        isLessonMode = false;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        lessonTopics.Clear();
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Add(new ChatMessage("assistant", "Lesson ended. Feel free to start a new lesson or take a quiz!", "Lesson ended by user."));
+        StateHasChanged();
+    }
+
+    // Quiz at current point in lesson (inline quiz)
+    private async Task StartQuizAtCurrentPoint()
+    {
+        if (activeCurriculum == null || learnedConcepts.Count == 0)
+        {
+            // If no concepts learned yet, quiz on the current topic
+            if (currentLessonIndex < lessonTopics.Count)
+            {
+                var currentTopic = lessonTopics[currentLessonIndex];
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        // Get quiz settings
+        var questionCount = Math.Min(await Settings.GetQuizQuestionCountAsync(), Math.Max(3, learnedConcepts.Count));
+        gradingScale = await Settings.GetGradingScaleAsync();
+        currentQuestionNumber = 1;
+        totalQuestions = questionCount;
+        correctAnswers = 0;
+        isQuizMode = true;
+        // Keep lesson mode active so we can return to it
+
+        var topicsList = string.Join(", ", learnedConcepts);
+        var quizPrompt = $@"Quiz me on what I've learned so far. I have covered these topics: {topicsList}
+
+Please ask me {questionCount} questions ONLY about these specific topics I've learned.
+
+QUIZ RULES:
+1. Ask ONE question at a time
+2. Wait for my answer before asking the next question
+3. After I answer, tell me if I'm correct or incorrect and briefly explain why
+4. Keep track of my score
+5. After all {questionCount} questions, provide a summary and then I'll continue with my lesson
+
+Please start with Question 1.";
+
+        prompt = quizPrompt;
+        await SendAsync();
+    }
+
+    // Quiz Me functionality (full curriculum quiz)
+    private async Task StartQuizMe()
+    {
+        if (activeCurriculum == null) return;
+
+        var resources = await LearningResources.GetCurriculumResourcesAsync(activeCurriculum.Id);
+        if (resources.Count == 0)
+        {
+            messages.Add(new ChatMessage("assistant", "This curriculum has no resources yet. Please add some learning resources first.", "No resources in curriculum."));
+            StateHasChanged();
+            return;
+        }
+
+        // Get quiz settings
+        totalQuestions = await Settings.GetQuizQuestionCountAsync();
+        gradingScale = await Settings.GetGradingScaleAsync();
+        currentQuestionNumber = 1;
+        correctAnswers = 0;
+        isQuizMode = true;
+        isLessonMode = false;
+
+        // Clear previous messages for fresh quiz
+        messages.Clear();
+
+        var quizPrompt = $@"I want to take a quiz on the curriculum material. Please quiz me with exactly {totalQuestions} questions based ONLY on the resources provided.
+
+QUIZ RULES:
+1. Ask ONE question at a time
+2. Wait for my answer before asking the next question
+3. After I answer, tell me if I'm correct or incorrect and briefly explain why
+4. Keep track of my score
+5. After all {totalQuestions} questions, provide a final summary with:
+   - Total correct: X/{totalQuestions}
+   - Percentage: X%
+   - Areas I did well in
+   - Areas I need to review
+
+
+
+Please start with Question 1.";
+
+        prompt = quizPrompt;
+        await SendAsync();
+    }
+
+    private void EndQuiz()
+    {
+        isQuizMode = false;
+        currentQuestionNumber = 0;
+        totalQuestions = 0;
+        correctAnswers = 0;
+        messages.Add(new ChatMessage("assistant", "Quiz ended. Feel free to continue chatting or start a new quiz!", "Quiz ended by user."));
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task SendFromJs()
+    {
+        await SendAsync();
+        StateHasChanged();
+        await ScrollToBottom();
+    }
+
+    private Task SendAsync() => SendAsyncInternal(captureTopics: false);
+
+    private async Task SendAsyncInternal(bool captureTopics)
+    {
+        var userText = prompt?.Trim();
+        if (string.IsNullOrWhiteSpace(userText)) return;
+
+        prompt = "";
+        await ResetTextareaHeight();
+        messages.Add(new ChatMessage("user", userText, userText));
+        StateHasChanged();
+        await ScrollToBottom();
+
+        isSending = true;
+        cts = new CancellationTokenSource();
+        StateHasChanged();
+        await ScrollToBottom();
+
+        try
+        {
+            var instructions = await Instructions.GetCombinedInstructionsAsync();
+            var curriculumContext = await LearningResources.GetActiveCurriculumContentAsync();
+
+            // Build context based on mode
+            string fullInstructions;
+            if (isQuizMode)
+            {
+                var quizInstructions = $@"You are conducting a quiz. Current question: {currentQuestionNumber} of {totalQuestions}.
+After the student answers, evaluate their response and indicate if it's correct or incorrect.
+When evaluating, be fair but accurate - partial credit is okay for partially correct answers.
+Keep track of the running score.";
+
+                fullInstructions = string.IsNullOrEmpty(curriculumContext)
+                    ? quizInstructions + "\n\n" + instructions
+                    : curriculumContext + "\n\n" + quizInstructions + "\n\n" + instructions;
+            }
+            else if (isLessonMode && learnedConcepts.Count > 0)
+            {
+                var learnedContext = $"SPIRAL LEARNING CONTEXT: The student has already learned these concepts: {string.Join(", ", learnedConcepts)}. Always reference and connect to these concepts when explaining new material.";
+                fullInstructions = string.IsNullOrEmpty(curriculumContext)
+                    ? learnedContext + "\n\n" + instructions
+                    : curriculumContext + "\n\n" + learnedContext + "\n\n" + instructions;
+            }
+            else
+            {
+                fullInstructions = string.IsNullOrEmpty(curriculumContext)
+                    ? instructions
+                    : curriculumContext + "\n\n" + instructions;
+            }
+
+            var reply = await Ai.GetReplyAsync(messages, fullInstructions, cts.Token);
+            messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson));
+
+            // Capture topics if this is the initial lesson request
+            if (captureTopics && isLessonMode)
+            {
+                ParseTopicsFromResponse(reply.Text);
+            }
+
+            // Update quiz question counter if in quiz mode
+            if (isQuizMode && currentQuestionNumber < totalQuestions)
+            {
+                var responseText = reply.Text.ToLowerInvariant();
+                var nextQuestionNum = (currentQuestionNumber + 1).ToString();
+                if (responseText.Contains("question") && (responseText.Contains(nextQuestionNum) || responseText.Contains("next")))
+                {
+                    currentQuestionNumber++;
+                }
+            }
+            else if (isQuizMode && currentQuestionNumber >= totalQuestions)
+            {
+                var responseText = reply.Text.ToLowerInvariant();
+                if (responseText.Contains("final") || responseText.Contains("summary") || responseText.Contains("total"))
+                {
+                    isQuizMode = false;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            messages.Add(new ChatMessage("assistant", "Request cancelled.", "Request was cancelled by user."));
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage("assistant", $"Error: {ex.Message}", ex.ToString()));
+        }
+        finally
+        {
+            cts?.Dispose();
+            cts = null;
+            isSending = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private void ParseTopicsFromResponse(string response)
+    {
+        lessonTopics.Clear();
+        var lines = response.Split('\n');
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            // Match lines like "1. Topic Name" or "1) Topic Name"
+            var match = Regex.Match(trimmed, @"^\d+[\.\)]\s*(.+)$");
+            if (match.Success)
+            {
+                var topic = match.Groups[1].Value.Trim();
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    lessonTopics.Add(topic);
+                }
+            }
+        }
+    }
+
+    private async Task AutoGrow()
+    {
+        await JS.InvokeVoidAsync("autoGrowTextarea", textareaRef);
+    }
+
+    private async Task ResetTextareaHeight()
+    {
+        await JS.InvokeVoidAsync("resetTextareaHeight", textareaRef);
+    }
+
+    private void Clear()
+    {
+        messages.Clear();
+        prompt = "";
+    }
+
+    private void ShowModal(string content)
+    {
+        modalContent = content;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        modalContent = "";
+    }
+
+    private string ParseMarkdown(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return "";
+
+        // Escape HTML first to prevent XSS
+        text = System.Net.WebUtility.HtmlEncode(text);
+
+        // Process line by line for block elements
+        var lines = text.Split('\n');
+        var result = new StringBuilder();
+        var inList = false;
+        var listType = "";
+
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.TrimStart();
+
+            // Headers (must be at start of line)
+            if (trimmedLine.StartsWith("###### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h6>{ProcessInlineMarkdown(trimmedLine.Substring(7))}</h6>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("##### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h5>{ProcessInlineMarkdown(trimmedLine.Substring(6))}</h5>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("#### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h4>{ProcessInlineMarkdown(trimmedLine.Substring(5))}</h4>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h3>{ProcessInlineMarkdown(trimmedLine.Substring(4))}</h3>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("## "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h2>{ProcessInlineMarkdown(trimmedLine.Substring(3))}</h2>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("# "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h1>{ProcessInlineMarkdown(trimmedLine.Substring(2))}</h1>");
+                continue;
+            }
+
+            // Horizontal rule
+            if (trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___")
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine("<hr />");
+                continue;
+            }
+
+            // Unordered list items
+            if (trimmedLine.StartsWith("- ") || trimmedLine.StartsWith("* "))
+            {
+                if (!inList || listType != "ul")
+                {
+                    CloseList(ref inList, ref listType, result);
+                    result.AppendLine("<ul>");
+                    inList = true;
+                    listType = "ul";
+                }
+                var itemContent = ProcessInlineMarkdown(trimmedLine.Substring(2));
+                result.AppendLine($"<li>{itemContent}</li>");
+                continue;
+            }
+
+            // Ordered list items
+            var orderedMatch = Regex.Match(trimmedLine, @"^(\d+)\.\s+(.*)$");
+            if (orderedMatch.Success)
+            {
+                if (!inList || listType != "ol")
+                {
+                    CloseList(ref inList, ref listType, result);
+                    result.AppendLine("<ol>");
+                    inList = true;
+                    listType = "ol";
+                }
+                var itemContent = ProcessInlineMarkdown(orderedMatch.Groups[2].Value);
+                result.AppendLine($"<li>{itemContent}</li>");
+                continue;
+            }
+
+            // Empty line
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine("<br />");
+                continue;
+            }
+
+            // Regular paragraph
+            CloseList(ref inList, ref listType, result);
+            var processed = ProcessInlineMarkdown(line);
+            result.AppendLine($"<p>{processed}</p>");
+        }
+
+        CloseList(ref inList, ref listType, result);
+        return result.ToString();
+    }
+
+    private void CloseList(ref bool inList, ref string listType, StringBuilder result)
+    {
+        if (inList)
+        {
+            result.AppendLine(listType == "ul" ? "</ul>" : "</ol>");
+            inList = false;
+            listType = "";
+        }
+    }
+
+    private string ProcessInlineMarkdown(string text)
+    {
+        // Bold with clickable term link: **text** or __text__
+        // Bold text is NOT styled as a link, just the icon next to it
+        text = Regex.Replace(text, @"\*\*(.+?)\*\*", match =>
+        {
+            var term = match.Groups[1].Value;
+            var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
+            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"icon-link\"></span></a>";
+        });
+        text = Regex.Replace(text, @"__(.+?)__", match =>
+        {
+            var term = match.Groups[1].Value;
+            var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
+            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"icon-link\"></span></a>";
+        });
+
+        // Italic: *text* or _text_
+        text = Regex.Replace(text, @"\*(.+?)\*", "<em>$1</em>");
+        text = Regex.Replace(text, @"_(.+?)_", "<em>$1</em>");
+
+        // Inline code: `code`
+        text = Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
+
+        // Links: [text](url)
+        text = Regex.Replace(text, @"\[(.+?)\]\((.+?)\)", "<a href=\"$2\" target=\"_blank\">$1</a>");
+
+        return text;
+    }
+
+    private string EscapeJsString(string text)
+    {
+        return text.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+    }
+
+    [JSInvokable]
+    public async Task AskAboutTerm(string term)
+    {
+        // Track that we're exploring a term so we can go back
+        if (!isTermExploration)
+        {
+            isTermExploration = true;
+            messageIndexBeforeExploration = messages.Count;
+        }
+
+        // Build context-aware prompt for term exploration
+        string termPrompt;
+        if (learnedConcepts.Count > 0)
+        {
+            var learnedList = string.Join(", ", learnedConcepts);
+            termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
+
+The student has already learned: {learnedList}
+Connect your explanation to these concepts where relevant.";
+        }
+        else
+        {
+            termPrompt = $"What is \"{term}\"? Please explain it in simple terms.";
+        }
+
+        prompt = termPrompt;
+        StateHasChanged();
+        await SendAsync();
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        dotNetRef?.Dispose();
+    }
+
+    public record ChatMessage(string Role, string Text, string FullJson);
+}
