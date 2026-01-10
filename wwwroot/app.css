@@ -261,26 +261,43 @@ h1:focus {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-left: 3px;
-    padding: 0 2px;
+    margin-left: 4px;
+    padding: 2px 4px;
     cursor: pointer;
     vertical-align: middle;
-    opacity: 0.5;
-    transition: opacity 0.2s;
+    opacity: 0.7;
+    transition: opacity 0.2s, transform 0.2s;
+    border-radius: 4px;
+    background: rgba(27, 110, 194, 0.1);
 }
 
 .markdown-content .term-link:hover {
     opacity: 1;
     text-decoration: none;
+    background: rgba(27, 110, 194, 0.2);
+    transform: scale(1.1);
 }
 
 .markdown-content .term-link .icon-link {
     display: inline-block;
-    width: 12px;
-    height: 12px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%231b6ec2' viewBox='0 0 16 16'%3E%3Cpath d='M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z'/%3E%3Cpath d='M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z'/%3E%3C/svg%3E");
+    width: 14px;
+    height: 14px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%231b6ec2' viewBox='0 0 16 16'%3E%3Cpath d='M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z'/%3E%3Cpath d='M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z'/%3E%3C/svg%3E");
     background-size: contain;
     background-repeat: no-repeat;
+}
+
+/* Dark theme term link icon */
+[data-theme="Dark"] .markdown-content .term-link {
+    background: rgba(77, 171, 247, 0.15);
+}
+
+[data-theme="Dark"] .markdown-content .term-link:hover {
+    background: rgba(77, 171, 247, 0.25);
+}
+
+[data-theme="Dark"] .markdown-content .term-link .icon-link {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234dabf7' viewBox='0 0 16 16'%3E%3Cpath d='M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z'/%3E%3Cpath d='M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z'/%3E%3C/svg%3E");
 }
 
 .markdown-content br {
@@ -302,6 +319,227 @@ h1:focus {
     max-height: 200px;
     overflow-y: auto;
     line-height: 1.4;
+}
+
+/* Core Concepts inline dropdown (in actions row) */
+.concepts-dropdown-inline {
+    position: relative;
+}
+
+.concepts-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.concepts-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+}
+
+.concepts-btn .concepts-icon {
+    font-size: 14px;
+}
+
+.concepts-btn .concepts-label {
+    font-weight: 500;
+}
+
+.concepts-chevron {
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+    margin-left: 4px;
+    margin-bottom: 3px;
+}
+
+.concepts-chevron.open {
+    transform: rotate(-135deg);
+    margin-bottom: -3px;
+}
+
+.concepts-dropdown-panel {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    min-width: 280px;
+    max-width: 400px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 8px;
+    z-index: 100;
+}
+
+.concepts-dropdown-panel .concept-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.concepts-dropdown-panel .concept-item:last-child {
+    border-bottom: none;
+}
+
+.concepts-dropdown-panel .concept-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.concepts-dropdown-panel .concept-term {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.concepts-dropdown-panel .concept-preview {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
+    text-align: right;
+}
+
+/* Legacy Core Concepts dropdown (under the input area) - kept for reference */
+.concepts-dropdown-container {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.concepts-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.concepts-icon {
+    font-size: 16px;
+}
+
+.concepts-label {
+    font-weight: 600;
+}
+
+.concepts-toggle {
+    margin-left: auto;
+    width: 12px;
+    height: 12px;
+    transition: transform 0.2s ease;
+}
+
+.concepts-toggle.open {
+    transform: rotate(180deg);
+}
+
+.concepts-dropdown-list {
+    max-height: 160px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-light);
+}
+
+.concept-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    cursor: pointer;
+}
+
+.concept-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.concept-term {
+    font-weight: 600;
+}
+
+.concept-preview {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
+    text-align: right;
+}
+
+/* Concept modal */
+.concept-modal {
+    width: min(720px, 92%);
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.concept-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.concept-modal-icon {
+    font-size: 20px;
+}
+
+.concept-modal-title {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+.concept-modal-body {
+    padding: 8px 0;
+}
+
+.concept-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.concept-action-btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.concept-action-btn.go-back {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.concept-action-btn.learn-more {
+    background: var(--accent-primary);
+    color: white;
 }
 
 .actions {

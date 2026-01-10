@@ -12,20 +12,20 @@
 <div style="display: inline-flex">
 
 
-@if (activeCurriculum != null && !isQuizMode && !isLessonMode)
-{
-    <button class="curriculum-action-btn start-lesson" style="margin: 0px 5px 5px 0px" @onclick="StartLesson" disabled="@isSending" title="Start the lesson">
-        <span class="icon-teach"></span>
-        Start Lesson
-    </button>
-}
-@if (activeCurriculum != null && !isQuizMode && !isLessonMode)
-{
-        <button class="curriculum-action-btn quiz" style="margin: 0px 5px 5px 0px"  @onclick="StartQuizMe" disabled="@isSending" title="Take a quiz">
-        <span class="icon-quiz"></span>
-        Quiz Me
-    </button>
-}
+    @if (activeCurriculum != null && !isQuizMode && !isLessonMode)
+    {
+        <button class="curriculum-action-btn start-lesson" style="margin: 0px 5px 5px 0px" @onclick="StartLesson" disabled="@isSending" title="Start the lesson">
+            <span class="icon-teach"></span>
+            Start Lesson
+        </button>
+    }
+    @if (activeCurriculum != null && !isQuizMode && !isLessonMode)
+    {
+        <button class="curriculum-action-btn quiz" style="margin: 0px 5px 5px 0px" @onclick="StartQuizMe" disabled="@isSending" title="Take a quiz">
+            <span class="icon-quiz"></span>
+            Quiz Me
+        </button>
+    }
 </div>
 
 @* Mode indicators at the top *@

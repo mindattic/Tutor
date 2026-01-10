@@ -259,6 +259,29 @@ public sealed class LearningResourceService
         await Task.CompletedTask;
     }
 
+    // Reset progress for a curriculum for a given user (placeholder - currently clears learned markers and active curriculum)
+    public async Task ResetCurriculumForUserAsync(string userId, string curriculumId)
+    {
+        // For now, simply clear the active curriculum and any user-specific markers stored in SecureStorage.
+        // Future: track per-user progress and remove it here.
+        try
+        {
+            // Remove active curriculum if it matches
+            var active = await GetActiveCurriculumIdAsync();
+            if (active == curriculumId)
+            {
+                await ClearActiveCurriculumAsync();
+            }
+
+            // Remove any stored progress key for this curriculum for this user
+            var progressKey = $"CURRICULUM_PROGRESS_{userId}_{curriculumId}";
+            SecureStorage.Remove(progressKey);
+        }
+        catch { }
+
+        await Task.CompletedTask;
+    }
+
     // Get combined content for chat context
     public async Task<string> GetActiveCurriculumContentAsync()
     {

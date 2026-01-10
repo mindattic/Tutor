@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection; 
-using System.Net.Http; 
+using System.Net.Http;
+using Tutor.Services;
 
 namespace Tutor
 {
@@ -40,6 +41,9 @@ namespace Tutor
 
             // Learning Resource service
             builder.Services.AddSingleton<Tutor.Services.LearningResourceService>();
+
+            // Core Concept service
+            builder.Services.AddSingleton<CoreConceptService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
