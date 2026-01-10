@@ -1,0 +1,149 @@
+﻿@using System.Text
+@using Microsoft.JSInterop
+@inject OpenAIService Ai
+@inject InstructionsService Instructions
+@implements IDisposable
+
+<div class="chat-shell">
+    <div class="chat-log">
+        @foreach (var m in messages)
+        {
+            <div class="msg @(m.Role)">
+                <div class="msg-header">
+                    <span class="role">@m.Role</span>
+                    <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                </div>
+                <div class="content">@m.Text</div>
+            </div>
+        }
+
+        @if (isSending)
+        {
+            <div class="msg assistant">
+                <div class="msg-header">
+                    <span class="role">assistant</span>
+                </div>
+                <div class="content">Thinking...</div>
+            </div>
+        }
+    </div>
+
+    <div class="chat-input">
+        <textarea @ref="textareaRef" 
+                  @bind="prompt" 
+                  @bind:event="oninput"
+                  @bind:after="AutoGrow"
+                  rows="1" 
+                  placeholder="Ask ChatGPT... (Enter to send, Shift+Enter for new line)"></textarea>
+
+        <div class="actions">
+            <button @onclick="SendAsync" disabled="@(isSending || string.IsNullOrWhiteSpace(prompt))">
+                <span>Send</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Full Response</span>
+                <button class="close-btn" @onclick="CloseModal">×</button>
+            </div>
+            <div class="modal-body">
+                <pre>@modalContent</pre>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<ChatMessage> messages = new();
+    private string prompt = "";
+    private bool isSending;
+    private bool showModal;
+    private string modalContent = "";
+    private ElementReference textareaRef;
+    private DotNetObjectReference<ChatGptPanel>? dotNetRef;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupTextareaEnterHandler", textareaRef, dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task SendFromJs()
+    {
+        await SendAsync();
+        StateHasChanged();
+    }
+
+    private async Task SendAsync()
+    {
+        var userText = prompt?.Trim();
+        if (string.IsNullOrWhiteSpace(userText)) return;
+
+        prompt = "";
+        await ResetTextareaHeight();
+        messages.Add(new ChatMessage("user", userText, userText));
+
+        isSending = true;
+        try
+        {
+            var instructions = await Instructions.GetCombinedInstructionsAsync();
+            var reply = await Ai.GetReplyAsync(messages, instructions);
+            messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson));
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage("assistant", $"Error: {ex.Message}", ex.ToString()));
+        }
+        finally
+        {
+            isSending = false;
+        }
+    }
+
+    private async Task AutoGrow()
+    {
+        await JS.InvokeVoidAsync("autoGrowTextarea", textareaRef);
+    }
+
+    private async Task ResetTextareaHeight()
+    {
+        await JS.InvokeVoidAsync("resetTextareaHeight", textareaRef);
+    }
+
+    private void Clear()
+    {
+        messages.Clear();
+        prompt = "";
+    }
+
+    private void ShowModal(string content)
+    {
+        modalContent = content;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        modalContent = "";
+    }
+
+    public void Dispose()
+    {
+        dotNetRef?.Dispose();
+    }
+
+    public record ChatMessage(string Role, string Text, string FullJson);
+}

@@ -1,0 +1,133 @@
+﻿@page "/settings"
+@using Microsoft.Maui.Storage
+@inject NavigationManager Nav
+
+<div class="page-title">Settings</div>
+
+<div style="max-width: 720px;">
+    <label>API Key</label>
+
+    <input type="password"
+           @bind="apiKey"
+           placeholder="sk-..."
+           style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);" />
+
+    <div style="margin-top: 10px; display: flex; gap: 10px;">
+        <button @onclick="SaveAsync" disabled="@isBusy">Save</button>
+        <button @onclick="LoadAsync" disabled="@isBusy">Load</button>
+        <button @onclick="ClearAsync" disabled="@isBusy">Clear</button>
+        <button @onclick="GoToChat" disabled="@isBusy">Go To Chat</button>
+    </div>
+
+    <p style="margin-top: 12px;">@status</p>
+
+    @if (!string.IsNullOrWhiteSpace(currentKeyPreview))
+    {
+        <p>Stored key (preview): <code>@currentKeyPreview</code></p>
+    }
+</div>
+
+@code
+{
+    private const string StorageKeyName = "OPENAI_API_KEY";
+
+    private string apiKey = "";
+    private string status = "";
+    private string currentKeyPreview = "";
+    private bool isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        var trimmed = (apiKey ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            status = "API key is empty.";
+            return;
+        }
+
+        isBusy = true;
+        try
+        {
+            await SecureStorage.SetAsync(StorageKeyName, trimmed);
+            status = "Saved to SecureStorage.";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            status = "Save failed: " + ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        isBusy = true;
+        try
+        {
+            var key = await SecureStorage.GetAsync(StorageKeyName);
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                status = "No key stored yet.";
+                currentKeyPreview = "";
+                return;
+            }
+
+            // Do not auto-fill the input, just show a safe preview
+            status = "Key loaded from SecureStorage.";
+            currentKeyPreview = MaskKey(key);
+        }
+        catch (Exception ex)
+        {
+            status = "Load failed: " + ex.Message;
+            currentKeyPreview = "";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ClearAsync()
+    {
+        isBusy = true;
+        try
+        {
+            SecureStorage.Remove(StorageKeyName);
+            apiKey = "";
+            currentKeyPreview = "";
+            status = "Key cleared from SecureStorage.";
+        }
+        catch (Exception ex)
+        {
+            status = "Clear failed: " + ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private void GoToChat()
+    {
+        Nav.NavigateTo("/chat");
+    }
+
+    private static string MaskKey(string key)
+    {
+        // Show first 6 and last 4 chars if long enough
+        if (key.Length <= 12) return new string('*', key.Length);
+
+        var start = key.Substring(0, 6);
+        var end = key.Substring(key.Length - 4, 4);
+        return start + "..." + end;
+    }
+}

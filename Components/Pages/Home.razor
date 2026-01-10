@@ -1,0 +1,60 @@
+﻿@page "/"
+@using Microsoft.Maui.Storage
+@inject NavigationManager Nav
+
+<div class="page-title">Welcome</div>
+
+@if (_checking)
+{
+    <p>Checking configuration...</p>
+}
+else if (!_hasApiKey)
+{
+    <div style="
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 200, 0, 0.15);
+            border: 1px solid rgba(255, 200, 0, 0.4);
+            max-width: 720px;
+        ">
+        <strong>OpenAI API key not found.</strong>
+        <p>
+            To use Chat, please enter your OpenAI API key in Settings.
+        </p>
+        <button @onclick="GoToSettings">Go to Settings</button>
+    </div>
+}
+else
+{
+    <p>Your OpenAI API key is configured.</p>
+}
+
+@code
+{
+    private const string StorageKeyName = "OPENAI_API_KEY";
+
+    private bool _checking = true;
+    private bool _hasApiKey;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var key = await SecureStorage.GetAsync(StorageKeyName);
+            _hasApiKey = !string.IsNullOrWhiteSpace(key);
+        }
+        catch
+        {
+            _hasApiKey = false;
+        }
+        finally
+        {
+            _checking = false;
+        }
+    }
+
+    private void GoToSettings()
+    {
+        Nav.NavigateTo("/settings");
+    }
+}
