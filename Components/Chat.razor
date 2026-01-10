@@ -35,7 +35,7 @@
         <span class="mode-icon icon-quiz-white"></span>
         <span class="mode-label">Quiz Mode</span>
         <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
-        <button class="mode-exit-btn" @onclick="EndQuiz" title="End Quiz">? End</button>
+        <button class="mode-exit-btn" @onclick="EndQuiz" title="End Quiz"><span class="bi bi-stop-fill"></span> End</button>
     </div>
 }
 else if (isLessonMode && lessonTopics.Count > 0)
@@ -48,7 +48,7 @@ else if (isLessonMode && lessonTopics.Count > 0)
         {
             <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
         }
-        <button class="mode-exit-btn" @onclick="EndLesson" title="End Lesson">? End</button>
+        <button class="mode-exit-btn" @onclick="EndLesson" title="End Lesson"><span class="bi bi-stop-fill"></span> End</button>
     </div>
 }
 
