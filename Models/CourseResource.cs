@@ -10,11 +10,31 @@ public class CourseResource
     public string Author { get; set; } = "";
     public string Year { get; set; } = "";
     public string Description { get; set; } = "";
+    
+    /// <summary>
+    /// Original content as uploaded/pasted.
+    /// </summary>
     public string Content { get; set; } = "";
+    
+    /// <summary>
+    /// AI-formatted version of the content (if processed).
+    /// </summary>
+    public string? FormattedContent { get; set; }
+    
     public ResourceType Type { get; set; } = ResourceType.Text;
     public string FileName { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Whether this resource has been processed (formatted, concepts extracted).
+    /// </summary>
+    public bool IsProcessed { get; set; }
+    
+    /// <summary>
+    /// Gets the best available content (formatted if available, otherwise original).
+    /// </summary>
+    public string GetEffectiveContent() => FormattedContent ?? Content;
 }
 
 public enum ResourceType

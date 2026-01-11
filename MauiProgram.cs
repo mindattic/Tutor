@@ -67,6 +67,27 @@ namespace Tutor
             // Core Concept service
             builder.Services.AddSingleton<CoreConceptService>();
 
+            // Concept extraction service (LLM-based concept discovery)
+            builder.Services.AddHttpClient<ConceptExtractionService>();
+
+            // Concept correlation service (relationship discovery)
+            builder.Services.AddHttpClient<ConceptCorrelationService>();
+
+
+
+
+            // Knowledge graph service (graph management and persistence)
+            builder.Services.AddSingleton<KnowledgeGraphService>();
+
+            // Table of contents service (learning path generation)
+            builder.Services.AddSingleton<TableOfContentsService>();
+
+            // Resource processing service (async pipeline with throttling)
+            builder.Services.AddSingleton<ResourceProcessingService>();
+
+            // Knowledge graph build service (async graph building with queue)
+            builder.Services.AddSingleton<KnowledgeGraphBuildService>();
+
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();

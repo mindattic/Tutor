@@ -85,6 +85,59 @@ public sealed class CourseService
     }
 
     /// <summary>
+    /// Core save method - saves resource without formatting or processing.
+    /// Used by ResourceProcessingService for the initial save step.
+    /// Returns the resource ID.
+    /// </summary>
+    public async Task<string> SaveResourceCoreAsync(CourseResource resource)
+    {
+        if (string.IsNullOrEmpty(resource.Id))
+        {
+            resource.Id = Guid.NewGuid().ToString();
+        }
+
+        await SaveResourceAsync(resource);
+
+        // Also save to file system for GitHub
+        if (!string.IsNullOrWhiteSpace(resource.Content))
+        {
+            await fileResourceService.SaveOriginalFileAsync(
+                resource.FileName ?? $"{resource.Title}.txt",
+                resource.Content);
+        }
+
+        return resource.Id;
+    }
+
+    /// <summary>
+    /// Updates just the content of a resource (used after async formatting).
+    /// </summary>
+    public async Task UpdateResourceContentAsync(string resourceId, string content, bool isFormatted = false)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null)
+            return;
+
+        if (isFormatted)
+        {
+            resource.FormattedContent = content;
+            
+            // Save formatted to file system
+            await fileResourceService.SaveFormattedFileAsync(
+                resource.Title,
+                content,
+                resource.FileName);
+        }
+        else
+        {
+            resource.Content = content;
+        }
+
+        resource.UpdatedAt = DateTime.UtcNow;
+        await SaveResourceAsync(resource);
+    }
+
+    /// <summary>
     /// Save a resource with optional auto-formatting of content.
     /// When autoFormat is true, creates a NEW formatted resource and keeps the original intact.
     /// Returns the ID of the saved resource (original if not formatted, new if formatted).

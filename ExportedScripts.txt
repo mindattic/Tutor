@@ -1,6 +1,6 @@
 ﻿== Tutor EXPORT ==
 VERSION: 1
-CREATED_UTC: 2026-01-11T03:03:58Z
+CREATED_UTC: 2026-01-11T04:59:38Z
 ROOT: D:/Projects/Tutor
 
 <<<MANIFEST JSON START>>>
@@ -25,18 +25,18 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "MauiProgram.cs",
-        "sha256":  "338C95B9459590E7ACD661EC7E85807EDB1E3B0D9530A6E4C75D0F2E8E44B374",
-        "bytes":  2299,
-        "lines":  54,
+        "sha256":  "BFBB3DCE2A7333282A9296BA1E28494F060706DC50807E265F6BF81C74A2AD73",
+        "bytes":  2563,
+        "lines":  58,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
     },
     {
         "path":  "Models/ContentChunk.cs",
-        "sha256":  "12903B204093061396ACB436F3D68C1A320E1189D92B47B9C8C72D10447EC765",
-        "bytes":  1460,
-        "lines":  44,
+        "sha256":  "85C36D0313AFDD15A257F29A07986EA731E8DA0A0567440327827CCB5AE54019",
+        "bytes":  1944,
+        "lines":  54,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -169,9 +169,9 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "Services/CourseService.cs",
-        "sha256":  "F3D4C405F8BE0773C90F8A848B215C056BAB5490277B9648529ECC115BE3F320",
-        "bytes":  19934,
-        "lines":  494,
+        "sha256":  "12BF81AAD5210B232B08D3032C6A8264D3D89106E2D89CE940B79B95F24AA7F2",
+        "bytes":  26589,
+        "lines":  635,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -204,6 +204,15 @@ ROOT: D:/Projects/Tutor
         "guid":  null
     },
     {
+        "path":  "Services/LSHService.cs",
+        "sha256":  "EEF1C1FEDD52EA73579C556FD6F3D43709779D2FD0951AB06D665A5F720BF589",
+        "bytes":  9093,
+        "lines":  257,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
         "path":  "Services/OpenAIService.cs",
         "sha256":  "8030891765E208B57755A26FACD0CE6A79937D98EF4E0E06F6447048777CB041",
         "bytes":  4550,
@@ -214,9 +223,18 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "Services/SettingsService.cs",
-        "sha256":  "ED6EB71C7835E53541701667343305DABD541164C2E9D65811C3DD0C25B7A1E6",
-        "bytes":  5720,
-        "lines":  203,
+        "sha256":  "6766FDCB061A7CA497E983EDEA9D2662A653102579ED478B39D8E256BA4F32C3",
+        "bytes":  9632,
+        "lines":  342,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/SimHashService.cs",
+        "sha256":  "62ED2F897B0738179CF4AA2FE82D1B69EC638FAA137DADC765B9684A60DBF5D6",
+        "bytes":  4201,
+        "lines":  123,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -259,9 +277,9 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "Services/VectorStoreService.cs",
-        "sha256":  "A382D598B15B8B360B7E5FA4C1E79257C5F553A3BB0EE52E923CD0893FB99102",
-        "bytes":  5834,
-        "lines":  168,
+        "sha256":  "D796A290216E458145556D162D68B8F5B15C8F7AA7D538A6D2E033C75E6C6DDB",
+        "bytes":  10499,
+        "lines":  264,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -322,9 +340,9 @@ namespace Tutor
 PATH: MauiProgram.cs
 TYPE: script
 EXT: .cs
-SHA256: 338C95B9459590E7ACD661EC7E85807EDB1E3B0D9530A6E4C75D0F2E8E44B374
-BYTES: 2299
-LINES: 73
+SHA256: BFBB3DCE2A7333282A9296BA1E28494F060706DC50807E265F6BF81C74A2AD73
+BYTES: 2563
+LINES: 79
 <<<CONTENT START>>>
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection; 
@@ -367,6 +385,12 @@ namespace Tutor
             // Chunking service for splitting content
             builder.Services.AddSingleton<ChunkingService>();
 
+            // LSH service for locality-sensitive hashing (semantic signatures)
+            builder.Services.AddSingleton<LSHService>();
+
+            // SimHash service for lexical fingerprinting
+            builder.Services.AddSingleton<SimHashService>();
+
             // Vector store service for storing/searching embeddings
             builder.Services.AddSingleton<VectorStoreService>();
 
@@ -406,9 +430,9 @@ namespace Tutor
 PATH: Models/ContentChunk.cs
 TYPE: script
 EXT: .cs
-SHA256: 12903B204093061396ACB436F3D68C1A320E1189D92B47B9C8C72D10447EC765
-BYTES: 1460
-LINES: 46
+SHA256: 85C36D0313AFDD15A257F29A07986EA731E8DA0A0567440327827CCB5AE54019
+BYTES: 1944
+LINES: 58
 <<<CONTENT START>>>
 namespace Tutor.Models;
 
@@ -444,6 +468,18 @@ public class ContentChunk
     /// The embedding vector for this chunk (1536 dimensions for text-embedding-3-small).
     /// </summary>
     public float[] Embedding { get; set; } = [];
+
+    /// <summary>
+    /// LSH signature for fast approximate nearest neighbor search (semantic similarity).
+    /// Computed from the embedding vector using random hyperplane projections.
+    /// </summary>
+    public byte[] SemanticSignature { get; set; } = [];
+
+    /// <summary>
+    /// SimHash signature for lexical similarity comparison.
+    /// Computed from the text content using FNV-1a hashing.
+    /// </summary>
+    public ulong LexicalSignature { get; set; }
     
     /// <summary>
     /// Title of the source resource (for context when retrieved).
@@ -1358,9 +1394,9 @@ public class CoreConceptService
 PATH: Services/CourseService.cs
 TYPE: script
 EXT: .cs
-SHA256: F3D4C405F8BE0773C90F8A848B215C056BAB5490277B9648529ECC115BE3F320
-BYTES: 19934
-LINES: 579
+SHA256: 12BF81AAD5210B232B08D3032C6A8264D3D89106E2D89CE940B79B95F24AA7F2
+BYTES: 26589
+LINES: 735
 <<<CONTENT START>>>
 using System.Text.Json;
 using Tutor.Models;
@@ -1378,6 +1414,8 @@ public sealed class CourseService
     private readonly VectorStoreService vectorStoreService;
     private readonly ContentFormatterService contentFormatterService;
     private readonly FileResourceService fileResourceService;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
 
     private List<CourseResource>? cachedResources;
     private List<Course>? cachedCourses;
@@ -1387,13 +1425,17 @@ public sealed class CourseService
         EmbeddingService embeddingService,
         VectorStoreService vectorStoreService,
         ContentFormatterService contentFormatterService,
-        FileResourceService fileResourceService)
+        FileResourceService fileResourceService,
+        LSHService lshService,
+        SimHashService simHashService)
     {
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;
         this.vectorStoreService = vectorStoreService;
         this.contentFormatterService = contentFormatterService;
         this.fileResourceService = fileResourceService;
+        this.lshService = lshService;
+        this.simHashService = simHashService;
     }
 
     // Resource management
@@ -1713,17 +1755,28 @@ public sealed class CourseService
         if (embeddings.Count != textChunks.Count)
             return;
 
-        // Create ContentChunk objects
+        // Create ContentChunk objects with embeddings and signatures
         var chunks = new List<ContentChunk>();
         for (int i = 0; i < textChunks.Count; i++)
         {
+            var embedding = embeddings[i];
+            var content = textChunks[i];
+
+            // Compute semantic signature from embedding using LSH
+            var semanticSignature = lshService.GetSignature(embedding);
+
+            // Compute lexical signature from content using SimHash
+            var lexicalSignature = simHashService.GetSignature64(content);
+
             chunks.Add(new ContentChunk
             {
                 ResourceId = resourceId,
                 CurriculumId = courseId, // Note: ContentChunk still uses CurriculumId internally for storage
                 ChunkIndex = i,
-                Content = textChunks[i],
-                Embedding = embeddings[i],
+                Content = content,
+                Embedding = embedding,
+                SemanticSignature = semanticSignature,
+                LexicalSignature = lexicalSignature,
                 SourceTitle = resource.Title
             });
         }
@@ -1936,6 +1989,145 @@ public sealed class CourseService
             sb.AppendLine(content);
             sb.AppendLine();
         }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Gets an overview of all resources in a course for curriculum planning.
+    /// This provides a holistic view by extracting key information from each resource.
+    /// </summary>
+    public async Task<string> GetCourseOverviewAsync(string? courseId = null, CancellationToken ct = default)
+    {
+        var course = courseId != null 
+            ? await GetCourseAsync(courseId) 
+            : await GetActiveCourseAsync();
+            
+        if (course == null)
+            return "";
+
+        var resources = await GetCourseResourcesAsync(course.Id);
+        if (resources.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== COURSE OVERVIEW: {course.Name} ===");
+        if (!string.IsNullOrWhiteSpace(course.Description))
+        {
+            sb.AppendLine($"Description: {course.Description}");
+        }
+        sb.AppendLine($"Total Resources: {resources.Count}");
+        sb.AppendLine();
+
+        // Provide structured information about each resource
+        sb.AppendLine("=== RESOURCES IN THIS COURSE ===");
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"### {resource.Title}");
+            if (!string.IsNullOrWhiteSpace(resource.Author))
+                sb.AppendLine($"Author: {resource.Author}");
+            if (!string.IsNullOrWhiteSpace(resource.Year))
+                sb.AppendLine($"Year: {resource.Year}");
+            if (!string.IsNullOrWhiteSpace(resource.Description))
+                sb.AppendLine($"Description: {resource.Description}");
+            
+            // Extract a representative sample from the content (first ~1500 chars)
+            // This helps the AI understand what each resource covers
+            if (!string.IsNullOrWhiteSpace(resource.Content))
+            {
+                var sample = resource.Content.Length > 1500 
+                    ? resource.Content[..1500] + "..."
+                    : resource.Content;
+                sb.AppendLine($"Content Preview:");
+                sb.AppendLine(sample);
+            }
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Gets unified context for curriculum planning that spans ALL resources in the course.
+    /// Combines course overview with broad RAG sampling from each resource.
+    /// This is specifically designed for generating course outlines/topics.
+    /// </summary>
+    public async Task<string> GetUnifiedCurriculumContextAsync(string? courseId = null, CancellationToken ct = default)
+    {
+        var course = courseId != null 
+            ? await GetCourseAsync(courseId) 
+            : await GetActiveCourseAsync();
+            
+        if (course == null)
+            return "";
+
+        var resources = await GetCourseResourcesAsync(course.Id);
+        if (resources.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== UNIFIED CURRICULUM CONTEXT: {course.Name} ===");
+        sb.AppendLine("You are creating a curriculum from MULTIPLE resources. Consider ALL of them together.");
+        sb.AppendLine($"Total Resources: {resources.Count}");
+        sb.AppendLine();
+
+        // List all resources first
+        sb.AppendLine("=== AVAILABLE RESOURCES ===");
+        for (int i = 0; i < resources.Count; i++)
+        {
+            var r = resources[i];
+            sb.AppendLine($"{i + 1}. {r.Title}" + 
+                (string.IsNullOrWhiteSpace(r.Description) ? "" : $" - {r.Description}"));
+        }
+        sb.AppendLine();
+
+        // For each resource, get representative chunks to capture key topics
+        sb.AppendLine("=== KEY CONTENT FROM EACH RESOURCE ===");
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"--- FROM: {resource.Title} ---");
+            
+            // Get all chunks for this resource and sample them
+            var chunks = await vectorStoreService.GetChunksForResourceAsync(resource.Id);
+            
+            if (chunks.Count > 0)
+            {
+                // Sample chunks evenly across the resource to get representative coverage
+                var sampleCount = Math.Min(5, chunks.Count);
+                var step = chunks.Count / sampleCount;
+                
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    var chunk = chunks[Math.Min(i * step, chunks.Count - 1)];
+                    sb.AppendLine(chunk.Content);
+                    sb.AppendLine();
+                }
+            }
+            else
+            {
+                // Fallback: sample from raw content
+                var contentLength = resource.Content.Length;
+                var sampleSize = Math.Min(2000, contentLength);
+                
+                // Get beginning sample
+                sb.AppendLine(resource.Content[..Math.Min(1000, contentLength)]);
+                sb.AppendLine();
+                
+                // Get middle sample if content is long enough
+                if (contentLength > 2000)
+                {
+                    var midStart = contentLength / 2 - 500;
+                    sb.AppendLine(resource.Content.Substring(midStart, Math.Min(1000, contentLength - midStart)));
+                    sb.AppendLine();
+                }
+            }
+        }
+
+        sb.AppendLine("=== END UNIFIED CONTEXT ===");
+        sb.AppendLine();
+        sb.AppendLine("IMPORTANT: Create a curriculum that synthesizes knowledge ACROSS all these resources.");
+        sb.AppendLine("Topics should integrate information from multiple resources where relevant.");
+        sb.AppendLine("Consider common themes, complementary information, and logical learning progression.");
 
         return sb.ToString();
     }
@@ -2354,6 +2546,318 @@ public sealed class InstructionsService
 <<<FILE END>>>
 
 <<<FILE START>>>
+PATH: Services/LSHService.cs
+TYPE: script
+EXT: .cs
+SHA256: EEF1C1FEDD52EA73579C556FD6F3D43709779D2FD0951AB06D665A5F720BF589
+BYTES: 9093
+LINES: 301
+<<<CONTENT START>>>
+using System.Text.Json;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Locality-Sensitive Hashing service using random hyperplane projections.
+/// Produces compact binary signatures from embedding vectors for fast approximate nearest neighbor search.
+/// </summary>
+public sealed class LSHService
+{
+    private const string HyperplanesFileName = "lsh_hyperplanes.json";
+    private const int DefaultBitCount = 256;
+    private const int DefaultSeed = 1337;
+
+    private readonly string hyperplanesFilePath;
+    private readonly object lockObj = new();
+
+    private float[][]? hyperplanes;
+
+    /// <summary>
+    /// Number of bits in the signature (number of hyperplanes).
+    /// </summary>
+    public int BitCount { get; }
+
+    /// <summary>
+    /// Dimension of the embedding vectors.
+    /// </summary>
+    public int EmbeddingDimension { get; }
+
+    /// <summary>
+    /// Random seed used for hyperplane generation.
+    /// </summary>
+    public int Seed { get; }
+
+    /// <summary>
+    /// Creates a new LSH service with the specified parameters.
+    /// </summary>
+    /// <param name="embeddingDimension">Dimension of embedding vectors (default 1536 for OpenAI text-embedding-3-small).</param>
+    /// <param name="bitCount">Number of bits in the signature (default 256).</param>
+    /// <param name="seed">Random seed for deterministic hyperplane generation (default 1337).</param>
+    public LSHService(int embeddingDimension = 1536, int bitCount = DefaultBitCount, int seed = DefaultSeed)
+    {
+        EmbeddingDimension = embeddingDimension;
+        BitCount = bitCount;
+        Seed = seed;
+        hyperplanesFilePath = Path.Combine(FileSystem.AppDataDirectory, HyperplanesFileName);
+    }
+
+    /// <summary>
+    /// Computes a binary signature from an embedding vector using random hyperplane projections.
+    /// Each bit indicates which side of a hyperplane the embedding falls on.
+    /// </summary>
+    /// <param name="embedding">The embedding vector to compute the signature for.</param>
+    /// <returns>A packed byte array containing the binary signature. Length is (BitCount + 7) / 8.</returns>
+    public byte[] GetSignature(float[] embedding)
+    {
+        if (embedding == null || embedding.Length == 0)
+            return [];
+
+        EnsureHyperplanesLoaded();
+
+        var signatureBytes = (BitCount + 7) / 8;
+        var signature = new byte[signatureBytes];
+
+        for (int i = 0; i < BitCount; i++)
+        {
+            var plane = hyperplanes![i];
+            var dot = DotProduct(embedding, plane);
+
+            // If dot product >= 0, set bit to 1 (LSB first within each byte)
+            if (dot >= 0)
+            {
+                var byteIndex = i / 8;
+                var bitIndex = i % 8;
+                signature[byteIndex] |= (byte)(1 << bitIndex);
+            }
+        }
+
+        return signature;
+    }
+
+    /// <summary>
+    /// Computes the Hamming distance between two binary signatures.
+    /// The Hamming distance is the number of bit positions that differ.
+    /// </summary>
+    /// <param name="a">First signature.</param>
+    /// <param name="b">Second signature.</param>
+    /// <returns>Number of differing bits.</returns>
+    public static int HammingDistance(byte[] a, byte[] b)
+    {
+        if (a == null || b == null)
+            return int.MaxValue;
+
+        var minLen = Math.Min(a.Length, b.Length);
+        var maxLen = Math.Max(a.Length, b.Length);
+        var distance = 0;
+
+        // Count differing bits in common portion
+        for (int i = 0; i < minLen; i++)
+        {
+            distance += PopCount((byte)(a[i] ^ b[i]));
+        }
+
+        // Any extra bytes in the longer array count as all differing bits
+        distance += (maxLen - minLen) * 8;
+
+        return distance;
+    }
+
+    /// <summary>
+    /// Counts the number of set bits (1s) in a byte.
+    /// </summary>
+    private static int PopCount(byte value)
+    {
+        int count = 0;
+        while (value != 0)
+        {
+            count += value & 1;
+            value >>= 1;
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Computes the dot product of two vectors.
+    /// </summary>
+    private static float DotProduct(float[] a, float[] b)
+    {
+        var len = Math.Min(a.Length, b.Length);
+        float sum = 0;
+        for (int i = 0; i < len; i++)
+        {
+            sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    /// <summary>
+    /// Ensures hyperplanes are loaded from disk or generated.
+    /// </summary>
+    private void EnsureHyperplanesLoaded()
+    {
+        if (hyperplanes != null)
+            return;
+
+        lock (lockObj)
+        {
+            if (hyperplanes != null)
+                return;
+
+            // Try to load from disk first
+            if (TryLoadHyperplanes())
+                return;
+
+            // Generate new hyperplanes
+            GenerateHyperplanes();
+
+            // Persist for stability across sessions
+            SaveHyperplanes();
+        }
+    }
+
+    /// <summary>
+    /// Attempts to load hyperplanes from the persisted file.
+    /// </summary>
+    private bool TryLoadHyperplanes()
+    {
+        try
+        {
+            if (!File.Exists(hyperplanesFilePath))
+                return false;
+
+            var json = File.ReadAllText(hyperplanesFilePath);
+            var data = JsonSerializer.Deserialize<HyperplaneData>(json);
+
+            if (data == null ||
+                data.BitCount != BitCount ||
+                data.EmbeddingDimension != EmbeddingDimension ||
+                data.Seed != Seed ||
+                data.Hyperplanes == null ||
+                data.Hyperplanes.Length != BitCount)
+            {
+                // Mismatch in parameters, regenerate
+                return false;
+            }
+
+            hyperplanes = data.Hyperplanes;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Generates random hyperplanes using a deterministic PRNG.
+    /// Uses Box-Muller transform to generate Gaussian-distributed values.
+    /// </summary>
+    private void GenerateHyperplanes()
+    {
+        var rng = new Random(Seed);
+        hyperplanes = new float[BitCount][];
+
+        for (int i = 0; i < BitCount; i++)
+        {
+            var plane = new float[EmbeddingDimension];
+
+            // Generate Gaussian-distributed random values using Box-Muller
+            for (int j = 0; j < EmbeddingDimension; j += 2)
+            {
+                var (g1, g2) = BoxMuller(rng);
+                plane[j] = g1;
+                if (j + 1 < EmbeddingDimension)
+                {
+                    plane[j + 1] = g2;
+                }
+            }
+
+            // Normalize the plane to unit length
+            NormalizeVector(plane);
+
+            hyperplanes[i] = plane;
+        }
+    }
+
+    /// <summary>
+    /// Box-Muller transform to generate two independent standard normal random variables.
+    /// </summary>
+    private static (float, float) BoxMuller(Random rng)
+    {
+        double u1, u2;
+        do
+        {
+            u1 = rng.NextDouble();
+            u2 = rng.NextDouble();
+        } while (u1 <= double.Epsilon);
+
+        var mag = Math.Sqrt(-2.0 * Math.Log(u1));
+        var angle = 2.0 * Math.PI * u2;
+
+        return ((float)(mag * Math.Cos(angle)), (float)(mag * Math.Sin(angle)));
+    }
+
+    /// <summary>
+    /// Normalizes a vector to unit length in place.
+    /// </summary>
+    private static void NormalizeVector(float[] vector)
+    {
+        float sumSq = 0;
+        for (int i = 0; i < vector.Length; i++)
+        {
+            sumSq += vector[i] * vector[i];
+        }
+
+        if (sumSq > 0)
+        {
+            var norm = (float)Math.Sqrt(sumSq);
+            for (int i = 0; i < vector.Length; i++)
+            {
+                vector[i] /= norm;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Saves hyperplanes to disk for persistence.
+    /// </summary>
+    private void SaveHyperplanes()
+    {
+        try
+        {
+            var data = new HyperplaneData
+            {
+                BitCount = BitCount,
+                EmbeddingDimension = EmbeddingDimension,
+                Seed = Seed,
+                Hyperplanes = hyperplanes!
+            };
+
+            var json = JsonSerializer.Serialize(data);
+            File.WriteAllText(hyperplanesFilePath, json);
+        }
+        catch
+        {
+            // Silently fail - hyperplanes are still in memory
+        }
+    }
+
+    /// <summary>
+    /// Data structure for persisting hyperplanes.
+    /// </summary>
+    private sealed class HyperplaneData
+    {
+        public int BitCount { get; set; }
+        public int EmbeddingDimension { get; set; }
+        public int Seed { get; set; }
+        public float[][] Hyperplanes { get; set; } = [];
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
 PATH: Services/OpenAIService.cs
 TYPE: script
 EXT: .cs
@@ -2518,9 +3022,9 @@ public sealed class OpenAIOptions
 PATH: Services/SettingsService.cs
 TYPE: script
 EXT: .cs
-SHA256: ED6EB71C7835E53541701667343305DABD541164C2E9D65811C3DD0C25B7A1E6
-BYTES: 5720
-LINES: 222
+SHA256: 6766FDCB061A7CA497E983EDEA9D2662A653102579ED478B39D8E256BA4F32C3
+BYTES: 9632
+LINES: 374
 <<<CONTENT START>>>
 using Microsoft.Maui.Storage;
 using System.Text.Json;
@@ -2716,6 +3220,158 @@ public sealed class SettingsService
             // Ignore errors
         }
     }
+
+    // Avatar and display name settings
+    private const string UserDisplayNameKey = "USER_DISPLAY_NAME";
+    private const string AssistantDisplayNameKey = "ASSISTANT_DISPLAY_NAME";
+    private const string UserAvatarIconKey = "USER_AVATAR_ICON";
+    private const string AssistantAvatarIconKey = "ASSISTANT_AVATAR_ICON";
+    private const string UserCustomAvatarKey = "USER_CUSTOM_AVATAR";
+    private const string AssistantCustomAvatarKey = "ASSISTANT_CUSTOM_AVATAR";
+
+    public async Task<string> GetUserDisplayNameAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(UserDisplayNameKey);
+            return string.IsNullOrEmpty(value) ? "User" : value;
+        }
+        catch
+        {
+            return "User";
+        }
+    }
+
+    public async Task SetUserDisplayNameAsync(string name)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(UserDisplayNameKey, name);
+        }
+        catch { }
+    }
+
+    public async Task<string> GetAssistantDisplayNameAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(AssistantDisplayNameKey);
+            return string.IsNullOrEmpty(value) ? "Assistant" : value;
+        }
+        catch
+        {
+            return "Assistant";
+        }
+    }
+
+    public async Task SetAssistantDisplayNameAsync(string name)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(AssistantDisplayNameKey, name);
+        }
+        catch { }
+    }
+
+    public async Task<string> GetUserAvatarIconAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(UserAvatarIconKey);
+            return string.IsNullOrEmpty(value) ? "bi-person-fill" : value;
+        }
+        catch
+        {
+            return "bi-person-fill";
+        }
+    }
+
+    public async Task SetUserAvatarIconAsync(string icon)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(UserAvatarIconKey, icon);
+        }
+        catch { }
+    }
+
+    public async Task<string> GetAssistantAvatarIconAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(AssistantAvatarIconKey);
+            return string.IsNullOrEmpty(value) ? "bi-robot" : value;
+        }
+        catch
+        {
+            return "bi-robot";
+        }
+    }
+
+    public async Task SetAssistantAvatarIconAsync(string icon)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(AssistantAvatarIconKey, icon);
+        }
+        catch { }
+    }
+
+    public async Task<string?> GetUserCustomAvatarAsync()
+    {
+        try
+        {
+            return await SecureStorage.GetAsync(UserCustomAvatarKey);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SetUserCustomAvatarAsync(string? dataUrl)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(dataUrl))
+            {
+                SecureStorage.Remove(UserCustomAvatarKey);
+            }
+            else
+            {
+                await SecureStorage.SetAsync(UserCustomAvatarKey, dataUrl);
+            }
+        }
+        catch { }
+    }
+
+    public async Task<string?> GetAssistantCustomAvatarAsync()
+    {
+        try
+        {
+            return await SecureStorage.GetAsync(AssistantCustomAvatarKey);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SetAssistantCustomAvatarAsync(string? dataUrl)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(dataUrl))
+            {
+                SecureStorage.Remove(AssistantCustomAvatarKey);
+            }
+            else
+            {
+                await SecureStorage.SetAsync(AssistantCustomAvatarKey, dataUrl);
+            }
+        }
+        catch { }
+    }
 }
 
 public enum GradingScale
@@ -2742,6 +3398,160 @@ public class ChatMessageState
     public string Role { get; set; } = "";
     public string Text { get; set; } = "";
     public string FullJson { get; set; } = "";
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/SimHashService.cs
+TYPE: script
+EXT: .cs
+SHA256: 62ED2F897B0738179CF4AA2FE82D1B69EC638FAA137DADC765B9684A60DBF5D6
+BYTES: 4201
+LINES: 143
+<<<CONTENT START>>>
+namespace Tutor.Services;
+
+/// <summary>
+/// SimHash service for computing locality-sensitive lexical fingerprints.
+/// Produces compact 64-bit signatures where similar text has similar signatures.
+/// Uses FNV-1a hashing for deterministic, stable results across sessions.
+/// </summary>
+public sealed class SimHashService
+{
+    /// <summary>
+    /// Number of bits in the signature.
+    /// </summary>
+    public const int BitCount = 64;
+
+    // FNV-1a 64-bit constants
+    private const ulong FnvOffsetBasis = 14695981039346656037UL;
+    private const ulong FnvPrime = 1099511628211UL;
+
+    /// <summary>
+    /// Computes a 64-bit SimHash signature for the given text.
+    /// Similar text will produce signatures with low Hamming distance.
+    /// </summary>
+    /// <param name="text">The text to hash.</param>
+    /// <returns>A 64-bit SimHash signature.</returns>
+    public ulong GetSignature64(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return 0UL;
+
+        // Accumulator for each bit position
+        var v = new int[BitCount];
+
+        // Tokenize and process
+        var tokens = Tokenize(text);
+
+        foreach (var token in tokens)
+        {
+            // Hash the token using FNV-1a 64-bit
+            var hash = Fnv1a64(token);
+
+            // For each bit, add weight if set, subtract if not
+            for (int i = 0; i < BitCount; i++)
+            {
+                var bit = (hash >> i) & 1UL;
+                if (bit == 1)
+                    v[i]++;
+                else
+                    v[i]--;
+            }
+        }
+
+        // Build final signature: bit i is 1 if v[i] >= 0
+        ulong signature = 0UL;
+        for (int i = 0; i < BitCount; i++)
+        {
+            if (v[i] >= 0)
+            {
+                signature |= (1UL << i);
+            }
+        }
+
+        return signature;
+    }
+
+    /// <summary>
+    /// Computes the Hamming distance between two 64-bit signatures.
+    /// The Hamming distance is the number of bit positions that differ.
+    /// </summary>
+    /// <param name="a">First signature.</param>
+    /// <param name="b">Second signature.</param>
+    /// <returns>Number of differing bits (0 to 64).</returns>
+    public static int HammingDistance(ulong a, ulong b)
+    {
+        return PopCount(a ^ b);
+    }
+
+    /// <summary>
+    /// Counts the number of set bits in a 64-bit value.
+    /// </summary>
+    private static int PopCount(ulong value)
+    {
+        // Use efficient bit manipulation
+        value = value - ((value >> 1) & 0x5555555555555555UL);
+        value = (value & 0x3333333333333333UL) + ((value >> 2) & 0x3333333333333333UL);
+        value = (value + (value >> 4)) & 0x0F0F0F0F0F0F0F0FUL;
+        return (int)((value * 0x0101010101010101UL) >> 56);
+    }
+
+    /// <summary>
+    /// Tokenizes text into words for SimHash computation.
+    /// </summary>
+    private static List<string> Tokenize(string text)
+    {
+        var tokens = new List<string>();
+        var current = new System.Text.StringBuilder();
+
+        // Convert to lowercase for normalization
+        text = text.ToLowerInvariant();
+
+        foreach (var c in text)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                current.Append(c);
+            }
+            else
+            {
+                // Non-alphanumeric character is a separator
+                if (current.Length > 0)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                }
+            }
+        }
+
+        // Add final token if any
+        if (current.Length > 0)
+        {
+            tokens.Add(current.ToString());
+        }
+
+        return tokens;
+    }
+
+    /// <summary>
+    /// FNV-1a 64-bit hash function.
+    /// A simple, fast, and deterministic hash algorithm.
+    /// </summary>
+    private static ulong Fnv1a64(string input)
+    {
+        var hash = FnvOffsetBasis;
+
+        foreach (var c in input)
+        {
+            hash ^= c;
+            hash *= FnvPrime;
+        }
+
+        return hash;
+    }
 }
 
 <<<CONTENT END>>>
@@ -3109,9 +3919,9 @@ public class UserService
 PATH: Services/VectorStoreService.cs
 TYPE: script
 EXT: .cs
-SHA256: A382D598B15B8B360B7E5FA4C1E79257C5F553A3BB0EE52E923CD0893FB99102
-BYTES: 5834
-LINES: 187
+SHA256: D796A290216E458145556D162D68B8F5B15C8F7AA7D538A6D2E033C75E6C6DDB
+BYTES: 10499
+LINES: 295
 <<<CONTENT START>>>
 using System.Text.Json;
 using Tutor.Models;
@@ -3121,16 +3931,29 @@ namespace Tutor.Services;
 /// <summary>
 /// Service for storing and searching content chunks with embeddings.
 /// Uses JSON file storage for simplicity (works across all MAUI platforms).
+/// Supports LSH-based candidate generation and combined similarity scoring.
 /// </summary>
 public sealed class VectorStoreService
 {
     private const string ChunksFileName = "content_chunks.json";
     private readonly string chunksFilePath;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
     private List<ContentChunk>? cachedChunks;
 
-    public VectorStoreService()
+    // Default LSH threshold for candidate generation (max Hamming distance)
+    private const int DefaultLshThreshold = 64;
+
+    // Scoring weights for combined similarity
+    private const float CosineWeight = 0.70f;
+    private const float SemanticWeight = 0.20f;
+    private const float LexicalWeight = 0.10f;
+
+    public VectorStoreService(LSHService lshService, SimHashService simHashService)
     {
         chunksFilePath = Path.Combine(FileSystem.AppDataDirectory, ChunksFileName);
+        this.lshService = lshService;
+        this.simHashService = simHashService;
     }
 
     /// <summary>
@@ -3171,6 +3994,7 @@ public sealed class VectorStoreService
 
     /// <summary>
     /// Search for the most relevant chunks given a query embedding.
+    /// Uses cosine similarity only (for backward compatibility when signatures are not available).
     /// </summary>
     public async Task<List<ContentChunk>> SearchAsync(
         float[] queryEmbedding, 
@@ -3194,7 +4018,8 @@ public sealed class VectorStoreService
     }
 
     /// <summary>
-    /// Search using a text query (requires embedding service to embed the query).
+    /// Search using a text query with combined similarity scoring.
+    /// Uses LSH for candidate generation and combines cosine, semantic, and lexical similarity.
     /// </summary>
     public async Task<List<ContentChunk>> SearchAsync(
         string query,
@@ -3204,11 +4029,104 @@ public sealed class VectorStoreService
         float minSimilarity = 0.3f,
         CancellationToken ct = default)
     {
+        return await SearchAsync(query, curriculumId, embeddingService, topK, minSimilarity, DefaultLshThreshold, ct);
+    }
+
+    /// <summary>
+    /// Search using a text query with combined similarity scoring and configurable LSH threshold.
+    /// </summary>
+    /// <param name="query">The search query text.</param>
+    /// <param name="curriculumId">The curriculum to search within.</param>
+    /// <param name="embeddingService">Service to generate query embedding.</param>
+    /// <param name="topK">Maximum number of results to return.</param>
+    /// <param name="minSimilarity">Minimum cosine similarity threshold.</param>
+    /// <param name="lshThreshold">Maximum LSH Hamming distance for candidate selection.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of most relevant content chunks.</returns>
+    public async Task<List<ContentChunk>> SearchAsync(
+        string query,
+        string curriculumId,
+        EmbeddingService embeddingService,
+        int topK,
+        float minSimilarity,
+        int lshThreshold,
+        CancellationToken ct = default)
+    {
+        // Get query embedding
         var queryEmbedding = await embeddingService.GetEmbeddingAsync(query, ct);
         if (queryEmbedding.Length == 0)
             return [];
 
-        return await SearchAsync(queryEmbedding, curriculumId, topK, minSimilarity);
+        // Compute query signatures
+        var querySemanticSig = lshService.GetSignature(queryEmbedding);
+        var queryLexicalSig = simHashService.GetSignature64(query);
+
+        var allChunks = await LoadChunksAsync();
+
+        // Filter to curriculum with valid embeddings
+        var candidateChunks = allChunks
+            .Where(c => c.CurriculumId == curriculumId && c.Embedding.Length > 0)
+            .ToList();
+
+        if (candidateChunks.Count == 0)
+            return [];
+
+        // Check if any chunks have semantic signatures for LSH filtering
+        var chunksWithSignatures = candidateChunks
+            .Where(c => c.SemanticSignature != null && c.SemanticSignature.Length > 0)
+            .ToList();
+
+        List<ContentChunk> candidates;
+
+        if (chunksWithSignatures.Count > 0 && querySemanticSig.Length > 0)
+        {
+            // LSH candidate generation: filter by Hamming distance
+            candidates = chunksWithSignatures
+                .Where(c => LSHService.HammingDistance(querySemanticSig, c.SemanticSignature) <= lshThreshold)
+                .ToList();
+
+            // If no candidates pass LSH filter, fall back to all chunks with signatures
+            if (candidates.Count == 0)
+            {
+                candidates = chunksWithSignatures;
+            }
+        }
+        else
+        {
+            // No signatures available, use all candidate chunks (fallback to cosine-only)
+            candidates = candidateChunks;
+        }
+
+        // Score and rank candidates
+        var scoredResults = candidates
+            .Select(c => new
+            {
+                Chunk = c,
+                Cosine = EmbeddingService.CosineSimilarity(queryEmbedding, c.Embedding),
+                SemanticHamming = c.SemanticSignature != null && c.SemanticSignature.Length > 0
+                    ? LSHService.HammingDistance(querySemanticSig, c.SemanticSignature)
+                    : lshService.BitCount, // Max distance if no signature
+                LexicalHamming = SimHashService.HammingDistance(queryLexicalSig, c.LexicalSignature)
+            })
+            .Where(x => x.Cosine >= minSimilarity) // Enforce minimum cosine similarity
+            .Select(x => new
+            {
+                x.Chunk,
+                x.Cosine,
+                SemanticScore = 1.0f - ((float)x.SemanticHamming / lshService.BitCount),
+                LexicalScore = 1.0f - ((float)x.LexicalHamming / SimHashService.BitCount),
+            })
+            .Select(x => new
+            {
+                x.Chunk,
+                CombinedScore = (CosineWeight * x.Cosine) + (SemanticWeight * x.SemanticScore) + (LexicalWeight * x.LexicalScore)
+            })
+            .OrderByDescending(x => x.CombinedScore)
+            .Take(topK)
+            .Select(x => x.Chunk)
+            .ToList();
+
+        return scoredResults;
     }
 
     /// <summary>

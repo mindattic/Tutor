@@ -15,6 +15,7 @@
 <div style="max-width: 720px;">
     <div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
+        <button class="tab @(activeTab == "Courses" ? "active" : "")" @onclick="@(() => activeTab = "Courses")">Courses</button>
         <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
         <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
         <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
@@ -56,6 +57,10 @@
                 </div>
                 <p>When enabled, press Enter to send. Use Shift+Enter for new line.</p>
             </div>
+        }
+        else if (activeTab == "Courses")
+        {
+            <CourseManagement />
         }
         else if (activeTab == "Appearance")
         {

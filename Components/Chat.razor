@@ -276,6 +276,10 @@ else if (isLessonMode && lessonTopics.Count > 0)
 }
 
 @code {
+    // Parameters from parent page
+    [Parameter] public string? StartTopic { get; set; }
+    [Parameter] public bool AutoStartLesson { get; set; }
+
 private readonly List<ChatMessage> messages = new();
 private string prompt = "";
 private bool isSending;
@@ -342,8 +346,13 @@ private bool showAllMessages;
         await LoadCourseState();
         await LoadLessonStateAsync();
         
-        // Auto-start lesson if course is active and not already in lesson mode
-        if (activeCourse != null && !isLessonMode)
+        // Handle starting from a specific topic (from TOC navigation)
+        if (!string.IsNullOrEmpty(StartTopic) && activeCourse != null)
+        {
+            await StartLessonFromTopic(StartTopic);
+        }
+        // Auto-start lesson if requested or if course is active and not already in lesson mode
+        else if ((AutoStartLesson || activeCourse != null) && !isLessonMode)
         {
             await StartLesson();
         }
@@ -497,8 +506,58 @@ etc.
 Keep it to 8-15 main topics to ensure comprehensive coverage.";
 
         prompt = topicsPrompt;
+        pendingDisplayText = "Generate curriculum for this course";
         await SendAsyncInternal(captureTopics: true);
     }
+
+    /// <summary>
+    /// Start a lesson from a specific topic (used when navigating from TOC)
+    /// </summary>
+    private async Task StartLessonFromTopic(string topicName)
+    {
+        if (activeCourse == null) return;
+
+        var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
+        if (resources.Count == 0)
+        {
+            messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
+            StateHasChanged();
+            return;
+        }
+
+        // Initialize lesson mode
+        isLessonMode = true;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+
+        // Build a prompt that gets topics and includes the target topic
+        var resourceNames = string.Join(", ", resources.Select(r => r.Title));
+        var topicsPrompt = $@"Based on ALL the course resources ({resourceNames}), create a unified curriculum.
+
+IMPORTANT: 
+1. You must synthesize knowledge from ALL {resources.Count} resources
+2. The curriculum MUST include a topic about ""{topicName}"" (this is where the student wants to start)
+3. Present a logical learning progression
+
+Return ONLY a numbered list of topic names, one per line, like:
+1. Topic Name
+2. Topic Name
+etc.
+Keep it to 8-15 main topics to ensure comprehensive coverage.
+Make sure to include ""{topicName}"" or a very similar topic name.";
+
+        // Store the target topic to jump to after topics are loaded
+        pendingStartTopic = topicName;
+        
+        prompt = topicsPrompt;
+        pendingDisplayText = $"Start learning from \"{topicName}\"";
+        await SendAsyncInternal(captureTopics: true);
+    }
+
+    private string? pendingStartTopic; // Topic to jump to after curriculum is loaded
 
     private async Task ContinueLesson()
     {
@@ -582,16 +641,26 @@ Since the student is REVISITING this topic after learning more advanced concepts
 
 This is spiral learning - enrich the explanation with their accumulated knowledge.
 
-Explain clearly and ask if they understand before we continue.";
+Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
+__First specific question about {topic}?__
+__Second specific question about {topic}?__
+__Third specific question about {topic}?__";
         }
         else
         {
             teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
 Explain the key concepts clearly, as if you're a tutor.
-After explaining, ask if I understand or have questions before we continue.";
+
+At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
+__First specific question?__
+__Second specific question?__
+__Third specific question?__
+
+The questions should be specific to what you just taught, not generic.";
         }
 
         prompt = teachPrompt;
+        pendingDisplayText = $"Teach me about \"{topic}\"";
         await SendAsync();
     }
 
@@ -932,6 +1001,22 @@ Keep track of the running score.";
             {
                 ParseTopicsFromResponse(reply.Text);
                 
+                // If we have a pending start topic, jump to it
+                if (!string.IsNullOrEmpty(pendingStartTopic) && lessonTopics.Count > 0)
+                {
+                    var targetIndex = FindTopicIndex(pendingStartTopic);
+                    if (targetIndex >= 0)
+                    {
+                        currentLessonIndex = targetIndex;
+                        hasStartedLearning = true;
+                        visitedTopicIndices.Add(targetIndex);
+                        pendingStartTopic = null;
+                        await TeachCurrentTopic();
+                        return;
+                    }
+                    pendingStartTopic = null;
+                }
+                
                 // Auto-show the Table of Contents after topics are generated
                 if (lessonTopics.Count > 0)
                 {
@@ -1001,6 +1086,50 @@ Keep track of the running score.";
         }
     }
 
+    /// <summary>
+    /// Find the index of a topic by name (fuzzy matching)
+    /// </summary>
+    private int FindTopicIndex(string targetTopic)
+    {
+        // First try exact match
+        var exactIndex = lessonTopics.FindIndex(t => 
+            t.Equals(targetTopic, StringComparison.OrdinalIgnoreCase));
+        if (exactIndex >= 0) return exactIndex;
+
+        // Try contains match (topic contains target or target contains topic)
+        var containsIndex = lessonTopics.FindIndex(t => 
+            t.Contains(targetTopic, StringComparison.OrdinalIgnoreCase) ||
+            targetTopic.Contains(t, StringComparison.OrdinalIgnoreCase));
+        if (containsIndex >= 0) return containsIndex;
+
+        // Try word overlap matching (find best match by common words)
+        var targetWords = targetTopic.ToLowerInvariant()
+            .Split([' ', ',', ':', '-', '–', '—'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 2)
+            .ToHashSet();
+
+        int bestIndex = -1;
+        int bestScore = 0;
+
+        for (int i = 0; i < lessonTopics.Count; i++)
+        {
+            var topicWords = lessonTopics[i].ToLowerInvariant()
+                .Split([' ', ',', ':', '-', '–', '—'], StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length > 2)
+                .ToHashSet();
+
+            var overlap = targetWords.Intersect(topicWords).Count();
+            if (overlap > bestScore)
+            {
+                bestScore = overlap;
+                bestIndex = i;
+            }
+        }
+
+        // Only return if we have at least 2 word matches
+        return bestScore >= 2 ? bestIndex : -1;
+    }
+
     private async Task AutoGrow()
     {
         await JS.InvokeVoidAsync("autoGrowTextarea", textareaRef);
@@ -1034,8 +1163,12 @@ Keep track of the running score.";
         if (string.IsNullOrEmpty(text))
             return "";
 
-        // Escape HTML first to prevent XSS
-        text = System.Net.WebUtility.HtmlEncode(text);
+        // Decode any HTML entities from the AI response (e.g., &amp; -> &, &gt; -> >)
+        text = System.Net.WebUtility.HtmlDecode(text);
+        
+        // Only escape < and > to prevent HTML injection, but preserve & for display
+        // We do this selectively to avoid double-encoding
+        text = text.Replace("<", "&lt;").Replace(">", "&gt;");
 
         // Process line by line for block elements
         var lines = text.Split('\n');
@@ -1154,7 +1287,7 @@ Keep track of the running score.";
 
     private string ProcessInlineMarkdown(string text)
     {
-        // Bold with clickable term link: **text** or __text__
+        // Bold with clickable term link: **text**
         // Bold text is NOT styled as a link, just the icon next to it
         text = Regex.Replace(text, @"\*\*(.+?)\*\*", match =>
         {
@@ -1162,11 +1295,13 @@ Keep track of the running score.";
             var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
             return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"icon-link\"></span></a>";
         });
+        
+        // Suggested question link: __text__ - renders as a blue clickable question
         text = Regex.Replace(text, @"__(.+?)__", match =>
         {
-            var term = match.Groups[1].Value;
-            var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
-            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"icon-link\"></span></a>";
+            var question = match.Groups[1].Value;
+            var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
+            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{EscapeJsString(question)}')\" title=\"Click to ask this question\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
         });
 
         // Italic: *text* or _text_
@@ -1175,6 +1310,7 @@ Keep track of the running score.";
 
         // Inline code: `code`
         text = Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
+
 
         // Links: [text](url)
         text = Regex.Replace(text, @"\[(.+?)\]\((.+?)\)", "<a href=\"$2\" target=\"_blank\">$1</a>");
@@ -1198,7 +1334,7 @@ Keep track of the running score.";
         }
 
         // Build context-aware prompt for term exploration
-        // Include instruction to offer more information as a clickable option
+        // Include instruction to suggest follow-up questions
         string termPrompt;
         if (learnedConcepts.Count > 0)
         {
@@ -1208,13 +1344,23 @@ Keep track of the running score.";
 The student has already learned: {learnedList}
 Connect your explanation to these concepts where relevant.
 
-End with: ""__Would you like to know more__?"" (using double underscores to make it a clickable link)";
+At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
+__First specific question?__
+__Second specific question?__
+__Third specific question?__
+
+The questions should be specific and relevant to what you just explained, not generic.";
         }
         else
         {
             termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
 
-End with: ""__Would you like to know more__?"" (using double underscores to make it a clickable link)";
+At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
+__First specific question?__
+__Second specific question?__
+__Third specific question?__
+
+The questions should be specific and relevant to what you just explained, not generic.";
         }
 
         // Show simplified display text but send full prompt to AI

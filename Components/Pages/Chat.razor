@@ -2,6 +2,7 @@
 @using Tutor.Services
 @using Tutor.Models
 @inject CourseService CourseService
+@inject NavigationManager Nav
 
 @if (activeCourse != null)
 {
@@ -12,13 +13,30 @@ else
     <div class="page-title">Chat</div>
 }
 
-<Tutor.Components.Chat />
+<Tutor.Components.Chat @ref="chatComponent" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
 
 @code {
     private Course? activeCourse;
+    private string? startTopic;
+    private bool autoStartLesson;
+    private Tutor.Components.Chat? chatComponent;
 
     protected override async Task OnInitializedAsync()
     {
         activeCourse = await CourseService.GetActiveCourseAsync();
+        
+        // Parse query parameters manually (no external dependency needed)
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            if (queryParams["action"] == "lesson")
+            {
+                autoStartLesson = true;
+            }
+            
+            startTopic = queryParams["topic"];
+        }
     }
 }

@@ -1,658 +1,439 @@
 @page "/courses"
-@using Microsoft.Maui.Storage
 @using Tutor.Models
 @using Tutor.Services
 @inject CourseService CourseService
-@inject IJSRuntime JS
+@inject KnowledgeGraphService GraphService
+@inject KnowledgeGraphBuildService BuildService
+@inject TableOfContentsService TocService
+@inject NavigationManager Nav
+@implements IDisposable
 
 <div class="page-title">Courses</div>
 
-<div class="resources-container">
-    @* Course Selector *@
-    <div class="curriculum-selector">
-        <div class="curriculum-dropdown-container">
-            <label>Active Course:</label>
-            <div class="curriculum-select-row">
-                <select class="curriculum-select" @bind="selectedCourseId" @bind:after="OnCourseChanged">
-                    <option value="">None (Standard ChatGPT)</option>
-                    @foreach (var course in courses)
+<div class="course-selector-page">
+    @* Graph Build Queue *@
+    @if (buildStatuses.Count > 0)
+    {
+        <div class="graph-build-queue">
+            <div class="queue-header">
+                <span class="bi bi-diagram-3"></span>
+                <span>Building Knowledge Graphs (@buildStatuses.Count(s => s.IsActive) active)</span>
+            </div>
+            @foreach (var build in buildStatuses.OrderBy(s => s.QueuedAt))
+            {
+                <div class="queue-item @build.Stage.ToString().ToLower()">
+                    <div class="queue-item-header">
+                        <span class="queue-item-title">@build.CourseName</span>
+                        <span class="queue-item-stage">@build.StageDisplayName</span>
+                    </div>
+                    @if (build.IsActive)
                     {
-                        <option value="@course.Id">@course.Name (@course.ResourceIds.Count resources)</option>
+                        <div class="progress-bar-container small">
+                            <div class="progress-bar" style="width: @(build.Progress)%"></div>
+                        </div>
                     }
-                </select>
-                <button class="icon-btn" title="New Course" @onclick="ShowNewCourseModal">
-                    <span class="icon-add"></span>
-                </button>
-                @if (!string.IsNullOrEmpty(selectedCourseId))
+                    <div class="queue-item-status">
+                        @build.CurrentOperation
+                        @if (build.Stage == GraphBuildStage.Complete)
+                        {
+                            <span class="build-stats">
+                                @build.ConceptsExtracted concepts, @build.RelationshipsFound relationships
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading courses...</p>
+        </div>
+    }
+    else if (courses.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-icon">
+                <span class="bi bi-book"></span>
+            </div>
+            <h4>No Courses Available</h4>
+            <p>Create a course and add resources to get started.</p>
+            <a href="settings" class="settings-btn primary">
+                <span class="bi bi-gear"></span> Go to Settings ? Courses
+            </a>
+        </div>
+    }
+    else if (selectedCourse == null)
+    {
+        <div class="course-list-view">
+            <p class="section-description">Select a course to view its curriculum, or build knowledge graphs.</p>
+            
+            <div class="course-grid">
+                @foreach (var course in courses)
                 {
-                    <button class="icon-btn" title="Rename" @onclick="ShowRenameCourseModal">
-                        <span class="icon-edit"></span>
-                    </button>
-                    <button class="icon-btn danger" title="Delete Course" @onclick="DeleteSelectedCourse">
-                        <span class="icon-delete"></span>
-                    </button>
+                    var hasGraph = courseGraphStatus.GetValueOrDefault(course.Id, false);
+                    var isBuilding = BuildService.IsBuildingCourse(course.Id);
+                    
+                    <div class="course-card @(hasGraph ? "has-graph" : "") @(isBuilding ? "building" : "")">
+                        <div class="course-icon" @onclick="@(() => SelectCourse(course))">
+                            <span class="bi bi-book-fill"></span>
+                        </div>
+                        <div class="course-info" @onclick="@(() => SelectCourse(course))">
+                            <div class="course-name">@course.Name</div>
+                            @if (!string.IsNullOrEmpty(course.Description))
+                            {
+                                <div class="course-description">@course.Description</div>
+                            }
+                            <div class="course-meta">
+                                <span class="meta-item">
+                                    <span class="bi bi-file-text"></span> @course.ResourceIds.Count resources
+                                </span>
+                                @if (isBuilding)
+                                {
+                                    <span class="meta-item graph-building">
+                                        <span class="bi bi-hourglass-split"></span> Building...
+                                    </span>
+                                }
+                                else if (hasGraph)
+                                {
+                                    <span class="meta-item graph-ready">
+                                        <span class="bi bi-diagram-3"></span> Graph Ready
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="meta-item graph-missing">
+                                        <span class="bi bi-exclamation-circle"></span> No Graph
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        <div class="course-actions">
+                            @if (!hasGraph && !isBuilding && course.ResourceIds.Count > 0)
+                            {
+                                <button class="icon-btn primary" title="Build Knowledge Graph" 
+                                        @onclick="@(() => QueueGraphBuild(course))" @onclick:stopPropagation="true">
+                                    <span class="bi bi-lightning-charge"></span>
+                                </button>
+                            }
+                            else if (hasGraph && !isBuilding)
+                            {
+                                <button class="icon-btn" title="Rebuild Graph" 
+                                        @onclick="@(() => QueueGraphBuild(course, rebuild: true))" @onclick:stopPropagation="true">
+                                    <span class="bi bi-arrow-clockwise"></span>
+                                </button>
+                            }
+                            <div class="course-arrow" @onclick="@(() => SelectCourse(course))">
+                                <span class="bi bi-chevron-right"></span>
+                            </div>
+                        </div>
+                    </div>
                 }
             </div>
         </div>
-        
-        @if (string.IsNullOrEmpty(selectedCourseId))
-        {
-            <div class="curriculum-info-box">
-                <span class="icon-info"></span>
-                <span>No course selected. Chat will use standard ChatGPT with full knowledge.</span>
+    }
+    else
+    {
+        <div class="course-detail-view">
+            <div class="course-header">
+                <button class="back-btn" @onclick="DeselectCourse">
+                    <span class="bi bi-arrow-left"></span> Back to Courses
+                </button>
+                <div class="course-title-row">
+                    <h2>@selectedCourse.Name</h2>
+                    @if (!string.IsNullOrEmpty(selectedCourse.Description))
+                    {
+                        <p class="course-desc">@selectedCourse.Description</p>
+                    }
+                </div>
             </div>
-        }
-        else
-        {
-            var activeCourse = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-            if (activeCourse != null)
+
+            @if (isLoadingGraph)
             {
-                <div class="curriculum-info-box active">
-                    <span class="icon-book"></span>
-                    <span><strong>@activeCourse.Name</strong> is active. Chat will only use knowledge from the @activeCourse.ResourceIds.Count selected resource(s).</span>
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading curriculum...</p>
                 </div>
             }
-        }
-    </div>
-
-    @* Tabs for Library and Add Resource *@
-    <div class="tabs">
-        <button class="tab @(activeTab == "Library" ? "active" : "")" @onclick="@(() => activeTab = "Library")">
-            Resource Library
-            @if (!string.IsNullOrEmpty(selectedCourseId))
+            else if (BuildService.IsBuildingCourse(selectedCourse.Id))
             {
-                var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-                if (course != null)
-                {
-                    <span class="tab-badge">@course.ResourceIds.Count in course</span>
-                }
-            }
-        </button>
-        <button class="tab @(activeTab == "Add" ? "active" : "")" @onclick="@(() => activeTab = "Add")">Add Resource</button>
-    </div>
-
-    <div class="tab-content">
-        @if (activeTab == "Library")
-        {
-            <div class="library-section">
-                @if (resources.Count == 0)
-                {
-                    <div class="empty-state">
-                        <p>No resources yet. Add some resources to build your knowledge base.</p>
-                        <button class="settings-btn primary" @onclick="@(() => activeTab = "Add")">Add First Resource</button>
+                <div class="graph-building-state">
+                    <div class="building-header">
+                        <span class="building-icon bi bi-diagram-3"></span>
+                        <span class="building-title">Building Knowledge Graph</span>
                     </div>
-                }
-                else
-                {
-                    @if (!string.IsNullOrEmpty(selectedCourseId))
+                    @if (SelectedCourseBuildStatus != null)
                     {
-                        <p class="library-hint">Check resources to add them to the active course. Uncheck to remove.</p>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: @(SelectedCourseBuildStatus.Progress)%"></div>
+                        </div>
+                        <div class="building-status">
+                            <span class="status-message">@SelectedCourseBuildStatus.CurrentOperation</span>
+                        </div>
+                        <div class="building-step">@SelectedCourseBuildStatus.StageDisplayName</div>
+                    }
+                </div>
+            }
+            else if (graph == null)
+            {
+                <div class="no-graph-state">
+                    <div class="empty-icon">
+                        <span class="bi bi-diagram-3"></span>
+                    </div>
+                    <h4>Knowledge Graph Required</h4>
+                    <p>Build a knowledge graph to generate the curriculum for this course.</p>
+                    @if (selectedCourse.ResourceIds.Count > 0)
+                    {
+                        <button class="settings-btn primary" @onclick="@(() => QueueGraphBuild(selectedCourse))">
+                            <span class="bi bi-lightning-charge"></span> Build Knowledge Graph
+                        </button>
                     }
                     else
                     {
-                        <p class="library-hint">Select a course above to manage which resources are included.</p>
+                        <p class="hint">Add resources to this course first.</p>
+                        <a href="settings" class="settings-btn">
+                            <span class="bi bi-plus-lg"></span> Add Resources
+                        </a>
                     }
-                    
-                    <div class="resource-list">
-                        @foreach (var item in resources)
-                        {
-                            var isInCourse = !string.IsNullOrEmpty(selectedCourseId) && 
-                                courses.FirstOrDefault(c => c.Id == selectedCourseId)?.ResourceIds.Contains(item.Id) == true;
+                </div>
+            }
+            else
+            {
+                <div class="curriculum-view">
+                    <div class="curriculum-header">
+                        <div class="curriculum-stats">
+                            <span class="stat">
+                                <span class="stat-value">@stats.TotalConcepts</span>
+                                <span class="stat-label">concepts</span>
+                            </span>
+                            <span class="stat">
+                                <span class="stat-value">@stats.MaxDepth</span>
+                                <span class="stat-label">levels</span>
+                            </span>
+                        </div>
+                        <button class="settings-btn primary" @onclick="StartLearning">
+                            <span class="bi bi-play-fill"></span> Start Learning
+                        </button>
+                    </div>
+
+                    @if (tableOfContents != null)
+                    {
+                        <div class="curriculum-toc">
+                            <h4>Curriculum Overview</h4>
+                            <p class="toc-hint">Click any topic to start learning from that point.</p>
                             
-                            <div class="resource-item @(isInCourse ? "in-curriculum" : "")">
-                                @if (!string.IsNullOrEmpty(selectedCourseId))
-                                {
-                                    <div class="resource-checkbox">
-                                        <input type="checkbox" 
-                                               checked="@isInCourse"
-                                               @onchange="@(() => ToggleResourceInCourse(item.Id))" />
+                            @foreach (var tocSection in tableOfContents.Sections)
+                            {
+                                <div class="toc-level">
+                                    <div class="level-header" @onclick="() => ToggleSectionExpanded(tocSection.Level)">
+                                        <span class="level-badge">Level @tocSection.Level</span>
+                                        <span class="level-title">@tocSection.Title</span>
+                                        <span class="level-count">@tocSection.Items.Count concepts</span>
+                                        <span class="level-toggle bi @(IsExpanded(tocSection.Level) ? "bi-chevron-up" : "bi-chevron-down")"></span>
                                     </div>
-                                }
-                                <div class="resource-info">
-                                    <div class="resource-title">
-                                        @item.Title
-                                        @if (isInCourse)
-                                        {
-                                            <span class="in-curriculum-badge">In Course</span>
-                                        }
-                                    </div>
-                                    <div class="resource-meta">
-                                        @if (!string.IsNullOrEmpty(item.Author))
-                                        {
-                                            <span>@item.Author</span>
-                                        }
-                                        @if (!string.IsNullOrEmpty(item.Year))
-                                        {
-                                            <span>(@item.Year)</span>
-                                        }
-                                        <span class="resource-type">@item.Type</span>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(item.Description))
+                                    @if (IsExpanded(tocSection.Level))
                                     {
-                                        <div class="resource-description">@item.Description</div>
+                                        <div class="level-concepts expanded">
+                                            @foreach (var item in tocSection.Items)
+                                            {
+                                                <button class="concept-tag clickable" 
+                                                        @onclick="() => StartLearningFromTopic(item.Term)"
+                                                        title="Start learning from: @item.Term">
+                                                    <span class="bi bi-play-circle"></span>
+                                                    @item.Term
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="level-concepts">
+                                            @foreach (var item in tocSection.Items.Take(5))
+                                            {
+                                                <button class="concept-tag clickable" 
+                                                        @onclick="() => StartLearningFromTopic(item.Term)"
+                                                        title="Start learning from: @item.Term">
+                                                    @item.Term
+                                                </button>
+                                            }
+                                            @if (tocSection.Items.Count > 5)
+                                            {
+                                                <span class="concept-more" @onclick="() => ToggleSectionExpanded(tocSection.Level)">
+                                                    +@(tocSection.Items.Count - 5) more
+                                                </span>
+                                            }
+                                        </div>
                                     }
                                 </div>
-                                <div class="resource-actions">
-                                    <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
-                                        <span class="icon-edit"></span>
-                                    </button>
-                                    <button class="icon-btn danger" title="Delete" @onclick="@(() => DeleteResource(item.Id))">
-                                        <span class="icon-delete"></span>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-        }
-        else if (activeTab == "Add")
-        {
-            <div class="add-section">
-                <h4>@(editingResource != null ? "Edit Resource" : "Add New Resource")</h4>
-
-                <div class="form-group">
-                    <label>Title *</label>
-                    <input type="text" class="settings-input" @bind="resourceTitle" placeholder="Resource title" />
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Author</label>
-                        <input type="text" class="settings-input" @bind="resourceAuthor" placeholder="Author name" />
-                    </div>
-                    <div class="form-group">
-                        <label>Year</label>
-                        <input type="text" class="settings-input" @bind="resourceYear" placeholder="2024" />
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea class="settings-input" @bind="resourceDescription" placeholder="Brief description of this resource" rows="2"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Content Source</label>
-                    <div class="toggle-button-group">
-                        <button class="toggle-btn @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">
-                            Paste Text
-                        </button>
-                        <button class="toggle-btn @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">
-                            Upload File
-                        </button>
-                    </div>
-                </div>
-
-                @if (contentSource == "file")
-                {
-                    <div class="form-group">
-                        <label>Upload Document</label>
-                        <div class="file-upload-area">
-                            <button class="settings-btn" @onclick="PickFile">Choose File</button>
-                            @if (!string.IsNullOrEmpty(uploadedFileName))
-                            {
-                                <span class="file-name">@uploadedFileName</span>
-                            }
-                            else
-                            {
-                                <span class="file-hint">Supports .txt, .docx</span>
                             }
                         </div>
-                    </div>
-                }
-
-                <div class="form-group">
-                    <label>Content *</label>
-                    <textarea class="settings-input content-textarea" 
-                              @bind="resourceContent" 
-                              placeholder="Paste your educational content here..."
-                              rows="10"></textarea>
-                    @if (!string.IsNullOrEmpty(resourceContent))
-                    {
-                        <div class="content-stats">@resourceContent.Length.ToString("N0") characters</div>
                     }
                 </div>
-
-                @if (editingResource == null)
-                {
-                    <div class="form-group">
-                        <div class="checkbox-row">
-                            <input type="checkbox" id="autoFormat" @bind="autoFormatContent" />
-                            <label for="autoFormat">Auto-format with AI</label>
-                        </div>
-                        <p class="format-hint">
-                            @if (autoFormatContent)
-                            {
-                                <span><span class="bi bi-check-lg"></span> Content will be automatically structured into clear sections with markdown formatting. Original will be preserved.</span>
-                            }
-                            else
-                            {
-                                <span>Content will be saved as-is without formatting.</span>
-                            }
-                        </p>
-                    </div>
-                }
-
-                @* Progress bar for formatting *@
-                @if (isFormatting)
-                {
-                    <div class="formatting-progress">
-                        <div class="formatting-header">
-                            <span class="formatting-icon bi bi-stars"></span>
-                            <span class="formatting-title">Formatting with AI...</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: @(formatProgressPercent)%"></div>
-                        </div>
-                        <div class="formatting-status">@statusMessage</div>
-                    </div>
-                }
-
-                <div class="form-actions">
-                    @if (editingResource != null)
-                    {
-                        <button class="settings-btn" @onclick="CancelEdit">Cancel</button>
-                    }
-                    <button class="settings-btn primary" @onclick="SaveResource" disabled="@isBusy">
-                        @(isBusy ? "Saving..." : (editingResource != null ? "Update" : "Add Resource"))
-                    </button>
-                </div>
-
-                @if (!string.IsNullOrEmpty(statusMessage) && !isFormatting)
-                {
-                    <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "")">
-                        @statusMessage
-                    </div>
-                }
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 </div>
 
-@* New Course Modal *@
-@if (showNewCourseModal)
-{
-    <div class="modal-overlay" @onclick="CloseModals">
-        <div class="modal-content small" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <span>Create New Course</span>
-                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Course Name *</label>
-                    <input type="text" class="settings-input" @bind="newCourseName" placeholder="e.g., Grade 5 Science" />
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea class="settings-input" @bind="newCourseDescription" placeholder="Brief description..." rows="2"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn primary" @onclick="CreateCourse">Create</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@* Rename Course Modal *@
-@if (showRenameCourseModal)
-{
-    <div class="modal-overlay" @onclick="CloseModals">
-        <div class="modal-content small" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <span>Rename Course</span>
-                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>New Name *</label>
-                    <input type="text" class="settings-input" @bind="renameCourseName" placeholder="Enter new name" />
-                </div>
-                <div class="form-actions">
-                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn primary" @onclick="RenameCourse">Rename</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
 @code {
-    private string activeTab = "Library";
-    private List<CourseResource> resources = new();
-    private List<Course> courses = new();
-    private string? selectedCourseId;
-
-    // Add/Edit form
-    private CourseResource? editingResource;
-    private string resourceTitle = "";
-    private string resourceAuthor = "";
-    private string resourceYear = "";
-    private string resourceDescription = "";
-    private string resourceContent = "";
-    private string contentSource = "text";
-    private string uploadedFileName = "";
-    private ResourceType uploadedFileType = ResourceType.Text;
-    private bool autoFormatContent = true;
-    private bool isFormatting;
-    private int formatProgressCurrent;
-    private int formatProgressTotal;
-    private int formatProgressPercent => formatProgressTotal > 0 ? (int)((double)formatProgressCurrent / formatProgressTotal * 100) : 0;
-
-    // Modals
-    private bool showNewCourseModal;
-    private string newCourseName = "";
-    private string newCourseDescription = "";
+private List<Course> courses = [];
+private Dictionary<string, bool> courseGraphStatus = [];
+private List<GraphBuildStatus> buildStatuses = [];
+private Course? selectedCourse;
+private KnowledgeGraph? graph;
+private KnowledgeGraphStats stats = new();
+private TableOfContents? tableOfContents;
     
-    private bool showRenameCourseModal;
-    private string renameCourseName = "";
+private bool isLoading = true;
+private bool isLoadingGraph;
+    
+// Computed property for the current course's build status
+private GraphBuildStatus? SelectedCourseBuildStatus => 
+    selectedCourse != null ? BuildService.GetStatusForCourse(selectedCourse.Id) : null;
 
-    private string statusMessage = "";
-    private bool isBusy;
+protected override async Task OnInitializedAsync()
+{
+        // Subscribe to build events
+        BuildService.OnStatusChanged += OnBuildStatusChanged;
+        BuildService.OnBuildComplete += OnBuildComplete;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
+        await LoadCoursesAsync();
+        RefreshBuildStatuses();
     }
 
-    private async Task LoadData()
+    public void Dispose()
     {
-        resources = await CourseService.GetAllResourcesAsync();
-        courses = await CourseService.GetAllCoursesAsync();
-        selectedCourseId = await CourseService.GetActiveCourseIdAsync();
+        BuildService.OnStatusChanged -= OnBuildStatusChanged;
+        BuildService.OnBuildComplete -= OnBuildComplete;
     }
 
-    private async Task OnCourseChanged()
+    private void OnBuildStatusChanged(GraphBuildStatus status)
     {
-        await CourseService.SetActiveCourseAsync(selectedCourseId);
+        RefreshBuildStatuses();
+        InvokeAsync(StateHasChanged);
     }
 
-    private async Task ToggleResourceInCourse(string resourceId)
+    private async void OnBuildComplete(string taskId)
     {
-        if (string.IsNullOrEmpty(selectedCourseId))
-            return;
-
-        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-        if (course == null)
-            return;
-
-        if (course.ResourceIds.Contains(resourceId))
+        // Refresh graph status when a build completes
+        await LoadCoursesAsync();
+        RefreshBuildStatuses();
+        
+        // If we're viewing the course that just completed, reload graph
+        var completedStatus = BuildService.GetStatus(taskId);
+        if (completedStatus != null && selectedCourse?.Id == completedStatus.CourseId)
         {
-            await CourseService.RemoveResourceFromCourseAsync(selectedCourseId, resourceId);
+            await LoadGraphForSelectedCourse();
         }
-        else
-        {
-            await CourseService.AddResourceToCourseAsync(selectedCourseId, resourceId);
-        }
-
-        await LoadData();
+        
+        await InvokeAsync(StateHasChanged);
     }
 
-    private void EditResource(CourseResource resource)
+    private void RefreshBuildStatuses()
     {
-        editingResource = resource;
-        resourceTitle = resource.Title;
-        resourceAuthor = resource.Author;
-        resourceYear = resource.Year;
-        resourceDescription = resource.Description;
-        resourceContent = resource.Content;
-        contentSource = "text";
-        uploadedFileName = resource.FileName;
-        activeTab = "Add";
+        buildStatuses = BuildService.GetRecentStatuses().ToList();
     }
 
-    private void CancelEdit()
+    private async Task LoadCoursesAsync()
     {
-        editingResource = null;
-        ClearForm();
-    }
+        isLoading = true;
+        StateHasChanged();
 
-    private void ClearForm()
-    {
-        resourceTitle = "";
-        resourceAuthor = "";
-        resourceYear = "";
-        resourceDescription = "";
-        resourceContent = "";
-        uploadedFileName = "";
-        uploadedFileType = ResourceType.Text;
-        autoFormatContent = true;
-        statusMessage = "";
-    }
-
-    private async Task SaveResource()
-    {
-        if (string.IsNullOrWhiteSpace(resourceTitle))
-        {
-            statusMessage = "Title is required.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(resourceContent))
-        {
-            statusMessage = "Content is required.";
-            return;
-        }
-
-        isBusy = true;
         try
         {
-            var isNew = editingResource == null;
-            var resource = editingResource ?? new CourseResource();
-            resource.Title = resourceTitle.Trim();
-            resource.Author = resourceAuthor.Trim();
-            resource.Year = resourceYear.Trim();
-            resource.Description = resourceDescription.Trim();
-            resource.Content = resourceContent;
-            resource.Type = contentSource == "file" ? uploadedFileType : ResourceType.Text;
-            resource.FileName = uploadedFileName;
-
-            if (autoFormatContent && isNew)
+            courses = await CourseService.GetAllCoursesAsync();
+            
+            // Check which courses have knowledge graphs
+            foreach (var course in courses)
             {
-                isFormatting = true;
-                formatProgressCurrent = 0;
-                formatProgressTotal = 1;
-                statusMessage = "Preparing to format...";
-                StateHasChanged();
+                var existingGraph = await GraphService.GetGraphForCourseAsync(course.Id);
+                courseGraphStatus[course.Id] = existingGraph != null;
             }
-
-            var savedResourceId = await CourseService.SaveResourceAsync(
-                resource, 
-                autoFormat: autoFormatContent && isNew,
-                onFormatProgress: (current, total) =>
-                {
-                    formatProgressCurrent = current;
-                    formatProgressTotal = total;
-                    statusMessage = $"Processing section {current} of {total}...";
-                    InvokeAsync(StateHasChanged);
-                });
-
-            if (isNew && !string.IsNullOrEmpty(selectedCourseId))
-            {
-                isFormatting = false;
-                statusMessage = "Adding to course and indexing...";
-                StateHasChanged();
-                await CourseService.AddResourceToCourseAsync(selectedCourseId, savedResourceId);
-            }
-
-            await LoadData();
-
-            var resultMessage = autoFormatContent && isNew 
-                ? "Resource added. Original preserved, formatted version created."
-                : (editingResource != null ? "Resource updated." : "Resource added.");
-            statusMessage = resultMessage;
-            editingResource = null;
-            ClearForm();
-            activeTab = "Library";
-        }
-        catch (Exception ex)
-        {
-            statusMessage = "Error: " + ex.Message;
         }
         finally
         {
-            isBusy = false;
-            isFormatting = false;
+            isLoading = false;
         }
     }
 
-    private async Task DeleteResource(string id)
+    private async Task SelectCourse(Course course)
     {
-        await CourseService.DeleteResourceAsync(id);
-        await LoadData();
-    }
+        selectedCourse = course;
+        isLoadingGraph = true;
+        StateHasChanged();
 
-    private async Task PickFile()
-    {
         try
         {
-            var customFileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
-            {
-                { DevicePlatform.iOS, new[] { "public.plain-text", "org.openxmlformats.wordprocessingml.document", "com.adobe.pdf" } },
-                { DevicePlatform.Android, new[] { "text/plain", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/pdf" } },
-                { DevicePlatform.WinUI, new[] { ".txt", ".docx", ".pdf" } },
-                { DevicePlatform.MacCatalyst, new[] { "public.plain-text", "org.openxmlformats.wordprocessingml.document", "com.adobe.pdf" } }
-            });
-
-            var options = new PickOptions
-            {
-                PickerTitle = "Select a document",
-                FileTypes = customFileTypes
-            };
-
-            var result = await FilePicker.PickAsync(options);
-
-            if (result != null)
-            {
-                uploadedFileName = result.FileName;
-                var extension = Path.GetExtension(result.FileName).ToLowerInvariant();
-
-                using var stream = await result.OpenReadAsync();
-
-                switch (extension)
-                {
-                    case ".txt":
-                        uploadedFileType = ResourceType.Txt;
-                        using (var reader = new StreamReader(stream))
-                        {
-                            resourceContent = await reader.ReadToEndAsync();
-                        }
-                        break;
-
-                    case ".docx":
-                        uploadedFileType = ResourceType.Docx;
-                        resourceContent = await ReadDocxAsync(stream);
-                        break;
-
-                    case ".pdf":
-                        uploadedFileType = ResourceType.Pdf;
-                        resourceContent = await ReadPdfAsync(stream);
-                        break;
-
-                    default:
-                        statusMessage = "Unsupported file type.";
-                        return;
-                }
-
-                if (string.IsNullOrEmpty(resourceTitle))
-                {
-                    resourceTitle = Path.GetFileNameWithoutExtension(result.FileName);
-                }
-
-                statusMessage = $"File loaded: {resourceContent.Length} characters";
-            }
+            // Set as active course
+            await CourseService.SetActiveCourseAsync(course.Id);
+            await LoadGraphForSelectedCourse();
         }
-        catch (Exception ex)
+        finally
         {
-            statusMessage = "Error reading file: " + ex.Message;
+            isLoadingGraph = false;
         }
     }
 
-    private async Task<string> ReadDocxAsync(Stream stream)
+    private async Task LoadGraphForSelectedCourse()
     {
-        try
+        if (selectedCourse == null) return;
+
+        // Load knowledge graph
+        graph = await GraphService.GetGraphForCourseAsync(selectedCourse.Id);
+        
+        
+        if (graph != null)
         {
-            using var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read);
-            var entry = archive.GetEntry("word/document.xml");
-
-            if (entry == null)
-                return "[Could not read DOCX file]";
-
-            using var entryStream = entry.Open();
-            using var reader = new StreamReader(entryStream);
-            var xml = await reader.ReadToEndAsync();
-
-            var text = System.Text.RegularExpressions.Regex.Replace(xml, "<[^>]+>", " ");
-            text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
-            return text.Trim();
+            stats = graph.GetStats();
+            tableOfContents = await TocService.GenerateTableOfContentsAsync(graph.Id);
         }
-        catch
+        else
         {
-            return "[Error reading DOCX file]";
+            stats = new();
+            tableOfContents = null;
         }
     }
 
-    private Task<string> ReadPdfAsync(Stream stream)
+    private void DeselectCourse()
     {
-        return Task.FromResult("[PDF content extraction requires additional libraries. Please copy-paste the text content instead, or convert to .txt/.docx format.]");
+        selectedCourse = null;
+        graph = null;
+        tableOfContents = null;
+        expandedSections.Clear();
     }
 
-    // Course management
-    private void ShowNewCourseModal()
+    private void QueueGraphBuild(Course course, bool rebuild = false)
     {
-        newCourseName = "";
-        newCourseDescription = "";
-        showNewCourseModal = true;
+        BuildService.QueueGraphBuild(course.Id, course.Name, rebuild);
+        RefreshBuildStatuses();
+        StateHasChanged();
     }
 
-    private void ShowRenameCourseModal()
+    // Track which TOC sections are expanded
+    private HashSet<int> expandedSections = [];
+
+    private bool IsExpanded(int level) => expandedSections.Contains(level);
+
+    private void ToggleSectionExpanded(int level)
     {
-        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-        renameCourseName = course?.Name ?? "";
-        showRenameCourseModal = true;
+        if (expandedSections.Contains(level))
+            expandedSections.Remove(level);
+        else
+            expandedSections.Add(level);
     }
 
-    private void CloseModals()
+    private void StartLearning()
     {
-        showNewCourseModal = false;
-        showRenameCourseModal = false;
+        // Navigate to chat with active course set (starts from beginning)
+        Nav.NavigateTo("/chat?action=lesson");
     }
 
-    private async Task CreateCourse()
+    private void StartLearningFromTopic(string topic)
     {
-        if (string.IsNullOrWhiteSpace(newCourseName))
-            return;
-
-        var course = await CourseService.CreateCourseAsync(
-            newCourseName.Trim(), 
-            newCourseDescription.Trim());
-
-        selectedCourseId = course.Id;
-        await CourseService.SetActiveCourseAsync(course.Id);
-        await LoadData();
-        CloseModals();
-    }
-
-    private async Task RenameCourse()
-    {
-        if (string.IsNullOrWhiteSpace(renameCourseName) || string.IsNullOrEmpty(selectedCourseId))
-            return;
-
-        await CourseService.RenameCourseAsync(selectedCourseId, renameCourseName.Trim());
-        await LoadData();
-        CloseModals();
-    }
-
-    private async Task DeleteSelectedCourse()
-    {
-        if (string.IsNullOrEmpty(selectedCourseId))
-            return;
-
-        await CourseService.DeleteCourseAsync(selectedCourseId);
-        selectedCourseId = null;
-        await LoadData();
+        // Navigate to chat and start lesson from this specific topic
+        var encodedTopic = Uri.EscapeDataString(topic);
+        Nav.NavigateTo($"/chat?action=lesson&topic={encodedTopic}");
     }
 }
