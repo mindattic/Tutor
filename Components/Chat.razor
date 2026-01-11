@@ -45,7 +45,7 @@ else if (isLessonMode && lessonTopics.Count > 0)
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <span>@confirmModalTitle</span>
-                <button class="close-btn" @onclick="CloseConfirmModal">×</button>
+                <button class="close-btn" @onclick="CloseConfirmModal"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body">
                 <p>@confirmModalMessage</p>
@@ -65,7 +65,7 @@ else if (isLessonMode && lessonTopics.Count > 0)
         <div class="modal-content toc-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <span><span class="bi bi-list-ul"></span> Table of Contents</span>
-                <button class="close-btn" @onclick="CloseTableOfContents">×</button>
+                <button class="close-btn" @onclick="CloseTableOfContents"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body toc-body">
                 <p class="toc-instruction">Click any topic to jump directly to it:</p>
@@ -84,23 +84,23 @@ else if (isLessonMode && lessonTopics.Count > 0)
                             <span class="toc-topic">@topic</span>
                             @if (isCompleted)
                             {
-                                <span class="toc-status">?</span>
+                                <span class="toc-status"><span class="bi bi-check-lg"></span></span>
                             }
                             else if (isCurrentTopic)
                             {
-                                <span class="toc-status">?</span>
+                                <span class="toc-status"><span class="bi bi-caret-right-fill"></span></span>
                             }
                             else if (isVisited)
                             {
-                                <span class="toc-status">?</span>
+                                <span class="toc-status"><span class="bi bi-circle"></span></span>
                             }
                         </button>
                     }
                 </div>
                 <div class="toc-legend">
-                    <span><span class="legend-icon">?</span> Completed</span>
-                    <span><span class="legend-icon">?</span> Current</span>
-                    <span><span class="legend-icon">?</span> Visited</span>
+                    <span><span class="legend-icon bi bi-check-lg"></span> Completed</span>
+                    <span><span class="legend-icon bi bi-caret-right-fill"></span> Current</span>
+                    <span><span class="legend-icon bi bi-circle"></span> Visited</span>
                 </div>
             </div>
         </div>
@@ -143,43 +143,65 @@ else if (isLessonMode && lessonTopics.Count > 0)
 
             @if (isVisible)
             {
-                <div class="msg @(m.Role) @(m.IsExploration ? "exploration" : "")">
-                    <div class="msg-header">
-                        <span class="role">@m.Role</span>
-                        <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                <div class="msg-wrapper @(m.Role)">
+                    <div class="msg-avatar @(m.Role)">
+                        @if (m.Role == "user" && !string.IsNullOrEmpty(userCustomAvatar))
+                        {
+                            <img src="@userCustomAvatar" alt="@userDisplayName" />
+                        }
+                        else if (m.Role == "assistant" && !string.IsNullOrEmpty(assistantCustomAvatar))
+                        {
+                            <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                        }
+                        else
+                        {
+                            <span class="bi @(m.Role == "user" ? userAvatarIcon : assistantAvatarIcon)"></span>
+                        }
                     </div>
-                    <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
-
-                    @* Show navigation buttons in assistant messages during lesson mode *@
-                    @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
-                    {
-                        <div class="msg-nav-buttons">
-                            <button class="msg-nav-btn quiz-inline" @onclick="StartQuizAtCurrentPoint" title="Quiz me on what I've learned so far">
-                                <span class="icon-quiz-small"></span>
-                                Quiz Me
-                            </button>
-                            <div class="msg-nav-spacer"></div>
-                            <button class="msg-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0)" title="Go to previous topic">
-                                <span class="icon-previous"></span>
-                                Previous
-                            </button>
-                            <button class="msg-nav-btn continue" @onclick="ContinueLesson" title="@(hasStartedLearning ? "Continue to next topic" : "Begin the lesson")">
-                                <span class="icon-continue"></span>
-                                @(hasStartedLearning ? "Continue" : "Begin")
-                            </button>
+                    <div class="msg @(m.Role)">
+                        <div class="msg-header">
+                            <span class="role">@(m.Role == "user" ? userDisplayName : assistantDisplayName)</span>
+                            <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
                         </div>
-                    }
+                        <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
 
-                    @* Show Continue button for term exploration *@
-                    @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
-                    {
-                        <div class="msg-nav-buttons">
-                            <button class="msg-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
-                                <span class="icon-continue"></span>
-                                Continue
-                            </button>
-                        </div>
-                    }
+                        @* Show navigation buttons in assistant messages during lesson mode *@
+                        @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
+                        {
+                            <div class="msg-nav-buttons">
+                                @if (learnedConcepts.Count > 0)
+                                {
+                                    <button class="msg-nav-btn quiz-inline" @onclick="StartQuizAtCurrentPoint" title="Quiz me on what I've learned so far">
+                                        <span class="icon-quiz-small"></span>
+                                        Quiz Me
+                                    </button>
+                                    <div class="msg-nav-spacer"></div>
+                                }
+                                <button class="msg-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0)" title="Go to previous topic">
+                                    <span class="icon-previous"></span>
+                                    Previous
+                                </button>
+                                <button class="msg-nav-btn continue" @onclick="ContinueLesson" title="@(hasStartedLearning ? "Continue to next topic" : "Begin the lesson")">
+                                    <span class="icon-continue"></span>
+                                    @(hasStartedLearning ? "Continue" : "Begin")
+                                </button>
+                            </div>
+                        }
+
+                        @* Show Continue button for term exploration *@
+                        @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
+                        {
+                            <div class="msg-nav-buttons">
+                                <button class="msg-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
+                                    <span class="icon-continue"></span>
+                                    Continue
+                                </button>
+                            </div>
+                        }
+
+                        @* Suggestion area for follow-up questions *@
+                        <div class="msg-suggestions"></div>
+                    </div>
                 </div>
             }
             messageIndex++;
@@ -187,11 +209,27 @@ else if (isLessonMode && lessonTopics.Count > 0)
 
         @if (isSending)
         {
-            <div class="msg assistant">
-                <div class="msg-header">
-                    <span class="role">assistant</span>
+            <div class="msg-wrapper assistant">
+                <div class="msg-avatar assistant">
+                    @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                    {
+                        <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                    }
+                    else
+                    {
+                        <span class="bi @assistantAvatarIcon"></span>
+                    }
                 </div>
-                <div class="content">Thinking...</div>
+                <div class="msg assistant">
+                    <div class="msg-header">
+                        <span class="role">@assistantDisplayName</span>
+                    </div>
+                    <div class="content thinking">
+                        <span class="thinking-dots">
+                            <span></span><span></span><span></span>
+                        </span>
+                    </div>
+                </div>
             </div>
         }
     </div>
@@ -228,7 +266,7 @@ else if (isLessonMode && lessonTopics.Count > 0)
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <span>Full Response</span>
-                <button class="close-btn" @onclick="CloseModal">×</button>
+                <button class="close-btn" @onclick="CloseModal"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body">
                 <pre>@modalContent</pre>
@@ -251,6 +289,14 @@ private bool enterToSend = true;
 private string placeholderText = "Ask a question...";
 private string? pendingDisplayText; // Simplified display text for next message
 private bool pendingIsExploration; // Whether next message is part of exploration
+
+// Avatar settings
+private string userDisplayName = "User";
+private string assistantDisplayName = "Assistant";
+private string userAvatarIcon = "bi-person-fill";
+private string assistantAvatarIcon = "bi-robot";
+private string? userCustomAvatar;
+private string? assistantCustomAvatar;
 
 // Message visibility
 private const int RecentMessageCount = 4; // Show last N messages by default
@@ -362,6 +408,15 @@ private bool showAllMessages;
         if (firstRender)
         {
             enterToSend = await Settings.GetEnterToSendAsync();
+            
+            // Load avatar settings
+            userDisplayName = await Settings.GetUserDisplayNameAsync();
+            assistantDisplayName = await Settings.GetAssistantDisplayNameAsync();
+            userAvatarIcon = await Settings.GetUserAvatarIconAsync();
+            assistantAvatarIcon = await Settings.GetAssistantAvatarIconAsync();
+            userCustomAvatar = await Settings.GetUserCustomAvatarAsync();
+            assistantCustomAvatar = await Settings.GetAssistantCustomAvatarAsync();
+            
             UpdatePlaceholder();
             StateHasChanged();
 
@@ -1143,7 +1198,7 @@ Keep track of the running score.";
         }
 
         // Build context-aware prompt for term exploration
-        // Include instruction to offer "more details" as a clickable option
+        // Include instruction to offer more information as a clickable option
         string termPrompt;
         if (learnedConcepts.Count > 0)
         {
@@ -1153,17 +1208,19 @@ Keep track of the running score.";
 The student has already learned: {learnedList}
 Connect your explanation to these concepts where relevant.
 
-End with: ""__More details__?"" (using double underscores to make it a clickable link)";
+End with: ""__Would you like to know more__?"" (using double underscores to make it a clickable link)";
         }
         else
         {
             termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
 
-End with: ""__More details__?"" (using double underscores to make it a clickable link)";
+End with: ""__Would you like to know more__?"" (using double underscores to make it a clickable link)";
         }
 
         // Show simplified display text but send full prompt to AI
-        var displayText = $"{term}?";
+        // Clean up the term for display by removing trailing punctuation
+        var cleanTerm = term.TrimEnd(':', '-', '–', '—', ',', ';', '.', '!', '?', ' ');
+        var displayText = $"{cleanTerm}?";
         prompt = termPrompt;
         pendingDisplayText = displayText;
         pendingIsExploration = true;

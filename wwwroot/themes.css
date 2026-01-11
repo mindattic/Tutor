@@ -14,6 +14,8 @@
     --accent-primary-hover: #155a9c;
     --accent-danger: #dc3545;
     --accent-danger-hover: #c82333;
+    --accent-user: #4a9eff;
+    --accent-assistant: #10b981;
     --msg-user-bg: rgba(0, 0, 0, 0.03);
     --msg-assistant-bg: rgba(0, 128, 255, 0.06);
     --input-bg: #ffffff;
@@ -41,6 +43,8 @@
     --accent-primary-hover: #339af0;
     --accent-danger: #ff6b6b;
     --accent-danger-hover: #fa5252;
+    --accent-user: #4dabf7;
+    --accent-assistant: #34d399;
     --msg-user-bg: rgba(255, 255, 255, 0.05);
     --msg-assistant-bg: rgba(77, 171, 247, 0.1);
     --input-bg: #16213e;
@@ -53,6 +57,7 @@
     --nav-active-bg: rgba(77, 171, 247, 0.3);
     --nav-hover-bg: rgba(255, 255, 255, 0.1);
 }
+
 
 /* Summer Theme */
 [data-theme="Summer"] {
@@ -68,6 +73,8 @@
     --accent-primary-hover: #e67e22;
     --accent-danger: #e74c3c;
     --accent-danger-hover: #c0392b;
+    --accent-user: #f39c12;
+    --accent-assistant: #27ae60;
     --msg-user-bg: rgba(253, 203, 110, 0.15);
     --msg-assistant-bg: rgba(243, 156, 18, 0.1);
     --input-bg: #ffffff;
@@ -95,6 +102,8 @@
     --accent-primary-hover: #2c5282;
     --accent-danger: #e53e3e;
     --accent-danger-hover: #c53030;
+    --accent-user: #63b3ed;
+    --accent-assistant: #48bb78;
     --msg-user-bg: rgba(66, 153, 225, 0.08);
     --msg-assistant-bg: rgba(49, 130, 206, 0.1);
     --input-bg: #ffffff;
@@ -122,6 +131,8 @@
     --accent-primary-hover: #a0522d;
     --accent-danger: #cd5c5c;
     --accent-danger-hover: #b22222;
+    --accent-user: #d2691e;
+    --accent-assistant: #228b22;
     --msg-user-bg: rgba(210, 105, 30, 0.08);
     --msg-assistant-bg: rgba(210, 105, 30, 0.12);
     --input-bg: #ffffff;
@@ -149,6 +160,8 @@
     --accent-primary-hover: #2f855a;
     --accent-danger: #fc8181;
     --accent-danger-hover: #f56565;
+    --accent-user: #68d391;
+    --accent-assistant: #38a169;
     --msg-user-bg: rgba(72, 187, 120, 0.1);
     --msg-assistant-bg: rgba(56, 161, 105, 0.12);
     --input-bg: #ffffff;

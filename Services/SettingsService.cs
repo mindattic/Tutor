@@ -192,6 +192,158 @@ public sealed class SettingsService
             // Ignore errors
         }
     }
+
+    // Avatar and display name settings
+    private const string UserDisplayNameKey = "USER_DISPLAY_NAME";
+    private const string AssistantDisplayNameKey = "ASSISTANT_DISPLAY_NAME";
+    private const string UserAvatarIconKey = "USER_AVATAR_ICON";
+    private const string AssistantAvatarIconKey = "ASSISTANT_AVATAR_ICON";
+    private const string UserCustomAvatarKey = "USER_CUSTOM_AVATAR";
+    private const string AssistantCustomAvatarKey = "ASSISTANT_CUSTOM_AVATAR";
+
+    public async Task<string> GetUserDisplayNameAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(UserDisplayNameKey);
+            return string.IsNullOrEmpty(value) ? "User" : value;
+        }
+        catch
+        {
+            return "User";
+        }
+    }
+
+    public async Task SetUserDisplayNameAsync(string name)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(UserDisplayNameKey, name);
+        }
+        catch { }
+    }
+
+    public async Task<string> GetAssistantDisplayNameAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(AssistantDisplayNameKey);
+            return string.IsNullOrEmpty(value) ? "Assistant" : value;
+        }
+        catch
+        {
+            return "Assistant";
+        }
+    }
+
+    public async Task SetAssistantDisplayNameAsync(string name)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(AssistantDisplayNameKey, name);
+        }
+        catch { }
+    }
+
+    public async Task<string> GetUserAvatarIconAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(UserAvatarIconKey);
+            return string.IsNullOrEmpty(value) ? "bi-person-fill" : value;
+        }
+        catch
+        {
+            return "bi-person-fill";
+        }
+    }
+
+    public async Task SetUserAvatarIconAsync(string icon)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(UserAvatarIconKey, icon);
+        }
+        catch { }
+    }
+
+    public async Task<string> GetAssistantAvatarIconAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(AssistantAvatarIconKey);
+            return string.IsNullOrEmpty(value) ? "bi-robot" : value;
+        }
+        catch
+        {
+            return "bi-robot";
+        }
+    }
+
+    public async Task SetAssistantAvatarIconAsync(string icon)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(AssistantAvatarIconKey, icon);
+        }
+        catch { }
+    }
+
+    public async Task<string?> GetUserCustomAvatarAsync()
+    {
+        try
+        {
+            return await SecureStorage.GetAsync(UserCustomAvatarKey);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SetUserCustomAvatarAsync(string? dataUrl)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(dataUrl))
+            {
+                SecureStorage.Remove(UserCustomAvatarKey);
+            }
+            else
+            {
+                await SecureStorage.SetAsync(UserCustomAvatarKey, dataUrl);
+            }
+        }
+        catch { }
+    }
+
+    public async Task<string?> GetAssistantCustomAvatarAsync()
+    {
+        try
+        {
+            return await SecureStorage.GetAsync(AssistantCustomAvatarKey);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SetAssistantCustomAvatarAsync(string? dataUrl)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(dataUrl))
+            {
+                SecureStorage.Remove(AssistantCustomAvatarKey);
+            }
+            else
+            {
+                await SecureStorage.SetAsync(AssistantCustomAvatarKey, dataUrl);
+            }
+        }
+        catch { }
+    }
 }
 
 public enum GradingScale

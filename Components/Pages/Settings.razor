@@ -1,6 +1,7 @@
 ﻿@page "/settings"
 @using Microsoft.Maui.Storage
 @using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Forms
 @using Tutor.Services
 @inject NavigationManager Nav
 @inject ThemeService ThemeService
@@ -8,11 +9,13 @@
 @inject FileResourceService FileResourceService
 @inject IJSRuntime JS
 
+
 <div class="page-title">Settings</div>
 
 <div style="max-width: 720px;">
     <div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
+        <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
         <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
         <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
         <button class="tab @(activeTab == "ChatGPT" ? "active" : "")" @onclick="@(() => activeTab = "ChatGPT")">ChatGPT</button>
@@ -52,6 +55,132 @@
                     <label for="enterToSend">Press Enter to send message</label>
                 </div>
                 <p>When enabled, press Enter to send. Use Shift+Enter for new line.</p>
+            </div>
+        }
+        else if (activeTab == "Appearance")
+        {
+            <div class="settings-section">
+                <h4>User Avatar</h4>
+                <div class="avatar-settings-row">
+                    <div class="avatar-preview user">
+                        @if (!string.IsNullOrEmpty(userCustomAvatar))
+                        {
+                            <img src="@userCustomAvatar" alt="User" />
+                        }
+                        else
+                        {
+                            <span class="bi @userAvatarIcon"></span>
+                        }
+                    </div>
+                    <div class="avatar-controls">
+                        <div class="avatar-name-row">
+                            <label>Display Name:</label>
+                            <input type="text" class="settings-input small" @bind="userDisplayName" @bind:after="SaveUserDisplayNameAsync" placeholder="User" />
+                        </div>
+                        <div class="avatar-icon-row">
+                            <label>Icon:</label>
+                            <select class="theme-select small" @bind="userAvatarIcon" @bind:after="SaveUserAvatarIconAsync">
+                                @foreach (var icon in AvailableAvatarIcons)
+                                {
+                                    <option value="@icon.Value">@icon.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="avatar-actions">
+                            <label class="settings-btn upload-btn">
+                                <span class="bi bi-upload"></span> Upload Image
+                                <InputFile OnChange="OnUserAvatarUpload" accept="image/*" style="display: none;" />
+                            </label>
+                            @if (!string.IsNullOrEmpty(userCustomAvatar))
+                            {
+                                <button class="settings-btn danger small" @onclick="ClearUserCustomAvatar">
+                                    <span class="bi bi-x"></span> Clear
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Assistant Avatar</h4>
+                <div class="avatar-settings-row">
+                    <div class="avatar-preview assistant">
+                        @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                        {
+                            <img src="@assistantCustomAvatar" alt="Assistant" />
+                        }
+                        else
+                        {
+                            <span class="bi @assistantAvatarIcon"></span>
+                        }
+                    </div>
+                    <div class="avatar-controls">
+                        <div class="avatar-name-row">
+                            <label>Display Name:</label>
+                            <input type="text" class="settings-input small" @bind="assistantDisplayName" @bind:after="SaveAssistantDisplayNameAsync" placeholder="Assistant" />
+                        </div>
+                        <div class="avatar-icon-row">
+                            <label>Icon:</label>
+                            <select class="theme-select small" @bind="assistantAvatarIcon" @bind:after="SaveAssistantAvatarIconAsync">
+                                @foreach (var icon in AvailableAvatarIcons)
+                                {
+                                    <option value="@icon.Value">@icon.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="avatar-actions">
+                            <label class="settings-btn upload-btn">
+                                <span class="bi bi-upload"></span> Upload Image
+                                <InputFile OnChange="OnAssistantAvatarUpload" accept="image/*" style="display: none;" />
+                            </label>
+                            @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                            {
+                                <button class="settings-btn danger small" @onclick="ClearAssistantCustomAvatar">
+                                    <span class="bi bi-x"></span> Clear
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Preview</h4>
+                <div class="chat-preview">
+                    <div class="preview-msg user">
+                        <div class="preview-avatar user">
+                            @if (!string.IsNullOrEmpty(userCustomAvatar))
+                            {
+                                <img src="@userCustomAvatar" alt="User" />
+                            }
+                            else
+                            {
+                                <span class="bi @userAvatarIcon"></span>
+                            }
+                        </div>
+                        <div class="preview-content">
+                            <span class="preview-name">@userDisplayName</span>
+                            <span class="preview-text">Hello, can you help me?</span>
+                        </div>
+                    </div>
+                    <div class="preview-msg assistant">
+                        <div class="preview-avatar assistant">
+                            @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                            {
+                                <img src="@assistantCustomAvatar" alt="Assistant" />
+                            }
+                            else
+                            {
+                                <span class="bi @assistantAvatarIcon"></span>
+                            }
+                        </div>
+                        <div class="preview-content">
+                            <span class="preview-name">@assistantDisplayName</span>
+                            <span class="preview-text">Of course! I'm here to help.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         }
         else if (activeTab == "Storage")
@@ -271,6 +400,49 @@
     private int originalFileCount = 0;
     private int formattedFileCount = 0;
 
+    // Avatar settings
+    private string userDisplayName = "User";
+    private string assistantDisplayName = "Assistant";
+    private string userAvatarIcon = "bi-person-fill";
+    private string assistantAvatarIcon = "bi-robot";
+    private string? userCustomAvatar;
+    private string? assistantCustomAvatar;
+
+    // Available avatar icons
+    private static readonly List<(string Name, string Value)> AvailableAvatarIcons =
+    [
+        ("Person", "bi-person-fill"),
+        ("Person Circle", "bi-person-circle"),
+        ("Person Badge", "bi-person-badge-fill"),
+        ("Emoji Smile", "bi-emoji-smile-fill"),
+        ("Emoji Sunglasses", "bi-emoji-sunglasses-fill"),
+        ("Emoji Heart Eyes", "bi-emoji-heart-eyes-fill"),
+        ("Star", "bi-star-fill"),
+        ("Heart", "bi-heart-fill"),
+        ("Lightning", "bi-lightning-fill"),
+        ("Fire", "bi-fire"),
+        ("Rocket", "bi-rocket-takeoff-fill"),
+        ("Trophy", "bi-trophy-fill"),
+        ("Robot", "bi-robot"),
+        ("CPU", "bi-cpu-fill"),
+        ("Lightbulb", "bi-lightbulb-fill"),
+        ("Book", "bi-book-fill"),
+        ("Mortarboard", "bi-mortarboard-fill"),
+        ("Chat", "bi-chat-dots-fill"),
+        ("Magic", "bi-magic"),
+        ("Gem", "bi-gem"),
+        ("Shield", "bi-shield-fill"),
+        ("Globe", "bi-globe"),
+        ("Moon", "bi-moon-fill"),
+        ("Sun", "bi-sun-fill"),
+        ("Cloud", "bi-cloud-fill"),
+        ("Music Note", "bi-music-note-beamed"),
+        ("Controller", "bi-controller"),
+        ("Puzzle", "bi-puzzle-fill"),
+        ("Flower", "bi-flower1"),
+        ("Tree", "bi-tree-fill"),
+    ];
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -280,7 +452,110 @@
         await LoadEnterToSendAsync();
         await LoadChatGptModelAsync();
         await LoadQuizSettingsAsync();
+        await LoadAvatarSettingsAsync();
         LoadStorageSettings();
+    }
+
+    private async Task LoadAvatarSettingsAsync()
+    {
+        userDisplayName = await SettingsService.GetUserDisplayNameAsync();
+        assistantDisplayName = await SettingsService.GetAssistantDisplayNameAsync();
+        userAvatarIcon = await SettingsService.GetUserAvatarIconAsync();
+        assistantAvatarIcon = await SettingsService.GetAssistantAvatarIconAsync();
+        userCustomAvatar = await SettingsService.GetUserCustomAvatarAsync();
+        assistantCustomAvatar = await SettingsService.GetAssistantCustomAvatarAsync();
+    }
+
+    private async Task SaveUserDisplayNameAsync()
+    {
+        await SettingsService.SetUserDisplayNameAsync(userDisplayName);
+        status = "User display name saved.";
+    }
+
+    private async Task SaveAssistantDisplayNameAsync()
+    {
+        await SettingsService.SetAssistantDisplayNameAsync(assistantDisplayName);
+        status = "Assistant display name saved.";
+    }
+
+    private async Task SaveUserAvatarIconAsync()
+    {
+        await SettingsService.SetUserAvatarIconAsync(userAvatarIcon);
+        status = "User avatar icon saved.";
+    }
+
+    private async Task SaveAssistantAvatarIconAsync()
+    {
+        await SettingsService.SetAssistantAvatarIconAsync(assistantAvatarIcon);
+        status = "Assistant avatar icon saved.";
+    }
+
+    private async Task OnUserAvatarUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file.Size > 512 * 1024) // 512KB limit
+            {
+                status = "Image too large. Please use an image under 512KB.";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 512 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var dataUrl = $"data:{file.ContentType};base64,{base64}";
+            
+            userCustomAvatar = dataUrl;
+            await SettingsService.SetUserCustomAvatarAsync(dataUrl);
+            status = "User avatar uploaded.";
+        }
+        catch (Exception ex)
+        {
+            status = $"Failed to upload: {ex.Message}";
+        }
+    }
+
+    private async Task OnAssistantAvatarUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file.Size > 512 * 1024)
+            {
+                status = "Image too large. Please use an image under 512KB.";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 512 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var dataUrl = $"data:{file.ContentType};base64,{base64}";
+            
+            assistantCustomAvatar = dataUrl;
+            await SettingsService.SetAssistantCustomAvatarAsync(dataUrl);
+            status = "Assistant avatar uploaded.";
+        }
+        catch (Exception ex)
+        {
+            status = $"Failed to upload: {ex.Message}";
+        }
+    }
+
+    private async Task ClearUserCustomAvatar()
+    {
+        userCustomAvatar = null;
+        await SettingsService.SetUserCustomAvatarAsync(null);
+        status = "User custom avatar cleared.";
+    }
+
+    private async Task ClearAssistantCustomAvatar()
+    {
+        assistantCustomAvatar = null;
+        await SettingsService.SetAssistantCustomAvatarAsync(null);
+        status = "Assistant custom avatar cleared.";
     }
 
     private void LoadStorageSettings()

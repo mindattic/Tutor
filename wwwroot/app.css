@@ -163,34 +163,145 @@ h1:focus {
 }
 
 
-.msg {
-    margin-bottom: 8px;
-    padding: 8px 10px;
+
+
+/* Message wrapper - positions avatar and message bubble */
+.msg-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+
+/* Avatar container - all avatars on left */
+.msg-avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
-    border: 1px solid var(--border-light);
-    vertical-align: top;
+    border: 2px solid var(--border-color);
+    background: var(--bg-primary);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.msg-avatar.user {
+    border-color: var(--accent-user, #4a9eff);
+    background: linear-gradient(135deg, #4a9eff 0%, #2563eb 100%);
+    color: white;
+}
+
+.msg-avatar.assistant {
+    border-color: var(--accent-assistant, #10b981);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.msg-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.msg {
+    flex: 1;
+    position: relative;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border-light);
+    min-width: 0;
 }
 
     .msg.user {
         background: var(--msg-user-bg);
+        border-color: var(--accent-user, #4a9eff);
     }
 
     .msg.assistant {
         background: var(--msg-assistant-bg);
+        border-color: var(--accent-assistant, #10b981);
     }
 
-/* Side exploration messages (term lookups) - indented to show they're off the main topic */
-.msg.exploration {
-    margin-left: 10%;
-    border-left: 3px solid var(--accent-secondary, var(--accent-primary));
-    opacity: 0.95;
+.msg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
-.msg.exploration .msg-header::before {
-    content: "Side topic: ";
-    font-size: 10px;
-    color: var(--text-tertiary, var(--text-secondary));
-    font-style: italic;
+/* Suggestion area for follow-up questions */
+.msg-suggestions {
+    min-height: 0;
+    margin-top: 0;
+    transition: all 0.3s ease;
+}
+
+.msg-suggestions:not(:empty) {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-light);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.msg-suggestion-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.msg-suggestion-btn:hover {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+/* Thinking animation */
+.thinking-dots {
+    display: inline-flex;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.thinking-dots span {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-assistant, #10b981);
+    border-radius: 50%;
+    animation: thinking-bounce 1.4s ease-in-out infinite;
+}
+
+.thinking-dots span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.thinking-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.thinking-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes thinking-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .role {
@@ -2290,6 +2401,172 @@ h1:focus {
     color: var(--text-secondary);
     font-size: 12px;
 }
+
+/* Avatar settings styles */
+.avatar-settings-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.avatar-preview {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    border: 3px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-preview.user {
+    border-color: var(--accent-user, #4a9eff);
+    background: linear-gradient(135deg, #4a9eff 0%, #2563eb 100%);
+    color: white;
+}
+
+.avatar-preview.assistant {
+    border-color: var(--accent-assistant, #10b981);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.avatar-name-row,
+.avatar-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar-name-row label,
+.avatar-icon-row label {
+    min-width: 100px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.settings-input.small {
+    flex: 1;
+    max-width: 200px;
+}
+
+.theme-select.small {
+    flex: 1;
+    max-width: 200px;
+}
+
+.avatar-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.settings-btn.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.settings-btn.small {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.settings-btn.danger {
+    background: var(--accent-danger);
+    color: white;
+}
+
+.settings-btn.danger:hover {
+    background: var(--accent-danger-hover);
+}
+
+/* Chat preview in settings */
+.chat-preview {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.preview-msg {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.preview-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.preview-avatar.user {
+    border-color: var(--accent-user, #4a9eff);
+    background: linear-gradient(135deg, #4a9eff 0%, #2563eb 100%);
+    color: white;
+}
+
+.preview-avatar.assistant {
+    border-color: var(--accent-assistant, #10b981);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.preview-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.preview-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.preview-text {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+
+
 
 
 
