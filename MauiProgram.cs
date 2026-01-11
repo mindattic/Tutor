@@ -39,6 +39,12 @@ namespace Tutor
             // Chunking service for splitting content
             builder.Services.AddSingleton<ChunkingService>();
 
+            // LSH service for locality-sensitive hashing (semantic signatures)
+            builder.Services.AddSingleton<LSHService>();
+
+            // SimHash service for lexical fingerprinting
+            builder.Services.AddSingleton<SimHashService>();
+
             // Vector store service for storing/searching embeddings
             builder.Services.AddSingleton<VectorStoreService>();
 

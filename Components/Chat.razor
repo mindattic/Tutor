@@ -143,12 +143,12 @@ else if (isLessonMode && lessonTopics.Count > 0)
 
             @if (isVisible)
             {
-                <div class="msg @(m.Role)">
+                <div class="msg @(m.Role) @(m.IsExploration ? "exploration" : "")">
                     <div class="msg-header">
                         <span class="role">@m.Role</span>
                         <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
                     </div>
-                    <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.Text))</div>
+                    <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
 
                     @* Show navigation buttons in assistant messages during lesson mode *@
                     @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
@@ -249,6 +249,8 @@ private DotNetObjectReference<Chat>? dotNetRef;
 private CancellationTokenSource? cts;
 private bool enterToSend = true;
 private string placeholderText = "Ask a question...";
+private string? pendingDisplayText; // Simplified display text for next message
+private bool pendingIsExploration; // Whether next message is part of exploration
 
 // Message visibility
 private const int RecentMessageCount = 4; // Show last N messages by default
@@ -801,6 +803,7 @@ Please start with Question 1.";
 
     private Task SendAsync() => SendAsyncInternal(captureTopics: false);
 
+
     private async Task SendAsyncInternal(bool captureTopics)
     {
         var userText = prompt?.Trim();
@@ -808,7 +811,14 @@ Please start with Question 1.";
 
         prompt = "";
         await ResetTextareaHeight();
-        messages.Add(new ChatMessage("user", userText, userText));
+        
+        // Capture pending state for this message
+        var displayText = pendingDisplayText;
+        var isExploration = pendingIsExploration;
+        pendingDisplayText = null;
+        pendingIsExploration = false;
+        
+        messages.Add(new ChatMessage("user", userText, userText, displayText, isExploration));
         StateHasChanged();
 
         isSending = true;
@@ -860,7 +870,7 @@ Keep track of the running score.";
             }
 
             var reply = await Ai.GetReplyAsync(messages, fullInstructions, cts.Token);
-            messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson));
+            messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson, null, isExploration));
 
             // Capture topics if this is the initial lesson request
             if (captureTopics && isLessonMode)
@@ -1133,6 +1143,7 @@ Keep track of the running score.";
         }
 
         // Build context-aware prompt for term exploration
+        // Include instruction to offer "more details" as a clickable option
         string termPrompt;
         if (learnedConcepts.Count > 0)
         {
@@ -1140,14 +1151,22 @@ Keep track of the running score.";
             termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
 
 The student has already learned: {learnedList}
-Connect your explanation to these concepts where relevant.";
+Connect your explanation to these concepts where relevant.
+
+End with: ""__More details__?"" (using double underscores to make it a clickable link)";
         }
         else
         {
-            termPrompt = $"What is \"{term}\"? Please explain it in simple terms.";
+            termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
+
+End with: ""__More details__?"" (using double underscores to make it a clickable link)";
         }
 
+        // Show simplified display text but send full prompt to AI
+        var displayText = $"{term}?";
         prompt = termPrompt;
+        pendingDisplayText = displayText;
+        pendingIsExploration = true;
         StateHasChanged();
         await SendAsync();
     }
@@ -1159,5 +1178,20 @@ Connect your explanation to these concepts where relevant.";
         dotNetRef?.Dispose();
     }
 
-    public record ChatMessage(string Role, string Text, string FullJson);
+    /// <summary>
+    /// Represents a chat message with optional display text for UI.
+    /// </summary>
+    /// <param name="Role">The role (user or assistant).</param>
+    /// <param name="Text">The actual message text sent to/from the AI.</param>
+    /// <param name="FullJson">The full JSON response (for debugging).</param>
+    /// <param name="DisplayText">Optional simplified text to show in the UI instead of Text.</param>
+    /// <param name="IsExploration">Whether this message is part of a side exploration (e.g., term lookup).</param>
+    public record ChatMessage(string Role, string Text, string FullJson, string? DisplayText = null, bool IsExploration = false)
+    {
+        /// <summary>
+        /// Gets the text to display in the chat UI.
+        /// Returns DisplayText if set, otherwise returns Text.
+        /// </summary>
+        public string VisibleText => DisplayText ?? Text;
+    }
 }

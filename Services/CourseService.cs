@@ -14,6 +14,8 @@ public sealed class CourseService
     private readonly VectorStoreService vectorStoreService;
     private readonly ContentFormatterService contentFormatterService;
     private readonly FileResourceService fileResourceService;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
 
     private List<CourseResource>? cachedResources;
     private List<Course>? cachedCourses;
@@ -23,13 +25,17 @@ public sealed class CourseService
         EmbeddingService embeddingService,
         VectorStoreService vectorStoreService,
         ContentFormatterService contentFormatterService,
-        FileResourceService fileResourceService)
+        FileResourceService fileResourceService,
+        LSHService lshService,
+        SimHashService simHashService)
     {
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;
         this.vectorStoreService = vectorStoreService;
         this.contentFormatterService = contentFormatterService;
         this.fileResourceService = fileResourceService;
+        this.lshService = lshService;
+        this.simHashService = simHashService;
     }
 
     // Resource management
@@ -349,17 +355,28 @@ public sealed class CourseService
         if (embeddings.Count != textChunks.Count)
             return;
 
-        // Create ContentChunk objects
+        // Create ContentChunk objects with embeddings and signatures
         var chunks = new List<ContentChunk>();
         for (int i = 0; i < textChunks.Count; i++)
         {
+            var embedding = embeddings[i];
+            var content = textChunks[i];
+
+            // Compute semantic signature from embedding using LSH
+            var semanticSignature = lshService.GetSignature(embedding);
+
+            // Compute lexical signature from content using SimHash
+            var lexicalSignature = simHashService.GetSignature64(content);
+
             chunks.Add(new ContentChunk
             {
                 ResourceId = resourceId,
                 CurriculumId = courseId, // Note: ContentChunk still uses CurriculumId internally for storage
                 ChunkIndex = i,
-                Content = textChunks[i],
-                Embedding = embeddings[i],
+                Content = content,
+                Embedding = embedding,
+                SemanticSignature = semanticSignature,
+                LexicalSignature = lexicalSignature,
                 SourceTitle = resource.Title
             });
         }

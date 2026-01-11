@@ -6,16 +6,29 @@ namespace Tutor.Services;
 /// <summary>
 /// Service for storing and searching content chunks with embeddings.
 /// Uses JSON file storage for simplicity (works across all MAUI platforms).
+/// Supports LSH-based candidate generation and combined similarity scoring.
 /// </summary>
 public sealed class VectorStoreService
 {
     private const string ChunksFileName = "content_chunks.json";
     private readonly string chunksFilePath;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
     private List<ContentChunk>? cachedChunks;
 
-    public VectorStoreService()
+    // Default LSH threshold for candidate generation (max Hamming distance)
+    private const int DefaultLshThreshold = 64;
+
+    // Scoring weights for combined similarity
+    private const float CosineWeight = 0.70f;
+    private const float SemanticWeight = 0.20f;
+    private const float LexicalWeight = 0.10f;
+
+    public VectorStoreService(LSHService lshService, SimHashService simHashService)
     {
         chunksFilePath = Path.Combine(FileSystem.AppDataDirectory, ChunksFileName);
+        this.lshService = lshService;
+        this.simHashService = simHashService;
     }
 
     /// <summary>
@@ -56,6 +69,7 @@ public sealed class VectorStoreService
 
     /// <summary>
     /// Search for the most relevant chunks given a query embedding.
+    /// Uses cosine similarity only (for backward compatibility when signatures are not available).
     /// </summary>
     public async Task<List<ContentChunk>> SearchAsync(
         float[] queryEmbedding, 
@@ -79,7 +93,8 @@ public sealed class VectorStoreService
     }
 
     /// <summary>
-    /// Search using a text query (requires embedding service to embed the query).
+    /// Search using a text query with combined similarity scoring.
+    /// Uses LSH for candidate generation and combines cosine, semantic, and lexical similarity.
     /// </summary>
     public async Task<List<ContentChunk>> SearchAsync(
         string query,
@@ -89,11 +104,104 @@ public sealed class VectorStoreService
         float minSimilarity = 0.3f,
         CancellationToken ct = default)
     {
+        return await SearchAsync(query, curriculumId, embeddingService, topK, minSimilarity, DefaultLshThreshold, ct);
+    }
+
+    /// <summary>
+    /// Search using a text query with combined similarity scoring and configurable LSH threshold.
+    /// </summary>
+    /// <param name="query">The search query text.</param>
+    /// <param name="curriculumId">The curriculum to search within.</param>
+    /// <param name="embeddingService">Service to generate query embedding.</param>
+    /// <param name="topK">Maximum number of results to return.</param>
+    /// <param name="minSimilarity">Minimum cosine similarity threshold.</param>
+    /// <param name="lshThreshold">Maximum LSH Hamming distance for candidate selection.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of most relevant content chunks.</returns>
+    public async Task<List<ContentChunk>> SearchAsync(
+        string query,
+        string curriculumId,
+        EmbeddingService embeddingService,
+        int topK,
+        float minSimilarity,
+        int lshThreshold,
+        CancellationToken ct = default)
+    {
+        // Get query embedding
         var queryEmbedding = await embeddingService.GetEmbeddingAsync(query, ct);
         if (queryEmbedding.Length == 0)
             return [];
 
-        return await SearchAsync(queryEmbedding, curriculumId, topK, minSimilarity);
+        // Compute query signatures
+        var querySemanticSig = lshService.GetSignature(queryEmbedding);
+        var queryLexicalSig = simHashService.GetSignature64(query);
+
+        var allChunks = await LoadChunksAsync();
+
+        // Filter to curriculum with valid embeddings
+        var candidateChunks = allChunks
+            .Where(c => c.CurriculumId == curriculumId && c.Embedding.Length > 0)
+            .ToList();
+
+        if (candidateChunks.Count == 0)
+            return [];
+
+        // Check if any chunks have semantic signatures for LSH filtering
+        var chunksWithSignatures = candidateChunks
+            .Where(c => c.SemanticSignature != null && c.SemanticSignature.Length > 0)
+            .ToList();
+
+        List<ContentChunk> candidates;
+
+        if (chunksWithSignatures.Count > 0 && querySemanticSig.Length > 0)
+        {
+            // LSH candidate generation: filter by Hamming distance
+            candidates = chunksWithSignatures
+                .Where(c => LSHService.HammingDistance(querySemanticSig, c.SemanticSignature) <= lshThreshold)
+                .ToList();
+
+            // If no candidates pass LSH filter, fall back to all chunks with signatures
+            if (candidates.Count == 0)
+            {
+                candidates = chunksWithSignatures;
+            }
+        }
+        else
+        {
+            // No signatures available, use all candidate chunks (fallback to cosine-only)
+            candidates = candidateChunks;
+        }
+
+        // Score and rank candidates
+        var scoredResults = candidates
+            .Select(c => new
+            {
+                Chunk = c,
+                Cosine = EmbeddingService.CosineSimilarity(queryEmbedding, c.Embedding),
+                SemanticHamming = c.SemanticSignature != null && c.SemanticSignature.Length > 0
+                    ? LSHService.HammingDistance(querySemanticSig, c.SemanticSignature)
+                    : lshService.BitCount, // Max distance if no signature
+                LexicalHamming = SimHashService.HammingDistance(queryLexicalSig, c.LexicalSignature)
+            })
+            .Where(x => x.Cosine >= minSimilarity) // Enforce minimum cosine similarity
+            .Select(x => new
+            {
+                x.Chunk,
+                x.Cosine,
+                SemanticScore = 1.0f - ((float)x.SemanticHamming / lshService.BitCount),
+                LexicalScore = 1.0f - ((float)x.LexicalHamming / SimHashService.BitCount),
+            })
+            .Select(x => new
+            {
+                x.Chunk,
+                CombinedScore = (CosineWeight * x.Cosine) + (SemanticWeight * x.SemanticScore) + (LexicalWeight * x.LexicalScore)
+            })
+            .OrderByDescending(x => x.CombinedScore)
+            .Take(topK)
+            .Select(x => x.Chunk)
+            .ToList();
+
+        return scoredResults;
     }
 
     /// <summary>

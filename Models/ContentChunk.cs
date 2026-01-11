@@ -32,6 +32,18 @@ public class ContentChunk
     /// The embedding vector for this chunk (1536 dimensions for text-embedding-3-small).
     /// </summary>
     public float[] Embedding { get; set; } = [];
+
+    /// <summary>
+    /// LSH signature for fast approximate nearest neighbor search (semantic similarity).
+    /// Computed from the embedding vector using random hyperplane projections.
+    /// </summary>
+    public byte[] SemanticSignature { get; set; } = [];
+
+    /// <summary>
+    /// SimHash signature for lexical similarity comparison.
+    /// Computed from the text content using FNV-1a hashing.
+    /// </summary>
+    public ulong LexicalSignature { get; set; }
     
     /// <summary>
     /// Title of the source resource (for context when retrieved).

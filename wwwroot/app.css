@@ -179,6 +179,20 @@ h1:focus {
         background: var(--msg-assistant-bg);
     }
 
+/* Side exploration messages (term lookups) - indented to show they're off the main topic */
+.msg.exploration {
+    margin-left: 10%;
+    border-left: 3px solid var(--accent-secondary, var(--accent-primary));
+    opacity: 0.95;
+}
+
+.msg.exploration .msg-header::before {
+    content: "Side topic: ";
+    font-size: 10px;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-style: italic;
+}
+
 .role {
     font-size: 11px;
     color: var(--text-secondary);
