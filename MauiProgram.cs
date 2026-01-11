@@ -48,11 +48,15 @@ namespace Tutor
             // Settings service
             builder.Services.AddSingleton<SettingsService>();
 
+
             // Theme service
             builder.Services.AddSingleton<ThemeService>();
 
-            // Learning Resource service
-            builder.Services.AddSingleton<Tutor.Services.LearningResourceService>();
+            // File-based resource storage service
+            builder.Services.AddSingleton<FileResourceService>();
+
+            // Course service (manages courses and resources)
+            builder.Services.AddSingleton<CourseService>();
 
             // Core Concept service
             builder.Services.AddSingleton<CoreConceptService>();

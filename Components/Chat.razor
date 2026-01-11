@@ -6,7 +6,7 @@
 @inject OpenAIService Ai
 @inject InstructionsService Instructions
 @inject SettingsService Settings
-@inject LearningResourceService LearningResources
+@inject CourseService CourseService
 @implements IDisposable
 
 @* Mode indicators at the top *@
@@ -206,8 +206,8 @@ private string placeholderText = "Ask a question...";
 private const int RecentMessageCount = 4; // Show last N messages by default
 private bool showAllMessages;
 
-    // Curriculum state
-    private Curriculum? activeCurriculum;
+    // Course state
+    private Course? activeCourse;
 
     // Lesson state
     private bool isLessonMode;
@@ -241,25 +241,25 @@ private bool showAllMessages;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadCurriculumState();
+        await LoadCourseState();
         await LoadLessonStateAsync();
         
-        // Auto-start lesson if curriculum is active and not already in lesson mode
-        if (activeCurriculum != null && !isLessonMode)
+        // Auto-start lesson if course is active and not already in lesson mode
+        if (activeCourse != null && !isLessonMode)
         {
             await StartLesson();
         }
     }
 
-    private async Task LoadCurriculumState()
+    private async Task LoadCourseState()
     {
-        activeCurriculum = await LearningResources.GetActiveCurriculumAsync();
+        activeCourse = await CourseService.GetActiveCourseAsync();
     }
 
     private async Task LoadLessonStateAsync()
     {
         var state = await Settings.GetLessonStateAsync();
-        if (state == null || activeCurriculum == null || state.CurriculumId != activeCurriculum.Id)
+        if (state == null || activeCourse == null || state.CurriculumId != activeCourse.Id)
             return;
 
         // Restore lesson state
@@ -280,7 +280,7 @@ private bool showAllMessages;
 
     private async Task SaveLessonStateAsync()
     {
-        if (!isLessonMode || activeCurriculum == null)
+        if (!isLessonMode || activeCourse == null)
         {
             await Settings.ClearLessonStateAsync();
             return;
@@ -288,7 +288,7 @@ private bool showAllMessages;
 
         var state = new LessonState
         {
-            CurriculumId = activeCurriculum.Id,
+            CurriculumId = activeCourse.Id,
             CurrentLessonIndex = currentLessonIndex,
             HasStartedLearning = hasStartedLearning,
             LessonTopics = lessonTopics,
@@ -356,12 +356,12 @@ private bool showAllMessages;
     // Lesson functionality
     private async Task StartLesson()
     {
-        if (activeCurriculum == null) return;
+        if (activeCourse == null) return;
 
-        var resources = await LearningResources.GetCurriculumResourcesAsync(activeCurriculum.Id);
+        var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
         if (resources.Count == 0)
         {
-            messages.Add(new ChatMessage("assistant", "This curriculum has no resources yet. Please add some learning resources first.", "No resources in curriculum."));
+            messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
             StateHasChanged();
             return;
         }
@@ -374,8 +374,8 @@ private bool showAllMessages;
         visitedTopicIndices.Clear();
         messages.Clear();
 
-        // First, get the topics from the curriculum
-        var topicsPrompt = @"Based on the curriculum resources, list the main topics/concepts in logical learning order.
+        // First, get the topics from the course
+        var topicsPrompt = @"Based on the course resources, list the main topics/concepts in logical learning order.
 Return ONLY a numbered list of topic names, one per line, like:
 1. Topic Name
 2. Topic Name
@@ -388,7 +388,7 @@ Keep it to 5-10 main topics.";
 
     private async Task ContinueLesson()
     {
-        if (!isLessonMode || activeCurriculum == null) return;
+        if (!isLessonMode || activeCourse == null) return;
 
         // If this is the first time clicking (Begin), teach the first topic
         if (!hasStartedLearning)
@@ -545,7 +545,7 @@ After explaining, ask if I understand or have questions before we continue.";
     // Quiz at current point in lesson (inline quiz)
     private async Task StartQuizAtCurrentPoint()
     {
-        if (activeCurriculum == null || learnedConcepts.Count == 0)
+        if (activeCourse == null || learnedConcepts.Count == 0)
         {
             // If no concepts learned yet, quiz on the current topic
             if (currentLessonIndex < lessonTopics.Count)
@@ -582,15 +582,15 @@ Please start with Question 1.";
         await SendAsync();
     }
 
-    // Quiz Me functionality (full curriculum quiz)
+    // Quiz Me functionality (full course quiz)
     private async Task StartQuizMe()
     {
-        if (activeCurriculum == null) return;
+        if (activeCourse == null) return;
 
-        var resources = await LearningResources.GetCurriculumResourcesAsync(activeCurriculum.Id);
+        var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
         if (resources.Count == 0)
         {
-            messages.Add(new ChatMessage("assistant", "This curriculum has no resources yet. Please add some learning resources first.", "No resources in curriculum."));
+            messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
             StateHasChanged();
             return;
         }
@@ -723,8 +723,8 @@ Please start with Question 1.";
         {
             var instructions = await Instructions.GetCombinedInstructionsAsync();
             
-            // Use RAG to get only relevant content instead of entire curriculum
-            var curriculumContext = await LearningResources.GetRelevantContentAsync(userText, topK: 5, cts.Token);
+            // Use RAG to get only relevant content instead of entire course
+            var courseContext = await CourseService.GetRelevantContentAsync(userText, topK: 5, cts.Token);
 
             // Build context based on mode
             string fullInstructions;
@@ -735,22 +735,22 @@ After the student answers, evaluate their response and indicate if it's correct 
 When evaluating, be fair but accurate - partial credit is okay for partially correct answers.
 Keep track of the running score.";
 
-                fullInstructions = string.IsNullOrEmpty(curriculumContext)
+                fullInstructions = string.IsNullOrEmpty(courseContext)
                     ? quizInstructions + "\n\n" + instructions
-                    : curriculumContext + "\n\n" + quizInstructions + "\n\n" + instructions;
+                    : courseContext + "\n\n" + quizInstructions + "\n\n" + instructions;
             }
             else if (isLessonMode && learnedConcepts.Count > 0)
             {
                 var learnedContext = $"SPIRAL LEARNING CONTEXT: The student has already learned these concepts: {string.Join(", ", learnedConcepts)}. Always reference and connect to these concepts when explaining new material.";
-                fullInstructions = string.IsNullOrEmpty(curriculumContext)
+                fullInstructions = string.IsNullOrEmpty(courseContext)
                     ? learnedContext + "\n\n" + instructions
-                    : curriculumContext + "\n\n" + learnedContext + "\n\n" + instructions;
+                    : courseContext + "\n\n" + learnedContext + "\n\n" + instructions;
             }
             else
             {
-                fullInstructions = string.IsNullOrEmpty(curriculumContext)
+                fullInstructions = string.IsNullOrEmpty(courseContext)
                     ? instructions
-                    : curriculumContext + "\n\n" + instructions;
+                    : courseContext + "\n\n" + instructions;
             }
 
             var reply = await Ai.GetReplyAsync(messages, fullInstructions, cts.Token);

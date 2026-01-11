@@ -892,6 +892,61 @@ h1:focus {
     font-size: 14px;
 }
 
+/* Storage settings styles */
+.path-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.path-input {
+    flex: 1;
+    font-family: monospace;
+    font-size: 12px;
+    background: var(--bg-tertiary) !important;
+}
+
+.folder-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.stat-item {
+    display: flex;
+    gap: 8px;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+.folder-tree {
+    font-family: monospace;
+    font-size: 13px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    line-height: 1.8;
+}
+
+.folder-item {
+    color: var(--text-primary);
+}
+
+.folder-item.indent {
+    padding-left: 24px;
+    color: var(--text-secondary);
+}
+
 /* Settings page styles */
 .model-selection {
     display: flex;

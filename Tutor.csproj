@@ -64,4 +64,10 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="LearningResources\Curricula\" />
+      <Folder Include="LearningResources\Formatted\" />
+      <Folder Include="LearningResources\Original\" />
+    </ItemGroup>
+
 </Project>

@@ -1,55 +1,55 @@
-@page "/learning-resources"
+@page "/courses"
 @using Microsoft.Maui.Storage
 @using Tutor.Models
 @using Tutor.Services
-@inject LearningResourceService LearningResourceService
+@inject CourseService CourseService
 @inject IJSRuntime JS
 
-<div class="page-title">Learning Resources</div>
+<div class="page-title">Courses</div>
 
 <div class="resources-container">
-    @* Curriculum Selector *@
+    @* Course Selector *@
     <div class="curriculum-selector">
         <div class="curriculum-dropdown-container">
-            <label>Active Curriculum:</label>
+            <label>Active Course:</label>
             <div class="curriculum-select-row">
-                <select class="curriculum-select" @bind="selectedCurriculumId" @bind:after="OnCurriculumChanged">
+                <select class="curriculum-select" @bind="selectedCourseId" @bind:after="OnCourseChanged">
                     <option value="">None (Standard ChatGPT)</option>
-                    @foreach (var curriculum in curricula)
+                    @foreach (var course in courses)
                     {
-                        <option value="@curriculum.Id">@curriculum.Name (@curriculum.ResourceIds.Count resources)</option>
+                        <option value="@course.Id">@course.Name (@course.ResourceIds.Count resources)</option>
                     }
                 </select>
-                <button class="icon-btn" title="New Curriculum" @onclick="ShowNewCurriculumModal">
+                <button class="icon-btn" title="New Course" @onclick="ShowNewCourseModal">
                     <span class="icon-add"></span>
                 </button>
-                @if (!string.IsNullOrEmpty(selectedCurriculumId))
+                @if (!string.IsNullOrEmpty(selectedCourseId))
                 {
-                    <button class="icon-btn" title="Rename" @onclick="ShowRenameCurriculumModal">
+                    <button class="icon-btn" title="Rename" @onclick="ShowRenameCourseModal">
                         <span class="icon-edit"></span>
                     </button>
-                    <button class="icon-btn danger" title="Delete Curriculum" @onclick="DeleteSelectedCurriculum">
+                    <button class="icon-btn danger" title="Delete Course" @onclick="DeleteSelectedCourse">
                         <span class="icon-delete"></span>
                     </button>
                 }
             </div>
         </div>
         
-        @if (string.IsNullOrEmpty(selectedCurriculumId))
+        @if (string.IsNullOrEmpty(selectedCourseId))
         {
             <div class="curriculum-info-box">
                 <span class="icon-info"></span>
-                <span>No curriculum selected. Chat will use standard ChatGPT with full knowledge.</span>
+                <span>No course selected. Chat will use standard ChatGPT with full knowledge.</span>
             </div>
         }
         else
         {
-            var activeCurriculum = curricula.FirstOrDefault(c => c.Id == selectedCurriculumId);
-            if (activeCurriculum != null)
+            var activeCourse = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+            if (activeCourse != null)
             {
                 <div class="curriculum-info-box active">
                     <span class="icon-book"></span>
-                    <span><strong>@activeCurriculum.Name</strong> is active. Chat will only use knowledge from the @activeCurriculum.ResourceIds.Count selected resource(s).</span>
+                    <span><strong>@activeCourse.Name</strong> is active. Chat will only use knowledge from the @activeCourse.ResourceIds.Count selected resource(s).</span>
                 </div>
             }
         }
@@ -59,12 +59,12 @@
     <div class="tabs">
         <button class="tab @(activeTab == "Library" ? "active" : "")" @onclick="@(() => activeTab = "Library")">
             Resource Library
-            @if (!string.IsNullOrEmpty(selectedCurriculumId))
+            @if (!string.IsNullOrEmpty(selectedCourseId))
             {
-                var curriculum = curricula.FirstOrDefault(c => c.Id == selectedCurriculumId);
-                if (curriculum != null)
+                var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+                if (course != null)
                 {
-                    <span class="tab-badge">@curriculum.ResourceIds.Count in curriculum</span>
+                    <span class="tab-badge">@course.ResourceIds.Count in course</span>
                 }
             }
         </button>
@@ -75,7 +75,7 @@
         @if (activeTab == "Library")
         {
             <div class="library-section">
-                @if (learningResources.Count == 0)
+                @if (resources.Count == 0)
                 {
                     <div class="empty-state">
                         <p>No resources yet. Add some resources to build your knowledge base.</p>
@@ -84,36 +84,36 @@
                 }
                 else
                 {
-                    @if (!string.IsNullOrEmpty(selectedCurriculumId))
+                    @if (!string.IsNullOrEmpty(selectedCourseId))
                     {
-                        <p class="library-hint">Check resources to add them to the active curriculum. Uncheck to remove.</p>
+                        <p class="library-hint">Check resources to add them to the active course. Uncheck to remove.</p>
                     }
                     else
                     {
-                        <p class="library-hint">Select a curriculum above to manage which resources are included.</p>
+                        <p class="library-hint">Select a course above to manage which resources are included.</p>
                     }
                     
                     <div class="resource-list">
-                        @foreach (var item in learningResources)
+                        @foreach (var item in resources)
                         {
-                            var isInCurriculum = !string.IsNullOrEmpty(selectedCurriculumId) && 
-                                curricula.FirstOrDefault(c => c.Id == selectedCurriculumId)?.ResourceIds.Contains(item.Id) == true;
+                            var isInCourse = !string.IsNullOrEmpty(selectedCourseId) && 
+                                courses.FirstOrDefault(c => c.Id == selectedCourseId)?.ResourceIds.Contains(item.Id) == true;
                             
-                            <div class="resource-item @(isInCurriculum ? "in-curriculum" : "")">
-                                @if (!string.IsNullOrEmpty(selectedCurriculumId))
+                            <div class="resource-item @(isInCourse ? "in-curriculum" : "")">
+                                @if (!string.IsNullOrEmpty(selectedCourseId))
                                 {
                                     <div class="resource-checkbox">
                                         <input type="checkbox" 
-                                               checked="@isInCurriculum"
-                                               @onchange="@(() => ToggleResourceInCurriculum(item.Id))" />
+                                               checked="@isInCourse"
+                                               @onchange="@(() => ToggleResourceInCourse(item.Id))" />
                                     </div>
                                 }
                                 <div class="resource-info">
                                     <div class="resource-title">
                                         @item.Title
-                                        @if (isInCurriculum)
+                                        @if (isInCourse)
                                         {
-                                            <span class="in-curriculum-badge">In Curriculum</span>
+                                            <span class="in-curriculum-badge">In Course</span>
                                         }
                                     </div>
                                     <div class="resource-meta">
@@ -133,10 +133,10 @@
                                     }
                                 </div>
                                 <div class="resource-actions">
-                                    <button class="icon-btn" title="Edit" @onclick="@(() => EditLearningResource(item))">
+                                    <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
                                         <span class="icon-edit"></span>
                                     </button>
-                                    <button class="icon-btn danger" title="Delete" @onclick="@(() => DeleteLearningResource(item.Id))">
+                                    <button class="icon-btn danger" title="Delete" @onclick="@(() => DeleteResource(item.Id))">
                                         <span class="icon-delete"></span>
                                     </button>
                                 </div>
@@ -149,74 +149,91 @@
         else if (activeTab == "Add")
         {
             <div class="add-section">
-                <h4>@(editingLearningResource != null ? "Edit Resource" : "Add New Resource")</h4>
+                <h4>@(editingResource != null ? "Edit Resource" : "Add New Resource")</h4>
 
                 <div class="form-group">
                     <label>Title *</label>
-                    <input type="text" class="settings-input" @bind="learningResourceTitle" placeholder="Resource title" />
+                    <input type="text" class="settings-input" @bind="resourceTitle" placeholder="Resource title" />
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Author</label>
-                        <input type="text" class="settings-input" @bind="learningResourceAuthor" placeholder="Author name" />
+                        <input type="text" class="settings-input" @bind="resourceAuthor" placeholder="Author name" />
                     </div>
                     <div class="form-group">
                         <label>Year</label>
-                        <input type="text" class="settings-input" @bind="learningResourceYear" placeholder="e.g., 2024" />
+                        <input type="text" class="settings-input" @bind="resourceYear" placeholder="2024" />
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Description</label>
-                    <input type="text" class="settings-input" @bind="learningResourceDescription" placeholder="Brief description" />
+                    <textarea class="settings-input" @bind="resourceDescription" placeholder="Brief description of this resource" rows="2"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Content Source</label>
-                    <div class="source-tabs">
-                        <button class="source-tab @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">Enter Text</button>
-                        <button class="source-tab @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">Upload File</button>
+                    <div class="content-source-buttons">
+                        <button class="source-btn @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">
+                            <span class="icon-text"></span> Paste Text
+                        </button>
+                        <button class="source-btn @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">
+                            <span class="icon-file"></span> Upload File
+                        </button>
                     </div>
                 </div>
 
-                @if (contentSource == "text")
+                @if (contentSource == "file")
                 {
                     <div class="form-group">
-                        <label>Content *</label>
-                        <textarea class="content-textarea" @bind="learningResourceContent" placeholder="Enter or paste your content here..."></textarea>
-                    </div>
-                }
-                else
-                {
-                    <div class="form-group">
-                        <label>Upload File (txt, docx, pdf)</label>
+                        <label>Upload Document</label>
                         <div class="file-upload-area">
                             <button class="settings-btn" @onclick="PickFile">Choose File</button>
                             @if (!string.IsNullOrEmpty(uploadedFileName))
                             {
                                 <span class="file-name">@uploadedFileName</span>
                             }
+                            else
+                            {
+                                <span class="file-hint">Supports .txt, .docx</span>
+                            }
                         </div>
-                        @if (!string.IsNullOrEmpty(learningResourceContent))
-                        {
-                            <div class="content-preview">
-                                <label>Preview (first 500 chars):</label>
-                                <pre>@(learningResourceContent.Length > 500 ? learningResourceContent.Substring(0, 500) + "..." : learningResourceContent)</pre>
-                            </div>
-                        }
                     </div>
                 }
 
+                <div class="form-group">
+                    <label>Content *</label>
+                    <textarea class="settings-input content-textarea" 
+                              @bind="resourceContent" 
+                              placeholder="Paste your educational content here..."
+                              rows="10"></textarea>
+                    @if (!string.IsNullOrEmpty(resourceContent))
+                    {
+                        <div class="content-stats">@resourceContent.Length.ToString("N0") characters</div>
+                    }
+                </div>
 
-                @if (editingLearningResource == null)
+                @if (editingResource == null)
                 {
-                    <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" @bind="autoFormatContent" />
-                            <span>Auto-format content with AI</span>
-                        </label>
-                        <p class="form-hint">Uses AI to add markdown formatting: headers, bullet points, bold keywords. Recommended for plain text imports.</p>
+                    <div class="form-group">
+                        <div class="auto-format-option">
+                            <input type="checkbox" id="autoFormat" @bind="autoFormatContent" />
+                            <label for="autoFormat">
+                                <span class="bi bi-stars"></span>
+                                Auto-format with AI
+                            </label>
+                        </div>
+                        <p class="format-hint">
+                            @if (autoFormatContent)
+                            {
+                                <span>? Content will be automatically structured into clear sections with markdown formatting. Original will be preserved.</span>
+                            }
+                            else
+                            {
+                                <span>Content will be saved as-is without formatting.</span>
+                            }
+                        </p>
                     </div>
                 }
 
@@ -236,73 +253,70 @@
                 }
 
                 <div class="form-actions">
-                    @if (editingLearningResource != null)
+                    @if (editingResource != null)
                     {
                         <button class="settings-btn" @onclick="CancelEdit">Cancel</button>
                     }
-                    <button class="settings-btn primary" @onclick="SaveLearningResource" disabled="@isBusy">
-                        @if (isBusy)
-                        {
-                            <span class="spinner"></span>
-                        }
-                        @(editingLearningResource != null ? "Update Resource" : "Add Resource")
+                    <button class="settings-btn primary" @onclick="SaveResource" disabled="@isBusy">
+                        @(isBusy ? "Saving..." : (editingResource != null ? "Update" : "Add Resource"))
                     </button>
                 </div>
 
                 @if (!string.IsNullOrEmpty(statusMessage) && !isFormatting)
                 {
-                    <p class="status-message">@statusMessage</p>
+                    <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "")">
+                        @statusMessage
+                    </div>
                 }
             </div>
         }
     </div>
 </div>
 
-@* New Curriculum Modal *@
-@if (showNewCurriculumModal)
+@* New Course Modal *@
+@if (showNewCourseModal)
 {
     <div class="modal-overlay" @onclick="CloseModals">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>Create New Curriculum</span>
+                <span>Create New Course</span>
                 <button class="close-btn" @onclick="CloseModals">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Curriculum Name *</label>
-                    <input type="text" class="settings-input" @bind="newCurriculumName" placeholder="e.g., Biology 101" />
+                    <label>Course Name *</label>
+                    <input type="text" class="settings-input" @bind="newCourseName" placeholder="e.g., Grade 5 Science" />
                 </div>
                 <div class="form-group">
-                    <label>Description (optional)</label>
-                    <input type="text" class="settings-input" @bind="newCurriculumDescription" placeholder="Brief description" />
+                    <label>Description</label>
+                    <textarea class="settings-input" @bind="newCourseDescription" placeholder="Brief description..." rows="2"></textarea>
                 </div>
-                <p class="hint">After creating, select resources from the library to add to this curriculum.</p>
                 <div class="form-actions">
                     <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn primary" @onclick="CreateCurriculum">Create</button>
+                    <button class="settings-btn primary" @onclick="CreateCourse">Create</button>
                 </div>
             </div>
         </div>
     </div>
 }
 
-@* Rename Curriculum Modal *@
-@if (showRenameCurriculumModal)
+@* Rename Course Modal *@
+@if (showRenameCourseModal)
 {
     <div class="modal-overlay" @onclick="CloseModals">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>Rename Curriculum</span>
+                <span>Rename Course</span>
                 <button class="close-btn" @onclick="CloseModals">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label>New Name *</label>
-                    <input type="text" class="settings-input" @bind="renameCurriculumName" placeholder="Enter new name" />
+                    <input type="text" class="settings-input" @bind="renameCourseName" placeholder="Enter new name" />
                 </div>
                 <div class="form-actions">
                     <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn primary" @onclick="RenameCurriculum">Rename</button>
+                    <button class="settings-btn primary" @onclick="RenameCourse">Rename</button>
                 </div>
             </div>
         </div>
@@ -311,33 +325,33 @@
 
 @code {
     private string activeTab = "Library";
-    private List<LearningResource> learningResources = new();
-    private List<Curriculum> curricula = new();
-    private string? selectedCurriculumId;
+    private List<CourseResource> resources = new();
+    private List<Course> courses = new();
+    private string? selectedCourseId;
 
     // Add/Edit form
-    private LearningResource? editingLearningResource;
-    private string learningResourceTitle = "";
-    private string learningResourceAuthor = "";
-    private string learningResourceYear = "";
-    private string learningResourceDescription = "";
-    private string learningResourceContent = "";
+    private CourseResource? editingResource;
+    private string resourceTitle = "";
+    private string resourceAuthor = "";
+    private string resourceYear = "";
+    private string resourceDescription = "";
+    private string resourceContent = "";
     private string contentSource = "text";
     private string uploadedFileName = "";
     private ResourceType uploadedFileType = ResourceType.Text;
-    private bool autoFormatContent = true; // Auto-format by default
-    private bool isFormatting; // For showing formatting progress
+    private bool autoFormatContent = true;
+    private bool isFormatting;
     private int formatProgressCurrent;
     private int formatProgressTotal;
     private int formatProgressPercent => formatProgressTotal > 0 ? (int)((double)formatProgressCurrent / formatProgressTotal * 100) : 0;
 
     // Modals
-    private bool showNewCurriculumModal;
-    private string newCurriculumName = "";
-    private string newCurriculumDescription = "";
+    private bool showNewCourseModal;
+    private string newCourseName = "";
+    private string newCourseDescription = "";
     
-    private bool showRenameCurriculumModal;
-    private string renameCurriculumName = "";
+    private bool showRenameCourseModal;
+    private string renameCourseName = "";
 
     private string statusMessage = "";
     private bool isBusy;
@@ -349,78 +363,78 @@
 
     private async Task LoadData()
     {
-        learningResources = await LearningResourceService.GetAllResourcesAsync();
-        curricula = await LearningResourceService.GetAllCurriculaAsync();
-        selectedCurriculumId = await LearningResourceService.GetActiveCurriculumIdAsync();
+        resources = await CourseService.GetAllResourcesAsync();
+        courses = await CourseService.GetAllCoursesAsync();
+        selectedCourseId = await CourseService.GetActiveCourseIdAsync();
     }
 
-    private async Task OnCurriculumChanged()
+    private async Task OnCourseChanged()
     {
-        await LearningResourceService.SetActiveCurriculumAsync(selectedCurriculumId);
+        await CourseService.SetActiveCourseAsync(selectedCourseId);
     }
 
-    private async Task ToggleResourceInCurriculum(string resourceId)
+    private async Task ToggleResourceInCourse(string resourceId)
     {
-        if (string.IsNullOrEmpty(selectedCurriculumId))
+        if (string.IsNullOrEmpty(selectedCourseId))
             return;
 
-        var curriculum = curricula.FirstOrDefault(c => c.Id == selectedCurriculumId);
-        if (curriculum == null)
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course == null)
             return;
 
-        if (curriculum.ResourceIds.Contains(resourceId))
+        if (course.ResourceIds.Contains(resourceId))
         {
-            await LearningResourceService.RemoveResourceFromCurriculumAsync(selectedCurriculumId, resourceId);
+            await CourseService.RemoveResourceFromCourseAsync(selectedCourseId, resourceId);
         }
         else
         {
-            await LearningResourceService.AddResourceToCurriculumAsync(selectedCurriculumId, resourceId);
+            await CourseService.AddResourceToCourseAsync(selectedCourseId, resourceId);
         }
 
         await LoadData();
     }
 
-    private void EditLearningResource(LearningResource learningResource)
+    private void EditResource(CourseResource resource)
     {
-        editingLearningResource = learningResource;
-        learningResourceTitle = learningResource.Title;
-        learningResourceAuthor = learningResource.Author;
-        learningResourceYear = learningResource.Year;
-        learningResourceDescription = learningResource.Description;
-        learningResourceContent = learningResource.Content;
+        editingResource = resource;
+        resourceTitle = resource.Title;
+        resourceAuthor = resource.Author;
+        resourceYear = resource.Year;
+        resourceDescription = resource.Description;
+        resourceContent = resource.Content;
         contentSource = "text";
-        uploadedFileName = learningResource.FileName;
+        uploadedFileName = resource.FileName;
         activeTab = "Add";
     }
 
     private void CancelEdit()
     {
-        editingLearningResource = null;
+        editingResource = null;
         ClearForm();
     }
 
     private void ClearForm()
     {
-        learningResourceTitle = "";
-        learningResourceAuthor = "";
-        learningResourceYear = "";
-        learningResourceDescription = "";
-        learningResourceContent = "";
+        resourceTitle = "";
+        resourceAuthor = "";
+        resourceYear = "";
+        resourceDescription = "";
+        resourceContent = "";
         uploadedFileName = "";
         uploadedFileType = ResourceType.Text;
         autoFormatContent = true;
         statusMessage = "";
     }
 
-    private async Task SaveLearningResource()
+    private async Task SaveResource()
     {
-        if (string.IsNullOrWhiteSpace(learningResourceTitle))
+        if (string.IsNullOrWhiteSpace(resourceTitle))
         {
             statusMessage = "Title is required.";
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(learningResourceContent))
+        if (string.IsNullOrWhiteSpace(resourceContent))
         {
             statusMessage = "Content is required.";
             return;
@@ -429,30 +443,27 @@
         isBusy = true;
         try
         {
-            var isNew = editingLearningResource == null;
-            var learningResource = editingLearningResource ?? new LearningResource();
-            learningResource.Title = learningResourceTitle.Trim();
-            learningResource.Author = learningResourceAuthor.Trim();
-            learningResource.Year = learningResourceYear.Trim();
-            learningResource.Description = learningResourceDescription.Trim();
-            learningResource.Content = learningResourceContent;
-            learningResource.Type = contentSource == "file" ? uploadedFileType : ResourceType.Text;
-            learningResource.FileName = uploadedFileName;
+            var isNew = editingResource == null;
+            var resource = editingResource ?? new CourseResource();
+            resource.Title = resourceTitle.Trim();
+            resource.Author = resourceAuthor.Trim();
+            resource.Year = resourceYear.Trim();
+            resource.Description = resourceDescription.Trim();
+            resource.Content = resourceContent;
+            resource.Type = contentSource == "file" ? uploadedFileType : ResourceType.Text;
+            resource.FileName = uploadedFileName;
 
-            // Show formatting status if auto-format is enabled
             if (autoFormatContent && isNew)
             {
                 isFormatting = true;
                 formatProgressCurrent = 0;
-                formatProgressTotal = 1; // Will be updated by callback
+                formatProgressTotal = 1;
                 statusMessage = "Preparing to format...";
                 StateHasChanged();
             }
 
-            // Save with auto-format option (only for new resources) with progress reporting
-            // Returns the ID of the resource to add to curriculum (formatted version if auto-format enabled)
-            var savedResourceId = await LearningResourceService.SaveResourceAsync(
-                learningResource, 
+            var savedResourceId = await CourseService.SaveResourceAsync(
+                resource, 
                 autoFormat: autoFormatContent && isNew,
                 onFormatProgress: (current, total) =>
                 {
@@ -462,22 +473,21 @@
                     InvokeAsync(StateHasChanged);
                 });
 
-            // If a curriculum is active and this is a new resource, add the formatted version automatically
-            if (isNew && !string.IsNullOrEmpty(selectedCurriculumId))
+            if (isNew && !string.IsNullOrEmpty(selectedCourseId))
             {
                 isFormatting = false;
-                statusMessage = "Adding to curriculum and indexing...";
+                statusMessage = "Adding to course and indexing...";
                 StateHasChanged();
-                await LearningResourceService.AddResourceToCurriculumAsync(selectedCurriculumId, savedResourceId);
+                await CourseService.AddResourceToCourseAsync(selectedCourseId, savedResourceId);
             }
 
             await LoadData();
 
             var resultMessage = autoFormatContent && isNew 
                 ? "Resource added. Original preserved, formatted version created."
-                : (editingLearningResource != null ? "Resource updated." : "Resource added.");
+                : (editingResource != null ? "Resource updated." : "Resource added.");
             statusMessage = resultMessage;
-            editingLearningResource = null;
+            editingResource = null;
             ClearForm();
             activeTab = "Library";
         }
@@ -492,9 +502,9 @@
         }
     }
 
-    private async Task DeleteLearningResource(string id)
+    private async Task DeleteResource(string id)
     {
-        await LearningResourceService.DeleteResourceAsync(id);
+        await CourseService.DeleteResourceAsync(id);
         await LoadData();
     }
 
@@ -531,18 +541,18 @@
                         uploadedFileType = ResourceType.Txt;
                         using (var reader = new StreamReader(stream))
                         {
-                            learningResourceContent = await reader.ReadToEndAsync();
+                            resourceContent = await reader.ReadToEndAsync();
                         }
                         break;
 
                     case ".docx":
                         uploadedFileType = ResourceType.Docx;
-                        learningResourceContent = await ReadDocxAsync(stream);
+                        resourceContent = await ReadDocxAsync(stream);
                         break;
 
                     case ".pdf":
                         uploadedFileType = ResourceType.Pdf;
-                        learningResourceContent = await ReadPdfAsync(stream);
+                        resourceContent = await ReadPdfAsync(stream);
                         break;
 
                     default:
@@ -550,12 +560,12 @@
                         return;
                 }
 
-                if (string.IsNullOrEmpty(learningResourceTitle))
+                if (string.IsNullOrEmpty(resourceTitle))
                 {
-                    learningResourceTitle = Path.GetFileNameWithoutExtension(result.FileName);
+                    resourceTitle = Path.GetFileNameWithoutExtension(result.FileName);
                 }
 
-                statusMessage = $"File loaded: {learningResourceContent.Length} characters";
+                statusMessage = $"File loaded: {resourceContent.Length} characters";
             }
         }
         catch (Exception ex)
@@ -593,59 +603,59 @@
         return Task.FromResult("[PDF content extraction requires additional libraries. Please copy-paste the text content instead, or convert to .txt/.docx format.]");
     }
 
-    // Curriculum management
-    private void ShowNewCurriculumModal()
+    // Course management
+    private void ShowNewCourseModal()
     {
-        newCurriculumName = "";
-        newCurriculumDescription = "";
-        showNewCurriculumModal = true;
+        newCourseName = "";
+        newCourseDescription = "";
+        showNewCourseModal = true;
     }
 
-    private void ShowRenameCurriculumModal()
+    private void ShowRenameCourseModal()
     {
-        var curriculum = curricula.FirstOrDefault(c => c.Id == selectedCurriculumId);
-        renameCurriculumName = curriculum?.Name ?? "";
-        showRenameCurriculumModal = true;
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        renameCourseName = course?.Name ?? "";
+        showRenameCourseModal = true;
     }
 
     private void CloseModals()
     {
-        showNewCurriculumModal = false;
-        showRenameCurriculumModal = false;
+        showNewCourseModal = false;
+        showRenameCourseModal = false;
     }
 
-    private async Task CreateCurriculum()
+    private async Task CreateCourse()
     {
-        if (string.IsNullOrWhiteSpace(newCurriculumName))
+        if (string.IsNullOrWhiteSpace(newCourseName))
             return;
 
-        var curriculum = await LearningResourceService.CreateCurriculumAsync(
-            newCurriculumName.Trim(), 
-            newCurriculumDescription.Trim());
+        var course = await CourseService.CreateCourseAsync(
+            newCourseName.Trim(), 
+            newCourseDescription.Trim());
 
-        selectedCurriculumId = curriculum.Id;
-        await LearningResourceService.SetActiveCurriculumAsync(curriculum.Id);
+        selectedCourseId = course.Id;
+        await CourseService.SetActiveCourseAsync(course.Id);
         await LoadData();
         CloseModals();
     }
 
-    private async Task RenameCurriculum()
+    private async Task RenameCourse()
     {
-        if (string.IsNullOrWhiteSpace(renameCurriculumName) || string.IsNullOrEmpty(selectedCurriculumId))
+        if (string.IsNullOrWhiteSpace(renameCourseName) || string.IsNullOrEmpty(selectedCourseId))
             return;
 
-        await LearningResourceService.RenameCurriculumAsync(selectedCurriculumId, renameCurriculumName.Trim());
+        await CourseService.RenameCourseAsync(selectedCourseId, renameCourseName.Trim());
         await LoadData();
         CloseModals();
     }
 
-    private async Task DeleteSelectedCurriculum()
+    private async Task DeleteSelectedCourse()
     {
-        if (string.IsNullOrEmpty(selectedCurriculumId))
+        if (string.IsNullOrEmpty(selectedCourseId))
             return;
 
-        await LearningResourceService.DeleteCurriculumAsync(selectedCurriculumId);
-        selectedCurriculumId = null;
+        await CourseService.DeleteCourseAsync(selectedCourseId);
+        selectedCourseId = null;
         await LoadData();
     }
 }

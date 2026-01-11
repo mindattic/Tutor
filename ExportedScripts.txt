@@ -1,0 +1,3305 @@
+﻿== Tutor EXPORT ==
+VERSION: 1
+CREATED_UTC: 2026-01-11T03:03:58Z
+ROOT: D:/Projects/Tutor
+
+<<<MANIFEST JSON START>>>
+[
+    {
+        "path":  "App.xaml.cs",
+        "sha256":  "E3354F319D2164C6EE21F66DAB55E6C958FE2916933E9A3D3C1489024DB8A6F6",
+        "bytes":  339,
+        "lines":  14,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "MainPage.xaml.cs",
+        "sha256":  "18077FA247C0DC5197306ECFFF423E7B994624C2964995D7D08577A997194CAA",
+        "bytes":  174,
+        "lines":  10,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "MauiProgram.cs",
+        "sha256":  "338C95B9459590E7ACD661EC7E85807EDB1E3B0D9530A6E4C75D0F2E8E44B374",
+        "bytes":  2299,
+        "lines":  54,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/ContentChunk.cs",
+        "sha256":  "12903B204093061396ACB436F3D68C1A320E1189D92B47B9C8C72D10447EC765",
+        "bytes":  1460,
+        "lines":  44,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/CoreConcept.cs",
+        "sha256":  "C178F2B080AE75D57A8D86CAA2582EF58F53CB17C3BF3BE99266F0EEA129EFAE",
+        "bytes":  591,
+        "lines":  19,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/Course.cs",
+        "sha256":  "7B9C0F5A9D0A80722D1B33569C6E532A0FDF73DE634CC6C1D27391DF3E07056C",
+        "bytes":  338,
+        "lines":  9,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/CourseResource.cs",
+        "sha256":  "B8D3673C21B3BA4F98370D4B337C2059F1E6FC6C25418CDF61A813545E96D0DE",
+        "bytes":  797,
+        "lines":  24,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/User.cs",
+        "sha256":  "CC99D6A94A0431D0DA53AB0AB749148514E71690D5390E5E86DD8523CDBFC212",
+        "bytes":  147,
+        "lines":  6,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/Android/MainActivity.cs",
+        "sha256":  "294AE70C82D2843844BE57CA87C4AD68BD358B0ACCE630C5A8BB92676A0CB622",
+        "bytes":  423,
+        "lines":  10,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/Android/MainApplication.cs",
+        "sha256":  "DDF662421166DE3AEA113D72752BAB12F037173C4F918DF2C47519822597AB9F",
+        "bytes":  381,
+        "lines":  14,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/iOS/AppDelegate.cs",
+        "sha256":  "6E23B010B7CA9DE121B68F728152A82F8A1E9B41029515E5A7A36DAB5EC8A07E",
+        "bytes":  234,
+        "lines":  9,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/iOS/Program.cs",
+        "sha256":  "A8A610C028A86AB9E635D3917261FB9739542A4E8D2E1F579C5A55A9C156C095",
+        "bytes":  426,
+        "lines":  15,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/MacCatalyst/AppDelegate.cs",
+        "sha256":  "6E23B010B7CA9DE121B68F728152A82F8A1E9B41029515E5A7A36DAB5EC8A07E",
+        "bytes":  234,
+        "lines":  9,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/MacCatalyst/Program.cs",
+        "sha256":  "F79257C6B9C7C003C67D468DF338EF323C9333F5008A789FE403D1E778E1F43B",
+        "bytes":  424,
+        "lines":  15,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Platforms/Windows/App.xaml.cs",
+        "sha256":  "012B6311B3EB9AEC68EB375EF8B14A2C802FF762AF3DE98DD641176DA4C7F8EF",
+        "bytes":  807,
+        "lines":  21,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/ChunkingService.cs",
+        "sha256":  "E052FBDE1F16693DCA25D80B76C4615A7A35BA5B6136FF4F20B40E7D75C5EC03",
+        "bytes":  5707,
+        "lines":  133,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/ContentFormatterService.cs",
+        "sha256":  "E91D0A288077F70267D6A46140FE43DE624BF68600490F17BBBCD581DEFEE951",
+        "bytes":  10278,
+        "lines":  249,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/CoreConceptService.cs",
+        "sha256":  "D80C4A607561883AD3E3FC87855091EB0E1D00E1509A13388AD8A1F3A099C6CB",
+        "bytes":  3379,
+        "lines":  93,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/CourseService.cs",
+        "sha256":  "F3D4C405F8BE0773C90F8A848B215C056BAB5490277B9648529ECC115BE3F320",
+        "bytes":  19934,
+        "lines":  494,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/EmbeddingService.cs",
+        "sha256":  "951F4475B88DA16EB4CE1BE61515FDF1B078309218B0759095A638F75AA038E7",
+        "bytes":  4117,
+        "lines":  106,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/FileResourceService.cs",
+        "sha256":  "BBE6A9F85A49FBB6F8A0478275464337FCD304CDB8298627ECC89E96CB38F9A6",
+        "bytes":  5871,
+        "lines":  161,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/InstructionsService.cs",
+        "sha256":  "D8C882A1460722B69FF53D97ED87691E4BC817FA26931555D81395C1D1E7C577",
+        "bytes":  2329,
+        "lines":  57,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/OpenAIService.cs",
+        "sha256":  "8030891765E208B57755A26FACD0CE6A79937D98EF4E0E06F6447048777CB041",
+        "bytes":  4550,
+        "lines":  128,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/SettingsService.cs",
+        "sha256":  "ED6EB71C7835E53541701667343305DABD541164C2E9D65811C3DD0C25B7A1E6",
+        "bytes":  5720,
+        "lines":  203,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/StoragePaths.cs",
+        "sha256":  "3AA03871AFD232B7F4932B2FBEEE5F8D9242441CA1494AC0CB4D700871360DDB",
+        "bytes":  1254,
+        "lines":  29,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/StorageSettings.cs",
+        "sha256":  "C33A66EB8B322EC55A4E77218E5C698178E98140CE936C5B0B8827F13AFBAC4B",
+        "bytes":  6333,
+        "lines":  178,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/ThemeService.cs",
+        "sha256":  "07518E00F6B7847DC343CEB6E4D3416C92D009120B6998BB557AB4E7DACFBA67",
+        "bytes":  1069,
+        "lines":  40,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/UserService.cs",
+        "sha256":  "08D95C7918146E7010A2333CD9B750BAAB631A4BC64CA53DD4ED352EFB84AC85",
+        "bytes":  1042,
+        "lines":  32,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/VectorStoreService.cs",
+        "sha256":  "A382D598B15B8B360B7E5FA4C1E79257C5F553A3BB0EE52E923CD0893FB99102",
+        "bytes":  5834,
+        "lines":  168,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    }
+]
+<<<MANIFEST JSON END>>>
+
+<<<FILE START>>>
+PATH: App.xaml.cs
+TYPE: script
+EXT: .cs
+SHA256: E3354F319D2164C6EE21F66DAB55E6C958FE2916933E9A3D3C1489024DB8A6F6
+BYTES: 339
+LINES: 16
+<<<CONTENT START>>>
+namespace Tutor
+{
+    public partial class App : Application
+    {
+        public App()
+        {
+            InitializeComponent();
+        }
+
+        protected override Window CreateWindow(IActivationState? activationState)
+        {
+            return new Window(new MainPage()) { Title = "Tutor" };
+        }
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: MainPage.xaml.cs
+TYPE: script
+EXT: .cs
+SHA256: 18077FA247C0DC5197306ECFFF423E7B994624C2964995D7D08577A997194CAA
+BYTES: 174
+LINES: 11
+<<<CONTENT START>>>
+namespace Tutor
+{
+    public partial class MainPage : ContentPage
+    {
+        public MainPage()
+        {
+            InitializeComponent();
+        }
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: MauiProgram.cs
+TYPE: script
+EXT: .cs
+SHA256: 338C95B9459590E7ACD661EC7E85807EDB1E3B0D9530A6E4C75D0F2E8E44B374
+BYTES: 2299
+LINES: 73
+<<<CONTENT START>>>
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection; 
+using System.Net.Http;
+using Tutor.Services;
+
+namespace Tutor
+{
+    public static class MauiProgram
+    {
+        public static MauiApp CreateMauiApp()
+        {
+            var builder = MauiApp.CreateBuilder();
+            builder
+                .UseMauiApp<App>()
+                .ConfigureFonts(fonts =>
+                {
+                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                });
+
+            builder.Services.AddMauiBlazorWebView();
+
+
+            // Register OpenAI configuration and service
+            builder.Services.AddSingleton(new OpenAIOptions
+            {
+                // Change this if you want a different model
+                Model = "gpt-4.1-mini"
+            });
+
+            // HttpClient + OpenAI service
+            builder.Services.AddHttpClient<OpenAIService>();
+
+            // Embedding service for RAG
+            builder.Services.AddHttpClient<EmbeddingService>();
+
+            // Content formatter service for auto-formatting imports
+            builder.Services.AddHttpClient<ContentFormatterService>();
+
+            // Chunking service for splitting content
+            builder.Services.AddSingleton<ChunkingService>();
+
+            // Vector store service for storing/searching embeddings
+            builder.Services.AddSingleton<VectorStoreService>();
+
+            // Instructions service
+            builder.Services.AddSingleton<InstructionsService>();
+
+            // Settings service
+            builder.Services.AddSingleton<SettingsService>();
+
+
+            // Theme service
+            builder.Services.AddSingleton<ThemeService>();
+
+            // File-based resource storage service
+            builder.Services.AddSingleton<FileResourceService>();
+
+            // Course service (manages courses and resources)
+            builder.Services.AddSingleton<CourseService>();
+
+            // Core Concept service
+            builder.Services.AddSingleton<CoreConceptService>();
+
+#if DEBUG
+            builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Logging.AddDebug();
+#endif
+
+            return builder.Build();
+        }
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/ContentChunk.cs
+TYPE: script
+EXT: .cs
+SHA256: 12903B204093061396ACB436F3D68C1A320E1189D92B47B9C8C72D10447EC765
+BYTES: 1460
+LINES: 46
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+/// <summary>
+/// Represents a chunk of content from a learning resource with its embedding vector.
+/// Used for RAG (Retrieval-Augmented Generation) to find relevant content.
+/// </summary>
+public class ContentChunk
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    
+    /// <summary>
+    /// The ID of the learning resource this chunk belongs to.
+    /// </summary>
+    public string ResourceId { get; set; } = "";
+    
+    /// <summary>
+    /// The ID of the curriculum this chunk belongs to (for efficient filtering).
+    /// </summary>
+    public string CurriculumId { get; set; } = "";
+    
+    /// <summary>
+    /// The index of this chunk within the resource (for ordering).
+    /// </summary>
+    public int ChunkIndex { get; set; }
+    
+    /// <summary>
+    /// The actual text content of this chunk.
+    /// </summary>
+    public string Content { get; set; } = "";
+    
+    /// <summary>
+    /// The embedding vector for this chunk (1536 dimensions for text-embedding-3-small).
+    /// </summary>
+    public float[] Embedding { get; set; } = [];
+    
+    /// <summary>
+    /// Title of the source resource (for context when retrieved).
+    /// </summary>
+    public string SourceTitle { get; set; } = "";
+    
+    /// <summary>
+    /// When this chunk was created/embedded.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/CoreConcept.cs
+TYPE: script
+EXT: .cs
+SHA256: C178F2B080AE75D57A8D86CAA2582EF58F53CB17C3BF3BE99266F0EEA129EFAE
+BYTES: 591
+LINES: 23
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+/// <summary>
+/// Represents a core concept that the student can quickly reference.
+/// </summary>
+public record CoreConcept
+{
+    /// <summary>
+    /// The term or name of the concept.
+    /// </summary>
+    public required string Term { get; init; }
+
+    /// <summary>
+    /// A brief reminder/description of the concept.
+    /// </summary>
+    public required string Description { get; init; }
+
+    /// <summary>
+    /// When the concept was added to the list.
+    /// </summary>
+    public DateTime AddedAt { get; init; } = DateTime.Now;
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/Course.cs
+TYPE: script
+EXT: .cs
+SHA256: 7B9C0F5A9D0A80722D1B33569C6E532A0FDF73DE634CC6C1D27391DF3E07056C
+BYTES: 338
+LINES: 11
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+public class Course
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> ResourceIds { get; set; } = new();
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/CourseResource.cs
+TYPE: script
+EXT: .cs
+SHA256: B8D3673C21B3BA4F98370D4B337C2059F1E6FC6C25418CDF61A813545E96D0DE
+BYTES: 797
+LINES: 27
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+/// <summary>
+/// Represents a learning resource (document, text, etc.) that can be added to a course.
+/// </summary>
+public class CourseResource
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Title { get; set; } = "";
+    public string Author { get; set; } = "";
+    public string Year { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string Content { get; set; } = "";
+    public ResourceType Type { get; set; } = ResourceType.Text;
+    public string FileName { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public enum ResourceType
+{
+    Text,
+    Txt,
+    Docx,
+    Pdf
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/User.cs
+TYPE: script
+EXT: .cs
+SHA256: CC99D6A94A0431D0DA53AB0AB749148514E71690D5390E5E86DD8523CDBFC212
+BYTES: 147
+LINES: 8
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+public record User
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/Android/MainActivity.cs
+TYPE: script
+EXT: .cs
+SHA256: 294AE70C82D2843844BE57CA87C4AD68BD358B0ACCE630C5A8BB92676A0CB622
+BYTES: 423
+LINES: 12
+<<<CONTENT START>>>
+using Android.App;
+using Android.Content.PM;
+using Android.OS;
+
+namespace Tutor
+{
+    [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
+    public class MainActivity : MauiAppCompatActivity
+    {
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/Android/MainApplication.cs
+TYPE: script
+EXT: .cs
+SHA256: DDF662421166DE3AEA113D72752BAB12F037173C4F918DF2C47519822597AB9F
+BYTES: 381
+LINES: 17
+<<<CONTENT START>>>
+using Android.App;
+using Android.Runtime;
+
+namespace Tutor
+{
+    [Application]
+    public class MainApplication : MauiApplication
+    {
+        public MainApplication(IntPtr handle, JniHandleOwnership ownership)
+            : base(handle, ownership)
+        {
+        }
+
+        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/iOS/AppDelegate.cs
+TYPE: script
+EXT: .cs
+SHA256: 6E23B010B7CA9DE121B68F728152A82F8A1E9B41029515E5A7A36DAB5EC8A07E
+BYTES: 234
+LINES: 11
+<<<CONTENT START>>>
+using Foundation;
+
+namespace Tutor
+{
+    [Register("AppDelegate")]
+    public class AppDelegate : MauiUIApplicationDelegate
+    {
+        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/iOS/Program.cs
+TYPE: script
+EXT: .cs
+SHA256: A8A610C028A86AB9E635D3917261FB9739542A4E8D2E1F579C5A55A9C156C095
+BYTES: 426
+LINES: 17
+<<<CONTENT START>>>
+using ObjCRuntime;
+using UIKit;
+
+namespace Tutor
+{
+    public class Program
+    {
+        // This is the main entry point of the application.
+        static void Main(string[] args)
+        {
+            // if you want to use a different Application Delegate class from "AppDelegate"
+            // you can specify it here.
+            UIApplication.Main(args, null, typeof(AppDelegate));
+        }
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/MacCatalyst/AppDelegate.cs
+TYPE: script
+EXT: .cs
+SHA256: 6E23B010B7CA9DE121B68F728152A82F8A1E9B41029515E5A7A36DAB5EC8A07E
+BYTES: 234
+LINES: 11
+<<<CONTENT START>>>
+using Foundation;
+
+namespace Tutor
+{
+    [Register("AppDelegate")]
+    public class AppDelegate : MauiUIApplicationDelegate
+    {
+        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/MacCatalyst/Program.cs
+TYPE: script
+EXT: .cs
+SHA256: F79257C6B9C7C003C67D468DF338EF323C9333F5008A789FE403D1E778E1F43B
+BYTES: 424
+LINES: 16
+<<<CONTENT START>>>
+using ObjCRuntime;
+using UIKit;
+
+namespace Tutor
+{
+    public class Program
+    {
+        // This is the main entry point of the application.
+        static void Main(string[] args)
+        {
+            // if you want to use a different Application Delegate class from "AppDelegate"
+            // you can specify it here.
+            UIApplication.Main(args, null, typeof(AppDelegate));
+        }
+    }
+}
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Platforms/Windows/App.xaml.cs
+TYPE: script
+EXT: .cs
+SHA256: 012B6311B3EB9AEC68EB375EF8B14A2C802FF762AF3DE98DD641176DA4C7F8EF
+BYTES: 807
+LINES: 26
+<<<CONTENT START>>>
+using Microsoft.UI.Xaml;
+
+// To learn more about WinUI, the WinUI project structure,
+// and more about our project templates, see: http://aka.ms/winui-project-info.
+
+namespace Tutor.WinUI
+{
+    /// <summary>
+    /// Provides application-specific behavior to supplement the default Application class.
+    /// </summary>
+    public partial class App : MauiWinUIApplication
+    {
+        /// <summary>
+        /// Initializes the singleton application object.  This is the first line of authored code
+        /// executed, and as such is the logical equivalent of main() or WinMain().
+        /// </summary>
+        public App()
+        {
+            this.InitializeComponent();
+        }
+
+        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
+    }
+
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/ChunkingService.cs
+TYPE: script
+EXT: .cs
+SHA256: E052FBDE1F16693DCA25D80B76C4615A7A35BA5B6136FF4F20B40E7D75C5EC03
+BYTES: 5707
+LINES: 154
+<<<CONTENT START>>>
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for splitting text content into chunks suitable for embedding.
+/// Uses semantic boundaries (paragraphs, sentences) when possible.
+/// </summary>
+public sealed partial class ChunkingService
+{
+    // Target ~500 tokens per chunk. Rough estimate: 1 token ? 4 characters for English
+    private const int TargetChunkSize = 2000; // characters (~500 tokens)
+    private const int MaxChunkSize = 2500;    // absolute max
+    private const int MinChunkSize = 200;     // don't create tiny chunks
+    private const int OverlapSize = 200;      // overlap between chunks for context continuity
+
+    /// <summary>
+    /// Split content into chunks with semantic boundaries and overlap.
+    /// </summary>
+    public List<string> ChunkContent(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return [];
+
+        // Normalize whitespace
+        content = NormalizeWhitespace(content);
+
+        // If content is small enough, return as single chunk
+        if (content.Length <= MaxChunkSize)
+            return [content];
+
+        var chunks = new List<string>();
+        var paragraphs = SplitIntoParagraphs(content);
+        var currentChunk = new StringBuilder();
+
+        foreach (var paragraph in paragraphs)
+        {
+            // If adding this paragraph exceeds target, finalize current chunk
+            if (currentChunk.Length > 0 && currentChunk.Length + paragraph.Length > TargetChunkSize)
+            {
+                chunks.Add(currentChunk.ToString().Trim());
+                
+                // Start new chunk with overlap from end of previous
+                var overlap = GetOverlapText(currentChunk.ToString());
+                currentChunk.Clear();
+                if (!string.IsNullOrWhiteSpace(overlap))
+                {
+                    currentChunk.Append(overlap);
+                    currentChunk.Append(' ');
+                }
+            }
+
+            // If single paragraph is too large, split by sentences
+            if (paragraph.Length > MaxChunkSize)
+            {
+                var sentences = SplitIntoSentences(paragraph);
+                foreach (var sentence in sentences)
+                {
+                    if (currentChunk.Length > 0 && currentChunk.Length + sentence.Length > TargetChunkSize)
+                    {
+                        chunks.Add(currentChunk.ToString().Trim());
+                        var overlap = GetOverlapText(currentChunk.ToString());
+                        currentChunk.Clear();
+                        if (!string.IsNullOrWhiteSpace(overlap))
+                        {
+                            currentChunk.Append(overlap);
+                            currentChunk.Append(' ');
+                        }
+                    }
+                    currentChunk.Append(sentence);
+                    currentChunk.Append(' ');
+                }
+            }
+            else
+            {
+                currentChunk.Append(paragraph);
+                currentChunk.Append("\n\n");
+            }
+        }
+
+        // Add final chunk if it has content
+        if (currentChunk.Length >= MinChunkSize)
+        {
+            chunks.Add(currentChunk.ToString().Trim());
+        }
+        else if (currentChunk.Length > 0 && chunks.Count > 0)
+        {
+            // Append small remainder to last chunk
+            chunks[^1] = chunks[^1] + "\n\n" + currentChunk.ToString().Trim();
+        }
+        else if (currentChunk.Length > 0)
+        {
+            chunks.Add(currentChunk.ToString().Trim());
+        }
+
+        return chunks;
+    }
+
+    private static string NormalizeWhitespace(string text)
+    {
+        // Replace multiple newlines with double newline (paragraph break)
+        text = MultipleNewlines().Replace(text, "\n\n");
+        // Replace multiple spaces with single space
+        text = MultipleSpaces().Replace(text, " ");
+        return text.Trim();
+    }
+
+    private static List<string> SplitIntoParagraphs(string text)
+    {
+        return [.. text.Split(["\n\n", "\r\n\r\n"], StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Trim())
+            .Where(p => !string.IsNullOrWhiteSpace(p))];
+    }
+
+    private static List<string> SplitIntoSentences(string text)
+    {
+        // Split on sentence-ending punctuation followed by space or end
+        var sentences = SentenceEnd().Split(text);
+        return [.. sentences.Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
+    }
+
+    private static string GetOverlapText(string text)
+    {
+        if (text.Length <= OverlapSize)
+            return text;
+
+        // Try to find a sentence boundary near the end for cleaner overlap
+        var endPortion = text[^(OverlapSize + 100)..];
+        var sentenceMatch = LastSentenceEnd().Match(endPortion);
+        
+        if (sentenceMatch.Success)
+        {
+            return endPortion[(sentenceMatch.Index + sentenceMatch.Length)..].Trim();
+        }
+
+        // Fall back to word boundary
+        var words = text[^OverlapSize..].Split(' ');
+        return words.Length > 1 ? string.Join(' ', words[1..]) : text[^OverlapSize..];
+    }
+
+    [GeneratedRegex(@"\n{2,}")]
+    private static partial Regex MultipleNewlines();
+
+    [GeneratedRegex(@" {2,}")]
+    private static partial Regex MultipleSpaces();
+
+    [GeneratedRegex(@"(?<=[.!?])\s+")]
+    private static partial Regex SentenceEnd();
+
+    [GeneratedRegex(@"[.!?]\s+")]
+    private static partial Regex LastSentenceEnd();
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/ContentFormatterService.cs
+TYPE: script
+EXT: .cs
+SHA256: E91D0A288077F70267D6A46140FE43DE624BF68600490F17BBBCD581DEFEE951
+BYTES: 10278
+LINES: 296
+<<<CONTENT START>>>
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for formatting imported content into structured markdown.
+/// Uses AI to identify sections, key terms, and add appropriate formatting.
+/// </summary>
+public sealed class ContentFormatterService
+{
+    private readonly HttpClient http;
+    private readonly OpenAIOptions opt;
+
+    // Formatting instructions for the AI
+    private const string FormattingPrompt = @"You are a document formatter. Convert the following raw text into well-structured markdown for educational use.
+
+FORMATTING RULES:
+- Add ## headers for major sections/topics
+- Add ### headers for subsections
+- Use **bold** for key terms, concepts, definitions, and important vocabulary
+- Use bullet points (-) for lists of items, features, or characteristics
+- Use numbered lists only for sequential steps or processes
+- Keep paragraphs short (2-3 sentences max)
+- Add blank lines between sections for readability
+- Preserve all original information - do not summarize or remove content
+- Do not add explanations or commentary - just format the existing content
+- If content has chapter/section numbers, preserve them in headers
+
+IMPORTANT: 
+- Bold ALL important terms, names, dates, and concepts that a student should remember
+- Every paragraph should have at least 1-2 bolded terms if relevant
+- Do not wrap the response in code blocks - return plain markdown
+
+Return ONLY the formatted markdown, nothing else.
+
+TEXT TO FORMAT:
+";
+
+    public ContentFormatterService(HttpClient http, OpenAIOptions opt)
+    {
+        this.http = http;
+        this.opt = opt;
+    }
+
+    /// <summary>
+    /// Format raw text content into structured markdown using AI.
+    /// </summary>
+    public async Task<string> FormatContentAsync(string rawContent, CancellationToken ct = default)
+    {
+        return await FormatContentAsync(rawContent, null, ct);
+    }
+
+    /// <summary>
+    /// Format raw text content into structured markdown using AI with progress reporting.
+    /// </summary>
+    public async Task<string> FormatContentAsync(string rawContent, Action<int, int>? onProgress, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(rawContent))
+            return rawContent;
+
+        var apiKey = await opt.GetApiKeyAsync();
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("OpenAI API key is missing.");
+
+        // For very large content, process in chunks to avoid token limits
+        if (rawContent.Length > 15000)
+        {
+            return await FormatLargeContentAsync(rawContent, apiKey, onProgress, ct);
+        }
+
+        onProgress?.Invoke(1, 1);
+        return await FormatChunkAsync(rawContent, apiKey, ct);
+    }
+
+    /// <summary>
+    /// Format large content by splitting into sections and processing each.
+    /// </summary>
+    private async Task<string> FormatLargeContentAsync(string content, string apiKey, Action<int, int>? onProgress, CancellationToken ct)
+    {
+        // Split by double newlines (paragraphs) and process in batches
+        var paragraphs = content.Split(["\n\n", "\r\n\r\n"], StringSplitOptions.RemoveEmptyEntries);
+        var chunks = new List<string>();
+        var currentChunk = new StringBuilder();
+        const int maxChunkSize = 12000;
+
+        foreach (var para in paragraphs)
+        {
+            if (currentChunk.Length + para.Length > maxChunkSize && currentChunk.Length > 0)
+            {
+                chunks.Add(currentChunk.ToString());
+                currentChunk.Clear();
+            }
+            currentChunk.AppendLine(para);
+            currentChunk.AppendLine();
+        }
+
+        if (currentChunk.Length > 0)
+        {
+            chunks.Add(currentChunk.ToString());
+        }
+
+        // Process each chunk with progress reporting
+        var formattedChunks = new List<string>();
+        var totalChunks = chunks.Count;
+        for (int i = 0; i < chunks.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            onProgress?.Invoke(i + 1, totalChunks);
+            var formatted = await FormatChunkAsync(chunks[i], apiKey, ct);
+            formattedChunks.Add(formatted);
+        }
+
+        return string.Join("\n\n", formattedChunks);
+    }
+
+    /// <summary>
+    /// Format a single chunk of content.
+    /// </summary>
+    private async Task<string> FormatChunkAsync(string content, string apiKey, CancellationToken ct)
+    {
+        var payload = new
+        {
+            model = "gpt-4.1-mini",
+            input = FormattingPrompt + content,
+            instructions = "Format the text as markdown. Return only the formatted content, no explanations."
+        };
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var resp = await http.SendAsync(req, ct);
+        var json = await resp.Content.ReadAsStringAsync(ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            // On failure, return original content
+            return content;
+        }
+
+        return ExtractText(json);
+    }
+
+    private static string ExtractText(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+
+            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
+            {
+                return outText.GetString() ?? "";
+            }
+
+            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in output.EnumerateArray())
+                {
+                    if (item.TryGetProperty("content", out var contentArr) && contentArr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var c in contentArr.EnumerateArray())
+                        {
+                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
+                            {
+                                return textProp.GetString() ?? "";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return "";
+    }
+
+    /// <summary>
+    /// Quick formatting without AI - applies basic markdown rules.
+    /// Useful as a fallback or for already-structured content.
+    /// </summary>
+    public static string QuickFormat(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return content;
+
+        var lines = content.Split('\n');
+        var result = new StringBuilder();
+        var inList = false;
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Trim();
+
+            // Skip empty lines but preserve spacing
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                if (inList)
+                {
+                    inList = false;
+                }
+                result.AppendLine();
+                continue;
+            }
+
+            // Detect potential headers (all caps, short lines, or ending with colon)
+            if (IsLikelyHeader(line))
+            {
+                result.AppendLine();
+                result.AppendLine($"## {ToTitleCase(line.TrimEnd(':'))}");
+                result.AppendLine();
+                continue;
+            }
+
+            // Detect list items (starting with numbers, letters, dashes, bullets)
+            if (IsLikelyListItem(line, out var listContent))
+            {
+                result.AppendLine($"- {listContent}");
+                inList = true;
+                continue;
+            }
+
+            // Regular paragraph
+            result.AppendLine(line);
+        }
+
+        return result.ToString().Trim();
+    }
+
+    private static bool IsLikelyHeader(string line)
+    {
+        // Short lines in all caps
+        if (line.Length < 60 && line == line.ToUpperInvariant() && line.Any(char.IsLetter))
+            return true;
+
+        // Lines ending with colon that are short
+        if (line.EndsWith(':') && line.Length < 50)
+            return true;
+
+        // Chapter/Section patterns
+        if (line.StartsWith("Chapter", StringComparison.OrdinalIgnoreCase) ||
+            line.StartsWith("Section", StringComparison.OrdinalIgnoreCase) ||
+            line.StartsWith("Part", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    private static bool IsLikelyListItem(string line, out string content)
+    {
+        content = line;
+
+        // Numbered list: "1." "1)" "a." "a)"
+        if (line.Length > 2)
+        {
+            var firstTwo = line[..2];
+            if (char.IsDigit(line[0]) && (line[1] == '.' || line[1] == ')'))
+            {
+                content = line[2..].Trim();
+                return true;
+            }
+            if (char.IsLetter(line[0]) && (line[1] == '.' || line[1] == ')'))
+            {
+                content = line[2..].Trim();
+                return true;
+            }
+        }
+
+        // Bullet points
+        if (line.StartsWith("- ") || line.StartsWith("• ") || line.StartsWith("* "))
+        {
+            content = line[2..].Trim();
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string ToTitleCase(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return text;
+
+        // If all caps, convert to title case
+        if (text == text.ToUpperInvariant())
+        {
+            var words = text.ToLowerInvariant().Split(' ');
+            return string.Join(' ', words.Select(w =>
+                w.Length > 0 ? char.ToUpperInvariant(w[0]) + w[1..] : w));
+        }
+
+        return text;
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/CoreConceptService.cs
+TYPE: script
+EXT: .cs
+SHA256: D80C4A607561883AD3E3FC87855091EB0E1D00E1509A13388AD8A1F3A099C6CB
+BYTES: 3379
+LINES: 112
+<<<CONTENT START>>>
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for managing core concepts that the student has learned during lessons.
+/// Persists concepts per-user using SecureStorage.
+/// </summary>
+public class CoreConceptService
+{
+    private const string ConceptsKeyPrefix = "CORE_CONCEPTS_";
+    private readonly List<CoreConcept> _concepts = new();
+    private string currentUserId = "default_user";
+
+    public event Action? OnConceptsChanged;
+
+    public IReadOnlyList<CoreConcept> GetConcepts() => _concepts.AsReadOnly();
+
+    public async Task LoadForUserAsync(string userId)
+    {
+        currentUserId = string.IsNullOrEmpty(userId) ? "default_user" : userId;
+        try
+        {
+            var json = await SecureStorage.GetAsync(ConceptsKeyPrefix + currentUserId);
+            if (string.IsNullOrEmpty(json))
+            {
+                _concepts.Clear();
+                return;
+            }
+
+            var list = JsonSerializer.Deserialize<List<CoreConcept>>(json);
+            _concepts.Clear();
+            if (list != null)
+                _concepts.AddRange(list);
+        }
+        catch
+        {
+            _concepts.Clear();
+        }
+
+        OnConceptsChanged?.Invoke();
+    }
+
+    private async Task SaveForUserAsync()
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(_concepts);
+            await SecureStorage.SetAsync(ConceptsKeyPrefix + currentUserId, json);
+        }
+        catch { }
+    }
+
+    public async Task<bool> AddConceptAsync(string term, string description)
+    {
+        if (string.IsNullOrWhiteSpace(term) || string.IsNullOrWhiteSpace(description))
+            return false;
+
+        if (_concepts.Any(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        _concepts.Add(new CoreConcept
+        {
+            Term = term.Trim(),
+            Description = description.Trim(),
+            AddedAt = DateTime.Now
+        });
+
+        await SaveForUserAsync();
+        OnConceptsChanged?.Invoke();
+        return true;
+    }
+
+    public async Task<bool> UpdateConceptAsync(string term, string newDescription)
+    {
+        var index = _concepts.FindIndex(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase));
+        if (index < 0) return false;
+
+        _concepts[index] = _concepts[index] with { Description = newDescription.Trim() };
+        await SaveForUserAsync();
+        OnConceptsChanged?.Invoke();
+        return true;
+    }
+
+    public async Task<bool> RemoveConceptAsync(string term)
+    {
+        var removed = _concepts.RemoveAll(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase)) > 0;
+        if (removed)
+        {
+            await SaveForUserAsync();
+            OnConceptsChanged?.Invoke();
+        }
+        return removed;
+    }
+
+    public CoreConcept? GetConcept(string term)
+    {
+        return _concepts.FirstOrDefault(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task ClearAllAsync()
+    {
+        _concepts.Clear();
+        try { SecureStorage.Remove(ConceptsKeyPrefix + currentUserId); } catch { }
+        OnConceptsChanged?.Invoke();
+        await Task.CompletedTask;
+    }
+
+    public int Count => _concepts.Count;
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/CourseService.cs
+TYPE: script
+EXT: .cs
+SHA256: F3D4C405F8BE0773C90F8A848B215C056BAB5490277B9648529ECC115BE3F320
+BYTES: 19934
+LINES: 579
+<<<CONTENT START>>>
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+public sealed class CourseService
+{
+    private const string ResourcesKey = "COURSE_RESOURCES_DATA";
+    private const string CoursesKey = "COURSES_DATA";
+    private const string ActiveCourseKey = "ACTIVE_COURSE";
+
+    private readonly ChunkingService chunkingService;
+    private readonly EmbeddingService embeddingService;
+    private readonly VectorStoreService vectorStoreService;
+    private readonly ContentFormatterService contentFormatterService;
+    private readonly FileResourceService fileResourceService;
+
+    private List<CourseResource>? cachedResources;
+    private List<Course>? cachedCourses;
+
+    public CourseService(
+        ChunkingService chunkingService,
+        EmbeddingService embeddingService,
+        VectorStoreService vectorStoreService,
+        ContentFormatterService contentFormatterService,
+        FileResourceService fileResourceService)
+    {
+        this.chunkingService = chunkingService;
+        this.embeddingService = embeddingService;
+        this.vectorStoreService = vectorStoreService;
+        this.contentFormatterService = contentFormatterService;
+        this.fileResourceService = fileResourceService;
+    }
+
+    // Resource management
+    public async Task<List<CourseResource>> GetAllResourcesAsync()
+    {
+        if (cachedResources != null)
+            return cachedResources;
+
+        try
+        {
+            var json = await SecureStorage.GetAsync(ResourcesKey);
+            if (string.IsNullOrEmpty(json))
+            {
+                cachedResources = new List<CourseResource>();
+                return cachedResources;
+            }
+
+            cachedResources = JsonSerializer.Deserialize<List<CourseResource>>(json) ?? new List<CourseResource>();
+            return cachedResources;
+        }
+        catch
+        {
+            cachedResources = new List<CourseResource>();
+            return cachedResources;
+        }
+    }
+
+    public async Task<CourseResource?> GetResourceAsync(string id)
+    {
+        var resources = await GetAllResourcesAsync();
+        return resources.FirstOrDefault(r => r.Id == id);
+    }
+
+    public async Task SaveResourceAsync(CourseResource resource)
+    {
+        var resources = await GetAllResourcesAsync();
+        var existing = resources.FirstOrDefault(r => r.Id == resource.Id);
+
+        if (existing != null)
+        {
+            resources.Remove(existing);
+            resource.UpdatedAt = DateTime.UtcNow;
+        }
+
+        resources.Add(resource);
+        await SaveResourcesAsync(resources);
+    }
+
+    /// <summary>
+    /// Save a resource with optional auto-formatting of content.
+    /// When autoFormat is true, creates a NEW formatted resource and keeps the original intact.
+    /// Returns the ID of the saved resource (original if not formatted, new if formatted).
+    /// </summary>
+    public async Task<string> SaveResourceAsync(CourseResource resource, bool autoFormat, CancellationToken ct = default)
+    {
+        return await SaveResourceAsync(resource, autoFormat, null, ct);
+    }
+
+    /// <summary>
+    /// Save a resource with optional auto-formatting of content and progress reporting.
+    /// When autoFormat is true, creates a NEW formatted resource and keeps the original intact.
+    /// Returns the ID of the saved resource (original if not formatted, new if formatted).
+    /// </summary>
+    public async Task<string> SaveResourceAsync(CourseResource resource, bool autoFormat, Action<int, int>? onFormatProgress, CancellationToken ct = default)
+    {
+        if (autoFormat && !string.IsNullOrWhiteSpace(resource.Content))
+        {
+            // Save the original resource first (to SecureStorage)
+            await SaveResourceAsync(resource);
+
+            // Also save original to file system for GitHub
+            await fileResourceService.SaveOriginalFileAsync(
+                resource.FileName ?? $"{resource.Title}.txt",
+                resource.Content);
+
+            // Create a new resource with formatted content
+            var formattedContent = await contentFormatterService.FormatContentAsync(resource.Content, onFormatProgress, ct);
+            var newId = Guid.NewGuid().ToString();
+            
+            var formattedResource = new CourseResource
+            {
+                Id = newId,
+                Title = $"{resource.Title} (Formatted)",
+                Author = resource.Author,
+                Year = resource.Year,
+                Description = $"AI-formatted version of: {resource.Title}",
+                Content = formattedContent,
+                Type = resource.Type,
+                FileName = AppendGuidToFileName(resource.FileName, newId),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await SaveResourceAsync(formattedResource);
+
+            // Save formatted content to file system for GitHub
+            await fileResourceService.SaveFormattedFileAsync(
+                resource.Title,
+                formattedContent,
+                resource.FileName);
+
+            return formattedResource.Id;
+        }
+
+        await SaveResourceAsync(resource);
+        return resource.Id;
+    }
+
+    /// <summary>
+    /// Appends a GUID to a filename to indicate it's been processed.
+    /// Example: "science-textbook.txt" -> "science-textbook_abc123.txt"
+    /// </summary>
+    private static string AppendGuidToFileName(string fileName, string guid)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return $"formatted_{guid[..8]}";
+
+        var extension = Path.GetExtension(fileName);
+        var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+        var shortGuid = guid.Length >= 8 ? guid[..8] : guid;
+        
+        return $"{nameWithoutExt}_{shortGuid}{extension}";
+    }
+
+    /// <summary>
+    /// Format an existing resource's content using AI.
+    /// </summary>
+    public async Task FormatResourceContentAsync(string resourceId, CancellationToken ct = default)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null || string.IsNullOrWhiteSpace(resource.Content))
+            return;
+
+        resource.Content = await contentFormatterService.FormatContentAsync(resource.Content, ct);
+        resource.UpdatedAt = DateTime.UtcNow;
+
+        await SaveResourceAsync(resource);
+    }
+
+    /// <summary>
+    /// Quick format (no AI) - applies basic markdown rules.
+    /// </summary>
+    public async Task QuickFormatResourceContentAsync(string resourceId)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null || string.IsNullOrWhiteSpace(resource.Content))
+            return;
+
+        resource.Content = ContentFormatterService.QuickFormat(resource.Content);
+        resource.UpdatedAt = DateTime.UtcNow;
+
+        await SaveResourceAsync(resource);
+    }
+
+    public async Task DeleteResourceAsync(string id)
+    {
+        var resources = await GetAllResourcesAsync();
+        var resource = resources.FirstOrDefault(r => r.Id == id);
+
+        if (resource != null)
+        {
+            resources.Remove(resource);
+            await SaveResourcesAsync(resources);
+
+            // Remove from all courses
+            var courses = await GetAllCoursesAsync();
+            foreach (var course in courses)
+            {
+                course.ResourceIds.Remove(id);
+            }
+            await SaveCoursesAsync(courses);
+        }
+    }
+
+    private async Task SaveResourcesAsync(List<CourseResource> resources)
+    {
+        cachedResources = resources;
+        var json = JsonSerializer.Serialize(resources);
+        await SecureStorage.SetAsync(ResourcesKey, json);
+    }
+
+    // Course management
+    public async Task<List<Course>> GetAllCoursesAsync()
+    {
+        if (cachedCourses != null)
+            return cachedCourses;
+
+        try
+        {
+            var json = await SecureStorage.GetAsync(CoursesKey);
+            if (string.IsNullOrEmpty(json))
+            {
+                cachedCourses = new List<Course>();
+                return cachedCourses;
+            }
+
+            cachedCourses = JsonSerializer.Deserialize<List<Course>>(json) ?? new List<Course>();
+            return cachedCourses;
+        }
+        catch
+        {
+            cachedCourses = new List<Course>();
+            return cachedCourses;
+        }
+    }
+
+    public async Task<Course?> GetCourseAsync(string id)
+    {
+        var courses = await GetAllCoursesAsync();
+        return courses.FirstOrDefault(c => c.Id == id);
+    }
+
+    public async Task<Course> CreateCourseAsync(string name, string description = "")
+    {
+        var course = new Course
+        {
+            Name = name,
+            Description = description,
+            ResourceIds = new List<string>()
+        };
+
+        var courses = await GetAllCoursesAsync();
+        courses.Add(course);
+        await SaveCoursesAsync(courses);
+
+        return course;
+    }
+
+    public async Task SaveCourseAsync(Course course)
+    {
+        var courses = await GetAllCoursesAsync();
+        var existing = courses.FirstOrDefault(c => c.Id == course.Id);
+
+        if (existing != null)
+        {
+            courses.Remove(existing);
+        }
+
+        courses.Add(course);
+        await SaveCoursesAsync(courses);
+    }
+
+    public async Task RenameCourseAsync(string courseId, string newName)
+    {
+        var courses = await GetAllCoursesAsync();
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+        if (course != null)
+        {
+            course.Name = newName;
+            await SaveCoursesAsync(courses);
+        }
+    }
+
+    public async Task DeleteCourseAsync(string id)
+    {
+        var courses = await GetAllCoursesAsync();
+        var course = courses.FirstOrDefault(c => c.Id == id);
+
+        if (course != null)
+        {
+            courses.Remove(course);
+            await SaveCoursesAsync(courses);
+
+            // Clear active course if it was deleted
+            var activeId = await GetActiveCourseIdAsync();
+            if (activeId == id)
+            {
+                await ClearActiveCourseAsync();
+            }
+        }
+    }
+
+    private async Task SaveCoursesAsync(List<Course> courses)
+    {
+        cachedCourses = courses;
+        var json = JsonSerializer.Serialize(courses);
+        await SecureStorage.SetAsync(CoursesKey, json);
+    }
+
+    // Course resource management
+    public async Task AddResourceToCourseAsync(string courseId, string resourceId)
+    {
+        var courses = await GetAllCoursesAsync();
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+        if (course != null && !course.ResourceIds.Contains(resourceId))
+        {
+            course.ResourceIds.Add(resourceId);
+            await SaveCoursesAsync(courses);
+            
+            // Chunk and embed the resource for RAG
+            await ChunkAndEmbedResourceAsync(resourceId, courseId);
+        }
+    }
+
+    /// <summary>
+    /// Chunk and embed a resource's content for RAG retrieval.
+    /// </summary>
+    public async Task ChunkAndEmbedResourceAsync(string resourceId, string courseId, CancellationToken ct = default)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null || string.IsNullOrWhiteSpace(resource.Content))
+            return;
+
+        // Check if already embedded
+        if (await vectorStoreService.HasChunksForResourceAsync(resourceId))
+            return;
+
+        // Split content into chunks
+        var textChunks = chunkingService.ChunkContent(resource.Content);
+        if (textChunks.Count == 0)
+            return;
+
+        // Generate embeddings for all chunks (batch API call)
+        var embeddings = await embeddingService.GetEmbeddingsAsync(textChunks, ct);
+        if (embeddings.Count != textChunks.Count)
+            return;
+
+        // Create ContentChunk objects
+        var chunks = new List<ContentChunk>();
+        for (int i = 0; i < textChunks.Count; i++)
+        {
+            chunks.Add(new ContentChunk
+            {
+                ResourceId = resourceId,
+                CurriculumId = courseId, // Note: ContentChunk still uses CurriculumId internally for storage
+                ChunkIndex = i,
+                Content = textChunks[i],
+                Embedding = embeddings[i],
+                SourceTitle = resource.Title
+            });
+        }
+
+        // Store chunks
+        await vectorStoreService.StoreChunksAsync(resourceId, courseId, chunks);
+    }
+
+    /// <summary>
+    /// Re-embed all resources in a course (useful after import or update).
+    /// </summary>
+    public async Task ReindexCourseAsync(string courseId, CancellationToken ct = default)
+    {
+        var course = await GetCourseAsync(courseId);
+        if (course == null)
+            return;
+
+        // Clear existing chunks for this course
+        await vectorStoreService.RemoveChunksForCurriculumAsync(courseId);
+
+        // Re-embed each resource
+        foreach (var resourceId in course.ResourceIds)
+        {
+            await ChunkAndEmbedResourceAsync(resourceId, courseId, ct);
+        }
+    }
+
+    public async Task RemoveResourceFromCourseAsync(string courseId, string resourceId)
+    {
+        var courses = await GetAllCoursesAsync();
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+        if (course != null)
+        {
+            course.ResourceIds.Remove(resourceId);
+            await SaveCoursesAsync(courses);
+            
+            // Remove chunks for this resource
+            await vectorStoreService.RemoveChunksForResourceAsync(resourceId);
+        }
+    }
+
+    public async Task<List<CourseResource>> GetCourseResourcesAsync(string courseId)
+    {
+        var course = await GetCourseAsync(courseId);
+        if (course == null)
+            return new List<CourseResource>();
+
+        var allResources = await GetAllResourcesAsync();
+        return allResources.Where(r => course.ResourceIds.Contains(r.Id)).ToList();
+    }
+
+    // Active course management
+    public async Task SetActiveCourseAsync(string? courseId)
+    {
+        if (string.IsNullOrEmpty(courseId))
+        {
+            await ClearActiveCourseAsync();
+        }
+        else
+        {
+            await SecureStorage.SetAsync(ActiveCourseKey, courseId);
+        }
+    }
+
+    public async Task<string?> GetActiveCourseIdAsync()
+    {
+        try
+        {
+            return await SecureStorage.GetAsync(ActiveCourseKey);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<Course?> GetActiveCourseAsync()
+    {
+        var activeId = await GetActiveCourseIdAsync();
+        if (string.IsNullOrEmpty(activeId))
+            return null;
+
+        return await GetCourseAsync(activeId);
+    }
+
+    public async Task ClearActiveCourseAsync()
+    {
+        SecureStorage.Remove(ActiveCourseKey);
+        await Task.CompletedTask;
+    }
+
+    // Reset progress for a course for a given user
+    public async Task ResetCourseForUserAsync(string userId, string courseId)
+    {
+        try
+        {
+            // Remove active course if it matches
+            var active = await GetActiveCourseIdAsync();
+            if (active == courseId)
+            {
+                await ClearActiveCourseAsync();
+            }
+
+            // Remove any stored progress key for this course for this user
+            var progressKey = $"COURSE_PROGRESS_{userId}_{courseId}";
+            SecureStorage.Remove(progressKey);
+        }
+        catch { }
+
+        await Task.CompletedTask;
+    }
+
+    // Get combined content for chat context - NOW USES RAG!
+    public async Task<string> GetActiveCourseContentAsync()
+    {
+        var activeCourse = await GetActiveCourseAsync();
+        if (activeCourse == null)
+            return "";
+
+        var resources = await GetCourseResourcesAsync(activeCourse.Id);
+        if (resources.Count == 0)
+            return "";
+
+        // Just return course metadata, not full content
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== COURSE: {activeCourse.Name} ===");
+        sb.AppendLine("The student is learning from this course. Use RAG-retrieved content to answer questions.");
+        sb.AppendLine();
+        sb.AppendLine("Available resources:");
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"- {resource.Title}");
+        }
+        sb.AppendLine();
+        sb.AppendLine("Note: Specific content will be provided via context retrieval.");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Get relevant content chunks for a query using RAG.
+    /// This is the efficient method that only retrieves relevant content.
+    /// </summary>
+    public async Task<string> GetRelevantContentAsync(string query, int topK = 5, CancellationToken ct = default)
+    {
+        var activeCourse = await GetActiveCourseAsync();
+        if (activeCourse == null)
+            return "";
+
+        // Search for relevant chunks
+        var chunks = await vectorStoreService.SearchAsync(
+            query, 
+            activeCourse.Id, 
+            embeddingService, 
+            topK, 
+            minSimilarity: 0.25f, 
+            ct);
+
+        if (chunks.Count == 0)
+        {
+            // Fallback: if no chunks found, might need to index
+            return await GetFallbackContentAsync(activeCourse);
+        }
+
+        // Build context from retrieved chunks
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== RELEVANT CONTENT FROM: {activeCourse.Name} ===");
+        sb.AppendLine("Answer based ONLY on the following retrieved content:");
+        sb.AppendLine();
+
+        var groupedBySource = chunks.GroupBy(c => c.SourceTitle);
+        foreach (var group in groupedBySource)
+        {
+            sb.AppendLine($"--- From: {group.Key} ---");
+            foreach (var chunk in group.OrderBy(c => c.ChunkIndex))
+            {
+                sb.AppendLine(chunk.Content);
+                sb.AppendLine();
+            }
+        }
+
+        sb.AppendLine("=== END RETRIEVED CONTENT ===");
+        sb.AppendLine("If the answer is not in the above content, say the topic is not covered in the current course.");
+        
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Fallback for when RAG hasn't been indexed yet.
+    /// Returns truncated content to avoid huge payloads.
+    /// </summary>
+    private async Task<string> GetFallbackContentAsync(Course course)
+    {
+        var resources = await GetCourseResourcesAsync(course.Id);
+        if (resources.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== COURSE: {course.Name} (FALLBACK - NOT INDEXED) ===");
+        sb.AppendLine("Note: Content has not been indexed for efficient search. Showing truncated content.");
+        sb.AppendLine();
+
+        const int maxCharsPerResource = 2000;
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"--- {resource.Title} ---");
+            var content = resource.Content.Length > maxCharsPerResource 
+                ? resource.Content[..maxCharsPerResource] + "... [truncated]"
+                : resource.Content;
+            sb.AppendLine(content);
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/EmbeddingService.cs
+TYPE: script
+EXT: .cs
+SHA256: 951F4475B88DA16EB4CE1BE61515FDF1B078309218B0759095A638F75AA038E7
+BYTES: 4117
+LINES: 125
+<<<CONTENT START>>>
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for generating text embeddings using OpenAI's embedding API.
+/// </summary>
+public sealed class EmbeddingService
+{
+    private readonly HttpClient http;
+    private readonly OpenAIOptions opt;
+    
+    // Using text-embedding-3-small for good quality at low cost
+    private const string EmbeddingModel = "text-embedding-3-small";
+    private const int EmbeddingDimensions = 1536;
+
+    public EmbeddingService(HttpClient http, OpenAIOptions opt)
+    {
+        this.http = http;
+        this.opt = opt;
+    }
+
+    /// <summary>
+    /// Generate an embedding vector for a single text.
+    /// </summary>
+    public async Task<float[]> GetEmbeddingAsync(string text, CancellationToken ct = default)
+    {
+        var embeddings = await GetEmbeddingsAsync([text], ct);
+        return embeddings.Count > 0 ? embeddings[0] : [];
+    }
+
+    /// <summary>
+    /// Generate embedding vectors for multiple texts in a single API call (more efficient).
+    /// </summary>
+    public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, CancellationToken ct = default)
+    {
+        if (texts.Count == 0)
+            return [];
+
+        var apiKey = await opt.GetApiKeyAsync();
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("OpenAI API key is missing.");
+
+        var payload = new
+        {
+            model = EmbeddingModel,
+            input = texts,
+            dimensions = EmbeddingDimensions
+        };
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/embeddings");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var resp = await http.SendAsync(req, ct);
+        var json = await resp.Content.ReadAsStringAsync(ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"OpenAI embeddings error {(int)resp.StatusCode}: {json}");
+        }
+
+        return ParseEmbeddingsResponse(json);
+    }
+
+    private static List<float[]> ParseEmbeddingsResponse(string json)
+    {
+        var result = new List<float[]>();
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            
+            if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in data.EnumerateArray())
+                {
+                    if (item.TryGetProperty("embedding", out var embedding) && embedding.ValueKind == JsonValueKind.Array)
+                    {
+                        var vector = new float[embedding.GetArrayLength()];
+                        var i = 0;
+                        foreach (var val in embedding.EnumerateArray())
+                        {
+                            vector[i++] = val.GetSingle();
+                        }
+                        result.Add(vector);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Return empty list on parse failure
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Calculate cosine similarity between two vectors.
+    /// Returns value between -1 and 1, where 1 means identical.
+    /// </summary>
+    public static float CosineSimilarity(float[] a, float[] b)
+    {
+        if (a.Length != b.Length || a.Length == 0)
+            return 0;
+
+        float dotProduct = 0;
+        float normA = 0;
+        float normB = 0;
+
+        for (int i = 0; i < a.Length; i++)
+        {
+            dotProduct += a[i] * b[i];
+            normA += a[i] * a[i];
+            normB += b[i] * b[i];
+        }
+
+        var denominator = MathF.Sqrt(normA) * MathF.Sqrt(normB);
+        return denominator == 0 ? 0 : dotProduct / denominator;
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/FileResourceService.cs
+TYPE: script
+EXT: .cs
+SHA256: BBE6A9F85A49FBB6F8A0478275464337FCD304CDB8298627ECC89E96CB38F9A6
+BYTES: 5871
+LINES: 187
+<<<CONTENT START>>>
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for saving course resources to files for GitHub check-in.
+/// Works alongside SecureStorage for app data.
+/// </summary>
+public sealed class FileResourceService
+{
+    /// <summary>
+    /// Save an original resource file to the Original folder.
+    /// </summary>
+    public async Task SaveOriginalFileAsync(string fileName, string content)
+    {
+        StorageSettings.Load();
+        var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Original");
+        Directory.CreateDirectory(dir);
+
+        var filePath = Path.Combine(dir, SanitizeFileName(fileName));
+        await File.WriteAllTextAsync(filePath, content);
+    }
+
+    /// <summary>
+    /// Save a formatted resource as a markdown file.
+    /// </summary>
+    public async Task SaveFormattedFileAsync(string title, string content, string? originalFileName = null)
+    {
+        StorageSettings.Load();
+        var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Formatted");
+        Directory.CreateDirectory(dir);
+
+        var baseName = !string.IsNullOrEmpty(originalFileName) 
+            ? Path.GetFileNameWithoutExtension(originalFileName)
+            : SanitizeFileName(title);
+        
+        var fileName = $"{baseName}_formatted.md";
+        var filePath = Path.Combine(dir, fileName);
+
+        // Add frontmatter with metadata
+        var markdown = $"""
+            ---
+            title: {title}
+            source: {originalFileName ?? "manual entry"}
+            formatted: {DateTime.UtcNow:O}
+            ---
+
+            {content}
+            """;
+
+        await File.WriteAllTextAsync(filePath, markdown);
+    }
+
+    /// <summary>
+    /// Save a course resource (both original and formatted versions).
+    /// </summary>
+    public async Task SaveResourceToFilesAsync(CourseResource resource, string? formattedContent = null)
+    {
+        StorageSettings.Load();
+
+        // Save original content
+        if (!string.IsNullOrEmpty(resource.Content) && StorageSettings.PreserveOriginalFiles)
+        {
+            var originalFileName = !string.IsNullOrEmpty(resource.FileName) 
+                ? resource.FileName 
+                : $"{SanitizeFileName(resource.Title)}.txt";
+            
+            await SaveOriginalFileAsync(originalFileName, resource.Content);
+        }
+
+        // Save formatted content if provided
+        if (!string.IsNullOrEmpty(formattedContent) && StorageSettings.SaveFormattedAsMarkdown)
+        {
+            await SaveFormattedFileAsync(resource.Title, formattedContent, resource.FileName);
+        }
+    }
+
+    /// <summary>
+    /// Save course metadata to a JSON file.
+    /// </summary>
+    public async Task SaveCourseAsync(Course course, List<CourseResource> resources)
+    {
+        StorageSettings.Load();
+        var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Courses");
+        Directory.CreateDirectory(dir);
+
+        var fileName = $"{SanitizeFileName(course.Name)}_{course.Id[..8]}.json";
+        var filePath = Path.Combine(dir, fileName);
+
+        var data = new
+        {
+            course.Id,
+            course.Name,
+            course.Description,
+            CreatedAt = DateTime.UtcNow,
+            Resources = resources.Select(r => new
+            {
+                r.Id,
+                r.Title,
+                r.Author,
+                r.Year,
+                r.Description,
+                r.FileName,
+                ContentLength = r.Content?.Length ?? 0
+            }).ToList()
+        };
+
+        var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
+    /// <summary>
+    /// Get all formatted markdown files from the Formatted folder.
+    /// </summary>
+    public List<string> GetFormattedFiles()
+    {
+        StorageSettings.Load();
+        var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Formatted");
+        
+        if (!Directory.Exists(dir))
+            return [];
+
+        return [.. Directory.GetFiles(dir, "*.md")];
+    }
+
+    /// <summary>
+    /// Get all original files from the Original folder.
+    /// </summary>
+    public List<string> GetOriginalFiles()
+    {
+        StorageSettings.Load();
+        var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Original");
+        
+        if (!Directory.Exists(dir))
+            return [];
+
+        return [.. Directory.GetFiles(dir)];
+    }
+
+    /// <summary>
+    /// Read a file's content.
+    /// </summary>
+    public async Task<string> ReadFileAsync(string filePath)
+    {
+        if (!File.Exists(filePath))
+            return "";
+
+        return await File.ReadAllTextAsync(filePath);
+    }
+
+    /// <summary>
+    /// Delete a file.
+    /// </summary>
+    public void DeleteFile(string filePath)
+    {
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    /// <summary>
+    /// Get the current resources directory.
+    /// </summary>
+    public string GetResourcesDirectory()
+    {
+        StorageSettings.Load();
+        return StorageSettings.GetResolvedDirectory();
+    }
+
+    /// <summary>
+    /// Open the learning resources directory in file explorer.
+    /// </summary>
+    public void OpenResourcesDirectory()
+    {
+        StorageSettings.OpenInExplorer();
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return sanitized.Trim().Replace(' ', '-').ToLowerInvariant();
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/InstructionsService.cs
+TYPE: script
+EXT: .cs
+SHA256: D8C882A1460722B69FF53D97ED87691E4BC817FA26931555D81395C1D1E7C577
+BYTES: 2329
+LINES: 64
+<<<CONTENT START>>>
+using Microsoft.Maui.Storage;
+
+public sealed class InstructionsService
+{
+    private const string StorageKeyPrefix = "INSTRUCTION_";
+    private const string CountKey = "INSTRUCTION_COUNT";
+
+    // Hardcoded internal instructions for consistent, direct responses
+    private static readonly List<string> InternalInstructions =
+    [
+        "No glazing or excessive praise (avoid 'Great question!', 'Excellent!', 'That's a wonderful question!')",
+        "No preamble - get straight to the content",
+        "No filler phrases ('Let me explain...', 'I'd be happy to...', 'Sure thing!')",
+        "Be concise and direct",
+        "Use clear, simple language appropriate for a student",
+        "Bold **key terms** that are important concepts",
+        "Use bullet points for clarity",
+        "Never user numbered lists",
+        "Keep paragraphs short (2-3 sentences max)",
+        "End teaching sections with a brief check-in question, not excessive encouragement",
+        "When correcting mistakes, be kind but direct",
+        "Focus on substance over style"
+    ];
+
+    public async Task<List<string>> GetAllInstructionsAsync()
+    {
+        var instructions = new List<string>();
+        
+        try
+        {
+            var countStr = await SecureStorage.GetAsync(CountKey);
+            var count = int.TryParse(countStr, out var c) ? c : 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                var instruction = await SecureStorage.GetAsync($"{StorageKeyPrefix}{i}");
+                if (!string.IsNullOrWhiteSpace(instruction))
+                {
+                    instructions.Add(instruction);
+                }
+            }
+        }
+        catch
+        {
+            // SecureStorage can fail on some platforms
+        }
+
+        return instructions;
+    }
+
+    public async Task<string> GetCombinedInstructionsAsync()
+    {
+        var userInstructions = await GetAllInstructionsAsync();
+        
+        // Combine internal instructions with user instructions
+        var allInstructions = new List<string>(InternalInstructions);
+        allInstructions.AddRange(userInstructions);
+        
+        // Format as bullet list
+        var formatted = allInstructions.Select(i => $"- {i}");
+        return "RESPONSE FORMAT RULES (ALWAYS FOLLOW):\n" + string.Join("\n", formatted);
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/OpenAIService.cs
+TYPE: script
+EXT: .cs
+SHA256: 8030891765E208B57755A26FACD0CE6A79937D98EF4E0E06F6447048777CB041
+BYTES: 4550
+LINES: 150
+<<<CONTENT START>>>
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Tutor.Components;
+
+public record ChatReply(string Text, string FullJson);
+
+// Simple message interface for the service
+public record ChatMessageDto(string Role, string Text);
+
+public sealed class OpenAIService
+{
+    private readonly HttpClient http;
+    private readonly OpenAIOptions opt;
+
+    public OpenAIService(HttpClient http, OpenAIOptions opt)
+    {
+        this.http = http;
+        this.opt = opt;
+    }
+
+    public async Task<ChatReply> GetReplyAsync(IEnumerable<Chat.ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
+    {
+        var apiKey = await opt.GetApiKeyAsync();
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("OpenAI API key is missing. Set it in SecureStorage.");
+
+        var sb = new StringBuilder();
+        foreach (var m in messages)
+        {
+            sb.AppendLine($"{m.Role}: {m.Text}");
+        }
+
+        object payload;
+        if (!string.IsNullOrWhiteSpace(instructions))
+        {
+            payload = new
+            {
+                model = opt.Model,
+                input = sb.ToString(),
+                instructions = instructions
+            };
+        }
+        else
+        {
+            payload = new
+            {
+                model = opt.Model,
+                input = sb.ToString(),
+            };
+        }
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var resp = await http.SendAsync(req, ct);
+        var json = await resp.Content.ReadAsStringAsync(ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"OpenAI error {(int)resp.StatusCode}: {json}");
+        }
+
+        // Format the JSON for display
+        var formattedJson = FormatJson(json);
+
+        // Parse the text from the response
+        var text = ExtractText(json);
+
+        return new ChatReply(text, formattedJson);
+    }
+
+    private static string ExtractText(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            
+            // Try output_text first (convenience field)
+            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
+            {
+                return outText.GetString() ?? "";
+            }
+
+            // Parse from output[0].content[0].text
+            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in output.EnumerateArray())
+                {
+                    if (item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var c in content.EnumerateArray())
+                        {
+                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
+                            {
+                                return textProp.GetString() ?? "";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to return raw json
+        }
+
+        return json;
+    }
+
+    private static string FormatJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return json;
+        }
+    }
+}
+
+public sealed class OpenAIOptions
+{
+    // Pick a default model you have access to. You can change this later.
+    public string Model { get; set; } = "gpt-4.1-mini";
+
+    public async Task<string?> GetApiKeyAsync()
+    {
+        try
+        {
+            return await Microsoft.Maui.Storage.SecureStorage.GetAsync("OPENAI_API_KEY");
+        }
+        catch
+        {
+            // SecureStorage can fail on some platforms if not configured.
+            return null;
+        }
+    }
+
+    public async Task SetApiKeyAsync(string apiKey)
+    {
+        await Microsoft.Maui.Storage.SecureStorage.SetAsync("OPENAI_API_KEY", apiKey);
+    }
+}
+
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/SettingsService.cs
+TYPE: script
+EXT: .cs
+SHA256: ED6EB71C7835E53541701667343305DABD541164C2E9D65811C3DD0C25B7A1E6
+BYTES: 5720
+LINES: 222
+<<<CONTENT START>>>
+using Microsoft.Maui.Storage;
+using System.Text.Json;
+
+public sealed class SettingsService
+{
+    private const string EnterToSendKey = "ENTER_TO_SEND";
+    private const string QuizQuestionCountKey = "QUIZ_QUESTION_COUNT";
+    private const string GradingScaleKey = "GRADING_SCALE";
+    private const string LessonStateKey = "LESSON_STATE";
+
+    // Enter to send setting
+    public async Task<bool> GetEnterToSendAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(EnterToSendKey);
+            return string.IsNullOrEmpty(value) || value == "true";
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    public async Task SetEnterToSendAsync(bool value)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(EnterToSendKey, value.ToString().ToLower());
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    // Quiz question count setting
+    public async Task<int> GetQuizQuestionCountAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(QuizQuestionCountKey);
+            return int.TryParse(value, out var count) ? count : 3;
+        }
+        catch
+        {
+            return 3;
+        }
+    }
+
+    public async Task SetQuizQuestionCountAsync(int count)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(QuizQuestionCountKey, count.ToString());
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    // Grading scale setting
+    public async Task<GradingScale> GetGradingScaleAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(GradingScaleKey);
+            return Enum.TryParse<GradingScale>(value, out var scale) ? scale : GradingScale.Standard;
+        }
+        catch
+        {
+            return GradingScale.Standard;
+        }
+    }
+
+    public async Task SetGradingScaleAsync(GradingScale scale)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(GradingScaleKey, scale.ToString());
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    public string GetGradeForScore(int correctAnswers, int totalQuestions, GradingScale scale)
+    {
+        if (totalQuestions == 0) return "N/A";
+        
+        var percentage = (double)correctAnswers / totalQuestions * 100;
+        
+        return scale switch
+        {
+            GradingScale.Standard => GetStandardGrade(percentage),
+            GradingScale.PlusMinus => GetPlusMinusGrade(percentage),
+            GradingScale.Lenient => GetLenientGrade(percentage),
+            GradingScale.Strict => GetStrictGrade(percentage),
+            _ => GetStandardGrade(percentage)
+        };
+    }
+
+    private string GetStandardGrade(double percentage) => percentage switch
+    {
+        >= 90 => "A",
+        >= 80 => "B",
+        >= 70 => "C",
+        >= 60 => "D",
+        _ => "F"
+    };
+
+    private string GetPlusMinusGrade(double percentage) => percentage switch
+    {
+        >= 97 => "A+",
+        >= 93 => "A",
+        >= 90 => "A-",
+        >= 87 => "B+",
+        >= 83 => "B",
+        >= 80 => "B-",
+        >= 77 => "C+",
+        >= 73 => "C",
+        >= 70 => "C-",
+        >= 67 => "D+",
+        >= 63 => "D",
+        >= 60 => "D-",
+        _ => "F"
+    };
+
+    private string GetLenientGrade(double percentage) => percentage switch
+    {
+        >= 85 => "A",
+        >= 75 => "B",
+        >= 65 => "C",
+        >= 55 => "D",
+        _ => "F"
+    };
+
+    private string GetStrictGrade(double percentage) => percentage switch
+    {
+        >= 95 => "A",
+        >= 85 => "B",
+        >= 75 => "C",
+        >= 65 => "D",
+        _ => "F"
+    };
+
+    // Lesson state persistence
+    public async Task<LessonState?> GetLessonStateAsync()
+    {
+        try
+        {
+            var json = await SecureStorage.GetAsync(LessonStateKey);
+            if (string.IsNullOrEmpty(json)) return null;
+            return JsonSerializer.Deserialize<LessonState>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SaveLessonStateAsync(LessonState? state)
+    {
+        try
+        {
+            if (state == null)
+            {
+                SecureStorage.Remove(LessonStateKey);
+            }
+            else
+            {
+                var json = JsonSerializer.Serialize(state);
+                await SecureStorage.SetAsync(LessonStateKey, json);
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    public async Task ClearLessonStateAsync()
+    {
+        try
+        {
+            SecureStorage.Remove(LessonStateKey);
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+}
+
+public enum GradingScale
+{
+    Standard,    // A=90, B=80, C=70, D=60
+    PlusMinus,   // A+, A, A-, B+, etc.
+    Lenient,     // A=85, B=75, C=65, D=55
+    Strict       // A=95, B=85, C=75, D=65
+}
+
+public class LessonState
+{
+    public string CurriculumId { get; set; } = "";
+    public int CurrentLessonIndex { get; set; }
+    public bool HasStartedLearning { get; set; }
+    public List<string> LessonTopics { get; set; } = [];
+    public List<string> LearnedConcepts { get; set; } = [];
+    public List<int> VisitedTopicIndices { get; set; } = [];
+    public List<ChatMessageState> Messages { get; set; } = [];
+}
+
+public class ChatMessageState
+{
+    public string Role { get; set; } = "";
+    public string Text { get; set; } = "";
+    public string FullJson { get; set; } = "";
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/StoragePaths.cs
+TYPE: script
+EXT: .cs
+SHA256: 3AA03871AFD232B7F4932B2FBEEE5F8D9242441CA1494AC0CB4D700871360DDB
+BYTES: 1254
+LINES: 34
+<<<CONTENT START>>>
+namespace Tutor.Services;
+
+/// <summary>
+/// Manages file paths for the application's persistent storage.
+/// Learning resources are stored in the project directory for GitHub sync.
+/// </summary>
+public static class StoragePaths
+{
+    private const string AppName = "Tutor";
+    
+    /// <summary>
+    /// Default learning resources directory within the project.
+    /// This is checked into GitHub.
+    /// </summary>
+    public static string DefaultLearningResourcesDirectory => 
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "LearningResources");
+
+    /// <summary>
+    /// App-local settings directory (not checked into GitHub).
+    /// </summary>
+    public static string SettingsDirectory =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName, "Settings");
+
+    /// <summary>
+    /// Path to the storage settings file.
+    /// </summary>
+    public static string StorageSettingsPath => Path.Combine(SettingsDirectory, "storage.settings.json");
+
+    /// <summary>
+    /// Path to the vector store (embeddings) file.
+    /// </summary>
+    public static string VectorStorePath => Path.Combine(SettingsDirectory, "content_chunks.json");
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/StorageSettings.cs
+TYPE: script
+EXT: .cs
+SHA256: C33A66EB8B322EC55A4E77218E5C698178E98140CE936C5B0B8827F13AFBAC4B
+BYTES: 6333
+LINES: 196
+<<<CONTENT START>>>
+using System.Text.Json;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Manages storage settings including the learning resources directory.
+/// Settings are persisted to a local JSON file.
+/// </summary>
+public static class StorageSettings
+{
+    private static readonly string SettingsDirectory = StoragePaths.SettingsDirectory;
+    private static readonly string SettingsFilePath = StoragePaths.StorageSettingsPath;
+
+    private static readonly object lockObj = new();
+    private static bool isLoaded = false;
+
+    /// <summary>
+    /// Directory where learning resources are stored.
+    /// Defaults to the LearningResources folder in the project.
+    /// </summary>
+    public static string LearningResourcesDirectory { get; set; } = "";
+
+    /// <summary>
+    /// Whether to save formatted resources as separate .md files.
+    /// </summary>
+    public static bool SaveFormattedAsMarkdown { get; set; } = true;
+
+    /// <summary>
+    /// Whether to preserve original uploaded files.
+    /// </summary>
+    public static bool PreserveOriginalFiles { get; set; } = true;
+
+    private sealed class Data
+    {
+        public string? LearningResourcesDirectory { get; set; }
+        public bool SaveFormattedAsMarkdown { get; set; } = true;
+        public bool PreserveOriginalFiles { get; set; } = true;
+    }
+
+    public static void Load()
+    {
+        lock (lockObj)
+        {
+            if (isLoaded) return;
+            isLoaded = true; // Set early to prevent recursion
+            
+            try
+            {
+                if (File.Exists(SettingsFilePath))
+                {
+                    var json = File.ReadAllText(SettingsFilePath);
+                    var data = JsonSerializer.Deserialize<Data>(json);
+                    if (data != null)
+                    {
+                        LearningResourcesDirectory = data.LearningResourcesDirectory ?? GetDefaultDirectory();
+                        SaveFormattedAsMarkdown = data.SaveFormattedAsMarkdown;
+                        PreserveOriginalFiles = data.PreserveOriginalFiles;
+                    }
+                    else
+                    {
+                        LearningResourcesDirectory = GetDefaultDirectory();
+                    }
+                }
+                else
+                {
+                    // Use default and create settings file
+                    LearningResourcesDirectory = GetDefaultDirectory();
+                    Save();
+                }
+
+                // Ensure the directory exists
+                EnsureDirectoryExists();
+            }
+            catch
+            {
+                if (string.IsNullOrEmpty(LearningResourcesDirectory))
+                {
+                    LearningResourcesDirectory = GetDefaultDirectory();
+                }
+            }
+        }
+    }
+
+    public static void Save()
+    {
+        lock (lockObj)
+        {
+            try
+            {
+                Directory.CreateDirectory(SettingsDirectory);
+                var json = JsonSerializer.Serialize(new Data
+                {
+                    LearningResourcesDirectory = LearningResourcesDirectory,
+                    SaveFormattedAsMarkdown = SaveFormattedAsMarkdown,
+                    PreserveOriginalFiles = PreserveOriginalFiles
+                }, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(SettingsFilePath, json);
+            }
+            catch
+            {
+                // Silently fail if we can't save settings
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the resolved learning resources directory path.
+    /// </summary>
+    public static string GetResolvedDirectory()
+    {
+        Load();
+        return Path.GetFullPath(LearningResourcesDirectory);
+    }
+
+    /// <summary>
+    /// Sets a custom learning resources directory.
+    /// </summary>
+    public static void SetDirectory(string path)
+    {
+        LearningResourcesDirectory = path;
+        EnsureDirectoryExists();
+        Save();
+    }
+
+    private static string GetDefaultDirectory()
+    {
+        // Try to find the project's LearningResources folder
+        var baseDir = AppContext.BaseDirectory;
+        
+        // Navigate up from bin/Debug/net10.0-windows... to project root
+        var projectRoot = baseDir;
+        for (int i = 0; i < 5; i++)
+        {
+            var parent = Directory.GetParent(projectRoot);
+            if (parent == null) break;
+            projectRoot = parent.FullName;
+            
+            // Check if this looks like the project root (has .csproj file)
+            if (Directory.GetFiles(projectRoot, "*.csproj").Length > 0)
+            {
+                return Path.Combine(projectRoot, "Resources");
+            }
+        }
+
+        // Fallback to app data directory
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Tutor", "Resources");
+    }
+
+    private static void EnsureDirectoryExists()
+    {
+        try
+        {
+            // Use the property directly to avoid recursion
+            var dir = Path.GetFullPath(LearningResourcesDirectory);
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            // Create subdirectories
+            Directory.CreateDirectory(Path.Combine(dir, "Original"));
+            Directory.CreateDirectory(Path.Combine(dir, "Formatted"));
+            Directory.CreateDirectory(Path.Combine(dir, "Courses"));
+        }
+        catch
+        {
+            // Silently fail
+        }
+    }
+
+    /// <summary>
+    /// Opens the resources directory in the file explorer.
+    /// </summary>
+    public static void OpenInExplorer()
+    {
+        try
+        {
+            var dir = GetResolvedDirectory();
+            if (Directory.Exists(dir))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = dir,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch
+        {
+            // Silently fail
+        }
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/ThemeService.cs
+TYPE: script
+EXT: .cs
+SHA256: 07518E00F6B7847DC343CEB6E4D3416C92D009120B6998BB557AB4E7DACFBA67
+BYTES: 1069
+LINES: 45
+<<<CONTENT START>>>
+using Microsoft.Maui.Storage;
+
+public sealed class ThemeService
+{
+    private const string ThemeKey = "APP_THEME";
+    
+    public static readonly string[] AvailableThemes = ["Light", "Dark", "Summer", "Winter", "Autumn", "Spring"];
+    
+    public string CurrentTheme { get; private set; } = "Light";
+
+    public async Task InitializeAsync()
+    {
+        CurrentTheme = await GetThemeAsync();
+    }
+
+    public async Task<string> GetThemeAsync()
+    {
+        try
+        {
+            var theme = await SecureStorage.GetAsync(ThemeKey);
+            return string.IsNullOrEmpty(theme) ? "Light" : theme;
+        }
+        catch
+        {
+            return "Light";
+        }
+    }
+
+    public async Task SetThemeAsync(string theme)
+    {
+        if (!AvailableThemes.Contains(theme))
+            theme = "Light";
+            
+        try
+        {
+            await SecureStorage.SetAsync(ThemeKey, theme);
+            CurrentTheme = theme;
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/UserService.cs
+TYPE: script
+EXT: .cs
+SHA256: 08D95C7918146E7010A2333CD9B750BAAB631A4BC64CA53DD4ED352EFB84AC85
+BYTES: 1042
+LINES: 39
+<<<CONTENT START>>>
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+public class UserService
+{
+    private const string UserKey = "ACTIVE_USER";
+    private User? currentUser;
+
+    public async Task<User> GetCurrentUserAsync()
+    {
+        if (currentUser != null) return currentUser;
+
+        try
+        {
+            var json = await SecureStorage.GetAsync(UserKey);
+            if (!string.IsNullOrEmpty(json))
+            {
+                currentUser = JsonSerializer.Deserialize<User>(json);
+                if (currentUser != null) return currentUser;
+            }
+        }
+        catch { }
+
+        // Create a default user
+        currentUser = new User { Id = "default_user", Name = "Default User" };
+        await SaveCurrentUserAsync(currentUser);
+        return currentUser;
+    }
+
+    public async Task SaveCurrentUserAsync(User user)
+    {
+        currentUser = user;
+        var json = JsonSerializer.Serialize(user);
+        await SecureStorage.SetAsync(UserKey, json);
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/VectorStoreService.cs
+TYPE: script
+EXT: .cs
+SHA256: A382D598B15B8B360B7E5FA4C1E79257C5F553A3BB0EE52E923CD0893FB99102
+BYTES: 5834
+LINES: 187
+<<<CONTENT START>>>
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for storing and searching content chunks with embeddings.
+/// Uses JSON file storage for simplicity (works across all MAUI platforms).
+/// </summary>
+public sealed class VectorStoreService
+{
+    private const string ChunksFileName = "content_chunks.json";
+    private readonly string chunksFilePath;
+    private List<ContentChunk>? cachedChunks;
+
+    public VectorStoreService()
+    {
+        chunksFilePath = Path.Combine(FileSystem.AppDataDirectory, ChunksFileName);
+    }
+
+    /// <summary>
+    /// Store chunks for a resource (replaces any existing chunks for that resource).
+    /// </summary>
+    public async Task StoreChunksAsync(string resourceId, string curriculumId, List<ContentChunk> chunks)
+    {
+        var allChunks = await LoadChunksAsync();
+        
+        // Remove existing chunks for this resource
+        allChunks.RemoveAll(c => c.ResourceId == resourceId);
+        
+        // Add new chunks
+        allChunks.AddRange(chunks);
+        
+        await SaveChunksAsync(allChunks);
+    }
+
+    /// <summary>
+    /// Remove all chunks for a specific resource.
+    /// </summary>
+    public async Task RemoveChunksForResourceAsync(string resourceId)
+    {
+        var allChunks = await LoadChunksAsync();
+        allChunks.RemoveAll(c => c.ResourceId == resourceId);
+        await SaveChunksAsync(allChunks);
+    }
+
+    /// <summary>
+    /// Remove all chunks for a specific curriculum.
+    /// </summary>
+    public async Task RemoveChunksForCurriculumAsync(string curriculumId)
+    {
+        var allChunks = await LoadChunksAsync();
+        allChunks.RemoveAll(c => c.CurriculumId == curriculumId);
+        await SaveChunksAsync(allChunks);
+    }
+
+    /// <summary>
+    /// Search for the most relevant chunks given a query embedding.
+    /// </summary>
+    public async Task<List<ContentChunk>> SearchAsync(
+        float[] queryEmbedding, 
+        string curriculumId, 
+        int topK = 5,
+        float minSimilarity = 0.3f)
+    {
+        var allChunks = await LoadChunksAsync();
+        
+        // Filter to curriculum and calculate similarities
+        var results = allChunks
+            .Where(c => c.CurriculumId == curriculumId && c.Embedding.Length > 0)
+            .Select(c => new { Chunk = c, Similarity = EmbeddingService.CosineSimilarity(queryEmbedding, c.Embedding) })
+            .Where(x => x.Similarity >= minSimilarity)
+            .OrderByDescending(x => x.Similarity)
+            .Take(topK)
+            .Select(x => x.Chunk)
+            .ToList();
+
+        return results;
+    }
+
+    /// <summary>
+    /// Search using a text query (requires embedding service to embed the query).
+    /// </summary>
+    public async Task<List<ContentChunk>> SearchAsync(
+        string query,
+        string curriculumId,
+        EmbeddingService embeddingService,
+        int topK = 5,
+        float minSimilarity = 0.3f,
+        CancellationToken ct = default)
+    {
+        var queryEmbedding = await embeddingService.GetEmbeddingAsync(query, ct);
+        if (queryEmbedding.Length == 0)
+            return [];
+
+        return await SearchAsync(queryEmbedding, curriculumId, topK, minSimilarity);
+    }
+
+    /// <summary>
+    /// Get all chunks for a specific resource.
+    /// </summary>
+    public async Task<List<ContentChunk>> GetChunksForResourceAsync(string resourceId)
+    {
+        var allChunks = await LoadChunksAsync();
+        return [.. allChunks.Where(c => c.ResourceId == resourceId).OrderBy(c => c.ChunkIndex)];
+    }
+
+    /// <summary>
+    /// Check if a resource has been chunked and embedded.
+    /// </summary>
+    public async Task<bool> HasChunksForResourceAsync(string resourceId)
+    {
+        var allChunks = await LoadChunksAsync();
+        return allChunks.Any(c => c.ResourceId == resourceId);
+    }
+
+    /// <summary>
+    /// Get statistics about stored chunks.
+    /// </summary>
+    public async Task<(int TotalChunks, int ResourceCount, int CurriculumCount)> GetStatsAsync()
+    {
+        var allChunks = await LoadChunksAsync();
+        return (
+            allChunks.Count,
+            allChunks.Select(c => c.ResourceId).Distinct().Count(),
+            allChunks.Select(c => c.CurriculumId).Distinct().Count()
+        );
+    }
+
+    private async Task<List<ContentChunk>> LoadChunksAsync()
+    {
+        if (cachedChunks != null)
+            return cachedChunks;
+
+        try
+        {
+            if (File.Exists(chunksFilePath))
+            {
+                var json = await File.ReadAllTextAsync(chunksFilePath);
+                cachedChunks = JsonSerializer.Deserialize<List<ContentChunk>>(json) ?? [];
+            }
+            else
+            {
+                cachedChunks = [];
+            }
+        }
+        catch
+        {
+            cachedChunks = [];
+        }
+
+        return cachedChunks;
+    }
+
+    private async Task SaveChunksAsync(List<ContentChunk> chunks)
+    {
+        cachedChunks = chunks;
+        
+        try
+        {
+            var json = JsonSerializer.Serialize(chunks, new JsonSerializerOptions { WriteIndented = false });
+            await File.WriteAllTextAsync(chunksFilePath, json);
+        }
+        catch
+        {
+            // Log or handle error
+        }
+    }
+
+    /// <summary>
+    /// Clear all stored chunks (for debugging/reset).
+    /// </summary>
+    public async Task ClearAllAsync()
+    {
+        cachedChunks = [];
+        try
+        {
+            if (File.Exists(chunksFilePath))
+            {
+                File.Delete(chunksFilePath);
+            }
+        }
+        catch { }
+        await Task.CompletedTask;
+    }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+

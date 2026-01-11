@@ -1,9 +1,11 @@
 ﻿@page "/settings"
 @using Microsoft.Maui.Storage
 @using Microsoft.JSInterop
+@using Tutor.Services
 @inject NavigationManager Nav
 @inject ThemeService ThemeService
 @inject SettingsService SettingsService
+@inject FileResourceService FileResourceService
 @inject IJSRuntime JS
 
 <div class="page-title">Settings</div>
@@ -11,6 +13,7 @@
 <div style="max-width: 720px;">
     <div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
+        <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
         <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
         <button class="tab @(activeTab == "ChatGPT" ? "active" : "")" @onclick="@(() => activeTab = "ChatGPT")">ChatGPT</button>
         <button class="tab @(activeTab == "Claude" ? "active" : "")" @onclick="@(() => activeTab = "Claude")">Claude</button>
@@ -49,6 +52,53 @@
                     <label for="enterToSend">Press Enter to send message</label>
                 </div>
                 <p>When enabled, press Enter to send. Use Shift+Enter for new line.</p>
+            </div>
+        }
+        else if (activeTab == "Storage")
+        {
+            <div class="settings-section">
+                <h4>Learning Resources Directory</h4>
+                <div class="path-input-row">
+                    <input type="text" class="settings-input path-input" value="@learningResourcesPath" readonly />
+                    <button class="settings-btn" @onclick="OpenResourcesFolder" title="Open folder">
+                        <span class="bi bi-folder2-open"></span>
+                    </button>
+                </div>
+                <p>Learning resources are saved to this folder and can be checked into GitHub.</p>
+                
+                <div class="folder-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Original files:</span>
+                        <span class="stat-value">@originalFileCount</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Formatted files:</span>
+                        <span class="stat-value">@formattedFileCount</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Storage Options</h4>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" id="saveFormatted" @bind="saveFormattedAsMarkdown" @bind:after="SaveStorageOptionsAsync" style="width: 18px; height: 18px;" />
+                    <label for="saveFormatted">Save formatted resources as .md files</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="preserveOriginal" @bind="preserveOriginalFiles" @bind:after="SaveStorageOptionsAsync" style="width: 18px; height: 18px;" />
+                    <label for="preserveOriginal">Preserve original uploaded files</label>
+                </div>
+                <p>These options control how resources are saved to the file system.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Folder Structure</h4>
+                <div class="folder-tree">
+                    <div class="folder-item">📁 Resources/</div>
+                    <div class="folder-item indent">📁 Original/ - Original uploaded files</div>
+                    <div class="folder-item indent">📁 Formatted/ - AI-formatted markdown files</div>
+                    <div class="folder-item indent">📁 Courses/ - Course definitions</div>
+                </div>
             </div>
         }
         else if (activeTab == "Quiz")
@@ -214,6 +264,14 @@
     private int quizQuestionCount = 3;
     private GradingScale gradingScale = GradingScale.Standard;
 
+    // Storage settings
+    private string learningResourcesPath = "";
+    private bool saveFormattedAsMarkdown = true;
+    private bool preserveOriginalFiles = true;
+    private int originalFileCount = 0;
+    private int formattedFileCount = 0;
+
+
     protected override async Task OnInitializedAsync()
     {
         selectedTheme = await ThemeService.GetThemeAsync();
@@ -222,6 +280,32 @@
         await LoadEnterToSendAsync();
         await LoadChatGptModelAsync();
         await LoadQuizSettingsAsync();
+        LoadStorageSettings();
+    }
+
+    private void LoadStorageSettings()
+    {
+        StorageSettings.Load();
+        learningResourcesPath = StorageSettings.GetResolvedDirectory();
+        saveFormattedAsMarkdown = StorageSettings.SaveFormattedAsMarkdown;
+        preserveOriginalFiles = StorageSettings.PreserveOriginalFiles;
+        
+        // Count files
+        originalFileCount = FileResourceService.GetOriginalFiles().Count;
+        formattedFileCount = FileResourceService.GetFormattedFiles().Count;
+    }
+
+    private void SaveStorageOptionsAsync()
+    {
+        StorageSettings.SaveFormattedAsMarkdown = saveFormattedAsMarkdown;
+        StorageSettings.PreserveOriginalFiles = preserveOriginalFiles;
+        StorageSettings.Save();
+        status = "Storage options saved.";
+    }
+
+    private void OpenResourcesFolder()
+    {
+        FileResourceService.OpenResourcesDirectory();
     }
 
     private async Task LoadQuizSettingsAsync()

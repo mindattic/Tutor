@@ -1,11 +1,11 @@
 ﻿@page "/chat"
 @using Tutor.Services
 @using Tutor.Models
-@inject LearningResourceService LearningResourceService
+@inject CourseService CourseService
 
-@if (activeCurriculum != null)
+@if (activeCourse != null)
 {
-    <div class="page-title">Chat: @activeCurriculum.Name</div>
+    <div class="page-title">Chat: @activeCourse.Name</div>
 }
 else
 {
@@ -15,10 +15,10 @@ else
 <Tutor.Components.Chat />
 
 @code {
-    private Curriculum? activeCurriculum;
+    private Course? activeCourse;
 
     protected override async Task OnInitializedAsync()
     {
-        activeCurriculum = await LearningResourceService.GetActiveCurriculumAsync();
+        activeCourse = await CourseService.GetActiveCourseAsync();
     }
 }
