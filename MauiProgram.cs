@@ -30,6 +30,15 @@ namespace Tutor
             // HttpClient + OpenAI service
             builder.Services.AddHttpClient<OpenAIService>();
 
+            // Embedding service for RAG
+            builder.Services.AddHttpClient<EmbeddingService>();
+
+            // Chunking service for splitting content
+            builder.Services.AddSingleton<ChunkingService>();
+
+            // Vector store service for storing/searching embeddings
+            builder.Services.AddSingleton<VectorStoreService>();
+
             // Instructions service
             builder.Services.AddSingleton<InstructionsService>();
 

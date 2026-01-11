@@ -9,8 +9,22 @@ public sealed class LearningResourceService
     private const string CurriculaKey = "CURRICULA_DATA";
     private const string ActiveCurriculumKey = "ACTIVE_CURRICULUM";
 
+    private readonly ChunkingService chunkingService;
+    private readonly EmbeddingService embeddingService;
+    private readonly VectorStoreService vectorStoreService;
+
     private List<LearningResource>? cachedLearningResources;
     private List<Curriculum>? cachedCurricula;
+
+    public LearningResourceService(
+        ChunkingService chunkingService,
+        EmbeddingService embeddingService,
+        VectorStoreService vectorStoreService)
+    {
+        this.chunkingService = chunkingService;
+        this.embeddingService = embeddingService;
+        this.vectorStoreService = vectorStoreService;
+    }
 
     // Learning Resources management
     public async Task<List<LearningResource>> GetAllResourcesAsync()
@@ -194,6 +208,70 @@ public sealed class LearningResourceService
         {
             curriculum.ResourceIds.Add(resourceId);
             await SaveCurriculaAsync(curricula);
+            
+            // Chunk and embed the resource for RAG
+            await ChunkAndEmbedResourceAsync(resourceId, curriculumId);
+        }
+    }
+
+    /// <summary>
+    /// Chunk and embed a resource's content for RAG retrieval.
+    /// </summary>
+    public async Task ChunkAndEmbedResourceAsync(string resourceId, string curriculumId, CancellationToken ct = default)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null || string.IsNullOrWhiteSpace(resource.Content))
+            return;
+
+        // Check if already embedded
+        if (await vectorStoreService.HasChunksForResourceAsync(resourceId))
+            return;
+
+        // Split content into chunks
+        var textChunks = chunkingService.ChunkContent(resource.Content);
+        if (textChunks.Count == 0)
+            return;
+
+        // Generate embeddings for all chunks (batch API call)
+        var embeddings = await embeddingService.GetEmbeddingsAsync(textChunks, ct);
+        if (embeddings.Count != textChunks.Count)
+            return;
+
+        // Create ContentChunk objects
+        var chunks = new List<ContentChunk>();
+        for (int i = 0; i < textChunks.Count; i++)
+        {
+            chunks.Add(new ContentChunk
+            {
+                ResourceId = resourceId,
+                CurriculumId = curriculumId,
+                ChunkIndex = i,
+                Content = textChunks[i],
+                Embedding = embeddings[i],
+                SourceTitle = resource.Title
+            });
+        }
+
+        // Store chunks
+        await vectorStoreService.StoreChunksAsync(resourceId, curriculumId, chunks);
+    }
+
+    /// <summary>
+    /// Re-embed all resources in a curriculum (useful after import or update).
+    /// </summary>
+    public async Task ReindexCurriculumAsync(string curriculumId, CancellationToken ct = default)
+    {
+        var curriculum = await GetCurriculumAsync(curriculumId);
+        if (curriculum == null)
+            return;
+
+        // Clear existing chunks for this curriculum
+        await vectorStoreService.RemoveChunksForCurriculumAsync(curriculumId);
+
+        // Re-embed each resource
+        foreach (var resourceId in curriculum.ResourceIds)
+        {
+            await ChunkAndEmbedResourceAsync(resourceId, curriculumId, ct);
         }
     }
 
@@ -206,6 +284,9 @@ public sealed class LearningResourceService
         {
             curriculum.ResourceIds.Remove(resourceId);
             await SaveCurriculaAsync(curricula);
+            
+            // Remove chunks for this resource
+            await vectorStoreService.RemoveChunksForResourceAsync(resourceId);
         }
     }
 
@@ -282,9 +363,12 @@ public sealed class LearningResourceService
         await Task.CompletedTask;
     }
 
-    // Get combined content for chat context
+    // Get combined content for chat context - NOW USES RAG!
+    // This is the OLD method that sends ALL content - kept for fallback
     public async Task<string> GetActiveCurriculumContentAsync()
     {
+        // Use RAG-based retrieval instead of full content
+        // Return minimal context - actual content retrieved per query
         var activeCurriculum = await GetActiveCurriculumAsync();
         if (activeCurriculum == null)
             return "";
@@ -293,24 +377,95 @@ public sealed class LearningResourceService
         if (resources.Count == 0)
             return "";
 
+        // Just return curriculum metadata, not full content
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"=== CURRICULUM: {activeCurriculum.Name} ===");
-        sb.AppendLine("You must ONLY answer questions based on the following resources. If the answer is not contained in these resources, politely explain that the topic is not covered in the current curriculum.");
+        sb.AppendLine("The student is learning from this curriculum. Use RAG-retrieved content to answer questions.");
+        sb.AppendLine();
+        sb.AppendLine("Available resources:");
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"- {resource.Title}");
+        }
+        sb.AppendLine();
+        sb.AppendLine("Note: Specific content will be provided via context retrieval.");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Get relevant content chunks for a query using RAG.
+    /// This is the efficient method that only retrieves relevant content.
+    /// </summary>
+    public async Task<string> GetRelevantContentAsync(string query, int topK = 5, CancellationToken ct = default)
+    {
+        var activeCurriculum = await GetActiveCurriculumAsync();
+        if (activeCurriculum == null)
+            return "";
+
+        // Search for relevant chunks
+        var chunks = await vectorStoreService.SearchAsync(
+            query, 
+            activeCurriculum.Id, 
+            embeddingService, 
+            topK, 
+            minSimilarity: 0.25f, 
+            ct);
+
+        if (chunks.Count == 0)
+        {
+            // Fallback: if no chunks found, might need to index
+            return await GetFallbackContentAsync(activeCurriculum);
+        }
+
+        // Build context from retrieved chunks
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== RELEVANT CONTENT FROM: {activeCurriculum.Name} ===");
+        sb.AppendLine("Answer based ONLY on the following retrieved content:");
         sb.AppendLine();
 
+        var groupedBySource = chunks.GroupBy(c => c.SourceTitle);
+        foreach (var group in groupedBySource)
+        {
+            sb.AppendLine($"--- From: {group.Key} ---");
+            foreach (var chunk in group.OrderBy(c => c.ChunkIndex))
+            {
+                sb.AppendLine(chunk.Content);
+                sb.AppendLine();
+            }
+        }
+
+        sb.AppendLine("=== END RETRIEVED CONTENT ===");
+        sb.AppendLine("If the answer is not in the above content, say the topic is not covered in the current curriculum.");
+        
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Fallback for when RAG hasn't been indexed yet.
+    /// Returns truncated content to avoid huge payloads.
+    /// </summary>
+    private async Task<string> GetFallbackContentAsync(Curriculum curriculum)
+    {
+        var resources = await GetCurriculumResourcesAsync(curriculum.Id);
+        if (resources.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== CURRICULUM: {curriculum.Name} (FALLBACK - NOT INDEXED) ===");
+        sb.AppendLine("Note: Content has not been indexed for efficient search. Showing truncated content.");
+        sb.AppendLine();
+
+        const int maxCharsPerResource = 2000;
         foreach (var resource in resources)
         {
             sb.AppendLine($"--- {resource.Title} ---");
-            if (!string.IsNullOrEmpty(resource.Author))
-                sb.AppendLine($"Author: {resource.Author}");
-            if (!string.IsNullOrEmpty(resource.Year))
-                sb.AppendLine($"Year: {resource.Year}");
-            sb.AppendLine();
-            sb.AppendLine(resource.Content);
+            var content = resource.Content.Length > maxCharsPerResource 
+                ? resource.Content[..maxCharsPerResource] + "... [truncated]"
+                : resource.Content;
+            sb.AppendLine(content);
             sb.AppendLine();
         }
 
-        sb.AppendLine("=== END CURRICULUM ===");
         return sb.ToString();
     }
 }

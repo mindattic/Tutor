@@ -634,7 +634,9 @@ Please start with Question 1.";
         try
         {
             var instructions = await Instructions.GetCombinedInstructionsAsync();
-            var curriculumContext = await LearningResources.GetActiveCurriculumContentAsync();
+            
+            // Use RAG to get only relevant content instead of entire curriculum
+            var curriculumContext = await LearningResources.GetRelevantContentAsync(userText, topK: 5, cts.Token);
 
             // Build context based on mode
             string fullInstructions;
