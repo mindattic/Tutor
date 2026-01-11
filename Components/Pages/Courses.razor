@@ -174,12 +174,12 @@
 
                 <div class="form-group">
                     <label>Content Source</label>
-                    <div class="content-source-buttons">
-                        <button class="source-btn @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">
-                            <span class="icon-text"></span> Paste Text
+                    <div class="toggle-button-group">
+                        <button class="toggle-btn @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">
+                            Paste Text
                         </button>
-                        <button class="source-btn @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">
-                            <span class="icon-file"></span> Upload File
+                        <button class="toggle-btn @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">
+                            Upload File
                         </button>
                     </div>
                 </div>
@@ -217,12 +217,9 @@
                 @if (editingResource == null)
                 {
                     <div class="form-group">
-                        <div class="auto-format-option">
+                        <div class="checkbox-row">
                             <input type="checkbox" id="autoFormat" @bind="autoFormatContent" />
-                            <label for="autoFormat">
-                                <span class="bi bi-stars"></span>
-                                Auto-format with AI
-                            </label>
+                            <label for="autoFormat">Auto-format with AI</label>
                         </div>
                         <p class="format-hint">
                             @if (autoFormatContent)

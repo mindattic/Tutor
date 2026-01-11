@@ -1271,6 +1271,39 @@ h1:focus {
     border-color: var(--accent-primary);
 }
 
+/* Toggle Button Group */
+.toggle-button-group {
+    display: inline-flex;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.toggle-btn {
+    padding: 8px 16px;
+    border: none;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    border-right: 1px solid var(--border-color);
+}
+
+.toggle-btn:last-child {
+    border-right: none;
+}
+
+.toggle-btn:hover:not(.active) {
+    background: var(--bg-secondary);
+}
+
+.toggle-btn.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
 .content-textarea {
     width: 100%;
     min-height: 200px;
@@ -1325,6 +1358,28 @@ h1:focus {
 /* Checkbox styling for forms */
 .checkbox-group {
     margin-top: 12px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+    margin: 0;
+}
+
+.checkbox-row label {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 0;
+    font-weight: normal;
 }
 
 .checkbox-label {
