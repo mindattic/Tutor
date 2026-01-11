@@ -9,25 +9,6 @@
 @inject LearningResourceService LearningResources
 @implements IDisposable
 
-<div style="display: inline-flex">
-
-
-    @if (activeCurriculum != null && !isQuizMode && !isLessonMode)
-    {
-        <button class="curriculum-action-btn start-lesson" style="margin: 0px 5px 5px 0px" @onclick="StartLesson" disabled="@isSending" title="Start the lesson">
-            <span class="icon-teach"></span>
-            Start Lesson
-        </button>
-    }
-    @if (activeCurriculum != null && !isQuizMode && !isLessonMode)
-    {
-        <button class="curriculum-action-btn quiz" style="margin: 0px 5px 5px 0px" @onclick="StartQuizMe" disabled="@isSending" title="Take a quiz">
-            <span class="icon-quiz"></span>
-            Quiz Me
-        </button>
-    }
-</div>
-
 @* Mode indicators at the top *@
 @if (isQuizMode)
 {
@@ -35,7 +16,7 @@
         <span class="mode-icon icon-quiz-white"></span>
         <span class="mode-label">Quiz Mode</span>
         <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
-        <button class="mode-exit-btn" @onclick="EndQuiz" title="End Quiz"><span class="bi bi-stop-fill"></span> End</button>
+        <button class="mode-exit-btn" @onclick="RestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span> Restart</button>
     </div>
 }
 else if (isLessonMode && lessonTopics.Count > 0)
@@ -48,7 +29,8 @@ else if (isLessonMode && lessonTopics.Count > 0)
         {
             <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
         }
-        <button class="mode-exit-btn" @onclick="EndLesson" title="End Lesson"><span class="bi bi-stop-fill"></span> End</button>
+        <span class="mode-progress">@GetLessonProgressText()</span>
+        <button class="mode-exit-btn" @onclick="RestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
     </div>
 }
 
@@ -58,50 +40,77 @@ else if (isLessonMode && lessonTopics.Count > 0)
     <div class="chat-log" @ref="chatLogRef">
         @{
             var messageIndex = 0;
+            var hiddenCount = GetHiddenMessageCount();
+            var startIndex = showAllMessages ? 0 : Math.Max(0, messages.Count - RecentMessageCount);
         }
+
+        @* Show expand button if there are hidden messages *@
+        @if (hiddenCount > 0 && !showAllMessages)
+        {
+            <div class="hidden-messages-notice">
+                <button class="expand-messages-btn" @onclick="() => showAllMessages = true">
+                    <span class="bi bi-chevron-up"></span>
+                    Show @hiddenCount older message@(hiddenCount == 1 ? "" : "s")
+                </button>
+            </div>
+        }
+        @if (showAllMessages && messages.Count > RecentMessageCount)
+        {
+            <div class="hidden-messages-notice">
+                <button class="expand-messages-btn" @onclick="() => showAllMessages = false">
+                    <span class="bi bi-chevron-down"></span>
+                    Hide older messages
+                </button>
+            </div>
+        }
+
         @foreach (var m in messages)
         {
             var idx = messageIndex;
             var isLastAssistantMessage = m.Role == "assistant" && idx == GetLastAssistantMessageIndex();
+            var isVisible = showAllMessages || idx >= startIndex;
 
-            <div class="msg @(m.Role)">
-                <div class="msg-header">
-                    <span class="role">@m.Role</span>
-                    <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+            @if (isVisible)
+            {
+                <div class="msg @(m.Role)">
+                    <div class="msg-header">
+                        <span class="role">@m.Role</span>
+                        <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                    </div>
+                    <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.Text))</div>
+
+                    @* Show navigation buttons in assistant messages during lesson mode *@
+                    @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
+                    {
+                        <div class="msg-nav-buttons">
+                            <button class="msg-nav-btn quiz-inline" @onclick="StartQuizAtCurrentPoint" title="Quiz me on what I've learned so far">
+                                <span class="icon-quiz-small"></span>
+                                Quiz Me
+                            </button>
+                            <div class="msg-nav-spacer"></div>
+                            <button class="msg-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0)" title="Go to previous topic">
+                                <span class="icon-previous"></span>
+                                Previous
+                            </button>
+                            <button class="msg-nav-btn continue" @onclick="ContinueLesson" title="@(hasStartedLearning ? "Continue to next topic" : "Begin the lesson")">
+                                <span class="icon-continue"></span>
+                                @(hasStartedLearning ? "Continue" : "Begin")
+                            </button>
+                        </div>
+                    }
+
+                    @* Show Continue button for term exploration *@
+                    @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
+                    {
+                        <div class="msg-nav-buttons">
+                            <button class="msg-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
+                                <span class="icon-continue"></span>
+                                Continue
+                            </button>
+                        </div>
+                    }
                 </div>
-                <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.Text))</div>
-
-                @* Show navigation buttons in assistant messages during lesson mode *@
-                @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
-                {
-                    <div class="msg-nav-buttons">
-                        <button class="msg-nav-btn quiz-inline" @onclick="StartQuizAtCurrentPoint" title="Quiz me on what I've learned so far">
-                            <span class="icon-quiz-small"></span>
-                            Quiz Me
-                        </button>
-                        <div class="msg-nav-spacer"></div>
-                        <button class="msg-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0)" title="Go to previous topic">
-                            <span class="icon-previous"></span>
-                            Previous
-                        </button>
-                        <button class="msg-nav-btn continue" @onclick="ContinueLesson" title="@(hasStartedLearning ? "Continue to next topic" : "Begin the lesson")">
-                            <span class="icon-continue"></span>
-                            @(hasStartedLearning ? "Continue" : "Begin")
-                        </button>
-                    </div>
-                }
-
-                @* Show Go Back button for term exploration *@
-                @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
-                {
-                    <div class="msg-nav-buttons">
-                        <button class="msg-nav-btn go-back" @onclick="BackToLesson" title="Return to the lesson">
-                            <span class="icon-back"></span>
-                            Go Back
-                        </button>
-                    </div>
-                }
-            </div>
+            }
             messageIndex++;
         }
 
@@ -158,17 +167,21 @@ else if (isLessonMode && lessonTopics.Count > 0)
 }
 
 @code {
-    private readonly List<ChatMessage> messages = new();
-    private string prompt = "";
-    private bool isSending;
-    private bool showModal;
-    private string modalContent = "";
-    private ElementReference textareaRef;
-    private ElementReference chatLogRef;
-    private DotNetObjectReference<Chat>? dotNetRef;
-    private CancellationTokenSource? cts;
-    private bool enterToSend = true;
-    private string placeholderText = "Ask a question...";
+private readonly List<ChatMessage> messages = new();
+private string prompt = "";
+private bool isSending;
+private bool showModal;
+private string modalContent = "";
+private ElementReference textareaRef;
+private ElementReference chatLogRef;
+private DotNetObjectReference<Chat>? dotNetRef;
+private CancellationTokenSource? cts;
+private bool enterToSend = true;
+private string placeholderText = "Ask a question...";
+
+// Message visibility
+private const int RecentMessageCount = 4; // Show last N messages by default
+private bool showAllMessages;
 
     // Curriculum state
     private Curriculum? activeCurriculum;
@@ -197,11 +210,67 @@ else if (isLessonMode && lessonTopics.Count > 0)
     protected override async Task OnInitializedAsync()
     {
         await LoadCurriculumState();
+        await LoadLessonStateAsync();
+        
+        // Auto-start lesson if curriculum is active and not already in lesson mode
+        if (activeCurriculum != null && !isLessonMode)
+        {
+            await StartLesson();
+        }
     }
 
     private async Task LoadCurriculumState()
     {
         activeCurriculum = await LearningResources.GetActiveCurriculumAsync();
+    }
+
+    private async Task LoadLessonStateAsync()
+    {
+        var state = await Settings.GetLessonStateAsync();
+        if (state == null || activeCurriculum == null || state.CurriculumId != activeCurriculum.Id)
+            return;
+
+        // Restore lesson state
+        isLessonMode = true;
+        hasStartedLearning = state.HasStartedLearning;
+        currentLessonIndex = state.CurrentLessonIndex;
+        lessonTopics = state.LessonTopics;
+        learnedConcepts = state.LearnedConcepts;
+        visitedTopicIndices = [.. state.VisitedTopicIndices];
+
+        // Restore messages
+        messages.Clear();
+        foreach (var msg in state.Messages)
+        {
+            messages.Add(new ChatMessage(msg.Role, msg.Text, msg.FullJson));
+        }
+    }
+
+    private async Task SaveLessonStateAsync()
+    {
+        if (!isLessonMode || activeCurriculum == null)
+        {
+            await Settings.ClearLessonStateAsync();
+            return;
+        }
+
+        var state = new LessonState
+        {
+            CurriculumId = activeCurriculum.Id,
+            CurrentLessonIndex = currentLessonIndex,
+            HasStartedLearning = hasStartedLearning,
+            LessonTopics = lessonTopics,
+            LearnedConcepts = learnedConcepts,
+            VisitedTopicIndices = [.. visitedTopicIndices],
+            Messages = messages.Select(m => new ChatMessageState
+            {
+                Role = m.Role,
+                Text = m.Text,
+                FullJson = m.FullJson
+            }).ToList()
+        };
+
+        await Settings.SaveLessonStateAsync(state);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -230,6 +299,11 @@ else if (isLessonMode && lessonTopics.Count > 0)
         return -1;
     }
 
+    private int GetHiddenMessageCount()
+    {
+        return Math.Max(0, messages.Count - RecentMessageCount);
+    }
+
     private void UpdatePlaceholder()
     {
         placeholderText = enterToSend
@@ -240,11 +314,6 @@ else if (isLessonMode && lessonTopics.Count > 0)
     private async Task FocusTextarea()
     {
         await JS.InvokeVoidAsync("focusElement", textareaRef);
-    }
-
-    private async Task ScrollToBottom()
-    {
-        await JS.InvokeVoidAsync("scrollToBottom", chatLogRef);
     }
 
     private void CancelRequest()
@@ -314,7 +383,6 @@ Keep it to 5-10 main topics.";
         {
             messages.Add(new ChatMessage("assistant", "?? **Congratulations!** You've completed all the topics in this lesson. You can use the **Previous** button to review any topic, or take a **Quiz** to test your knowledge!", "Lesson completed"));
             StateHasChanged();
-            await ScrollToBottom();
             return;
         }
 
@@ -381,7 +449,7 @@ After explaining, ask if I understand or have questions before we continue.";
         await SendAsync();
     }
 
-    private void BackToLesson()
+    private async Task BackToLesson()
     {
         if (!isTermExploration) return;
 
@@ -393,18 +461,53 @@ After explaining, ask if I understand or have questions before we continue.";
 
         isTermExploration = false;
         StateHasChanged();
+
+        // Save state after returning to lesson
+        if (isLessonMode)
+        {
+            await SaveLessonStateAsync();
+        }
     }
 
-    private void EndLesson()
+    private async Task ContinueFromExploration()
     {
+        // Clear exploration state and continue with the lesson
+        isTermExploration = false;
+        
+        // Continue to next topic if we're in lesson mode
+        if (isLessonMode)
+        {
+            await ContinueLesson();
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task RestartLesson()
+    {
+        // Clear all lesson state
         isLessonMode = false;
         hasStartedLearning = false;
         currentLessonIndex = 0;
         lessonTopics.Clear();
         learnedConcepts.Clear();
         visitedTopicIndices.Clear();
-        messages.Add(new ChatMessage("assistant", "Lesson ended. Feel free to start a new lesson or take a quiz!", "Lesson ended by user."));
-        StateHasChanged();
+        messages.Clear();
+        await Settings.ClearLessonStateAsync();
+        
+        // Restart the lesson from the beginning
+        await StartLesson();
+    }
+
+    private string GetLessonProgressText()
+    {
+        if (lessonTopics.Count == 0) return "";
+        var completed = learnedConcepts.Count;
+        var total = lessonTopics.Count;
+        var percentage = (int)((double)completed / total * 100);
+        return $"{completed}/{total} completed ({percentage}%)";
     }
 
     // Quiz at current point in lesson (inline quiz)
@@ -492,14 +595,17 @@ Please start with Question 1.";
         await SendAsync();
     }
 
-    private void EndQuiz()
+    private async Task RestartQuiz()
     {
+        // Clear quiz state
         isQuizMode = false;
         currentQuestionNumber = 0;
         totalQuestions = 0;
         correctAnswers = 0;
-        messages.Add(new ChatMessage("assistant", "Quiz ended. Feel free to continue chatting or start a new quiz!", "Quiz ended by user."));
-        StateHasChanged();
+        messages.Clear();
+        
+        // Restart quiz from the beginning
+        await StartQuizAtCurrentPoint();
     }
 
     [JSInvokable]
@@ -507,7 +613,6 @@ Please start with Question 1.";
     {
         await SendAsync();
         StateHasChanged();
-        await ScrollToBottom();
     }
 
     private Task SendAsync() => SendAsyncInternal(captureTopics: false);
@@ -521,12 +626,10 @@ Please start with Question 1.";
         await ResetTextareaHeight();
         messages.Add(new ChatMessage("user", userText, userText));
         StateHasChanged();
-        await ScrollToBottom();
 
         isSending = true;
         cts = new CancellationTokenSource();
         StateHasChanged();
-        await ScrollToBottom();
 
         try
         {
@@ -602,7 +705,12 @@ Keep track of the running score.";
             cts = null;
             isSending = false;
             StateHasChanged();
-            await ScrollToBottom();
+
+            // Save lesson state after each interaction
+            if (isLessonMode)
+            {
+                await SaveLessonStateAsync();
+            }
         }
     }
 

@@ -132,6 +132,36 @@ h1:focus {
     max-height: calc(100vh - 320px);
 }
 
+/* Hidden messages expand/collapse */
+.hidden-messages-notice {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.expand-messages-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px dashed var(--border-color);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.expand-messages-btn:hover {
+    background: var(--bg-tertiary, var(--bg-primary));
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+}
+
+.expand-messages-btn .bi {
+    font-size: 10px;
+}
+
 
 .msg {
     margin-bottom: 8px;
@@ -1486,13 +1516,20 @@ h1:focus {
 }
 
 .mode-indicator .mode-topic {
-    margin-left: auto;
     font-style: italic;
     opacity: 0.9;
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.mode-indicator .mode-progress {
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    opacity: 0.9;
 }
 
 .mode-indicator .mode-exit-btn {

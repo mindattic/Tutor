@@ -1,10 +1,12 @@
 using Microsoft.Maui.Storage;
+using System.Text.Json;
 
 public sealed class SettingsService
 {
     private const string EnterToSendKey = "ENTER_TO_SEND";
     private const string QuizQuestionCountKey = "QUIZ_QUESTION_COUNT";
     private const string GradingScaleKey = "GRADING_SCALE";
+    private const string LessonStateKey = "LESSON_STATE";
 
     // Enter to send setting
     public async Task<bool> GetEnterToSendAsync()
@@ -143,6 +145,53 @@ public sealed class SettingsService
         >= 65 => "D",
         _ => "F"
     };
+
+    // Lesson state persistence
+    public async Task<LessonState?> GetLessonStateAsync()
+    {
+        try
+        {
+            var json = await SecureStorage.GetAsync(LessonStateKey);
+            if (string.IsNullOrEmpty(json)) return null;
+            return JsonSerializer.Deserialize<LessonState>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SaveLessonStateAsync(LessonState? state)
+    {
+        try
+        {
+            if (state == null)
+            {
+                SecureStorage.Remove(LessonStateKey);
+            }
+            else
+            {
+                var json = JsonSerializer.Serialize(state);
+                await SecureStorage.SetAsync(LessonStateKey, json);
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    public async Task ClearLessonStateAsync()
+    {
+        try
+        {
+            SecureStorage.Remove(LessonStateKey);
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
 }
 
 public enum GradingScale
@@ -151,4 +200,22 @@ public enum GradingScale
     PlusMinus,   // A+, A, A-, B+, etc.
     Lenient,     // A=85, B=75, C=65, D=55
     Strict       // A=95, B=85, C=75, D=65
+}
+
+public class LessonState
+{
+    public string CurriculumId { get; set; } = "";
+    public int CurrentLessonIndex { get; set; }
+    public bool HasStartedLearning { get; set; }
+    public List<string> LessonTopics { get; set; } = [];
+    public List<string> LearnedConcepts { get; set; } = [];
+    public List<int> VisitedTopicIndices { get; set; } = [];
+    public List<ChatMessageState> Messages { get; set; } = [];
+}
+
+public class ChatMessageState
+{
+    public string Role { get; set; } = "";
+    public string Text { get; set; } = "";
+    public string FullJson { get; set; } = "";
 }
