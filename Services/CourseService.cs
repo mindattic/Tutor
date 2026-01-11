@@ -575,4 +575,143 @@ public sealed class CourseService
 
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Gets an overview of all resources in a course for curriculum planning.
+    /// This provides a holistic view by extracting key information from each resource.
+    /// </summary>
+    public async Task<string> GetCourseOverviewAsync(string? courseId = null, CancellationToken ct = default)
+    {
+        var course = courseId != null 
+            ? await GetCourseAsync(courseId) 
+            : await GetActiveCourseAsync();
+            
+        if (course == null)
+            return "";
+
+        var resources = await GetCourseResourcesAsync(course.Id);
+        if (resources.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== COURSE OVERVIEW: {course.Name} ===");
+        if (!string.IsNullOrWhiteSpace(course.Description))
+        {
+            sb.AppendLine($"Description: {course.Description}");
+        }
+        sb.AppendLine($"Total Resources: {resources.Count}");
+        sb.AppendLine();
+
+        // Provide structured information about each resource
+        sb.AppendLine("=== RESOURCES IN THIS COURSE ===");
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"### {resource.Title}");
+            if (!string.IsNullOrWhiteSpace(resource.Author))
+                sb.AppendLine($"Author: {resource.Author}");
+            if (!string.IsNullOrWhiteSpace(resource.Year))
+                sb.AppendLine($"Year: {resource.Year}");
+            if (!string.IsNullOrWhiteSpace(resource.Description))
+                sb.AppendLine($"Description: {resource.Description}");
+            
+            // Extract a representative sample from the content (first ~1500 chars)
+            // This helps the AI understand what each resource covers
+            if (!string.IsNullOrWhiteSpace(resource.Content))
+            {
+                var sample = resource.Content.Length > 1500 
+                    ? resource.Content[..1500] + "..."
+                    : resource.Content;
+                sb.AppendLine($"Content Preview:");
+                sb.AppendLine(sample);
+            }
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Gets unified context for curriculum planning that spans ALL resources in the course.
+    /// Combines course overview with broad RAG sampling from each resource.
+    /// This is specifically designed for generating course outlines/topics.
+    /// </summary>
+    public async Task<string> GetUnifiedCurriculumContextAsync(string? courseId = null, CancellationToken ct = default)
+    {
+        var course = courseId != null 
+            ? await GetCourseAsync(courseId) 
+            : await GetActiveCourseAsync();
+            
+        if (course == null)
+            return "";
+
+        var resources = await GetCourseResourcesAsync(course.Id);
+        if (resources.Count == 0)
+            return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== UNIFIED CURRICULUM CONTEXT: {course.Name} ===");
+        sb.AppendLine("You are creating a curriculum from MULTIPLE resources. Consider ALL of them together.");
+        sb.AppendLine($"Total Resources: {resources.Count}");
+        sb.AppendLine();
+
+        // List all resources first
+        sb.AppendLine("=== AVAILABLE RESOURCES ===");
+        for (int i = 0; i < resources.Count; i++)
+        {
+            var r = resources[i];
+            sb.AppendLine($"{i + 1}. {r.Title}" + 
+                (string.IsNullOrWhiteSpace(r.Description) ? "" : $" - {r.Description}"));
+        }
+        sb.AppendLine();
+
+        // For each resource, get representative chunks to capture key topics
+        sb.AppendLine("=== KEY CONTENT FROM EACH RESOURCE ===");
+        foreach (var resource in resources)
+        {
+            sb.AppendLine($"--- FROM: {resource.Title} ---");
+            
+            // Get all chunks for this resource and sample them
+            var chunks = await vectorStoreService.GetChunksForResourceAsync(resource.Id);
+            
+            if (chunks.Count > 0)
+            {
+                // Sample chunks evenly across the resource to get representative coverage
+                var sampleCount = Math.Min(5, chunks.Count);
+                var step = chunks.Count / sampleCount;
+                
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    var chunk = chunks[Math.Min(i * step, chunks.Count - 1)];
+                    sb.AppendLine(chunk.Content);
+                    sb.AppendLine();
+                }
+            }
+            else
+            {
+                // Fallback: sample from raw content
+                var contentLength = resource.Content.Length;
+                var sampleSize = Math.Min(2000, contentLength);
+                
+                // Get beginning sample
+                sb.AppendLine(resource.Content[..Math.Min(1000, contentLength)]);
+                sb.AppendLine();
+                
+                // Get middle sample if content is long enough
+                if (contentLength > 2000)
+                {
+                    var midStart = contentLength / 2 - 500;
+                    sb.AppendLine(resource.Content.Substring(midStart, Math.Min(1000, contentLength - midStart)));
+                    sb.AppendLine();
+                }
+            }
+        }
+
+        sb.AppendLine("=== END UNIFIED CONTEXT ===");
+        sb.AppendLine();
+        sb.AppendLine("IMPORTANT: Create a curriculum that synthesizes knowledge ACROSS all these resources.");
+        sb.AppendLine("Topics should integrate information from multiple resources where relevant.");
+        sb.AppendLine("Consider common themes, complementary information, and logical learning progression.");
+
+        return sb.ToString();
+    }
 }

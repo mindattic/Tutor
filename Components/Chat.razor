@@ -33,6 +33,7 @@ else if (isLessonMode && lessonTopics.Count > 0)
         }
         <span class="mode-progress">@GetLessonProgressText()</span>
         <div class="mode-spacer"></div>
+        <button class="mode-exit-btn toc" @onclick="ShowTableOfContents" title="Table of Contents"><span class="bi bi-list-ul"></span> Table of Contents</button>
         <button class="mode-exit-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
     </div>
 }
@@ -57,7 +58,54 @@ else if (isLessonMode && lessonTopics.Count > 0)
     </div>
 }
 
-
+@* Table of Contents modal *@
+@if (showTableOfContents && lessonTopics.Count > 0)
+{
+    <div class="modal-overlay" @onclick="CloseTableOfContents">
+        <div class="modal-content toc-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span><span class="bi bi-list-ul"></span> Table of Contents</span>
+                <button class="close-btn" @onclick="CloseTableOfContents">×</button>
+            </div>
+            <div class="modal-body toc-body">
+                <p class="toc-instruction">Click any topic to jump directly to it:</p>
+                <div class="toc-list">
+                    @for (int i = 0; i < lessonTopics.Count; i++)
+                    {
+                        var index = i;
+                        var topic = lessonTopics[i];
+                        var isCurrentTopic = i == currentLessonIndex;
+                        var isCompleted = learnedConcepts.Contains(topic);
+                        var isVisited = visitedTopicIndices.Contains(i);
+                        
+                        <button class="toc-item @(isCurrentTopic ? "current" : "") @(isCompleted ? "completed" : "") @(isVisited && !isCompleted ? "visited" : "")"
+                                @onclick="() => JumpToTopic(index)">
+                            <span class="toc-number">@(i + 1)</span>
+                            <span class="toc-topic">@topic</span>
+                            @if (isCompleted)
+                            {
+                                <span class="toc-status">?</span>
+                            }
+                            else if (isCurrentTopic)
+                            {
+                                <span class="toc-status">?</span>
+                            }
+                            else if (isVisited)
+                            {
+                                <span class="toc-status">?</span>
+                            }
+                        </button>
+                    }
+                </div>
+                <div class="toc-legend">
+                    <span><span class="legend-icon">?</span> Completed</span>
+                    <span><span class="legend-icon">?</span> Current</span>
+                    <span><span class="legend-icon">?</span> Visited</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <div class="chat-shell">
     <div class="chat-log" @ref="chatLogRef">
@@ -236,6 +284,8 @@ private bool showAllMessages;
     private int correctAnswers;
     private GradingScale gradingScale;
 
+    // Table of Contents state
+    private bool showTableOfContents;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -374,13 +424,20 @@ private bool showAllMessages;
         visitedTopicIndices.Clear();
         messages.Clear();
 
-        // First, get the topics from the course
-        var topicsPrompt = @"Based on the course resources, list the main topics/concepts in logical learning order.
+        // Build a prompt that emphasizes using ALL resources together
+        var resourceNames = string.Join(", ", resources.Select(r => r.Title));
+        var topicsPrompt = $@"Based on ALL the course resources ({resourceNames}), create a unified curriculum.
+
+IMPORTANT: You must synthesize knowledge from ALL {resources.Count} resources to create topics that:
+- Cover the breadth of information across ALL resources
+- Integrate related concepts from different resources
+- Present a logical learning progression
+
 Return ONLY a numbered list of topic names, one per line, like:
 1. Topic Name
 2. Topic Name
 etc.
-Keep it to 5-10 main topics.";
+Keep it to 8-15 main topics to ensure comprehensive coverage.";
 
         prompt = topicsPrompt;
         await SendAsyncInternal(captureTopics: true);
@@ -531,6 +588,45 @@ After explaining, ask if I understand or have questions before we continue.";
         
         // Restart the lesson from the beginning
         await StartLesson();
+    }
+
+    // Table of Contents functionality
+    private void ShowTableOfContents()
+    {
+        showTableOfContents = true;
+    }
+
+    private void CloseTableOfContents()
+    {
+        showTableOfContents = false;
+    }
+
+    private async Task JumpToTopic(int topicIndex)
+    {
+        if (topicIndex < 0 || topicIndex >= lessonTopics.Count) return;
+
+        // Close the TOC modal
+        showTableOfContents = false;
+
+        // Mark current topic as learned if we've started learning
+        if (hasStartedLearning && currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!learnedConcepts.Contains(currentTopic))
+            {
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        // Jump to the selected topic
+        currentLessonIndex = topicIndex;
+        hasStartedLearning = true;
+
+        // Check if we've visited this topic before (for spiral learning enrichment)
+        var enrichWithLearned = visitedTopicIndices.Contains(topicIndex) && learnedConcepts.Count > 0;
+        visitedTopicIndices.Add(topicIndex);
+
+        await TeachCurrentTopic(enrichWithLearned);
     }
 
     private string GetLessonProgressText()
@@ -723,8 +819,18 @@ Please start with Question 1.";
         {
             var instructions = await Instructions.GetCombinedInstructionsAsync();
             
-            // Use RAG to get only relevant content instead of entire course
-            var courseContext = await CourseService.GetRelevantContentAsync(userText, topK: 5, cts.Token);
+            // Use unified context for curriculum planning (captureTopics), otherwise use RAG
+            string courseContext;
+            if (captureTopics)
+            {
+                // For curriculum planning, we need to see ALL resources holistically
+                courseContext = await CourseService.GetUnifiedCurriculumContextAsync(ct: cts.Token);
+            }
+            else
+            {
+                // For regular queries, use RAG to get only relevant content
+                courseContext = await CourseService.GetRelevantContentAsync(userText, topK: 5, cts.Token);
+            }
 
             // Build context based on mode
             string fullInstructions;
@@ -760,6 +866,12 @@ Keep track of the running score.";
             if (captureTopics && isLessonMode)
             {
                 ParseTopicsFromResponse(reply.Text);
+                
+                // Auto-show the Table of Contents after topics are generated
+                if (lessonTopics.Count > 0)
+                {
+                    showTableOfContents = true;
+                }
             }
 
             // Update quiz question counter if in quiz mode
