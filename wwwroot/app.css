@@ -761,6 +761,27 @@ h1:focus {
         font-family: inherit;
     }
 
+    .modal-body p {
+        margin: 0 0 16px 0;
+        line-height: 1.5;
+    }
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.settings-btn.danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.settings-btn.danger:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
 
 .page-title {
     font-size: xx-large;
@@ -1246,6 +1267,104 @@ h1:focus {
     overflow-y: auto;
 }
 
+/* Checkbox styling for forms */
+.checkbox-group {
+    margin-top: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.form-hint {
+    margin-top: 4px;
+    margin-left: 26px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Formatting progress indicator */
+.formatting-progress {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.formatting-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.formatting-icon {
+    font-size: 24px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.formatting-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    height: 12px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    background: white;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.formatting-status {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+/* Button spinner */
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 6px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .form-actions {
     display: flex;
     gap: 10px;
@@ -1532,8 +1651,11 @@ h1:focus {
     opacity: 0.9;
 }
 
+.mode-indicator .mode-spacer {
+    flex: 1;
+}
+
 .mode-indicator .mode-exit-btn {
-    margin-left: auto;
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 4px 10px;
@@ -1546,6 +1668,16 @@ h1:focus {
 
 .mode-indicator .mode-exit-btn:hover {
     background: rgba(255, 255, 255, 0.3);
+}
+
+.mode-indicator .mode-exit-btn.cancel {
+    background: rgba(220, 53, 69, 0.6);
+    border-color: rgba(220, 53, 69, 0.8);
+    margin-left: 8px;
+}
+
+.mode-indicator .mode-exit-btn.cancel:hover {
+    background: rgba(220, 53, 69, 0.8);
 }
 
 .mode-indicator.lesson .mode-exit-btn {

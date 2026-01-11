@@ -208,17 +208,48 @@
                     </div>
                 }
 
+
+                @if (editingLearningResource == null)
+                {
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" @bind="autoFormatContent" />
+                            <span>Auto-format content with AI</span>
+                        </label>
+                        <p class="form-hint">Uses AI to add markdown formatting: headers, bullet points, bold keywords. Recommended for plain text imports.</p>
+                    </div>
+                }
+
+                @* Progress bar for formatting *@
+                @if (isFormatting)
+                {
+                    <div class="formatting-progress">
+                        <div class="formatting-header">
+                            <span class="formatting-icon">?</span>
+                            <span class="formatting-title">Formatting with AI...</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: @(formatProgressPercent)%"></div>
+                        </div>
+                        <div class="formatting-status">@statusMessage</div>
+                    </div>
+                }
+
                 <div class="form-actions">
                     @if (editingLearningResource != null)
                     {
                         <button class="settings-btn" @onclick="CancelEdit">Cancel</button>
                     }
                     <button class="settings-btn primary" @onclick="SaveLearningResource" disabled="@isBusy">
+                        @if (isBusy)
+                        {
+                            <span class="spinner"></span>
+                        }
                         @(editingLearningResource != null ? "Update Resource" : "Add Resource")
                     </button>
                 </div>
 
-                @if (!string.IsNullOrEmpty(statusMessage))
+                @if (!string.IsNullOrEmpty(statusMessage) && !isFormatting)
                 {
                     <p class="status-message">@statusMessage</p>
                 }
@@ -294,6 +325,11 @@
     private string contentSource = "text";
     private string uploadedFileName = "";
     private ResourceType uploadedFileType = ResourceType.Text;
+    private bool autoFormatContent = true; // Auto-format by default
+    private bool isFormatting; // For showing formatting progress
+    private int formatProgressCurrent;
+    private int formatProgressTotal;
+    private int formatProgressPercent => formatProgressTotal > 0 ? (int)((double)formatProgressCurrent / formatProgressTotal * 100) : 0;
 
     // Modals
     private bool showNewCurriculumModal;
@@ -372,6 +408,7 @@
         learningResourceContent = "";
         uploadedFileName = "";
         uploadedFileType = ResourceType.Text;
+        autoFormatContent = true;
         statusMessage = "";
     }
 
@@ -402,17 +439,44 @@
             learningResource.Type = contentSource == "file" ? uploadedFileType : ResourceType.Text;
             learningResource.FileName = uploadedFileName;
 
-            await LearningResourceService.SaveResourceAsync(learningResource);
+            // Show formatting status if auto-format is enabled
+            if (autoFormatContent && isNew)
+            {
+                isFormatting = true;
+                formatProgressCurrent = 0;
+                formatProgressTotal = 1; // Will be updated by callback
+                statusMessage = "Preparing to format...";
+                StateHasChanged();
+            }
 
-            // If a curriculum is active and this is a new resource, add it automatically
+            // Save with auto-format option (only for new resources) with progress reporting
+            // Returns the ID of the resource to add to curriculum (formatted version if auto-format enabled)
+            var savedResourceId = await LearningResourceService.SaveResourceAsync(
+                learningResource, 
+                autoFormat: autoFormatContent && isNew,
+                onFormatProgress: (current, total) =>
+                {
+                    formatProgressCurrent = current;
+                    formatProgressTotal = total;
+                    statusMessage = $"Processing section {current} of {total}...";
+                    InvokeAsync(StateHasChanged);
+                });
+
+            // If a curriculum is active and this is a new resource, add the formatted version automatically
             if (isNew && !string.IsNullOrEmpty(selectedCurriculumId))
             {
-                await LearningResourceService.AddResourceToCurriculumAsync(selectedCurriculumId, learningResource.Id);
+                isFormatting = false;
+                statusMessage = "Adding to curriculum and indexing...";
+                StateHasChanged();
+                await LearningResourceService.AddResourceToCurriculumAsync(selectedCurriculumId, savedResourceId);
             }
 
             await LoadData();
 
-            statusMessage = editingLearningResource != null ? "Resource updated." : "Resource added.";
+            var resultMessage = autoFormatContent && isNew 
+                ? "Resource added. Original preserved, formatted version created."
+                : (editingLearningResource != null ? "Resource updated." : "Resource added.");
+            statusMessage = resultMessage;
             editingLearningResource = null;
             ClearForm();
             activeTab = "Library";
@@ -424,6 +488,7 @@
         finally
         {
             isBusy = false;
+            isFormatting = false;
         }
     }
 

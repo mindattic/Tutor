@@ -16,7 +16,9 @@
         <span class="mode-icon icon-quiz-white"></span>
         <span class="mode-label">Quiz Mode</span>
         <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
-        <button class="mode-exit-btn" @onclick="RestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span> Restart</button>
+        <div class="mode-spacer"></div>
+        <button class="mode-exit-btn" @onclick="ConfirmRestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span> Restart</button>
+        <button class="mode-exit-btn cancel" @onclick="ConfirmCancelQuiz" title="Cancel Quiz"><span class="bi bi-x-lg"></span> Cancel</button>
     </div>
 }
 else if (isLessonMode && lessonTopics.Count > 0)
@@ -30,7 +32,28 @@ else if (isLessonMode && lessonTopics.Count > 0)
             <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
         }
         <span class="mode-progress">@GetLessonProgressText()</span>
-        <button class="mode-exit-btn" @onclick="RestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
+        <div class="mode-spacer"></div>
+        <button class="mode-exit-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
+    </div>
+}
+
+@* Confirmation modal (for restart and cancel) *@
+@if (showConfirmModal)
+{
+    <div class="modal-overlay" @onclick="CloseConfirmModal">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>@confirmModalTitle</span>
+                <button class="close-btn" @onclick="CloseConfirmModal">×</button>
+            </div>
+            <div class="modal-body">
+                <p>@confirmModalMessage</p>
+                <div class="modal-actions">
+                    <button class="settings-btn" @onclick="CloseConfirmModal">Cancel</button>
+                    <button class="settings-btn danger" @onclick="ExecuteConfirmedAction">@confirmModalActionText</button>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
@@ -194,9 +217,17 @@ private bool showAllMessages;
     private List<string> learnedConcepts = new();
     private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
 
+
     // Term exploration state
     private bool isTermExploration;
     private int messageIndexBeforeExploration;
+
+    // Confirmation modal state
+    private bool showConfirmModal;
+    private string confirmModalTitle = "";
+    private string confirmModalMessage = "";
+    private string confirmModalActionText = "";
+    private Func<Task>? confirmedAction;
 
     // Quiz state
     private bool isQuizMode;
@@ -204,6 +235,7 @@ private bool showAllMessages;
     private int currentQuestionNumber;
     private int correctAnswers;
     private GradingScale gradingScale;
+
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -606,6 +638,62 @@ Please start with Question 1.";
         
         // Restart quiz from the beginning
         await StartQuizAtCurrentPoint();
+    }
+
+    private void CancelQuiz()
+    {
+        // Clear quiz state and return to lesson mode
+        isQuizMode = false;
+        currentQuestionNumber = 0;
+        totalQuestions = 0;
+        correctAnswers = 0;
+        messages.Add(new ChatMessage("assistant", "Quiz cancelled. You can continue with your lesson or start a new quiz anytime.", "Quiz cancelled by user."));
+        StateHasChanged();
+    }
+
+    // Confirmation dialog methods
+    private void ConfirmRestartLesson()
+    {
+        confirmModalTitle = "Confirm Restart";
+        confirmModalMessage = "Are you sure you want to restart the lesson? All current progress will be lost.";
+        confirmModalActionText = "Yes, Restart";
+        confirmedAction = RestartLesson;
+        showConfirmModal = true;
+    }
+
+    private void ConfirmRestartQuiz()
+    {
+        confirmModalTitle = "Confirm Restart";
+        confirmModalMessage = "Are you sure you want to restart the quiz? Your current progress will be lost.";
+        confirmModalActionText = "Yes, Restart";
+        confirmedAction = RestartQuiz;
+        showConfirmModal = true;
+    }
+
+    private void ConfirmCancelQuiz()
+    {
+        confirmModalTitle = "Cancel Quiz";
+        confirmModalMessage = "Are you sure you want to cancel the quiz? You can start a new quiz anytime.";
+        confirmModalActionText = "Yes, Cancel Quiz";
+        confirmedAction = () => { CancelQuiz(); return Task.CompletedTask; };
+        showConfirmModal = true;
+    }
+
+    private void CloseConfirmModal()
+    {
+        showConfirmModal = false;
+        confirmedAction = null;
+    }
+
+    private async Task ExecuteConfirmedAction()
+    {
+        showConfirmModal = false;
+        
+        if (confirmedAction != null)
+        {
+            await confirmedAction();
+            confirmedAction = null;
+        }
     }
 
     [JSInvokable]

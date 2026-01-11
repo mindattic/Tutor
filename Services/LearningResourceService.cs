@@ -12,6 +12,7 @@ public sealed class LearningResourceService
     private readonly ChunkingService chunkingService;
     private readonly EmbeddingService embeddingService;
     private readonly VectorStoreService vectorStoreService;
+    private readonly ContentFormatterService contentFormatterService;
 
     private List<LearningResource>? cachedLearningResources;
     private List<Curriculum>? cachedCurricula;
@@ -19,11 +20,13 @@ public sealed class LearningResourceService
     public LearningResourceService(
         ChunkingService chunkingService,
         EmbeddingService embeddingService,
-        VectorStoreService vectorStoreService)
+        VectorStoreService vectorStoreService,
+        ContentFormatterService contentFormatterService)
     {
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;
         this.vectorStoreService = vectorStoreService;
+        this.contentFormatterService = contentFormatterService;
     }
 
     // Learning Resources management
@@ -70,6 +73,100 @@ public sealed class LearningResourceService
 
         learningResources.Add(learningResource);
         await SaveLearningResourcesAsync(learningResources);
+    }
+
+    /// <summary>
+    /// Save a resource with optional auto-formatting of content.
+    /// When autoFormat is true, creates a NEW formatted resource and keeps the original intact.
+    /// Returns the ID of the saved resource (original if not formatted, new if formatted).
+    /// </summary>
+    public async Task<string> SaveResourceAsync(LearningResource learningResource, bool autoFormat, CancellationToken ct = default)
+    {
+        return await SaveResourceAsync(learningResource, autoFormat, null, ct);
+    }
+
+    /// <summary>
+    /// Save a resource with optional auto-formatting of content and progress reporting.
+    /// When autoFormat is true, creates a NEW formatted resource and keeps the original intact.
+    /// Returns the ID of the saved resource (original if not formatted, new if formatted).
+    /// </summary>
+    public async Task<string> SaveResourceAsync(LearningResource learningResource, bool autoFormat, Action<int, int>? onFormatProgress, CancellationToken ct = default)
+    {
+        if (autoFormat && !string.IsNullOrWhiteSpace(learningResource.Content))
+        {
+            // Save the original resource first
+            await SaveResourceAsync(learningResource);
+
+            // Create a new resource with formatted content
+            var formattedContent = await contentFormatterService.FormatContentAsync(learningResource.Content, onFormatProgress, ct);
+            var newId = Guid.NewGuid().ToString();
+            
+            var formattedResource = new LearningResource
+            {
+                Id = newId,
+                Title = $"{learningResource.Title} (Formatted)",
+                Author = learningResource.Author,
+                Year = learningResource.Year,
+                Description = $"AI-formatted version of: {learningResource.Title}",
+                Content = formattedContent,
+                Type = learningResource.Type,
+                FileName = AppendGuidToFileName(learningResource.FileName, newId),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await SaveResourceAsync(formattedResource);
+            return formattedResource.Id;
+        }
+
+        await SaveResourceAsync(learningResource);
+        return learningResource.Id;
+    }
+
+    /// <summary>
+    /// Appends a GUID to a filename to indicate it's been processed.
+    /// Example: "science-textbook.txt" -> "science-textbook_abc123.txt"
+    /// </summary>
+    private static string AppendGuidToFileName(string fileName, string guid)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return $"formatted_{guid[..8]}";
+
+        var extension = Path.GetExtension(fileName);
+        var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+        var shortGuid = guid.Length >= 8 ? guid[..8] : guid;
+        
+        return $"{nameWithoutExt}_{shortGuid}{extension}";
+    }
+
+    /// <summary>
+    /// Format an existing resource's content using AI.
+    /// </summary>
+    public async Task FormatResourceContentAsync(string resourceId, CancellationToken ct = default)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null || string.IsNullOrWhiteSpace(resource.Content))
+            return;
+
+        resource.Content = await contentFormatterService.FormatContentAsync(resource.Content, ct);
+        resource.UpdatedAt = DateTime.UtcNow;
+
+        await SaveResourceAsync(resource);
+    }
+
+    /// <summary>
+    /// Quick format (no AI) - applies basic markdown rules.
+    /// </summary>
+    public async Task QuickFormatResourceContentAsync(string resourceId)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null || string.IsNullOrWhiteSpace(resource.Content))
+            return;
+
+        resource.Content = ContentFormatterService.QuickFormat(resource.Content);
+        resource.UpdatedAt = DateTime.UtcNow;
+
+        await SaveResourceAsync(resource);
     }
 
     public async Task DeleteResourceAsync(string id)

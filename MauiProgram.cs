@@ -33,6 +33,9 @@ namespace Tutor
             // Embedding service for RAG
             builder.Services.AddHttpClient<EmbeddingService>();
 
+            // Content formatter service for auto-formatting imports
+            builder.Services.AddHttpClient<ContentFormatterService>();
+
             // Chunking service for splitting content
             builder.Services.AddSingleton<ChunkingService>();
 
