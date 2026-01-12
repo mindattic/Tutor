@@ -74,6 +74,13 @@
         function getTheme() {
             return document.documentElement.getAttribute('data-theme') || 'Light';
         }
+        function setBorderRadius(px) {
+            document.documentElement.style.setProperty('--border-radius', px + 'px');
+        }
+        function getBorderRadius() {
+            var value = getComputedStyle(document.documentElement).getPropertyValue('--border-radius');
+            return parseInt(value) || 6;
+        }
         
         // Term click handler for clickable bold terms
         var termClickDotNetRef = null;
@@ -85,7 +92,136 @@
                 }
             };
         }
+
+        // D3.js Force Directed Graph for Knowledge Base visualization
+        var forceGraphDotNetRef = null;
+        var forceSimulation = null;
+
+        function initForceGraph(container, nodes, links, dotNetRef) {
+            forceGraphDotNetRef = dotNetRef;
+            
+            // Clear any existing graph
+            container.innerHTML = '';
+            
+            var width = container.clientWidth || 800;
+            var height = container.clientHeight || 500;
+
+            // Color scale for node groups
+            var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+            // Create SVG
+            var svg = d3.select(container)
+                .append('svg')
+                .attr('width', '100%')
+                .attr('height', '100%')
+                .attr('viewBox', [0, 0, width, height]);
+
+            // Add zoom behavior
+            var g = svg.append('g');
+            svg.call(d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', function(event) {
+                    g.attr('transform', event.transform);
+                }));
+
+            // Create force simulation
+            forceSimulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(function(d) { return d.id; }).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(40));
+
+            // Create links
+            var link = g.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', function(d) { return 'link ' + (d.type || '').toLowerCase(); })
+                .attr('stroke', '#999')
+                .attr('stroke-opacity', 0.6)
+                .attr('stroke-width', 2);
+
+            // Create nodes
+            var node = g.append('g')
+                .attr('class', 'nodes')
+                .selectAll('g')
+                .data(nodes)
+                .enter().append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Add circles to nodes
+            node.append('circle')
+                .attr('r', 20)
+                .attr('fill', function(d) { return color(d.group); })
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2);
+
+            // Add labels to nodes
+            node.append('text')
+                .attr('dy', 35)
+                .attr('text-anchor', 'middle')
+                .attr('class', 'node-label')
+                .text(function(d) { 
+                    return d.title.length > 15 ? d.title.substring(0, 15) + '...' : d.title; 
+                });
+
+            // Add click handler
+            node.on('click', function(event, d) {
+                event.stopPropagation();
+                if (forceGraphDotNetRef) {
+                    forceGraphDotNetRef.invokeMethodAsync('OnNodeClick', d.id);
+                }
+                // Highlight selected node
+                node.selectAll('circle').attr('stroke', '#fff').attr('stroke-width', 2);
+                d3.select(this).select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+            });
+
+            // Update positions on each tick
+            forceSimulation.on('tick', function() {
+                link
+                    .attr('x1', function(d) { return d.source.x; })
+                    .attr('y1', function(d) { return d.source.y; })
+                    .attr('x2', function(d) { return d.target.x; })
+                    .attr('y2', function(d) { return d.target.y; });
+
+                node.attr('transform', function(d) { 
+                    return 'translate(' + d.x + ',' + d.y + ')'; 
+                });
+            });
+
+            function dragstarted(event, d) {
+                if (!event.active) forceSimulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) forceSimulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        }
+
+        function highlightNode(nodeId) {
+            if (!forceSimulation) return;
+            d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
+            d3.selectAll('.node').filter(function(d) { return d.id === nodeId; })
+                .select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+        }
     </script>
+
+    <!-- D3.js library for force graph -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 
 </body>
 

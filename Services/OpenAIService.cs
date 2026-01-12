@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Tutor.Components;
+using Tutor.Services.Logging;
 
 public record ChatReply(string Text, string FullJson);
 
@@ -17,23 +18,34 @@ public sealed class OpenAIService
     {
         this.http = http;
         this.opt = opt;
+        Log.Debug("OpenAIService initialized");
     }
 
     public async Task<ChatReply> GetReplyAsync(IEnumerable<Chat.ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
     {
+        Log.Info("OpenAI: Getting chat reply...");
+        
         var apiKey = await opt.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            Log.Error("OpenAI: API key is missing");
             throw new InvalidOperationException("OpenAI API key is missing. Set it in SecureStorage.");
+        }
 
         var sb = new StringBuilder();
+        var messageCount = 0;
         foreach (var m in messages)
         {
             sb.AppendLine($"{m.Role}: {m.Text}");
+            messageCount++;
         }
+        
+        Log.Debug($"OpenAI: Sending {messageCount} message(s), model={opt.Model}");
 
         object payload;
         if (!string.IsNullOrWhiteSpace(instructions))
         {
+            Log.Trace($"OpenAI: Using custom instructions ({instructions.Length} chars)");
             payload = new
             {
                 model = opt.Model,
@@ -54,21 +66,57 @@ public sealed class OpenAIService
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        using var resp = await http.SendAsync(req, ct);
-        var json = await resp.Content.ReadAsStringAsync(ct);
-
-        if (!resp.IsSuccessStatusCode)
+        try
         {
-            throw new InvalidOperationException($"OpenAI error {(int)resp.StatusCode}: {json}");
+            Log.Trace("OpenAI: Sending HTTP request...");
+            using var resp = await http.SendAsync(req, ct);
+            var statusCode = (int)resp.StatusCode;
+            var json = await resp.Content.ReadAsStringAsync(ct);
+
+            // Log all non-200 responses with detailed info
+            if (statusCode != 200)
+            {
+                Log.Error($"OpenAI: API error HTTP {statusCode} {resp.ReasonPhrase}");
+                Log.Debug($"OpenAI error body: {(json.Length > 500 ? json[..500] + "..." : json)}");
+                
+                var errorMessage = statusCode switch
+                {
+                    400 => $"Bad Request - Check your message format",
+                    401 => "Unauthorized - Invalid or expired API key",
+                    403 => "Forbidden - API key lacks permissions",
+                    404 => "Not Found - Invalid endpoint or model name",
+                    429 => "Rate Limited - Too many requests, wait before retrying",
+                    500 => "OpenAI Server Error - Try again later",
+                    502 => "Bad Gateway - OpenAI temporarily unavailable",
+                    503 => "Service Unavailable - OpenAI overloaded",
+                    _ => json
+                };
+                
+                throw new InvalidOperationException($"OpenAI HTTP {statusCode}: {errorMessage}");
+            }
+            
+            Log.Debug($"OpenAI: Response HTTP {statusCode} ({json.Length} chars)");
+
+            // Format the JSON for display
+            var formattedJson = FormatJson(json);
+
+            // Parse the text from the response
+            var text = ExtractText(json);
+            
+            Log.Info($"OpenAI: Reply received ({text.Length} chars)");
+
+            return new ChatReply(text, formattedJson);
         }
-
-        // Format the JSON for display
-        var formattedJson = FormatJson(json);
-
-        // Parse the text from the response
-        var text = ExtractText(json);
-
-        return new ChatReply(text, formattedJson);
+        catch (HttpRequestException ex)
+        {
+            Log.Error($"OpenAI: Network error - {ex.Message} (Status: {ex.StatusCode})", ex);
+            throw new InvalidOperationException($"Network error: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            Log.Error("OpenAI: Request timed out after waiting", ex);
+            throw new InvalidOperationException("OpenAI API request timed out", ex);
+        }
     }
 
     private static string ExtractText(string json)

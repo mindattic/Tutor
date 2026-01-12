@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using Microsoft.Maui.Storage
 @inject NavigationManager Nav
+@inject AppUiState UiState
+@inject SideNavService SideNavService
 
 <div class="page-title">Welcome</div>
 
@@ -19,14 +21,14 @@ else if (!_hasApiKey)
         ">
         <strong>OpenAI API key not found.</strong>
         <p>
-            To use Chat, please enter your OpenAI API key in Settings.
+            To use the Learn feature, please enter your OpenAI API key in Settings.
         </p>
         <button @onclick="GoToSettings">Go to Settings</button>
     </div>
 }
 else
 {
-    <p>Your OpenAI API key is configured.</p>
+    <p>Your OpenAI API key is configured. Go to <a href="learn">Learn</a> to start.</p>
 }
 
 @code
@@ -38,6 +40,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Clear side nav on home page
+        UiState.SetActiveTab(TopTab.Learn);
+        SideNavService.ClearSideNav();
+
         try
         {
             var key = await SecureStorage.GetAsync(StorageKeyName);

@@ -1,8 +1,11 @@
 @using Microsoft.Maui.Storage
 @using Tutor.Models
 @using Tutor.Services
+@using Tutor.Services.Logging
 @inject CourseService CourseService
 @inject ResourceProcessingService ProcessingService
+@inject KnowledgeBaseService KnowledgeBaseService
+@inject KnowledgeBaseStorageService KnowledgeBaseStorageService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -51,7 +54,7 @@
                     <button class="icon-btn" title="Rename" @onclick="ShowRenameCourseModal">
                         <span class="icon-edit"></span>
                     </button>
-                    <button class="icon-btn danger" title="Delete Course" @onclick="DeleteSelectedCourse">
+                    <button class="icon-btn danger" title="Delete Course" @onclick="ConfirmDeleteCourse">
                         <span class="icon-delete"></span>
                     </button>
                 }
@@ -73,6 +76,79 @@
                 <div class="curriculum-info-box active">
                     <span class="icon-book"></span>
                     <span><strong>@activeCourse.Name</strong> is active. Chat will only use knowledge from the @activeCourse.ResourceIds.Count selected resource(s).</span>
+                </div>
+                
+                @* Knowledge Base Section *@
+                <div class="kb-section">
+                    <div class="kb-status-row">
+                        <div class="kb-status-info">
+                            @if (isGeneratingKnowledgeBase)
+                            {
+                                <span class="kb-status generating">
+                                    <span class="bi bi-hourglass-split"></span>
+                                    <span>@kbGenerationStatus</span>
+                                </span>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" style="width: @(kbGenerationProgress)%"></div>
+                                </div>
+                            }
+                            else if (activeCourse.HasKnowledgeBase)
+                            {
+                                <span class="kb-status @(kbNeedsRegeneration ? "needs-update" : "ready")">
+                                    @if (kbNeedsRegeneration)
+                                    {
+                                        <span class="bi bi-arrow-clockwise"></span>
+                                        <span>Knowledge Base needs update (@knowledgeBaseConceptCount concepts)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bi bi-check-circle-fill"></span>
+                                        <span>Knowledge Base Ready (@knowledgeBaseConceptCount concepts)</span>
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="kb-status not-built">
+                                    <span class="bi bi-exclamation-circle"></span>
+                                    <span>No Knowledge Base - Generate one to enable concept exploration</span>
+                                </span>
+                            }
+                        </div>
+                        <div class="kb-actions">
+                            @if (isGeneratingKnowledgeBase)
+                            {
+                                <button class="settings-btn danger small" @onclick="CancelKnowledgeBaseGeneration" title="Cancel">
+                                    <span class="bi bi-x-lg"></span>
+                                    Cancel
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="settings-btn @(kbNeedsRegeneration ? "warning" : "primary") small" 
+                                        @onclick="GenerateKnowledgeBase" 
+                                        disabled="@(activeCourse.ResourceIds.Count == 0)"
+                                        title="@(activeCourse.HasKnowledgeBase ? "Regenerate Knowledge Base" : "Generate Knowledge Base")">
+                                    <span class="bi bi-lightbulb"></span>
+                                    @(activeCourse.HasKnowledgeBase ? "Regenerate" : "Generate") Knowledge Base
+                                </button>
+                                @if (activeCourse.HasKnowledgeBase)
+                                {
+                                    <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Explore Knowledge Base">
+                                        <span class="bi bi-diagram-3"></span>
+                                        Explore
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(kbErrorMessage))
+                    {
+                        <div class="kb-error">
+                            <span class="bi bi-exclamation-triangle"></span>
+                            <span>@kbErrorMessage</span>
+                        </div>
+                    }
                 </div>
             }
         }
@@ -159,7 +235,7 @@
                                     <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
                                         <span class="icon-edit"></span>
                                     </button>
-                                    <button class="icon-btn danger" title="Delete" @onclick="@(() => DeleteResource(item.Id))">
+                                    <button class="icon-btn danger" title="Delete" @onclick="@(() => ConfirmDeleteResource(item))">
                                         <span class="icon-delete"></span>
                                     </button>
                                 </div>
@@ -354,20 +430,65 @@
     </div>
 }
 
-@code {
-    private string activeTab = "Library";
-    private List<CourseResource> resources = new();
-    private List<Course> courses = new();
-    private string? selectedCourseId;
-    private Dictionary<string, ResourceProcessingStatus> processingTasks = new();
+@* Delete Confirmation Modal *@
+@if (showDeleteConfirmModal)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>@deleteConfirmTitle</span>
+                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <p>@deleteConfirmMessage</p>
+                <div class="form-actions">
+                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn danger" @onclick="ExecuteDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-    // Add/Edit form
-    private CourseResource? editingResource;
-    private string resourceTitle = "";
-    private string resourceAuthor = "";
-    private string resourceYear = "";
-    private string resourceDescription = "";
-    private string resourceContent = "";
+@* Knowledge Base Explorer Modal *@
+@if (showKnowledgeBaseExplorer && !string.IsNullOrEmpty(explorerKnowledgeBaseId))
+{
+    <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
+        <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span><span class="bi bi-diagram-3"></span> Knowledge Base Explorer</span>
+                <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body kb-explorer-body">
+                <KnowledgeBaseGraph KnowledgeBaseId="@explorerKnowledgeBaseId" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+private string activeTab = "Library";
+private List<CourseResource> resources = new();
+private List<Course> courses = new();
+private string? selectedCourseId;
+private Dictionary<string, ResourceProcessingStatus> processingTasks = new();
+
+// Knowledge Base generation state
+private bool isGeneratingKnowledgeBase;
+private bool kbNeedsRegeneration;
+private int kbGenerationProgress;
+private string kbGenerationStatus = "";
+private string kbErrorMessage = "";
+private int knowledgeBaseConceptCount;
+private CancellationTokenSource? kbCancellationTokenSource;
+
+// Add/Edit form
+private CourseResource? editingResource;
+private string resourceTitle = "";
+private string resourceAuthor = "";
+private string resourceYear = "";
+private string resourceDescription = "";
+private string resourceContent = "";
     private string contentSource = "text";
     private string uploadedFileName = "";
     private ResourceType uploadedFileType = ResourceType.Text;
@@ -382,6 +503,16 @@
     private bool showRenameCourseModal;
     private string renameCourseName = "";
 
+    // Knowledge Base Explorer modal
+    private bool showKnowledgeBaseExplorer;
+    private string? explorerKnowledgeBaseId;
+
+    // Delete confirmation modal
+    private bool showDeleteConfirmModal;
+    private string deleteConfirmTitle = "";
+    private string deleteConfirmMessage = "";
+    private Func<Task>? pendingDeleteAction;
+
     private string statusMessage = "";
 
     protected override async Task OnInitializedAsync()
@@ -390,6 +521,9 @@
         ProcessingService.OnStatusChanged += OnProcessingStatusChanged;
         ProcessingService.OnProcessingComplete += OnProcessingComplete;
         ProcessingService.OnProcessingError += OnProcessingError;
+        
+        // Subscribe to KB build progress
+        KnowledgeBaseService.OnProgressChanged += OnKnowledgeBaseProgressChanged;
 
         await LoadData();
         RefreshProcessingTasks();
@@ -400,6 +534,9 @@
         ProcessingService.OnStatusChanged -= OnProcessingStatusChanged;
         ProcessingService.OnProcessingComplete -= OnProcessingComplete;
         ProcessingService.OnProcessingError -= OnProcessingError;
+        KnowledgeBaseService.OnProgressChanged -= OnKnowledgeBaseProgressChanged;
+        kbCancellationTokenSource?.Cancel();
+        kbCancellationTokenSource?.Dispose();
     }
 
     private void OnProcessingStatusChanged(ResourceProcessingStatus status)
@@ -436,11 +573,32 @@
         resources = await CourseService.GetAllResourcesAsync();
         courses = await CourseService.GetAllCoursesAsync();
         selectedCourseId = await CourseService.GetActiveCourseIdAsync();
+        
+        // Load concept count for active course
+        await LoadKnowledgeBaseInfo();
+    }
+
+    private async Task LoadKnowledgeBaseInfo()
+    {
+        knowledgeBaseConceptCount = 0;
+        if (!string.IsNullOrEmpty(selectedCourseId))
+        {
+            var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+            if (course?.HasKnowledgeBase == true)
+            {
+                var kb = await KnowledgeBaseStorageService.LoadAsync(course.KnowledgeBaseId!);
+                if (kb != null)
+                {
+                    knowledgeBaseConceptCount = kb.Concepts.Count;
+                }
+            }
+        }
     }
 
     private async Task OnCourseChanged()
     {
         await CourseService.SetActiveCourseAsync(selectedCourseId);
+        await LoadKnowledgeBaseInfo();
     }
 
     private async Task ToggleResourceInCourse(string resourceId)
@@ -452,6 +610,7 @@
         if (course == null)
             return;
 
+        bool wasAdded = false;
         if (course.ResourceIds.Contains(resourceId))
         {
             await CourseService.RemoveResourceFromCourseAsync(selectedCourseId, resourceId);
@@ -459,9 +618,17 @@
         else
         {
             await CourseService.AddResourceToCourseAsync(selectedCourseId, resourceId);
+            wasAdded = true;
         }
 
         await LoadData();
+
+        // If a resource was added and course has a KB, prompt to regenerate
+        if (wasAdded && course.HasKnowledgeBase)
+        {
+            kbNeedsRegeneration = true;
+            statusMessage = "Resource added. Consider regenerating the Knowledge Base to include the new content.";
+        }
     }
 
     private void EditResource(CourseResource resource)
@@ -662,6 +829,61 @@
     {
         showNewCourseModal = false;
         showRenameCourseModal = false;
+        showDeleteConfirmModal = false;
+        pendingDeleteAction = null;
+    }
+
+    private void OpenKnowledgeBaseExplorer()
+    {
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course?.HasKnowledgeBase == true)
+        {
+            explorerKnowledgeBaseId = course.KnowledgeBaseId;
+            showKnowledgeBaseExplorer = true;
+        }
+    }
+
+    private void CloseKnowledgeBaseExplorer()
+    {
+        showKnowledgeBaseExplorer = false;
+        explorerKnowledgeBaseId = null;
+    }
+
+    private void ConfirmDeleteCourse()
+    {
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course == null) return;
+
+        deleteConfirmTitle = "Delete Course";
+        deleteConfirmMessage = $"Are you sure you want to delete \"{course.Name}\"? This will remove the course and its Knowledge Base, but resources will remain in the library.";
+        pendingDeleteAction = async () =>
+        {
+            await CourseService.DeleteCourseAsync(selectedCourseId!);
+            selectedCourseId = null;
+            await LoadData();
+        };
+        showDeleteConfirmModal = true;
+    }
+
+    private void ConfirmDeleteResource(CourseResource resource)
+    {
+        deleteConfirmTitle = "Delete Resource";
+        deleteConfirmMessage = $"Are you sure you want to delete \"{resource.Title}\"? This will remove it from all courses.";
+        pendingDeleteAction = async () =>
+        {
+            await CourseService.DeleteResourceAsync(resource.Id);
+            await LoadData();
+        };
+        showDeleteConfirmModal = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (pendingDeleteAction != null)
+        {
+            await pendingDeleteAction();
+        }
+        CloseModals();
     }
 
     private async Task CreateCourse()
@@ -689,13 +911,90 @@
         CloseModals();
     }
 
-    private async Task DeleteSelectedCourse()
+    // Knowledge Base generation
+    private void OnKnowledgeBaseProgressChanged(KnowledgeBaseBuildProgress progress)
+    {
+        kbGenerationProgress = progress.Progress;
+        kbGenerationStatus = progress.Message;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GenerateKnowledgeBase()
     {
         if (string.IsNullOrEmpty(selectedCourseId))
+        {
+            Log.Warn("GenerateKnowledgeBase called with no course selected");
             return;
+        }
 
-        await CourseService.DeleteCourseAsync(selectedCourseId);
-        selectedCourseId = null;
-        await LoadData();
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course == null || course.ResourceIds.Count == 0)
+        {
+            kbErrorMessage = "Add at least one resource to the course before generating a Knowledge Base.";
+            Log.Warn($"Cannot generate KB for course '{course?.Name ?? selectedCourseId}': No resources");
+            return;
+        }
+
+        // Get resources for this course
+        var courseResources = resources.Where(r => course.ResourceIds.Contains(r.Id)).ToList();
+        if (courseResources.Count == 0)
+        {
+            kbErrorMessage = "No resources found for this course.";
+            Log.Warn($"Cannot generate KB for course '{course.Name}': Resources not found in library");
+            return;
+        }
+
+        Log.Info($"Starting Knowledge Base generation for course '{course.Name}' with {courseResources.Count} resource(s)");
+        
+        isGeneratingKnowledgeBase = true;
+        kbGenerationProgress = 0;
+        kbGenerationStatus = "Starting Knowledge Base generation...";
+        kbErrorMessage = "";
+        kbCancellationTokenSource = new CancellationTokenSource();
+
+        try
+        {
+            var kb = await KnowledgeBaseService.BuildFromResourcesAsync(
+                $"{course.Name} Knowledge Base",
+                courseResources,
+                kbCancellationTokenSource.Token);
+
+
+            // Link the Knowledge Base to the course
+            course.KnowledgeBaseId = kb.Id;
+            course.UpdatedAt = DateTime.UtcNow;
+            await CourseService.SaveCourseAsync(course);
+
+            knowledgeBaseConceptCount = kb.Concepts.Count;
+            kbGenerationStatus = $"Knowledge Base generated with {kb.Concepts.Count} concepts!";
+            kbNeedsRegeneration = false; // Clear the flag after successful generation
+            
+            Log.Info($"Knowledge Base generation completed for '{course.Name}': {kb.Concepts.Count} concepts, {kb.Relations.Count} relationships");
+            
+            await LoadData();
+        }
+        catch (OperationCanceledException)
+        {
+            kbGenerationStatus = "Knowledge Base generation cancelled.";
+            Log.Warn($"Knowledge Base generation cancelled for course '{course.Name}'");
+        }
+        catch (Exception ex)
+        {
+            kbErrorMessage = $"Failed to generate Knowledge Base: {ex.Message}";
+            Log.Error($"Knowledge Base generation failed for course '{course.Name}': {ex.Message}", ex);
+        }
+        finally
+        {
+            isGeneratingKnowledgeBase = false;
+            kbCancellationTokenSource?.Dispose();
+            kbCancellationTokenSource = null;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelKnowledgeBaseGeneration()
+    {
+        Log.Info("User cancelled Knowledge Base generation");
+        kbCancellationTokenSource?.Cancel();
     }
 }

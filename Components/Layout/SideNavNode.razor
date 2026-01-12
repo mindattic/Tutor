@@ -1,0 +1,54 @@
+@using Tutor.Services
+
+<div class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "")" 
+     style="--indent-level: @Level">
+    
+    <div class="side-nav-item-content" @onclick="() => OnNodeClick.InvokeAsync(Node)">
+        @if (Node.Children.Count > 0)
+        {
+            <button class="expand-btn" @onclick="HandleToggleClick" @onclick:stopPropagation="true">
+                <span class="bi @(Node.IsExpanded ? "bi-chevron-down" : "bi-chevron-right")"></span>
+            </button>
+        }
+        else
+        {
+            <span class="expand-spacer"></span>
+        }
+        
+        @if (!string.IsNullOrEmpty(Node.Icon))
+        {
+            <span class="side-nav-icon bi @Node.Icon"></span>
+        }
+        
+        <span class="side-nav-title">@Node.Title</span>
+    </div>
+    
+    @if (Node.IsExpanded && Node.Children.Count > 0)
+    {
+        <div class="side-nav-children">
+            @foreach (var child in Node.Children)
+            {
+                <SideNavNode Node="@child" Level="@(Level + 1)" OnNodeClick="OnNodeClick" OnToggle="OnToggle" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public NavNode Node { get; set; } = new();
+
+    [Parameter]
+    public int Level { get; set; }
+
+    [Parameter]
+    public EventCallback<NavNode> OnNodeClick { get; set; }
+
+    [Parameter]
+    public EventCallback<NavNode> OnToggle { get; set; }
+
+    private async Task HandleToggleClick()
+    {
+        await OnToggle.InvokeAsync(Node);
+    }
+}

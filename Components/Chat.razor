@@ -2,11 +2,13 @@
 @using System.Text.RegularExpressions
 @using Microsoft.JSInterop
 @using Tutor.Services
+@using Tutor.Services.Logging
 @using Tutor.Models
 @inject OpenAIService Ai
 @inject InstructionsService Instructions
 @inject SettingsService Settings
 @inject CourseService CourseService
+@inject KnowledgeBaseStorageService KbStorageService
 @implements IDisposable
 
 @* Mode indicators at the top *@
@@ -21,19 +23,30 @@
         <button class="mode-exit-btn cancel" @onclick="ConfirmCancelQuiz" title="Cancel Quiz"><span class="bi bi-x-lg"></span> Cancel</button>
     </div>
 }
-else if (isLessonMode && lessonTopics.Count > 0)
+else if (isLessonMode)
 {
     <div class="mode-indicator lesson">
         <span class="mode-icon icon-teach-white"></span>
         <span class="mode-label">Lesson Mode</span>
-        <span class="mode-detail">Topic @(currentLessonIndex + 1) of @lessonTopics.Count</span>
-        @if (currentLessonIndex < lessonTopics.Count)
+        @if (lessonTopics.Count > 0)
         {
-            <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
+            <span class="mode-detail">Topic @(currentLessonIndex + 1) of @lessonTopics.Count</span>
+            @if (currentLessonIndex < lessonTopics.Count)
+            {
+                <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
+            }
+            <span class="mode-progress">@GetLessonProgressText()</span>
         }
-        <span class="mode-progress">@GetLessonProgressText()</span>
+        else
+        {
+            <span class="mode-detail">Generating curriculum...</span>
+        }
         <div class="mode-spacer"></div>
-        <button class="mode-exit-btn toc" @onclick="ShowTableOfContents" title="Table of Contents"><span class="bi bi-list-ul"></span> Table of Contents</button>
+        @if (lessonTopics.Count > 0)
+        {
+            <button class="mode-exit-btn kb" @onclick="ShowKnowledgeBase" title="Knowledge Base"><span class="bi bi-lightbulb"></span> Knowledge Base</button>
+            <button class="mode-exit-btn toc" @onclick="ShowTableOfContents" title="Table of Contents"><span class="bi bi-list-ul"></span> Table of Contents</button>
+        }
         <button class="mode-exit-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
     </div>
 }
@@ -107,6 +120,61 @@ else if (isLessonMode && lessonTopics.Count > 0)
     </div>
 }
 
+@* Knowledge Base modal *@
+@if (showKnowledgeBase)
+{
+    <div class="modal-overlay" @onclick="CloseKnowledgeBase">
+        <div class="modal-content kb-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span><span class="bi bi-lightbulb"></span> Knowledge Base</span>
+                <button class="close-btn" @onclick="CloseKnowledgeBase"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body kb-body">
+                @if (knowledgeBaseConcepts.Count == 0)
+                {
+                    <p class="kb-empty">No concepts available. Build a knowledge base in Courses.</p>
+                }
+                else
+                {
+                    <p class="kb-instruction">All concepts from your knowledge base:</p>
+                    <div class="kb-concepts">
+                        @foreach (var concept in knowledgeBaseConcepts.OrderBy(c => c.Title))
+                        {
+                            var isLearned = learnedConcepts.Contains(concept.Title);
+                            <div class="kb-concept @(isLearned ? "learned" : "")" @onclick="() => SelectConcept(concept)">
+                                <div class="kb-concept-header">
+                                    <span class="kb-concept-title">@concept.Title</span>
+                                    @if (isLearned)
+                                    {
+                                        <span class="kb-concept-status"><span class="bi bi-check-circle-fill"></span></span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(concept.Summary))
+                                {
+                                    <div class="kb-concept-summary">@concept.Summary</div>
+                                }
+                                @if (concept.Tags.Count > 0)
+                                {
+                                    <div class="kb-concept-tags">
+                                        @foreach (var tag in concept.Tags.Take(3))
+                                        {
+                                            <span class="kb-tag">@tag</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="kb-legend">
+                        <span><span class="legend-icon bi bi-check-circle-fill"></span> Learned</span>
+                        <span class="kb-count">@knowledgeBaseConcepts.Count concepts total</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 <div class="chat-shell">
     <div class="chat-log" @ref="chatLogRef">
         @{
@@ -166,7 +234,7 @@ else if (isLessonMode && lessonTopics.Count > 0)
                         <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
 
                         @* Show navigation buttons in assistant messages during lesson mode *@
-                        @if (m.Role == "assistant" && isLessonMode && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
+                        @if (m.Role == "assistant" && isLessonMode && lessonTopics.Count > 0 && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
                         {
                             <div class="msg-nav-buttons">
                                 @if (learnedConcepts.Count > 0)
@@ -188,10 +256,14 @@ else if (isLessonMode && lessonTopics.Count > 0)
                             </div>
                         }
 
-                        @* Show Continue button for term exploration *@
+                        @* Show Back and Continue buttons for term exploration *@
                         @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
                         {
                             <div class="msg-nav-buttons">
+                                <button class="msg-nav-btn previous" @onclick="BackToLesson" title="Go back to where you were">
+                                    <span class="icon-previous"></span>
+                                    Back
+                                </button>
                                 <button class="msg-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
                                     <span class="icon-continue"></span>
                                     Continue
@@ -339,6 +411,10 @@ private bool showAllMessages;
     // Table of Contents state
     private bool showTableOfContents;
 
+    // Knowledge Base state
+    private bool showKnowledgeBase;
+    private List<Concept> knowledgeBaseConcepts = [];
+
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -473,14 +549,19 @@ private bool showAllMessages;
     private async Task StartLesson()
     {
         if (activeCourse == null) return;
+        
+        Log.Info($"Chat: Starting lesson for course '{activeCourse.Name}'");
 
         var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
         if (resources.Count == 0)
         {
+            Log.Warn($"Chat: Course '{activeCourse.Name}' has no resources");
             messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
             StateHasChanged();
             return;
         }
+        
+        Log.Debug($"Chat: Found {resources.Count} resources for course '{activeCourse.Name}'");
 
         // Initialize lesson mode
         isLessonMode = true;
@@ -727,6 +808,54 @@ The questions should be specific to what you just taught, not generic.";
         showTableOfContents = false;
     }
 
+    // Knowledge Base functionality
+    private async Task ShowKnowledgeBase()
+    {
+        // Load concepts from knowledge base if not already loaded
+        if (knowledgeBaseConcepts.Count == 0 && activeCourse != null)
+        {
+            await LoadKnowledgeBaseConcepts();
+        }
+        showKnowledgeBase = true;
+    }
+
+    private void CloseKnowledgeBase()
+    {
+        showKnowledgeBase = false;
+    }
+
+    private async Task LoadKnowledgeBaseConcepts()
+    {
+        if (activeCourse == null || string.IsNullOrEmpty(activeCourse.KnowledgeBaseId))
+            return;
+
+        var kb = await KbStorageService.LoadAsync(activeCourse.KnowledgeBaseId);
+        if (kb != null && kb.Status == KnowledgeBaseStatus.Ready)
+        {
+            knowledgeBaseConcepts = kb.Concepts;
+        }
+    }
+
+    private async Task SelectConcept(Concept concept)
+    {
+        // Close the KB modal
+        showKnowledgeBase = false;
+
+        // Teach this concept
+        var teachPrompt = $@"Teach me about ""{concept.Title}"".
+
+{(string.IsNullOrEmpty(concept.Summary) ? "" : $"Context: {concept.Summary}")}
+
+Explain clearly, then at the end suggest THREE natural follow-up questions I might have. Format each as a clickable link on its own line:
+__First specific question about {concept.Title}?__
+__Second specific question about {concept.Title}?__
+__Third specific question about {concept.Title}?__";
+
+        prompt = teachPrompt;
+        pendingDisplayText = $"Teach me about \"{concept.Title}\"";
+        await SendAsync();
+    }
+
     private async Task JumpToTopic(int topicIndex)
     {
         if (topicIndex < 0 || topicIndex >= lessonTopics.Count) return;
@@ -932,6 +1061,8 @@ Please start with Question 1.";
     {
         var userText = prompt?.Trim();
         if (string.IsNullOrWhiteSpace(userText)) return;
+        
+        Log.Debug($"Chat: Sending message (captureTopics={captureTopics}, quizMode={isQuizMode}, lessonMode={isLessonMode})");
 
         prompt = "";
         await ResetTextareaHeight();
@@ -958,11 +1089,13 @@ Please start with Question 1.";
             if (captureTopics)
             {
                 // For curriculum planning, we need to see ALL resources holistically
+                Log.Debug("Chat: Using unified curriculum context for topic planning");
                 courseContext = await CourseService.GetUnifiedCurriculumContextAsync(ct: cts.Token);
             }
             else
             {
                 // For regular queries, use RAG to get only relevant content
+                Log.Trace("Chat: Using RAG context for query");
                 courseContext = await CourseService.GetRelevantContentAsync(userText, topK: 5, cts.Token);
             }
 
@@ -970,6 +1103,7 @@ Please start with Question 1.";
             string fullInstructions;
             if (isQuizMode)
             {
+                Log.Debug($"Chat: Quiz mode - Question {currentQuestionNumber}/{totalQuestions}");
                 var quizInstructions = $@"You are conducting a quiz. Current question: {currentQuestionNumber} of {totalQuestions}.
 After the student answers, evaluate their response and indicate if it's correct or incorrect.
 When evaluating, be fair but accurate - partial credit is okay for partially correct answers.
@@ -993,13 +1127,16 @@ Keep track of the running score.";
                     : courseContext + "\n\n" + instructions;
             }
 
+            Log.Info($"Chat: Calling AI service ({userText.Length} chars input)");
             var reply = await Ai.GetReplyAsync(messages, fullInstructions, cts.Token);
             messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson, null, isExploration));
+            Log.Info($"Chat: AI reply received ({reply.Text.Length} chars)");
 
             // Capture topics if this is the initial lesson request
             if (captureTopics && isLessonMode)
             {
                 ParseTopicsFromResponse(reply.Text);
+                Log.Info($"Chat: Parsed {lessonTopics.Count} topics from curriculum response");
                 
                 // If we have a pending start topic, jump to it
                 if (!string.IsNullOrEmpty(pendingStartTopic) && lessonTopics.Count > 0)
@@ -1007,6 +1144,7 @@ Keep track of the running score.";
                     var targetIndex = FindTopicIndex(pendingStartTopic);
                     if (targetIndex >= 0)
                     {
+                        Log.Debug($"Chat: Jumping to topic index {targetIndex}: {pendingStartTopic}");
                         currentLessonIndex = targetIndex;
                         hasStartedLearning = true;
                         visitedTopicIndices.Add(targetIndex);
@@ -1039,16 +1177,19 @@ Keep track of the running score.";
                 var responseText = reply.Text.ToLowerInvariant();
                 if (responseText.Contains("final") || responseText.Contains("summary") || responseText.Contains("total"))
                 {
+                    Log.Info("Chat: Quiz completed");
                     isQuizMode = false;
                 }
             }
         }
         catch (OperationCanceledException)
         {
+            Log.Warn("Chat: Request cancelled by user");
             messages.Add(new ChatMessage("assistant", "Request cancelled.", "Request was cancelled by user."));
         }
         catch (Exception ex)
         {
+            Log.Error($"Chat: Error during message send - {ex.Message}", ex);
             messages.Add(new ChatMessage("assistant", $"Error: {ex.Message}", ex.ToString()));
         }
         finally

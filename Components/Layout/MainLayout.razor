@@ -1,15 +1,15 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.JSInterop
+@using Tutor.Services
 @inject ThemeService ThemeService
+@inject SettingsService SettingsService
 @inject IJSRuntime JS
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <article class="content px-4">
+<div class="app-layout">
+    <TopMenu />
+    
+    <main class="main-panel">
+        <article class="content">
             @Body
         </article>
     </main>
@@ -22,6 +22,9 @@
         {
             var theme = await ThemeService.GetThemeAsync();
             await JS.InvokeVoidAsync("setTheme", theme);
+
+            var borderRadius = await SettingsService.GetBorderRadiusAsync();
+            await JS.InvokeVoidAsync("setBorderRadius", borderRadius);
         }
     }
 }

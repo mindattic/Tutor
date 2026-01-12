@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -42,6 +43,7 @@ TEXT TO FORMAT:
     {
         this.http = http;
         this.opt = opt;
+        Log.Debug("ContentFormatterService initialized");
     }
 
     /// <summary>
@@ -60,18 +62,26 @@ TEXT TO FORMAT:
         if (string.IsNullOrWhiteSpace(rawContent))
             return rawContent;
 
+        Log.Info($"ContentFormatter: Starting formatting ({rawContent.Length} chars)");
+
         var apiKey = await opt.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            Log.Error("ContentFormatter: API key is missing");
             throw new InvalidOperationException("OpenAI API key is missing.");
+        }
 
         // For very large content, process in chunks to avoid token limits
         if (rawContent.Length > 15000)
         {
+            Log.Debug($"ContentFormatter: Large content detected, using chunked processing");
             return await FormatLargeContentAsync(rawContent, apiKey, onProgress, ct);
         }
 
         onProgress?.Invoke(1, 1);
-        return await FormatChunkAsync(rawContent, apiKey, ct);
+        var result = await FormatChunkAsync(rawContent, apiKey, ct);
+        Log.Info($"ContentFormatter: Formatting complete ({result.Length} chars output)");
+        return result;
     }
 
     /// <summary>
@@ -131,16 +141,41 @@ TEXT TO FORMAT:
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        using var resp = await http.SendAsync(req, ct);
-        var json = await resp.Content.ReadAsStringAsync(ct);
-
-        if (!resp.IsSuccessStatusCode)
+        try
         {
-            // On failure, return original content
-            return content;
-        }
+            Log.Trace("ContentFormatter: Sending HTTP request...");
+            using var resp = await http.SendAsync(req, ct);
+            var statusCode = (int)resp.StatusCode;
+            var json = await resp.Content.ReadAsStringAsync(ct);
 
-        return ExtractText(json);
+            if (statusCode != 200)
+            {
+                Log.Error($"ContentFormatter: API error HTTP {statusCode} {resp.ReasonPhrase}");
+                Log.Debug($"ContentFormatter error body: {(json.Length > 500 ? json[..500] + "..." : json)}");
+                
+                // On failure, return original content with a warning
+                Log.Warn($"ContentFormatter: Returning original content due to API error {statusCode}");
+                return content;
+            }
+
+            Log.Debug($"ContentFormatter: Response HTTP {statusCode} ({json.Length} chars)");
+            return ExtractText(json);
+        }
+        catch (HttpRequestException ex)
+        {
+            Log.Error($"ContentFormatter: Network error - {ex.Message} (Status: {ex.StatusCode})", ex);
+            return content; // Return original on network error
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            Log.Error("ContentFormatter: Request timed out", ex);
+            return content; // Return original on timeout
+        }
+        catch (TaskCanceledException)
+        {
+            Log.Debug("ContentFormatter: Request cancelled by user");
+            throw;
+        }
     }
 
     private static string ExtractText(string json)

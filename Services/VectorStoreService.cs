@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Tutor.Models;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -29,6 +30,7 @@ public sealed class VectorStoreService
         chunksFilePath = Path.Combine(FileSystem.AppDataDirectory, ChunksFileName);
         this.lshService = lshService;
         this.simHashService = simHashService;
+        Log.Debug($"VectorStoreService initialized at: {chunksFilePath}");
     }
 
     /// <summary>
@@ -36,15 +38,19 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task StoreChunksAsync(string resourceId, string curriculumId, List<ContentChunk> chunks)
     {
+        Log.Info($"VectorStore: Storing {chunks.Count} chunks for resource {resourceId}");
         var allChunks = await LoadChunksAsync();
         
         // Remove existing chunks for this resource
-        allChunks.RemoveAll(c => c.ResourceId == resourceId);
+        var removed = allChunks.RemoveAll(c => c.ResourceId == resourceId);
+        if (removed > 0)
+            Log.Debug($"VectorStore: Removed {removed} existing chunks for resource {resourceId}");
         
         // Add new chunks
         allChunks.AddRange(chunks);
         
         await SaveChunksAsync(allChunks);
+        Log.Debug($"VectorStore: Total chunks now: {allChunks.Count}");
     }
 
     /// <summary>
@@ -52,8 +58,10 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task RemoveChunksForResourceAsync(string resourceId)
     {
+        Log.Debug($"VectorStore: Removing chunks for resource {resourceId}");
         var allChunks = await LoadChunksAsync();
-        allChunks.RemoveAll(c => c.ResourceId == resourceId);
+        var removed = allChunks.RemoveAll(c => c.ResourceId == resourceId);
+        Log.Info($"VectorStore: Removed {removed} chunks for resource {resourceId}");
         await SaveChunksAsync(allChunks);
     }
 
@@ -62,8 +70,10 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task RemoveChunksForCurriculumAsync(string curriculumId)
     {
+        Log.Debug($"VectorStore: Removing chunks for curriculum {curriculumId}");
         var allChunks = await LoadChunksAsync();
-        allChunks.RemoveAll(c => c.CurriculumId == curriculumId);
+        var removed = allChunks.RemoveAll(c => c.CurriculumId == curriculumId);
+        Log.Info($"VectorStore: Removed {removed} chunks for curriculum {curriculumId}");
         await SaveChunksAsync(allChunks);
     }
 
@@ -77,6 +87,7 @@ public sealed class VectorStoreService
         int topK = 5,
         float minSimilarity = 0.3f)
     {
+        Log.Debug($"VectorStore: Searching curriculum {curriculumId} (topK={topK})");
         var allChunks = await LoadChunksAsync();
         
         // Filter to curriculum and calculate similarities
@@ -88,6 +99,8 @@ public sealed class VectorStoreService
             .Take(topK)
             .Select(x => x.Chunk)
             .ToList();
+        
+        Log.Debug($"VectorStore: Found {results.Count} matching chunks");
 
         return results;
     }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Tutor.Models;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -36,6 +37,7 @@ public sealed class CourseService
         this.fileResourceService = fileResourceService;
         this.lshService = lshService;
         this.simHashService = simHashService;
+        Log.Debug("CourseService initialized");
     }
 
     // Resource management
@@ -50,14 +52,17 @@ public sealed class CourseService
             if (string.IsNullOrEmpty(json))
             {
                 cachedResources = new List<CourseResource>();
+                Log.Debug("CourseService: No resources found, returning empty list");
                 return cachedResources;
             }
 
             cachedResources = JsonSerializer.Deserialize<List<CourseResource>>(json) ?? new List<CourseResource>();
+            Log.Debug($"CourseService: Loaded {cachedResources.Count} resources from storage");
             return cachedResources;
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Error($"CourseService: Failed to load resources - {ex.Message}", ex);
             cachedResources = new List<CourseResource>();
             return cachedResources;
         }
@@ -71,6 +76,7 @@ public sealed class CourseService
 
     public async Task SaveResourceAsync(CourseResource resource)
     {
+        Log.Info($"CourseService: Saving resource '{resource.Title}' (ID: {resource.Id})");
         var resources = await GetAllResourcesAsync();
         var existing = resources.FirstOrDefault(r => r.Id == resource.Id);
 
@@ -78,6 +84,7 @@ public sealed class CourseService
         {
             resources.Remove(existing);
             resource.UpdatedAt = DateTime.UtcNow;
+            Log.Debug($"CourseService: Updating existing resource '{resource.Title}'");
         }
 
         resources.Add(resource);
@@ -97,6 +104,7 @@ public sealed class CourseService
         }
 
         await SaveResourceAsync(resource);
+
 
         // Also save to file system for GitHub
         if (!string.IsNullOrWhiteSpace(resource.Content))
@@ -303,6 +311,7 @@ public sealed class CourseService
 
     public async Task<Course> CreateCourseAsync(string name, string description = "")
     {
+        Log.Info($"CourseService: Creating course '{name}'");
         var course = new Course
         {
             Name = name,
@@ -313,12 +322,15 @@ public sealed class CourseService
         var courses = await GetAllCoursesAsync();
         courses.Add(course);
         await SaveCoursesAsync(courses);
+        
+        Log.Info($"CourseService: Course '{name}' created with ID: {course.Id}");
 
         return course;
     }
 
     public async Task SaveCourseAsync(Course course)
     {
+        Log.Debug($"CourseService: Saving course '{course.Name}' (ID: {course.Id})");
         var courses = await GetAllCoursesAsync();
         var existing = courses.FirstOrDefault(c => c.Id == course.Id);
 
@@ -333,13 +345,16 @@ public sealed class CourseService
 
     public async Task RenameCourseAsync(string courseId, string newName)
     {
+        Log.Info($"CourseService: Renaming course {courseId} to '{newName}'");
         var courses = await GetAllCoursesAsync();
         var course = courses.FirstOrDefault(c => c.Id == courseId);
 
         if (course != null)
         {
+            var oldName = course.Name;
             course.Name = newName;
             await SaveCoursesAsync(courses);
+            Log.Info($"CourseService: Course renamed from '{oldName}' to '{newName}'");
         }
     }
 
@@ -350,6 +365,7 @@ public sealed class CourseService
 
         if (course != null)
         {
+            Log.Info($"CourseService: Deleting course '{course.Name}' (ID: {id})");
             courses.Remove(course);
             await SaveCoursesAsync(courses);
 
@@ -359,6 +375,7 @@ public sealed class CourseService
             {
                 await ClearActiveCourseAsync();
             }
+            Log.Info($"CourseService: Course '{course.Name}' deleted");
         }
     }
 

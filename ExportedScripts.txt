@@ -1,6 +1,6 @@
 ﻿== Tutor EXPORT ==
 VERSION: 1
-CREATED_UTC: 2026-01-11T04:59:38Z
+CREATED_UTC: 2026-01-11T17:00:33Z
 ROOT: D:/Projects/Tutor
 
 <<<MANIFEST JSON START>>>
@@ -25,9 +25,27 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "MauiProgram.cs",
-        "sha256":  "BFBB3DCE2A7333282A9296BA1E28494F060706DC50807E265F6BF81C74A2AD73",
-        "bytes":  2563,
-        "lines":  58,
+        "sha256":  "404AD0B68140EDDACD4969597683FAF49CBC1DFEC2356A0D22F2A5ED22CCD090",
+        "bytes":  3457,
+        "lines":  70,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/ConceptNode.cs",
+        "sha256":  "D8FE51AD778C41C99D3791D1A29919FC208E36E00B964DB0521D0C26F0D80D50",
+        "bytes":  4547,
+        "lines":  112,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/ConceptRelationship.cs",
+        "sha256":  "9AD0866B4D41DFCBCC2BA07BF28AF0E6AD0F1FCD627E6A0AE80FFD04996E28BB",
+        "bytes":  5229,
+        "lines":  128,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -61,9 +79,18 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "Models/CourseResource.cs",
-        "sha256":  "B8D3673C21B3BA4F98370D4B337C2059F1E6FC6C25418CDF61A813545E96D0DE",
-        "bytes":  797,
-        "lines":  24,
+        "sha256":  "886FA6898D51EBE5386ABBF9622F32CB4657E7F0D09D1B7D7A9355D9F1EEEE9B",
+        "bytes":  1390,
+        "lines":  44,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Models/KnowledgeGraph.cs",
+        "sha256":  "5DFED1ABF06429E4B994F098881938FA1C9CAE96C3C08F97AA433A80AC0D6B67",
+        "bytes":  13632,
+        "lines":  334,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -150,6 +177,24 @@ ROOT: D:/Projects/Tutor
         "guid":  null
     },
     {
+        "path":  "Services/ConceptCorrelationService.cs",
+        "sha256":  "69E9288D76DC8614DD33C250035995582744C6F748B1D131BEB15EE09FA20B54",
+        "bytes":  21965,
+        "lines":  498,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/ConceptExtractionService.cs",
+        "sha256":  "6CE23CD55B17268166AF212CA7DDC7BE02717D05D5F43A543474ECCC52D4AB97",
+        "bytes":  15555,
+        "lines":  339,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
         "path":  "Services/ContentFormatterService.cs",
         "sha256":  "E91D0A288077F70267D6A46140FE43DE624BF68600490F17BBBCD581DEFEE951",
         "bytes":  10278,
@@ -169,9 +214,9 @@ ROOT: D:/Projects/Tutor
     },
     {
         "path":  "Services/CourseService.cs",
-        "sha256":  "12BF81AAD5210B232B08D3032C6A8264D3D89106E2D89CE940B79B95F24AA7F2",
-        "bytes":  26589,
-        "lines":  635,
+        "sha256":  "97958D743ACB8211D739BEE3619796587094CE63BEA5286F729D6284D4C755C3",
+        "bytes":  28242,
+        "lines":  681,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -204,6 +249,24 @@ ROOT: D:/Projects/Tutor
         "guid":  null
     },
     {
+        "path":  "Services/KnowledgeGraphBuildService.cs",
+        "sha256":  "4B96FD9FF1AE4D0228D48B7E0CC26FDBFA51418502E0A174F0198007B8640BBE",
+        "bytes":  13593,
+        "lines":  337,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/KnowledgeGraphService.cs",
+        "sha256":  "3C64919AAA5774991F00AFB3F3EDBF3E1947BB611807A8124499ABB4A5F23067",
+        "bytes":  20063,
+        "lines":  526,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
         "path":  "Services/LSHService.cs",
         "sha256":  "EEF1C1FEDD52EA73579C556FD6F3D43709779D2FD0951AB06D665A5F720BF589",
         "bytes":  9093,
@@ -217,6 +280,15 @@ ROOT: D:/Projects/Tutor
         "sha256":  "8030891765E208B57755A26FACD0CE6A79937D98EF4E0E06F6447048777CB041",
         "bytes":  4550,
         "lines":  128,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/ResourceProcessingService.cs",
+        "sha256":  "D44E8C1313C6DCE2910EE722C80B52B556F79863198F51B901837E57857F8EFE",
+        "bytes":  15174,
+        "lines":  388,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -253,6 +325,15 @@ ROOT: D:/Projects/Tutor
         "sha256":  "C33A66EB8B322EC55A4E77218E5C698178E98140CE936C5B0B8827F13AFBAC4B",
         "bytes":  6333,
         "lines":  178,
+        "ext":  ".cs",
+        "type":  "script",
+        "guid":  null
+    },
+    {
+        "path":  "Services/TableOfContentsService.cs",
+        "sha256":  "A9D127B88ACA764BA3D1717902683EC6E4B9DE95BA5962BC553F8F04DCC0A78F",
+        "bytes":  16976,
+        "lines":  423,
         "ext":  ".cs",
         "type":  "script",
         "guid":  null
@@ -340,9 +421,9 @@ namespace Tutor
 PATH: MauiProgram.cs
 TYPE: script
 EXT: .cs
-SHA256: BFBB3DCE2A7333282A9296BA1E28494F060706DC50807E265F6BF81C74A2AD73
-BYTES: 2563
-LINES: 79
+SHA256: 404AD0B68140EDDACD4969597683FAF49CBC1DFEC2356A0D22F2A5ED22CCD090
+BYTES: 3457
+LINES: 100
 <<<CONTENT START>>>
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection; 
@@ -413,6 +494,27 @@ namespace Tutor
             // Core Concept service
             builder.Services.AddSingleton<CoreConceptService>();
 
+            // Concept extraction service (LLM-based concept discovery)
+            builder.Services.AddHttpClient<ConceptExtractionService>();
+
+            // Concept correlation service (relationship discovery)
+            builder.Services.AddHttpClient<ConceptCorrelationService>();
+
+
+
+
+            // Knowledge graph service (graph management and persistence)
+            builder.Services.AddSingleton<KnowledgeGraphService>();
+
+            // Table of contents service (learning path generation)
+            builder.Services.AddSingleton<TableOfContentsService>();
+
+            // Resource processing service (async pipeline with throttling)
+            builder.Services.AddSingleton<ResourceProcessingService>();
+
+            // Knowledge graph build service (async graph building with queue)
+            builder.Services.AddSingleton<KnowledgeGraphBuildService>();
+
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();
@@ -421,6 +523,315 @@ namespace Tutor
             return builder.Build();
         }
     }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/ConceptNode.cs
+TYPE: script
+EXT: .cs
+SHA256: D8FE51AD778C41C99D3791D1A29919FC208E36E00B964DB0521D0C26F0D80D50
+BYTES: 4547
+LINES: 135
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+/// <summary>
+/// Represents a core concept as a node in a hierarchical knowledge graph.
+/// Concepts form a directed acyclic graph where edges represent prerequisite relationships.
+/// Example: "Emperor" ? "Primarchs" ? "Horus Heresy" means you must understand
+/// the Emperor before Primarchs, and Primarchs before the Horus Heresy.
+/// </summary>
+public class ConceptNode
+{
+    /// <summary>
+    /// Unique identifier for this concept.
+    /// </summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// The canonical name/term for this concept.
+    /// </summary>
+    public string Term { get; set; } = "";
+
+    /// <summary>
+    /// A concise description of the concept.
+    /// </summary>
+    public string Description { get; set; } = "";
+
+    /// <summary>
+    /// Extended explanation with examples and context.
+    /// </summary>
+    public string ExtendedContent { get; set; } = "";
+
+    /// <summary>
+    /// Alternative names or synonyms for this concept.
+    /// Used for matching during concept discovery.
+    /// </summary>
+    public List<string> Aliases { get; set; } = [];
+
+    /// <summary>
+    /// The embedding vector for semantic similarity comparisons.
+    /// Generated from the term + description for dense retrieval.
+    /// </summary>
+    public float[] Embedding { get; set; } = [];
+
+    /// <summary>
+    /// LSH signature for fast approximate nearest neighbor search.
+    /// </summary>
+    public byte[] SemanticSignature { get; set; } = [];
+
+    /// <summary>
+    /// SimHash signature for lexical similarity.
+    /// </summary>
+    public ulong LexicalSignature { get; set; }
+
+    /// <summary>
+    /// IDs of concepts that must be understood BEFORE this one (prerequisites).
+    /// These are the incoming edges in the knowledge graph.
+    /// </summary>
+    public List<string> PrerequisiteIds { get; set; } = [];
+
+    /// <summary>
+    /// IDs of concepts that depend on this one (this is their prerequisite).
+    /// These are the outgoing edges in the knowledge graph.
+    /// </summary>
+    public List<string> DependentIds { get; set; } = [];
+
+    /// <summary>
+    /// Computed depth in the knowledge hierarchy.
+    /// Concepts with no prerequisites have depth 0 (foundational).
+    /// Higher depth = more advanced/dependent concepts.
+    /// </summary>
+    public int HierarchyDepth { get; set; }
+
+    /// <summary>
+    /// IDs of resources where this concept was discovered or is discussed.
+    /// </summary>
+    public List<string> SourceResourceIds { get; set; } = [];
+
+    /// <summary>
+    /// IDs of content chunks most relevant to this concept.
+    /// Used for retrieval when explaining the concept.
+    /// </summary>
+    public List<string> RelevantChunkIds { get; set; } = [];
+
+    /// <summary>
+    /// Tags/categories for grouping related concepts.
+    /// </summary>
+    public List<string> Tags { get; set; } = [];
+
+    /// <summary>
+    /// Confidence score (0-1) indicating how well-established this concept is.
+    /// Higher scores indicate more supporting evidence from resources.
+    /// </summary>
+    public float ConfidenceScore { get; set; } = 1.0f;
+
+    /// <summary>
+    /// Whether this concept has been reviewed/confirmed by the user.
+    /// </summary>
+    public bool IsVerified { get; set; }
+
+    /// <summary>
+    /// When this concept was first discovered/added.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// When this concept was last updated.
+    /// </summary>
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Creates the text representation used for generating embeddings.
+    /// </summary>
+    public string GetEmbeddingText()
+    {
+        var parts = new List<string> { Term };
+        
+        if (!string.IsNullOrWhiteSpace(Description))
+            parts.Add(Description);
+            
+        if (Aliases.Count > 0)
+            parts.Add($"Also known as: {string.Join(", ", Aliases)}");
+
+        return string.Join(". ", parts);
+    }
+
+    /// <summary>
+    /// Checks if this concept is foundational (no prerequisites).
+    /// </summary>
+    public bool IsFoundational => PrerequisiteIds.Count == 0;
+
+    /// <summary>
+    /// Checks if this concept is a leaf (no dependents).
+    /// </summary>
+    public bool IsLeaf => DependentIds.Count == 0;
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/ConceptRelationship.cs
+TYPE: script
+EXT: .cs
+SHA256: 9AD0866B4D41DFCBCC2BA07BF28AF0E6AD0F1FCD627E6A0AE80FFD04996E28BB
+BYTES: 5229
+LINES: 152
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+/// <summary>
+/// Represents a directed edge in the knowledge graph between two concepts.
+/// The edge indicates that the source concept is a prerequisite for the target concept.
+/// </summary>
+public class ConceptRelationship
+{
+    /// <summary>
+    /// Unique identifier for this relationship.
+    /// </summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// ID of the prerequisite concept (the concept that must be understood first).
+    /// </summary>
+    public string SourceConceptId { get; set; } = "";
+
+    /// <summary>
+    /// ID of the dependent concept (the concept that requires the prerequisite).
+    /// </summary>
+    public string TargetConceptId { get; set; } = "";
+
+    /// <summary>
+    /// The type of relationship between concepts.
+    /// </summary>
+    public ConceptRelationType RelationType { get; set; } = ConceptRelationType.Prerequisite;
+
+    /// <summary>
+    /// Confidence score (0-1) for this relationship.
+    /// Higher scores indicate stronger evidence for the relationship.
+    /// Computed from semantic similarity, co-occurrence, and other signals.
+    /// </summary>
+    public float ConfidenceScore { get; set; }
+
+    /// <summary>
+    /// Cosine similarity between the concept embeddings.
+    /// </summary>
+    public float SemanticSimilarity { get; set; }
+
+    /// <summary>
+    /// LSH Hamming distance between semantic signatures.
+    /// Lower values indicate higher similarity.
+    /// </summary>
+    public int SemanticDistance { get; set; }
+
+    /// <summary>
+    /// SimHash Hamming distance for lexical similarity.
+    /// Lower values indicate higher similarity.
+    /// </summary>
+    public int LexicalDistance { get; set; }
+
+    /// <summary>
+    /// How often these concepts appear together in the source material.
+    /// Higher values suggest stronger relationship.
+    /// </summary>
+    public int CoOccurrenceCount { get; set; }
+
+    /// <summary>
+    /// IDs of resources where this relationship was discovered.
+    /// </summary>
+    public List<string> EvidenceResourceIds { get; set; } = [];
+
+    /// <summary>
+    /// IDs of chunks that provide evidence for this relationship.
+    /// </summary>
+    public List<string> EvidenceChunkIds { get; set; } = [];
+
+    /// <summary>
+    /// Optional explanation of why this relationship exists.
+    /// </summary>
+    public string Justification { get; set; } = "";
+
+    /// <summary>
+    /// Whether this relationship has been confirmed by the user or LLM analysis.
+    /// </summary>
+    public bool IsVerified { get; set; }
+
+    /// <summary>
+    /// When this relationship was discovered.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// When this relationship was last updated.
+    /// </summary>
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Creates a weighted combined score from all similarity metrics.
+    /// </summary>
+    public float ComputeCombinedScore(float semanticWeight = 0.5f, float distanceWeight = 0.3f, float coOccurrenceWeight = 0.2f)
+    {
+        // Normalize LSH distance (0-256 typically) to 0-1 similarity
+        var normalizedSemanticDist = 1.0f - Math.Clamp(SemanticDistance / 128f, 0f, 1f);
+        
+        // Normalize lexical distance to 0-1 similarity
+        var normalizedLexicalDist = 1.0f - Math.Clamp(LexicalDistance / 32f, 0f, 1f);
+        
+        // Average the distance-based scores
+        var distanceScore = (normalizedSemanticDist + normalizedLexicalDist) / 2f;
+        
+        // Normalize co-occurrence (assuming max of ~100 is very strong)
+        var normalizedCoOccurrence = Math.Clamp(CoOccurrenceCount / 50f, 0f, 1f);
+
+        return (SemanticSimilarity * semanticWeight) +
+               (distanceScore * distanceWeight) +
+               (normalizedCoOccurrence * coOccurrenceWeight);
+    }
+}
+
+/// <summary>
+/// Types of relationships between concepts in the knowledge graph.
+/// </summary>
+public enum ConceptRelationType
+{
+    /// <summary>
+    /// Source must be understood before target (foundational dependency).
+    /// Example: "Addition" is a prerequisite for "Multiplication"
+    /// </summary>
+    Prerequisite,
+
+    /// <summary>
+    /// Concepts are strongly related but neither is strictly required first.
+    /// Example: "Velocity" and "Speed" are related
+    /// </summary>
+    Related,
+
+    /// <summary>
+    /// Target is a specific instance or example of the source.
+    /// Example: "Horus" is an instance of "Primarch"
+    /// </summary>
+    Instance,
+
+    /// <summary>
+    /// Target is a part or component of the source.
+    /// Example: "Engine" is part of "Car"
+    /// </summary>
+    PartOf,
+
+    /// <summary>
+    /// Target is a specialization or subtype of the source.
+    /// Example: "Traitor Primarch" specializes "Primarch"
+    /// </summary>
+    Specialization,
+
+    /// <summary>
+    /// Concepts are frequently mentioned together but relationship type is unclear.
+    /// </summary>
+    CoOccurs
 }
 
 <<<CONTENT END>>>
@@ -555,9 +966,9 @@ public class Course
 PATH: Models/CourseResource.cs
 TYPE: script
 EXT: .cs
-SHA256: B8D3673C21B3BA4F98370D4B337C2059F1E6FC6C25418CDF61A813545E96D0DE
-BYTES: 797
-LINES: 27
+SHA256: 886FA6898D51EBE5386ABBF9622F32CB4657E7F0D09D1B7D7A9355D9F1EEEE9B
+BYTES: 1390
+LINES: 47
 <<<CONTENT START>>>
 namespace Tutor.Models;
 
@@ -571,11 +982,31 @@ public class CourseResource
     public string Author { get; set; } = "";
     public string Year { get; set; } = "";
     public string Description { get; set; } = "";
+    
+    /// <summary>
+    /// Original content as uploaded/pasted.
+    /// </summary>
     public string Content { get; set; } = "";
+    
+    /// <summary>
+    /// AI-formatted version of the content (if processed).
+    /// </summary>
+    public string? FormattedContent { get; set; }
+    
     public ResourceType Type { get; set; } = ResourceType.Text;
     public string FileName { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Whether this resource has been processed (formatted, concepts extracted).
+    /// </summary>
+    public bool IsProcessed { get; set; }
+    
+    /// <summary>
+    /// Gets the best available content (formatted if available, otherwise original).
+    /// </summary>
+    public string GetEffectiveContent() => FormattedContent ?? Content;
 }
 
 public enum ResourceType
@@ -584,6 +1015,404 @@ public enum ResourceType
     Txt,
     Docx,
     Pdf
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Models/KnowledgeGraph.cs
+TYPE: script
+EXT: .cs
+SHA256: 5DFED1ABF06429E4B994F098881938FA1C9CAE96C3C08F97AA433A80AC0D6B67
+BYTES: 13632
+LINES: 387
+<<<CONTENT START>>>
+namespace Tutor.Models;
+
+/// <summary>
+/// Represents a complete knowledge graph for a course or subject domain.
+/// Contains concept nodes and their relationships, supporting:
+/// - Hierarchical traversal (prerequisites ? dependents)
+/// - Topological sorting for optimal learning order
+/// - Bidirectional navigation from any concept
+/// </summary>
+public class KnowledgeGraph
+{
+    /// <summary>
+    /// Unique identifier for this knowledge graph.
+    /// </summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Name of the knowledge domain or course this graph represents.
+    /// </summary>
+    public string Name { get; set; } = "";
+
+    /// <summary>
+    /// Description of the subject matter covered.
+    /// </summary>
+    public string Description { get; set; } = "";
+
+    /// <summary>
+    /// ID of the course this graph belongs to (if any).
+    /// </summary>
+    public string? CourseId { get; set; }
+
+    /// <summary>
+    /// All concept nodes in the graph, keyed by their ID for fast lookup.
+    /// </summary>
+    public Dictionary<string, ConceptNode> Nodes { get; set; } = [];
+
+    /// <summary>
+    /// All relationships in the graph, keyed by their ID.
+    /// </summary>
+    public Dictionary<string, ConceptRelationship> Relationships { get; set; } = [];
+
+    /// <summary>
+    /// Adjacency list for forward traversal (concept ID ? dependent concept IDs).
+    /// Built from relationships for efficient graph navigation.
+    /// </summary>
+    public Dictionary<string, List<string>> ForwardEdges { get; set; } = [];
+
+    /// <summary>
+    /// Adjacency list for backward traversal (concept ID ? prerequisite concept IDs).
+    /// </summary>
+    public Dictionary<string, List<string>> BackwardEdges { get; set; } = [];
+
+    /// <summary>
+    /// When this graph was created.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// When this graph was last modified.
+    /// </summary>
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Version number for tracking changes.
+    /// </summary>
+    public int Version { get; set; } = 1;
+
+    /// <summary>
+    /// Gets all foundational concepts (no prerequisites).
+    /// These are the starting points for learning paths.
+    /// </summary>
+    public IEnumerable<ConceptNode> GetFoundationalConcepts()
+    {
+        return Nodes.Values.Where(n => n.IsFoundational).OrderBy(n => n.Term);
+    }
+
+    /// <summary>
+    /// Gets all leaf concepts (no dependents).
+    /// These are the endpoints of learning paths.
+    /// </summary>
+    public IEnumerable<ConceptNode> GetLeafConcepts()
+    {
+        return Nodes.Values.Where(n => n.IsLeaf).OrderByDescending(n => n.HierarchyDepth);
+    }
+
+    /// <summary>
+    /// Gets concepts at a specific depth level.
+    /// </summary>
+    public IEnumerable<ConceptNode> GetConceptsAtDepth(int depth)
+    {
+        return Nodes.Values.Where(n => n.HierarchyDepth == depth).OrderBy(n => n.Term);
+    }
+
+    /// <summary>
+    /// Gets the maximum depth of the hierarchy.
+    /// </summary>
+    public int MaxDepth => Nodes.Count > 0 ? Nodes.Values.Max(n => n.HierarchyDepth) : 0;
+
+    /// <summary>
+    /// Gets all direct prerequisites for a concept.
+    /// </summary>
+    public IEnumerable<ConceptNode> GetPrerequisites(string conceptId)
+    {
+        if (!Nodes.ContainsKey(conceptId))
+            return [];
+
+        var prereqIds = BackwardEdges.TryGetValue(conceptId, out var edges) ? edges : [];
+        return prereqIds.Where(id => Nodes.ContainsKey(id)).Select(id => Nodes[id]);
+    }
+
+    /// <summary>
+    /// Gets all direct dependents of a concept.
+    /// </summary>
+    public IEnumerable<ConceptNode> GetDependents(string conceptId)
+    {
+        if (!Nodes.ContainsKey(conceptId))
+            return [];
+
+        var depIds = ForwardEdges.TryGetValue(conceptId, out var edges) ? edges : [];
+        return depIds.Where(id => Nodes.ContainsKey(id)).Select(id => Nodes[id]);
+    }
+
+    /// <summary>
+    /// Gets ALL prerequisites transitively (the complete prerequisite chain).
+    /// Returns concepts ordered from most foundational to immediate prerequisites.
+    /// </summary>
+    public List<ConceptNode> GetAllPrerequisites(string conceptId)
+    {
+        var result = new List<ConceptNode>();
+        var visited = new HashSet<string>();
+        CollectPrerequisitesRecursive(conceptId, visited, result);
+        
+        // Order by hierarchy depth (foundational first)
+        return result.OrderBy(n => n.HierarchyDepth).ThenBy(n => n.Term).ToList();
+    }
+
+    private void CollectPrerequisitesRecursive(string conceptId, HashSet<string> visited, List<ConceptNode> result)
+    {
+        if (!BackwardEdges.TryGetValue(conceptId, out var prereqIds))
+            return;
+
+        foreach (var prereqId in prereqIds)
+        {
+            if (visited.Contains(prereqId) || !Nodes.ContainsKey(prereqId))
+                continue;
+
+            visited.Add(prereqId);
+            CollectPrerequisitesRecursive(prereqId, visited, result);
+            result.Add(Nodes[prereqId]);
+        }
+    }
+
+    /// <summary>
+    /// Gets ALL dependents transitively (the complete dependent chain).
+    /// Returns concepts ordered from immediate dependents to most advanced.
+    /// </summary>
+    public List<ConceptNode> GetAllDependents(string conceptId)
+    {
+        var result = new List<ConceptNode>();
+        var visited = new HashSet<string>();
+        CollectDependentsRecursive(conceptId, visited, result);
+        
+        // Order by hierarchy depth (closer dependents first)
+        return result.OrderBy(n => n.HierarchyDepth).ThenBy(n => n.Term).ToList();
+    }
+
+    private void CollectDependentsRecursive(string conceptId, HashSet<string> visited, List<ConceptNode> result)
+    {
+        if (!ForwardEdges.TryGetValue(conceptId, out var depIds))
+            return;
+
+        foreach (var depId in depIds)
+        {
+            if (visited.Contains(depId) || !Nodes.ContainsKey(depId))
+                continue;
+
+            visited.Add(depId);
+            result.Add(Nodes[depId]);
+            CollectDependentsRecursive(depId, visited, result);
+        }
+    }
+
+    /// <summary>
+    /// Gets a complete learning path from foundational concepts to a target concept.
+    /// Returns an ordered list representing the optimal learning sequence.
+    /// </summary>
+    public List<ConceptNode> GetLearningPathTo(string targetConceptId)
+    {
+        if (!Nodes.ContainsKey(targetConceptId))
+            return [];
+
+        var prerequisites = GetAllPrerequisites(targetConceptId);
+        prerequisites.Add(Nodes[targetConceptId]);
+        
+        return TopologicalSort(prerequisites);
+    }
+
+    /// <summary>
+    /// Gets a complete learning path from a concept to all its dependents.
+    /// Returns an ordered list representing the forward learning sequence.
+    /// </summary>
+    public List<ConceptNode> GetLearningPathFrom(string startConceptId)
+    {
+        if (!Nodes.ContainsKey(startConceptId))
+            return [];
+
+        var path = new List<ConceptNode> { Nodes[startConceptId] };
+        path.AddRange(GetAllDependents(startConceptId));
+        
+        return TopologicalSort(path);
+    }
+
+    /// <summary>
+    /// Performs a topological sort on a subset of nodes.
+    /// Ensures prerequisites come before their dependents.
+    /// </summary>
+    public List<ConceptNode> TopologicalSort(IEnumerable<ConceptNode> nodesToSort)
+    {
+        var nodeSet = nodesToSort.ToDictionary(n => n.Id);
+        var result = new List<ConceptNode>();
+        var visited = new HashSet<string>();
+        var temp = new HashSet<string>();
+
+        void Visit(string nodeId)
+        {
+            if (!nodeSet.ContainsKey(nodeId) || visited.Contains(nodeId))
+                return;
+            
+            if (temp.Contains(nodeId))
+                return; // Cycle detected, skip
+
+            temp.Add(nodeId);
+
+            // Visit prerequisites first
+            if (BackwardEdges.TryGetValue(nodeId, out var prereqs))
+            {
+                foreach (var prereqId in prereqs)
+                {
+                    Visit(prereqId);
+                }
+            }
+
+            temp.Remove(nodeId);
+            visited.Add(nodeId);
+            result.Add(nodeSet[nodeId]);
+        }
+
+        // Start from nodes with no prerequisites within the subset
+        foreach (var node in nodeSet.Values.OrderBy(n => n.HierarchyDepth).ThenBy(n => n.Term))
+        {
+            Visit(node.Id);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the complete topologically sorted list of all concepts.
+    /// This represents the optimal learning order for the entire subject.
+    /// </summary>
+    public List<ConceptNode> GetFullLearningOrder()
+    {
+        return TopologicalSort(Nodes.Values);
+    }
+
+    /// <summary>
+    /// Finds a concept by term (case-insensitive).
+    /// </summary>
+    public ConceptNode? FindByTerm(string term)
+    {
+        return Nodes.Values.FirstOrDefault(n => 
+            n.Term.Equals(term, StringComparison.OrdinalIgnoreCase) ||
+            n.Aliases.Any(a => a.Equals(term, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// Rebuilds the adjacency lists from the relationships dictionary.
+    /// Call this after deserialization or after bulk relationship changes.
+    /// </summary>
+    public void RebuildAdjacencyLists()
+    {
+        ForwardEdges.Clear();
+        BackwardEdges.Clear();
+
+        foreach (var rel in Relationships.Values.Where(r => r.RelationType == ConceptRelationType.Prerequisite))
+        {
+            // Forward: source (prerequisite) ? target (dependent)
+            if (!ForwardEdges.ContainsKey(rel.SourceConceptId))
+                ForwardEdges[rel.SourceConceptId] = [];
+            
+            if (!ForwardEdges[rel.SourceConceptId].Contains(rel.TargetConceptId))
+                ForwardEdges[rel.SourceConceptId].Add(rel.TargetConceptId);
+
+            // Backward: target (dependent) ? source (prerequisite)
+            if (!BackwardEdges.ContainsKey(rel.TargetConceptId))
+                BackwardEdges[rel.TargetConceptId] = [];
+            
+            if (!BackwardEdges[rel.TargetConceptId].Contains(rel.SourceConceptId))
+                BackwardEdges[rel.TargetConceptId].Add(rel.SourceConceptId);
+        }
+
+        // Also update the node-level prerequisite/dependent lists
+        foreach (var node in Nodes.Values)
+        {
+            node.PrerequisiteIds = BackwardEdges.TryGetValue(node.Id, out var prereqs) ? prereqs.ToList() : [];
+            node.DependentIds = ForwardEdges.TryGetValue(node.Id, out var deps) ? deps.ToList() : [];
+        }
+    }
+
+    /// <summary>
+    /// Recalculates hierarchy depths for all nodes based on the graph structure.
+    /// Foundational concepts (no prerequisites) get depth 0.
+    /// </summary>
+    public void RecalculateDepths()
+    {
+        // Reset all depths
+        foreach (var node in Nodes.Values)
+        {
+            node.HierarchyDepth = 0;
+        }
+
+        // Calculate depth for each node
+        var visited = new Dictionary<string, int>();
+        
+        int CalculateDepth(string nodeId)
+        {
+            if (visited.TryGetValue(nodeId, out var cached))
+                return cached;
+
+            if (!BackwardEdges.TryGetValue(nodeId, out var prereqs) || prereqs.Count == 0)
+            {
+                visited[nodeId] = 0;
+                return 0;
+            }
+
+            // Depth is 1 + max depth of prerequisites
+            var maxPrereqDepth = prereqs
+                .Where(id => Nodes.ContainsKey(id))
+                .Select(CalculateDepth)
+                .DefaultIfEmpty(-1)
+                .Max();
+
+            var depth = maxPrereqDepth + 1;
+            visited[nodeId] = depth;
+            return depth;
+        }
+
+        foreach (var nodeId in Nodes.Keys)
+        {
+            Nodes[nodeId].HierarchyDepth = CalculateDepth(nodeId);
+        }
+    }
+
+    /// <summary>
+    /// Gets statistics about the knowledge graph.
+    /// </summary>
+    public KnowledgeGraphStats GetStats()
+    {
+        return new KnowledgeGraphStats
+        {
+            TotalConcepts = Nodes.Count,
+            TotalRelationships = Relationships.Count,
+            FoundationalConcepts = Nodes.Values.Count(n => n.IsFoundational),
+            LeafConcepts = Nodes.Values.Count(n => n.IsLeaf),
+            MaxDepth = MaxDepth,
+            AverageDepth = Nodes.Count > 0 ? Nodes.Values.Average(n => n.HierarchyDepth) : 0,
+            VerifiedConcepts = Nodes.Values.Count(n => n.IsVerified),
+            VerifiedRelationships = Relationships.Values.Count(r => r.IsVerified)
+        };
+    }
+}
+
+/// <summary>
+/// Statistics about a knowledge graph.
+/// </summary>
+public class KnowledgeGraphStats
+{
+    public int TotalConcepts { get; set; }
+    public int TotalRelationships { get; set; }
+    public int FoundationalConcepts { get; set; }
+    public int LeafConcepts { get; set; }
+    public int MaxDepth { get; set; }
+    public double AverageDepth { get; set; }
+    public int VerifiedConcepts { get; set; }
+    public int VerifiedRelationships { get; set; }
 }
 
 <<<CONTENT END>>>
@@ -955,6 +1784,989 @@ public sealed partial class ChunkingService
 
     [GeneratedRegex(@"[.!?]\s+")]
     private static partial Regex LastSentenceEnd();
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/ConceptCorrelationService.cs
+TYPE: script
+EXT: .cs
+SHA256: 69E9288D76DC8614DD33C250035995582744C6F748B1D131BEB15EE09FA20B54
+BYTES: 21965
+LINES: 574
+<<<CONTENT START>>>
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for discovering and scoring relationships between concepts.
+/// Uses multi-signal correlation combining:
+/// - Semantic similarity (embedding cosine distance)
+/// - LSH approximate matching for fast candidate generation
+/// - SimHash lexical similarity
+/// - Co-occurrence patterns
+/// - LLM-based prerequisite inference
+/// </summary>
+public sealed class ConceptCorrelationService
+{
+    private readonly HttpClient http;
+    private readonly OpenAIOptions opt;
+    private readonly EmbeddingService embeddingService;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
+
+    // Thresholds for relationship detection
+    private const float MinSemanticSimilarity = 0.4f;
+    private const int MaxLshDistance = 80;
+    private const int MaxLexicalDistance = 20;
+    private const float MinRelationshipConfidence = 0.3f;
+
+    // Weights for combined scoring
+    private const float SemanticWeight = 0.50f;
+    private const float LshWeight = 0.25f;
+    private const float LexicalWeight = 0.15f;
+    private const float CoOccurrenceWeight = 0.10f;
+
+    private const string PrerequisiteAnalysisPrompt = """
+        You are an expert educator analyzing the prerequisite relationships between concepts.
+        
+        Given the following pairs of concepts, determine which ones have prerequisite relationships.
+        A prerequisite relationship means: to understand Concept B, you must first understand Concept A.
+        
+        For each pair, return:
+        - "prerequisite": true if A is a prerequisite for B
+        - "reverse": true if B is a prerequisite for A (instead)
+        - "related": true if they are related but neither is a strict prerequisite
+        - "confidence": 0.0-1.0 indicating how confident you are
+        - "justification": brief explanation
+        
+        Return as JSON array:
+        {
+            "relationships": [
+                {
+                    "conceptA": "...",
+                    "conceptB": "...",
+                    "prerequisite": true,
+                    "reverse": false,
+                    "related": true,
+                    "confidence": 0.85,
+                    "justification": "A defines the foundation that B builds upon"
+                }
+            ]
+        }
+        """;
+
+    public ConceptCorrelationService(
+        HttpClient http,
+        OpenAIOptions opt,
+        EmbeddingService embeddingService,
+        LSHService lshService,
+        SimHashService simHashService)
+    {
+        this.http = http;
+        this.opt = opt;
+        this.embeddingService = embeddingService;
+        this.lshService = lshService;
+        this.simHashService = simHashService;
+    }
+
+    /// <summary>
+    /// Finds all related concept pairs using multi-signal correlation.
+    /// Returns candidate pairs sorted by relationship strength.
+    /// </summary>
+    public List<ConceptPairScore> FindRelatedPairs(
+        List<ConceptNode> concepts,
+        int maxPairsPerConcept = 10)
+    {
+        var pairs = new List<ConceptPairScore>();
+
+        for (int i = 0; i < concepts.Count; i++)
+        {
+            var conceptA = concepts[i];
+            var candidates = new List<ConceptPairScore>();
+
+            for (int j = 0; j < concepts.Count; j++)
+            {
+                if (i == j) continue;
+
+                var conceptB = concepts[j];
+                var score = ComputePairScore(conceptA, conceptB);
+
+                if (score.CombinedScore >= MinRelationshipConfidence)
+                {
+                    candidates.Add(score);
+                }
+            }
+
+            // Take top candidates for this concept
+            pairs.AddRange(candidates
+                .OrderByDescending(p => p.CombinedScore)
+                .Take(maxPairsPerConcept));
+        }
+
+        // Deduplicate (A,B) and (B,A) keeping the higher scored one
+        var uniquePairs = new Dictionary<string, ConceptPairScore>();
+        foreach (var pair in pairs)
+        {
+            var key = string.Compare(pair.ConceptAId, pair.ConceptBId) < 0
+                ? $"{pair.ConceptAId}|{pair.ConceptBId}"
+                : $"{pair.ConceptBId}|{pair.ConceptAId}";
+
+            if (!uniquePairs.TryGetValue(key, out var existing) || pair.CombinedScore > existing.CombinedScore)
+            {
+                uniquePairs[key] = pair;
+            }
+        }
+
+        return uniquePairs.Values.OrderByDescending(p => p.CombinedScore).ToList();
+    }
+
+    /// <summary>
+    /// Computes the correlation score between two concepts using all available signals.
+    /// </summary>
+    public ConceptPairScore ComputePairScore(ConceptNode conceptA, ConceptNode conceptB)
+    {
+        // Semantic similarity (cosine of embeddings)
+        var semanticSimilarity = conceptA.Embedding.Length > 0 && conceptB.Embedding.Length > 0
+            ? EmbeddingService.CosineSimilarity(conceptA.Embedding, conceptB.Embedding)
+            : 0f;
+
+        // LSH distance (Hamming distance of semantic signatures)
+        var lshDistance = conceptA.SemanticSignature.Length > 0 && conceptB.SemanticSignature.Length > 0
+            ? LSHService.HammingDistance(conceptA.SemanticSignature, conceptB.SemanticSignature)
+            : 256; // Max distance if no signatures
+
+        // Lexical distance (Hamming distance of SimHash signatures)
+        var lexicalDistance = SimHashService.HammingDistance(
+            conceptA.LexicalSignature, 
+            conceptB.LexicalSignature);
+
+        // Co-occurrence (shared source resources)
+        var sharedResources = conceptA.SourceResourceIds
+            .Intersect(conceptB.SourceResourceIds)
+            .Count();
+
+        // Compute normalized scores
+        var normalizedLsh = 1f - Math.Clamp(lshDistance / 128f, 0f, 1f);
+        var normalizedLexical = 1f - Math.Clamp(lexicalDistance / 32f, 0f, 1f);
+        var normalizedCoOccurrence = Math.Clamp(sharedResources / 5f, 0f, 1f);
+
+        // Combined weighted score
+        var combinedScore =
+            (semanticSimilarity * SemanticWeight) +
+            (normalizedLsh * LshWeight) +
+            (normalizedLexical * LexicalWeight) +
+            (normalizedCoOccurrence * CoOccurrenceWeight);
+
+        return new ConceptPairScore
+        {
+            ConceptAId = conceptA.Id,
+            ConceptATerm = conceptA.Term,
+            ConceptBId = conceptB.Id,
+            ConceptBTerm = conceptB.Term,
+            SemanticSimilarity = semanticSimilarity,
+            LshDistance = lshDistance,
+            LexicalDistance = lexicalDistance,
+            CoOccurrenceCount = sharedResources,
+            CombinedScore = combinedScore
+        };
+    }
+
+    /// <summary>
+    /// Uses LLM to determine prerequisite relationships from concept pairs.
+    /// </summary>
+    public async Task<List<ConceptRelationship>> InferPrerequisitesAsync(
+        List<ConceptPairScore> pairs,
+        Dictionary<string, ConceptNode> conceptLookup,
+        CancellationToken ct = default)
+    {
+        if (pairs.Count == 0)
+            return [];
+
+        var apiKey = await opt.GetApiKeyAsync();
+        if (string.IsNullOrWhiteSpace(apiKey))
+            return BuildRelationshipsWithoutLlm(pairs, conceptLookup);
+
+        // Prepare pairs for LLM analysis (batch for efficiency)
+        var relationships = new List<ConceptRelationship>();
+        const int batchSize = 20;
+
+        for (int i = 0; i < pairs.Count; i += batchSize)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var batch = pairs.Skip(i).Take(batchSize).ToList();
+            var batchRelationships = await AnalyzeBatchAsync(batch, conceptLookup, apiKey, ct);
+            relationships.AddRange(batchRelationships);
+
+            // Rate limit between batches
+            if (i + batchSize < pairs.Count)
+            {
+                await Task.Delay(300, ct);
+            }
+        }
+
+        return relationships;
+    }
+
+    /// <summary>
+    /// Builds relationships using only similarity scores (no LLM).
+    /// Useful as fallback or for quick initial relationships.
+    /// </summary>
+    public List<ConceptRelationship> BuildRelationshipsWithoutLlm(
+        List<ConceptPairScore> pairs,
+        Dictionary<string, ConceptNode> conceptLookup)
+    {
+        var relationships = new List<ConceptRelationship>();
+
+        foreach (var pair in pairs)
+        {
+            if (!conceptLookup.TryGetValue(pair.ConceptAId, out var conceptA) ||
+                !conceptLookup.TryGetValue(pair.ConceptBId, out var conceptB))
+                continue;
+
+            // Use heuristics to determine direction:
+            // - Shorter description often = more foundational
+            // - Fewer characters in term = often more basic
+            // - Higher confidence concepts are more likely foundational
+
+            var aScore = conceptA.Description.Length + conceptA.Term.Length * 2 + (1 - conceptA.ConfidenceScore) * 100;
+            var bScore = conceptB.Description.Length + conceptB.Term.Length * 2 + (1 - conceptB.ConfidenceScore) * 100;
+
+            string sourceId, targetId;
+            if (aScore < bScore)
+            {
+                // A is likely more foundational
+                sourceId = pair.ConceptAId;
+                targetId = pair.ConceptBId;
+            }
+            else
+            {
+                // B is likely more foundational
+                sourceId = pair.ConceptBId;
+                targetId = pair.ConceptAId;
+            }
+
+            var relType = pair.SemanticSimilarity >= 0.7f
+                ? ConceptRelationType.Prerequisite
+                : ConceptRelationType.Related;
+
+            relationships.Add(new ConceptRelationship
+            {
+                SourceConceptId = sourceId,
+                TargetConceptId = targetId,
+                RelationType = relType,
+                ConfidenceScore = pair.CombinedScore,
+                SemanticSimilarity = pair.SemanticSimilarity,
+                SemanticDistance = pair.LshDistance,
+                LexicalDistance = pair.LexicalDistance,
+                CoOccurrenceCount = pair.CoOccurrenceCount,
+                IsVerified = false
+            });
+        }
+
+        return relationships;
+    }
+
+    private async Task<List<ConceptRelationship>> AnalyzeBatchAsync(
+        List<ConceptPairScore> batch,
+        Dictionary<string, ConceptNode> conceptLookup,
+        string apiKey,
+        CancellationToken ct)
+    {
+        var relationships = new List<ConceptRelationship>();
+
+        try
+        {
+            // Format pairs for LLM
+            var pairDescriptions = new StringBuilder();
+            foreach (var pair in batch)
+            {
+                if (!conceptLookup.TryGetValue(pair.ConceptAId, out var a) ||
+                    !conceptLookup.TryGetValue(pair.ConceptBId, out var b))
+                    continue;
+
+                pairDescriptions.AppendLine($"Concept A: {a.Term} - {a.Description}");
+                pairDescriptions.AppendLine($"Concept B: {b.Term} - {b.Description}");
+                pairDescriptions.AppendLine();
+            }
+
+            var payload = new
+            {
+                model = opt.Model,
+                input = pairDescriptions.ToString(),
+                instructions = PrerequisiteAnalysisPrompt
+            };
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            using var resp = await http.SendAsync(req, ct);
+            var json = await resp.Content.ReadAsStringAsync(ct);
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                // Fall back to heuristic-based relationships
+                return BuildRelationshipsWithoutLlm(batch, conceptLookup);
+            }
+
+            var responseText = ExtractResponseText(json);
+            var analyzed = ParsePrerequisiteAnalysis(responseText, batch, conceptLookup);
+            relationships.AddRange(analyzed);
+        }
+        catch
+        {
+            // Fall back to heuristic-based relationships
+            return BuildRelationshipsWithoutLlm(batch, conceptLookup);
+        }
+
+        return relationships;
+    }
+
+    private static string ExtractResponseText(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+
+            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
+                return outText.GetString() ?? "";
+
+            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in output.EnumerateArray())
+                {
+                    if (item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var c in content.EnumerateArray())
+                        {
+                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
+                                return textProp.GetString() ?? "";
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return json;
+    }
+
+    private static List<ConceptRelationship> ParsePrerequisiteAnalysis(
+        string responseText,
+        List<ConceptPairScore> originalPairs,
+        Dictionary<string, ConceptNode> conceptLookup)
+    {
+        var relationships = new List<ConceptRelationship>();
+
+        try
+        {
+            var jsonStart = responseText.IndexOf('{');
+            var jsonEnd = responseText.LastIndexOf('}');
+            if (jsonStart < 0 || jsonEnd < jsonStart)
+                return relationships;
+
+            var jsonText = responseText.Substring(jsonStart, jsonEnd - jsonStart + 1);
+            using var doc = JsonDocument.Parse(jsonText);
+
+            if (!doc.RootElement.TryGetProperty("relationships", out var relArray) ||
+                relArray.ValueKind != JsonValueKind.Array)
+                return relationships;
+
+            // Build lookup from term to concept
+            var termLookup = conceptLookup.Values
+                .ToDictionary(c => c.Term.ToLowerInvariant(), c => c, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in relArray.EnumerateArray())
+            {
+                var termA = item.TryGetProperty("conceptA", out var a) ? a.GetString() ?? "" : "";
+                var termB = item.TryGetProperty("conceptB", out var b) ? b.GetString() ?? "" : "";
+                var isPrereq = item.TryGetProperty("prerequisite", out var p) && p.GetBoolean();
+                var isReverse = item.TryGetProperty("reverse", out var r) && r.GetBoolean();
+                var isRelated = item.TryGetProperty("related", out var rel) && rel.GetBoolean();
+                var confidence = item.TryGetProperty("confidence", out var conf) ? (float)conf.GetDouble() : 0.5f;
+                var justification = item.TryGetProperty("justification", out var j) ? j.GetString() ?? "" : "";
+
+                // Find the matching concepts
+                if (!termLookup.TryGetValue(termA.ToLowerInvariant(), out var conceptA) ||
+                    !termLookup.TryGetValue(termB.ToLowerInvariant(), out var conceptB))
+                    continue;
+
+                // Find the original pair score
+                var pairScore = originalPairs.FirstOrDefault(ps =>
+                    (ps.ConceptAId == conceptA.Id && ps.ConceptBId == conceptB.Id) ||
+                    (ps.ConceptAId == conceptB.Id && ps.ConceptBId == conceptA.Id));
+
+                string sourceId, targetId;
+                ConceptRelationType relType;
+
+                if (isPrereq && !isReverse)
+                {
+                    sourceId = conceptA.Id;
+                    targetId = conceptB.Id;
+                    relType = ConceptRelationType.Prerequisite;
+                }
+                else if (isReverse)
+                {
+                    sourceId = conceptB.Id;
+                    targetId = conceptA.Id;
+                    relType = ConceptRelationType.Prerequisite;
+                }
+                else if (isRelated)
+                {
+                    sourceId = conceptA.Id;
+                    targetId = conceptB.Id;
+                    relType = ConceptRelationType.Related;
+                }
+                else
+                {
+                    continue; // Skip pairs with no relationship
+                }
+
+                relationships.Add(new ConceptRelationship
+                {
+                    SourceConceptId = sourceId,
+                    TargetConceptId = targetId,
+                    RelationType = relType,
+                    ConfidenceScore = confidence,
+                    SemanticSimilarity = pairScore?.SemanticSimilarity ?? 0,
+                    SemanticDistance = pairScore?.LshDistance ?? 256,
+                    LexicalDistance = pairScore?.LexicalDistance ?? 64,
+                    CoOccurrenceCount = pairScore?.CoOccurrenceCount ?? 0,
+                    Justification = justification,
+                    IsVerified = true // LLM analyzed
+                });
+            }
+        }
+        catch { }
+
+        return relationships;
+    }
+
+    /// <summary>
+    /// Detects potential cycles in the graph and removes the weakest edge.
+    /// </summary>
+    public static void RemoveCycles(KnowledgeGraph graph)
+    {
+        while (true)
+        {
+            var cycle = FindCycle(graph);
+            if (cycle == null || cycle.Count == 0)
+                break;
+
+            // Find the weakest edge in the cycle
+            ConceptRelationship? weakest = null;
+            var lowestConfidence = float.MaxValue;
+
+            for (int i = 0; i < cycle.Count; i++)
+            {
+                var fromId = cycle[i];
+                var toId = cycle[(i + 1) % cycle.Count];
+
+                var edge = graph.Relationships.Values.FirstOrDefault(r =>
+                    r.SourceConceptId == fromId && r.TargetConceptId == toId &&
+                    r.RelationType == ConceptRelationType.Prerequisite);
+
+                if (edge != null && edge.ConfidenceScore < lowestConfidence)
+                {
+                    weakest = edge;
+                    lowestConfidence = edge.ConfidenceScore;
+                }
+            }
+
+            if (weakest != null)
+            {
+                // Demote to Related instead of removing
+                weakest.RelationType = ConceptRelationType.Related;
+                graph.RebuildAdjacencyLists();
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    private static List<string>? FindCycle(KnowledgeGraph graph)
+    {
+        var visited = new HashSet<string>();
+        var recursionStack = new HashSet<string>();
+        var parent = new Dictionary<string, string?>();
+
+        foreach (var nodeId in graph.Nodes.Keys)
+        {
+            if (!visited.Contains(nodeId))
+            {
+                var cycle = DfsCycle(nodeId, visited, recursionStack, parent, graph);
+                if (cycle != null)
+                    return cycle;
+            }
+        }
+
+        return null;
+    }
+
+    private static List<string>? DfsCycle(
+        string nodeId,
+        HashSet<string> visited,
+        HashSet<string> stack,
+        Dictionary<string, string?> parent,
+        KnowledgeGraph graph)
+    {
+        visited.Add(nodeId);
+        stack.Add(nodeId);
+
+        if (graph.ForwardEdges.TryGetValue(nodeId, out var neighbors))
+        {
+            foreach (var neighbor in neighbors)
+            {
+                if (!visited.Contains(neighbor))
+                {
+                    parent[neighbor] = nodeId;
+                    var cycle = DfsCycle(neighbor, visited, stack, parent, graph);
+                    if (cycle != null)
+                        return cycle;
+                }
+                else if (stack.Contains(neighbor))
+                {
+                    // Found cycle - reconstruct it
+                    var cycleNodes = new List<string> { neighbor };
+                    var current = nodeId;
+                    while (current != neighbor)
+                    {
+                        cycleNodes.Add(current);
+                        current = parent.TryGetValue(current, out var p) ? p! : neighbor;
+                    }
+                    cycleNodes.Reverse();
+                    return cycleNodes;
+                }
+            }
+        }
+
+        stack.Remove(nodeId);
+        return null;
+    }
+}
+
+/// <summary>
+/// Represents the correlation score between two concepts.
+/// </summary>
+public class ConceptPairScore
+{
+    public string ConceptAId { get; set; } = "";
+    public string ConceptATerm { get; set; } = "";
+    public string ConceptBId { get; set; } = "";
+    public string ConceptBTerm { get; set; } = "";
+    public float SemanticSimilarity { get; set; }
+    public int LshDistance { get; set; }
+    public int LexicalDistance { get; set; }
+    public int CoOccurrenceCount { get; set; }
+    public float CombinedScore { get; set; }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/ConceptExtractionService.cs
+TYPE: script
+EXT: .cs
+SHA256: 6CE23CD55B17268166AF212CA7DDC7BE02717D05D5F43A543474ECCC52D4AB97
+BYTES: 15555
+LINES: 387
+<<<CONTENT START>>>
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for extracting core concepts from course resources using LLM analysis.
+/// Identifies key terms, their definitions, and potential relationships.
+/// </summary>
+public sealed class ConceptExtractionService
+{
+    private readonly HttpClient http;
+    private readonly OpenAIOptions opt;
+    private readonly EmbeddingService embeddingService;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
+
+    private const string ExtractionPrompt = """
+        You are an expert knowledge analyst. Analyze the following educational content and extract core concepts.
+        
+        For each concept, identify:
+        1. The term or name (canonical form)
+        2. A concise definition/description (1-2 sentences)
+        3. Any alternative names or synonyms
+        4. Related concepts mentioned in the same context
+        5. Whether this concept seems to require understanding of other concepts first (prerequisites)
+        
+        Return your analysis as a JSON array with this structure:
+        {
+            "concepts": [
+                {
+                    "term": "Concept Name",
+                    "description": "Clear, concise definition",
+                    "aliases": ["Alternative Name 1", "Synonym"],
+                    "relatedTerms": ["Related Concept 1", "Related Concept 2"],
+                    "potentialPrerequisites": ["Foundational Concept"],
+                    "confidence": 0.95
+                }
+            ]
+        }
+        
+        Focus on:
+        - Key terminology and domain-specific vocabulary
+        - People, places, events (for history/narrative content)
+        - Technical concepts and processes
+        - Hierarchical relationships (categories ? subcategories ? instances)
+        
+        Be thorough but avoid trivial or common terms. Each concept should be meaningful for learning the subject.
+        """;
+
+    public ConceptExtractionService(
+        HttpClient http, 
+        OpenAIOptions opt,
+        EmbeddingService embeddingService,
+        LSHService lshService,
+        SimHashService simHashService)
+    {
+        this.http = http;
+        this.opt = opt;
+        this.embeddingService = embeddingService;
+        this.lshService = lshService;
+        this.simHashService = simHashService;
+    }
+
+    /// <summary>
+    /// Extracts concepts from a single piece of content.
+    /// </summary>
+    public async Task<List<ExtractedConcept>> ExtractConceptsAsync(
+        string content, 
+        string resourceId,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return [];
+
+        var apiKey = await opt.GetApiKeyAsync();
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("OpenAI API key is missing.");
+
+        // Truncate content if too long (leaving room for prompt)
+        var maxContentLength = 12000;
+        var truncatedContent = content.Length > maxContentLength 
+            ? content[..maxContentLength] + "\n\n[Content truncated...]" 
+            : content;
+
+        var payload = new
+        {
+            model = opt.Model,
+            input = $"Content to analyze:\n\n{truncatedContent}",
+            instructions = ExtractionPrompt
+        };
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var resp = await http.SendAsync(req, ct);
+        var json = await resp.Content.ReadAsStringAsync(ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"OpenAI error {(int)resp.StatusCode}: {json}");
+        }
+
+        var responseText = ExtractResponseText(json);
+        var concepts = ParseExtractedConcepts(responseText, resourceId);
+
+        return concepts;
+    }
+
+    /// <summary>
+    /// Extracts concepts from multiple content chunks and merges results.
+    /// </summary>
+    public async Task<List<ExtractedConcept>> ExtractConceptsFromChunksAsync(
+        List<ContentChunk> chunks,
+        string resourceId,
+        CancellationToken ct = default)
+    {
+        var allConcepts = new List<ExtractedConcept>();
+
+        // Process chunks in batches to avoid rate limiting
+        const int batchSize = 5;
+        for (int i = 0; i < chunks.Count; i += batchSize)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var batch = chunks.Skip(i).Take(batchSize);
+            var combinedContent = string.Join("\n\n---\n\n", batch.Select(c => c.Content));
+
+            try
+            {
+                var concepts = await ExtractConceptsAsync(combinedContent, resourceId, ct);
+                allConcepts.AddRange(concepts);
+            }
+            catch (Exception)
+            {
+                // Continue with other batches on error
+            }
+
+            // Small delay between batches
+            if (i + batchSize < chunks.Count)
+            {
+                await Task.Delay(500, ct);
+            }
+        }
+
+        // Merge duplicate concepts
+        return MergeConcepts(allConcepts);
+    }
+
+    /// <summary>
+    /// Converts extracted concepts to ConceptNodes with embeddings and signatures.
+    /// </summary>
+    public async Task<List<ConceptNode>> CreateConceptNodesAsync(
+        List<ExtractedConcept> extractedConcepts,
+        CancellationToken ct = default)
+    {
+        if (extractedConcepts.Count == 0)
+            return [];
+
+        // Generate embeddings for all concepts in batch
+        var embeddingTexts = extractedConcepts.Select(c => $"{c.Term}. {c.Description}").ToList();
+        var embeddings = await embeddingService.GetEmbeddingsAsync(embeddingTexts, ct);
+
+        var nodes = new List<ConceptNode>();
+        
+        for (int i = 0; i < extractedConcepts.Count; i++)
+        {
+            var extracted = extractedConcepts[i];
+            var embedding = i < embeddings.Count ? embeddings[i] : [];
+
+            var node = new ConceptNode
+            {
+                Term = extracted.Term,
+                Description = extracted.Description,
+                Aliases = extracted.Aliases,
+                Embedding = embedding,
+                SemanticSignature = embedding.Length > 0 ? lshService.GetSignature(embedding) : [],
+                LexicalSignature = simHashService.GetSignature64($"{extracted.Term} {extracted.Description}"),
+                SourceResourceIds = [extracted.SourceResourceId],
+                ConfidenceScore = extracted.Confidence,
+                Tags = extracted.RelatedTerms // Store related terms as tags initially
+            };
+
+            nodes.Add(node);
+        }
+
+        return nodes;
+    }
+
+    /// <summary>
+    /// Merges duplicate concepts by term, combining their metadata.
+    /// </summary>
+    private static List<ExtractedConcept> MergeConcepts(List<ExtractedConcept> concepts)
+    {
+        var merged = new Dictionary<string, ExtractedConcept>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var concept in concepts)
+        {
+            var key = concept.Term.ToLowerInvariant().Trim();
+
+            if (merged.TryGetValue(key, out var existing))
+            {
+                // Merge aliases
+                var allAliases = existing.Aliases.Union(concept.Aliases, StringComparer.OrdinalIgnoreCase).ToList();
+                
+                // Merge related terms
+                var allRelated = existing.RelatedTerms.Union(concept.RelatedTerms, StringComparer.OrdinalIgnoreCase).ToList();
+                
+                // Merge prerequisites
+                var allPrereqs = existing.PotentialPrerequisites.Union(concept.PotentialPrerequisites, StringComparer.OrdinalIgnoreCase).ToList();
+                
+                // Use higher confidence and longer description
+                var newConfidence = Math.Max(existing.Confidence, concept.Confidence);
+                var newDescription = concept.Description.Length > existing.Description.Length 
+                    ? concept.Description 
+                    : existing.Description;
+
+                merged[key] = existing with
+                {
+                    Description = newDescription,
+                    Aliases = allAliases,
+                    RelatedTerms = allRelated,
+                    PotentialPrerequisites = allPrereqs,
+                    Confidence = newConfidence
+                };
+            }
+            else
+            {
+                merged[key] = concept;
+            }
+        }
+
+        return merged.Values.ToList();
+    }
+
+    private static string ExtractResponseText(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            
+            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
+            {
+                return outText.GetString() ?? "";
+            }
+
+            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in output.EnumerateArray())
+                {
+                    if (item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var c in content.EnumerateArray())
+                        {
+                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
+                            {
+                                return textProp.GetString() ?? "";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return json;
+    }
+
+    private static List<ExtractedConcept> ParseExtractedConcepts(string responseText, string resourceId)
+    {
+        var concepts = new List<ExtractedConcept>();
+
+        try
+        {
+            // Find JSON in the response (may be wrapped in markdown code blocks)
+            var jsonStart = responseText.IndexOf('{');
+            var jsonEnd = responseText.LastIndexOf('}');
+            
+            if (jsonStart < 0 || jsonEnd < jsonStart)
+                return concepts;
+
+            var jsonText = responseText.Substring(jsonStart, jsonEnd - jsonStart + 1);
+
+            using var doc = JsonDocument.Parse(jsonText);
+
+            if (doc.RootElement.TryGetProperty("concepts", out var conceptsArray) && 
+                conceptsArray.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in conceptsArray.EnumerateArray())
+                {
+                    var term = DecodeHtmlEntities(item.TryGetProperty("term", out var t) ? t.GetString() ?? "" : "");
+                    var description = DecodeHtmlEntities(item.TryGetProperty("description", out var d) ? d.GetString() ?? "" : "");
+                    
+                    if (string.IsNullOrWhiteSpace(term))
+                        continue;
+
+                    var aliases = new List<string>();
+                    if (item.TryGetProperty("aliases", out var aliasArray) && aliasArray.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var alias in aliasArray.EnumerateArray())
+                        {
+                            if (alias.ValueKind == JsonValueKind.String)
+                                aliases.Add(DecodeHtmlEntities(alias.GetString() ?? ""));
+                        }
+                    }
+
+                    var relatedTerms = new List<string>();
+                    if (item.TryGetProperty("relatedTerms", out var relatedArray) && relatedArray.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var related in relatedArray.EnumerateArray())
+                        {
+                            if (related.ValueKind == JsonValueKind.String)
+                                relatedTerms.Add(DecodeHtmlEntities(related.GetString() ?? ""));
+                        }
+                    }
+
+                    var prerequisites = new List<string>();
+                    if (item.TryGetProperty("potentialPrerequisites", out var prereqArray) && prereqArray.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var prereq in prereqArray.EnumerateArray())
+                        {
+                            if (prereq.ValueKind == JsonValueKind.String)
+                                prerequisites.Add(DecodeHtmlEntities(prereq.GetString() ?? ""));
+                        }
+                    }
+
+                    var confidence = item.TryGetProperty("confidence", out var c) && c.ValueKind == JsonValueKind.Number
+                        ? (float)c.GetDouble()
+                        : 0.8f;
+
+                    concepts.Add(new ExtractedConcept
+                    {
+                        Term = term.Trim(),
+                        Description = description.Trim(),
+                        Aliases = aliases.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).ToList(),
+                        RelatedTerms = relatedTerms.Where(r => !string.IsNullOrWhiteSpace(r)).Select(r => r.Trim()).ToList(),
+                        PotentialPrerequisites = prerequisites.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()).ToList(),
+                        Confidence = Math.Clamp(confidence, 0f, 1f),
+                        SourceResourceId = resourceId
+                    });
+                }
+            }
+        }
+        catch
+        {
+            // Return empty list on parse failure
+        }
+
+        return concepts;
+    }
+
+    /// <summary>
+    /// Decodes HTML entities in a string to their actual characters.
+    /// Handles common entities like &amp;quot; ? ", &amp;amp; ? &amp;, &amp;lt; ? &lt;, &amp;gt; ? &gt;, &amp;apos; ? ', 
+    /// numeric entities like &amp;#39; ? ', &amp;#x27; ? ', and all other standard HTML entities.
+    /// </summary>
+    private static string DecodeHtmlEntities(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        // Use WebUtility.HtmlDecode which handles all standard HTML entities including:
+        // - Named entities: &quot; &amp; &lt; &gt; &nbsp; &copy; etc.
+        // - Decimal numeric entities: &#39; &#169; etc.
+        // - Hexadecimal numeric entities: &#x27; &#xA9; etc.
+        return WebUtility.HtmlDecode(text);
+    }
+}
+
+/// <summary>
+/// Represents a concept as extracted from content before it's added to the graph.
+/// </summary>
+public record ExtractedConcept
+{
+    public string Term { get; init; } = "";
+    public string Description { get; init; } = "";
+    public List<string> Aliases { get; init; } = [];
+    public List<string> RelatedTerms { get; init; } = [];
+    public List<string> PotentialPrerequisites { get; init; } = [];
+    public float Confidence { get; init; } = 0.8f;
+    public string SourceResourceId { get; init; } = "";
 }
 
 <<<CONTENT END>>>
@@ -1394,9 +3206,9 @@ public class CoreConceptService
 PATH: Services/CourseService.cs
 TYPE: script
 EXT: .cs
-SHA256: 12BF81AAD5210B232B08D3032C6A8264D3D89106E2D89CE940B79B95F24AA7F2
-BYTES: 26589
-LINES: 735
+SHA256: 97958D743ACB8211D739BEE3619796587094CE63BEA5286F729D6284D4C755C3
+BYTES: 28242
+LINES: 788
 <<<CONTENT START>>>
 using System.Text.Json;
 using Tutor.Models;
@@ -1482,6 +3294,59 @@ public sealed class CourseService
 
         resources.Add(resource);
         await SaveResourcesAsync(resources);
+    }
+
+    /// <summary>
+    /// Core save method - saves resource without formatting or processing.
+    /// Used by ResourceProcessingService for the initial save step.
+    /// Returns the resource ID.
+    /// </summary>
+    public async Task<string> SaveResourceCoreAsync(CourseResource resource)
+    {
+        if (string.IsNullOrEmpty(resource.Id))
+        {
+            resource.Id = Guid.NewGuid().ToString();
+        }
+
+        await SaveResourceAsync(resource);
+
+        // Also save to file system for GitHub
+        if (!string.IsNullOrWhiteSpace(resource.Content))
+        {
+            await fileResourceService.SaveOriginalFileAsync(
+                resource.FileName ?? $"{resource.Title}.txt",
+                resource.Content);
+        }
+
+        return resource.Id;
+    }
+
+    /// <summary>
+    /// Updates just the content of a resource (used after async formatting).
+    /// </summary>
+    public async Task UpdateResourceContentAsync(string resourceId, string content, bool isFormatted = false)
+    {
+        var resource = await GetResourceAsync(resourceId);
+        if (resource == null)
+            return;
+
+        if (isFormatted)
+        {
+            resource.FormattedContent = content;
+            
+            // Save formatted to file system
+            await fileResourceService.SaveFormattedFileAsync(
+                resource.Title,
+                content,
+                resource.FileName);
+        }
+        else
+        {
+            resource.Content = content;
+        }
+
+        resource.UpdatedAt = DateTime.UtcNow;
+        await SaveResourceAsync(resource);
     }
 
     /// <summary>
@@ -2546,6 +4411,1036 @@ public sealed class InstructionsService
 <<<FILE END>>>
 
 <<<FILE START>>>
+PATH: Services/KnowledgeGraphBuildService.cs
+TYPE: script
+EXT: .cs
+SHA256: 4B96FD9FF1AE4D0228D48B7E0CC26FDBFA51418502E0A174F0198007B8640BBE
+BYTES: 13593
+LINES: 385
+<<<CONTENT START>>>
+using System.Collections.Concurrent;
+using System.Threading.Channels;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Background service for building knowledge graphs asynchronously.
+/// Supports queuing multiple builds and provides progress updates.
+/// Persists across navigation/tab changes.
+/// </summary>
+public sealed class KnowledgeGraphBuildService : IDisposable
+{
+    private readonly CourseService courseService;
+    private readonly KnowledgeGraphService graphService;
+    private readonly TableOfContentsService tocService;
+
+    // Throttling - only one graph build at a time (they're expensive)
+    private readonly SemaphoreSlim buildThrottle = new(1, 1);
+
+    // Build queue
+    private readonly Channel<GraphBuildTask> buildQueue;
+    private readonly ConcurrentDictionary<string, GraphBuildStatus> statusTracker = new();
+    private readonly CancellationTokenSource cts = new();
+    private readonly Task processingLoopTask;
+
+    // Events for UI updates
+    public event Action<GraphBuildStatus>? OnStatusChanged;
+    public event Action<string>? OnBuildComplete;
+    public event Action<string, string>? OnBuildError;
+
+    public KnowledgeGraphBuildService(
+        CourseService courseService,
+        KnowledgeGraphService graphService,
+        TableOfContentsService tocService)
+    {
+        this.courseService = courseService;
+        this.graphService = graphService;
+        this.tocService = tocService;
+
+        // Unbounded channel for queuing builds
+        buildQueue = Channel.CreateUnbounded<GraphBuildTask>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false
+        });
+
+        // Start the background processing loop
+        processingLoopTask = Task.Run(ProcessingLoopAsync);
+    }
+
+    /// <summary>
+    /// Queues a knowledge graph build for a course.
+    /// Returns immediately - building happens in background.
+    /// </summary>
+    public string QueueGraphBuild(string courseId, string courseName, bool rebuild = false)
+    {
+        // Check if already building this course
+        var existingBuild = statusTracker.Values.FirstOrDefault(s => 
+            s.CourseId == courseId && 
+            s.Stage != GraphBuildStage.Complete && 
+            s.Stage != GraphBuildStage.Failed);
+
+        if (existingBuild != null)
+        {
+            return existingBuild.TaskId; // Return existing task
+        }
+
+        var taskId = Guid.NewGuid().ToString();
+
+        var status = new GraphBuildStatus
+        {
+            TaskId = taskId,
+            CourseId = courseId,
+            CourseName = courseName,
+            Stage = GraphBuildStage.Queued,
+            QueuedAt = DateTime.UtcNow,
+            IsRebuild = rebuild
+        };
+
+        statusTracker[taskId] = status;
+        NotifyStatusChanged(status);
+
+        var task = new GraphBuildTask
+        {
+            TaskId = taskId,
+            CourseId = courseId,
+            CourseName = courseName,
+            Rebuild = rebuild
+        };
+
+        buildQueue.Writer.TryWrite(task);
+
+        return taskId;
+    }
+
+    /// <summary>
+    /// Gets the current status of a build task.
+    /// </summary>
+    public GraphBuildStatus? GetStatus(string taskId)
+    {
+        return statusTracker.TryGetValue(taskId, out var status) ? status : null;
+    }
+
+    /// <summary>
+    /// Gets build status for a specific course.
+    /// </summary>
+    public GraphBuildStatus? GetStatusForCourse(string courseId)
+    {
+        return statusTracker.Values.FirstOrDefault(s => 
+            s.CourseId == courseId && 
+            s.Stage != GraphBuildStage.Complete && 
+            s.Stage != GraphBuildStage.Failed);
+    }
+
+    /// <summary>
+    /// Gets all active build statuses.
+    /// </summary>
+    public IEnumerable<GraphBuildStatus> GetAllStatuses()
+    {
+        return statusTracker.Values
+            .Where(s => s.Stage != GraphBuildStage.Complete && s.Stage != GraphBuildStage.Failed)
+            .OrderBy(s => s.QueuedAt);
+    }
+
+    /// <summary>
+    /// Gets all statuses including completed (for recent history).
+    /// </summary>
+    public IEnumerable<GraphBuildStatus> GetRecentStatuses(int maxAge = 300) // 5 minutes
+    {
+        var cutoff = DateTime.UtcNow.AddSeconds(-maxAge);
+        return statusTracker.Values
+            .Where(s => s.QueuedAt > cutoff || (s.Stage != GraphBuildStage.Complete && s.Stage != GraphBuildStage.Failed))
+            .OrderByDescending(s => s.QueuedAt);
+    }
+
+    /// <summary>
+    /// Gets count of items in queue or building.
+    /// </summary>
+    public int GetActiveCount()
+    {
+        return statusTracker.Values.Count(s => 
+            s.Stage != GraphBuildStage.Complete && s.Stage != GraphBuildStage.Failed);
+    }
+
+    /// <summary>
+    /// Checks if a course has a build in progress or queued.
+    /// </summary>
+    public bool IsBuildingCourse(string courseId)
+    {
+        return statusTracker.Values.Any(s => 
+            s.CourseId == courseId && 
+            s.Stage != GraphBuildStage.Complete && 
+            s.Stage != GraphBuildStage.Failed);
+    }
+
+    private async Task ProcessingLoopAsync()
+    {
+        await foreach (var task in buildQueue.Reader.ReadAllAsync(cts.Token))
+        {
+            await BuildGraphAsync(task);
+        }
+    }
+
+    private async Task BuildGraphAsync(GraphBuildTask task)
+    {
+        await buildThrottle.WaitAsync(cts.Token);
+
+        try
+        {
+            var status = statusTracker[task.TaskId];
+
+            // Stage 1: Load course and resources
+            UpdateStatus(task.TaskId, GraphBuildStage.LoadingResources, 5, "Loading course resources...");
+            
+            var course = await courseService.GetCourseAsync(task.CourseId);
+            if (course == null)
+            {
+                throw new InvalidOperationException($"Course {task.CourseId} not found");
+            }
+
+            var resources = await courseService.GetCourseResourcesAsync(task.CourseId);
+            if (resources.Count == 0)
+            {
+                throw new InvalidOperationException("Course has no resources to analyze");
+            }
+
+            status.TotalResources = resources.Count;
+            UpdateStatus(task.TaskId, GraphBuildStage.LoadingResources, 10, 
+                $"Found {resources.Count} resources");
+
+            // Stage 2: Check for existing graph (if not rebuilding)
+            if (!task.Rebuild)
+            {
+                var existingGraph = await graphService.GetGraphForCourseAsync(task.CourseId, cts.Token);
+                if (existingGraph != null)
+                {
+                    // Graph exists - update status and complete
+                    status.ConceptsExtracted = existingGraph.Nodes.Count;
+                    status.RelationshipsFound = existingGraph.Relationships.Count;
+                    UpdateStatus(task.TaskId, GraphBuildStage.Complete, 100, 
+                        $"Graph already exists: {existingGraph.Nodes.Count} concepts");
+                    status.CompletedAt = DateTime.UtcNow;
+                    OnBuildComplete?.Invoke(task.TaskId);
+                    return;
+                }
+            }
+
+            // Stage 3: Build the graph
+            UpdateStatus(task.TaskId, GraphBuildStage.ExtractingConcepts, 15, "Extracting concepts...");
+
+            var progress = new Progress<GraphBuildProgress>(p =>
+            {
+                var stage = p.Message.Contains("relationship", StringComparison.OrdinalIgnoreCase) 
+                    ? GraphBuildStage.FindingRelationships
+                    : p.Message.Contains("embedding", StringComparison.OrdinalIgnoreCase)
+                        ? GraphBuildStage.GeneratingEmbeddings
+                        : GraphBuildStage.ExtractingConcepts;
+
+                var baseProgress = stage switch
+                {
+                    GraphBuildStage.ExtractingConcepts => 15,
+                    GraphBuildStage.GeneratingEmbeddings => 50,
+                    GraphBuildStage.FindingRelationships => 70,
+                    _ => 15
+                };
+
+                var stageProgress = baseProgress + (int)(p.PercentComplete * 0.2);
+                
+                status.CurrentResource = p.Detail ?? "";
+                UpdateStatus(task.TaskId, stage, Math.Min(stageProgress, 90), p.Message);
+            });
+
+            var graph = await graphService.CreateGraphFromResourcesAsync(
+                task.CourseName,
+                task.CourseId,
+                resources,
+                progress,
+                cts.Token);
+
+            status.ConceptsExtracted = graph.Nodes.Count;
+            status.RelationshipsFound = graph.Relationships.Count;
+
+            // Stage 4: Generate Table of Contents
+            UpdateStatus(task.TaskId, GraphBuildStage.GeneratingToc, 95, "Generating table of contents...");
+            
+            var toc = await tocService.GenerateTableOfContentsAsync(graph.Id, cts.Token);
+            status.TocGenerated = toc.TotalConcepts > 0;
+
+            // Complete
+            UpdateStatus(task.TaskId, GraphBuildStage.Complete, 100, 
+                $"Complete: {graph.Nodes.Count} concepts, {graph.Relationships.Count} relationships");
+            status.CompletedAt = DateTime.UtcNow;
+            OnBuildComplete?.Invoke(task.TaskId);
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStatus(task.TaskId, GraphBuildStage.Failed, 0, "Cancelled");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus(task.TaskId, GraphBuildStage.Failed, 0, $"Error: {ex.Message}");
+            OnBuildError?.Invoke(task.TaskId, ex.Message);
+        }
+        finally
+        {
+            buildThrottle.Release();
+        }
+    }
+
+    private void UpdateStatus(string taskId, GraphBuildStage stage, int progress, string message)
+    {
+        if (statusTracker.TryGetValue(taskId, out var status))
+        {
+            status.Stage = stage;
+            status.Progress = progress;
+            status.CurrentOperation = message;
+            status.LastUpdated = DateTime.UtcNow;
+            NotifyStatusChanged(status);
+        }
+    }
+
+    private void NotifyStatusChanged(GraphBuildStatus status)
+    {
+        try
+        {
+            OnStatusChanged?.Invoke(status);
+        }
+        catch
+        {
+            // Ignore UI callback errors
+        }
+    }
+
+    /// <summary>
+    /// Clears completed/failed tasks from the tracker.
+    /// </summary>
+    public void ClearCompletedTasks()
+    {
+        var toRemove = statusTracker
+            .Where(kvp => kvp.Value.Stage == GraphBuildStage.Complete || kvp.Value.Stage == GraphBuildStage.Failed)
+            .Where(kvp => kvp.Value.CompletedAt.HasValue && kvp.Value.CompletedAt.Value < DateTime.UtcNow.AddMinutes(-5))
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var key in toRemove)
+        {
+            statusTracker.TryRemove(key, out _);
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        buildQueue.Writer.Complete();
+        buildThrottle.Dispose();
+        cts.Dispose();
+    }
+}
+
+/// <summary>
+/// Internal task representation for the build queue.
+/// </summary>
+internal class GraphBuildTask
+{
+    public string TaskId { get; set; } = "";
+    public string CourseId { get; set; } = "";
+    public string CourseName { get; set; } = "";
+    public bool Rebuild { get; set; }
+}
+
+/// <summary>
+/// Build stages for a knowledge graph.
+/// </summary>
+public enum GraphBuildStage
+{
+    Queued,
+    LoadingResources,
+    ExtractingConcepts,
+    GeneratingEmbeddings,
+    FindingRelationships,
+    BuildingGraph,
+    GeneratingToc,
+    Complete,
+    Failed
+}
+
+/// <summary>
+/// Status tracking for a graph build.
+/// </summary>
+public class GraphBuildStatus
+{
+    public string TaskId { get; set; } = "";
+    public string CourseId { get; set; } = "";
+    public string CourseName { get; set; } = "";
+    public GraphBuildStage Stage { get; set; } = GraphBuildStage.Queued;
+    public int Progress { get; set; }
+    public string CurrentOperation { get; set; } = "";
+    public string CurrentResource { get; set; } = "";
+    public DateTime QueuedAt { get; set; }
+    public DateTime LastUpdated { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public int TotalResources { get; set; }
+    public int ConceptsExtracted { get; set; }
+    public int RelationshipsFound { get; set; }
+    public bool TocGenerated { get; set; }
+    public bool IsRebuild { get; set; }
+
+    public string StageDisplayName => Stage switch
+    {
+        GraphBuildStage.Queued => "Queued",
+        GraphBuildStage.LoadingResources => "Loading Resources",
+        GraphBuildStage.ExtractingConcepts => "Extracting Concepts",
+        GraphBuildStage.GeneratingEmbeddings => "Generating Embeddings",
+        GraphBuildStage.FindingRelationships => "Finding Relationships",
+        GraphBuildStage.BuildingGraph => "Building Graph",
+        GraphBuildStage.GeneratingToc => "Generating TOC",
+        GraphBuildStage.Complete => "Complete",
+        GraphBuildStage.Failed => "Failed",
+        _ => "Unknown"
+    };
+
+    public bool IsActive => Stage != GraphBuildStage.Complete && Stage != GraphBuildStage.Failed;
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/KnowledgeGraphService.cs
+TYPE: script
+EXT: .cs
+SHA256: 3C64919AAA5774991F00AFB3F3EDBF3E1947BB611807A8124499ABB4A5F23067
+BYTES: 20063
+LINES: 623
+<<<CONTENT START>>>
+using System.Text.Json;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for managing knowledge graphs - creation, persistence, and operations.
+/// Orchestrates concept extraction, correlation, and graph building.
+/// </summary>
+public sealed class KnowledgeGraphService
+{
+    private const string GraphsDirectoryName = "KnowledgeGraphs";
+    private readonly string graphsDirectory;
+    
+    private readonly ConceptExtractionService extractionService;
+    private readonly ConceptCorrelationService correlationService;
+    private readonly EmbeddingService embeddingService;
+    private readonly LSHService lshService;
+    private readonly SimHashService simHashService;
+
+    private readonly Dictionary<string, KnowledgeGraph> loadedGraphs = [];
+
+    public event Action<string>? OnGraphUpdated;
+
+    public KnowledgeGraphService(
+        ConceptExtractionService extractionService,
+        ConceptCorrelationService correlationService,
+        EmbeddingService embeddingService,
+        LSHService lshService,
+        SimHashService simHashService)
+    {
+        this.extractionService = extractionService;
+        this.correlationService = correlationService;
+        this.embeddingService = embeddingService;
+        this.lshService = lshService;
+        this.simHashService = simHashService;
+
+        graphsDirectory = Path.Combine(FileSystem.AppDataDirectory, GraphsDirectoryName);
+        Directory.CreateDirectory(graphsDirectory);
+    }
+
+    /// <summary>
+    /// Creates a new knowledge graph from course resources.
+    /// </summary>
+    public async Task<KnowledgeGraph> CreateGraphFromResourcesAsync(
+        string name,
+        string? courseId,
+        List<CourseResource> resources,
+        IProgress<GraphBuildProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        var graph = new KnowledgeGraph
+        {
+            Name = name,
+            CourseId = courseId,
+            Description = $"Knowledge graph for {name}"
+        };
+
+        // Total steps: resources + embeddings + relationships + finalization
+        var totalSteps = resources.Count + 3;
+        var currentStep = 0;
+
+        void ReportProgress(string message, string? detail = null)
+        {
+            progress?.Report(new GraphBuildProgress
+            {
+                CurrentStep = currentStep,
+                TotalSteps = totalSteps,
+                Message = message,
+                Detail = detail,
+                PercentComplete = totalSteps > 0 ? (int)((double)currentStep / totalSteps * 100) : 0
+            });
+        }
+
+        ReportProgress("Extracting concepts from resources...");
+
+        // Extract concepts from all resources
+        var allExtracted = new List<ExtractedConcept>();
+        foreach (var resource in resources)
+        {
+            ct.ThrowIfCancellationRequested();
+            currentStep++;
+            ReportProgress($"Analyzing resource {currentStep} of {resources.Count}", resource.Title);
+
+            var concepts = await extractionService.ExtractConceptsAsync(
+                resource.Content, 
+                resource.Id, 
+                ct);
+            
+            allExtracted.AddRange(concepts);
+        }
+
+        if (allExtracted.Count == 0)
+        {
+            ReportProgress("No concepts found in resources.");
+            return graph;
+        }
+
+        currentStep++;
+        ReportProgress($"Generating embeddings for {allExtracted.Count} concepts...");
+
+        // Create concept nodes with embeddings
+        var nodes = await extractionService.CreateConceptNodesAsync(allExtracted, ct);
+        
+        // Add nodes to graph
+        foreach (var node in nodes)
+        {
+            graph.Nodes[node.Id] = node;
+        }
+
+        currentStep++;
+        ReportProgress("Finding relationships between concepts...");
+
+        // Find related pairs
+        var pairs = correlationService.FindRelatedPairs(nodes);
+        
+        ReportProgress($"Analyzing {pairs.Count} potential relationships...");
+
+        // Infer prerequisites using LLM
+        var relationships = await correlationService.InferPrerequisitesAsync(
+            pairs, 
+            graph.Nodes, 
+            ct);
+
+        // Add relationships to graph
+        foreach (var rel in relationships)
+        {
+            graph.Relationships[rel.Id] = rel;
+        }
+
+        currentStep++;
+        ReportProgress("Building graph structure...");
+
+        // Build adjacency lists
+        graph.RebuildAdjacencyLists();
+
+        // Remove cycles
+        ConceptCorrelationService.RemoveCycles(graph);
+
+        // Calculate depths
+        graph.RecalculateDepths();
+
+        ReportProgress("Saving knowledge graph...");
+
+        // Save the graph
+        await SaveGraphAsync(graph, ct);
+
+        loadedGraphs[graph.Id] = graph;
+        OnGraphUpdated?.Invoke(graph.Id);
+
+        var stats = graph.GetStats();
+        ReportProgress($"Complete! {stats.TotalConcepts} concepts, {stats.TotalRelationships} relationships");
+
+        return graph;
+    }
+
+    /// <summary>
+    /// Adds new concepts from a resource to an existing graph.
+    /// </summary>
+    public async Task<int> AddResourceToGraphAsync(
+        string graphId,
+        CourseResource resource,
+        CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            throw new InvalidOperationException($"Graph {graphId} not found.");
+
+        // Extract new concepts
+        var extracted = await extractionService.ExtractConceptsAsync(
+            resource.Content, 
+            resource.Id, 
+            ct);
+
+        if (extracted.Count == 0)
+            return 0;
+
+        // Filter out concepts that already exist (by term)
+        var newExtracted = extracted
+            .Where(e => graph.FindByTerm(e.Term) == null)
+            .ToList();
+
+        if (newExtracted.Count == 0)
+            return 0;
+
+        // Create nodes with embeddings
+        var newNodes = await extractionService.CreateConceptNodesAsync(newExtracted, ct);
+
+        foreach (var node in newNodes)
+        {
+            graph.Nodes[node.Id] = node;
+        }
+
+        // Find relationships between new nodes and existing nodes
+        var allNodes = graph.Nodes.Values.ToList();
+        var pairs = new List<ConceptPairScore>();
+
+        foreach (var newNode in newNodes)
+        {
+            foreach (var existingNode in allNodes)
+            {
+                if (newNode.Id == existingNode.Id)
+                    continue;
+
+                var score = correlationService.ComputePairScore(newNode, existingNode);
+                if (score.CombinedScore >= 0.3f)
+                {
+                    pairs.Add(score);
+                }
+            }
+        }
+
+        // Infer new relationships
+        var newRelationships = await correlationService.InferPrerequisitesAsync(
+            pairs,
+            graph.Nodes,
+            ct);
+
+        foreach (var rel in newRelationships)
+        {
+            graph.Relationships[rel.Id] = rel;
+        }
+
+        // Rebuild graph structure
+        graph.RebuildAdjacencyLists();
+        ConceptCorrelationService.RemoveCycles(graph);
+        graph.RecalculateDepths();
+        graph.UpdatedAt = DateTime.UtcNow;
+        graph.Version++;
+
+        await SaveGraphAsync(graph, ct);
+        OnGraphUpdated?.Invoke(graph.Id);
+
+        return newNodes.Count;
+    }
+
+    /// <summary>
+    /// Adds a single concept to the graph and finds its relationships.
+    /// </summary>
+    public async Task<ConceptNode> AddConceptAsync(
+        string graphId,
+        string term,
+        string description,
+        CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            throw new InvalidOperationException($"Graph {graphId} not found.");
+
+        // Check if concept already exists
+        var existing = graph.FindByTerm(term);
+        if (existing != null)
+            return existing;
+
+        // Create embedding
+        var embeddingText = $"{term}. {description}";
+        var embedding = await embeddingService.GetEmbeddingAsync(embeddingText, ct);
+
+        var node = new ConceptNode
+        {
+            Term = term,
+            Description = description,
+            Embedding = embedding,
+            SemanticSignature = embedding.Length > 0 ? lshService.GetSignature(embedding) : [],
+            LexicalSignature = simHashService.GetSignature64(embeddingText),
+            IsVerified = true // Manually added
+        };
+
+        graph.Nodes[node.Id] = node;
+
+        // Find relationships to existing concepts
+        var pairs = new List<ConceptPairScore>();
+        foreach (var existingNode in graph.Nodes.Values.Where(n => n.Id != node.Id))
+        {
+            var score = correlationService.ComputePairScore(node, existingNode);
+            if (score.CombinedScore >= 0.3f)
+            {
+                pairs.Add(score);
+            }
+        }
+
+        // Get top candidates and infer relationships
+        var topPairs = pairs.OrderByDescending(p => p.CombinedScore).Take(10).ToList();
+        var relationships = await correlationService.InferPrerequisitesAsync(
+            topPairs, 
+            graph.Nodes, 
+            ct);
+
+        foreach (var rel in relationships)
+        {
+            graph.Relationships[rel.Id] = rel;
+        }
+
+        // Rebuild graph
+        graph.RebuildAdjacencyLists();
+        ConceptCorrelationService.RemoveCycles(graph);
+        graph.RecalculateDepths();
+        graph.UpdatedAt = DateTime.UtcNow;
+        graph.Version++;
+
+        await SaveGraphAsync(graph, ct);
+        OnGraphUpdated?.Invoke(graph.Id);
+
+        return node;
+    }
+
+    /// <summary>
+    /// Removes a concept and its relationships from the graph.
+    /// </summary>
+    public async Task RemoveConceptAsync(string graphId, string conceptId, CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return;
+
+        if (!graph.Nodes.ContainsKey(conceptId))
+            return;
+
+        graph.Nodes.Remove(conceptId);
+
+        // Remove relationships involving this concept
+        var toRemove = graph.Relationships
+            .Where(kvp => kvp.Value.SourceConceptId == conceptId || kvp.Value.TargetConceptId == conceptId)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var relId in toRemove)
+        {
+            graph.Relationships.Remove(relId);
+        }
+
+        graph.RebuildAdjacencyLists();
+        graph.RecalculateDepths();
+        graph.UpdatedAt = DateTime.UtcNow;
+        graph.Version++;
+
+        await SaveGraphAsync(graph, ct);
+        OnGraphUpdated?.Invoke(graph.Id);
+    }
+
+    /// <summary>
+    /// Adds a prerequisite relationship between two concepts.
+    /// </summary>
+    public async Task AddPrerequisiteAsync(
+        string graphId,
+        string prerequisiteConceptId,
+        string dependentConceptId,
+        CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return;
+
+        if (!graph.Nodes.ContainsKey(prerequisiteConceptId) ||
+            !graph.Nodes.ContainsKey(dependentConceptId))
+            return;
+
+        // Check if relationship already exists
+        var exists = graph.Relationships.Values.Any(r =>
+            r.SourceConceptId == prerequisiteConceptId &&
+            r.TargetConceptId == dependentConceptId &&
+            r.RelationType == ConceptRelationType.Prerequisite);
+
+        if (exists)
+            return;
+
+        var prereq = graph.Nodes[prerequisiteConceptId];
+        var dependent = graph.Nodes[dependentConceptId];
+
+        var rel = new ConceptRelationship
+        {
+            SourceConceptId = prerequisiteConceptId,
+            TargetConceptId = dependentConceptId,
+            RelationType = ConceptRelationType.Prerequisite,
+            ConfidenceScore = 1.0f,
+            SemanticSimilarity = prereq.Embedding.Length > 0 && dependent.Embedding.Length > 0
+                ? EmbeddingService.CosineSimilarity(prereq.Embedding, dependent.Embedding)
+                : 0f,
+            IsVerified = true
+        };
+
+        graph.Relationships[rel.Id] = rel;
+        graph.RebuildAdjacencyLists();
+        ConceptCorrelationService.RemoveCycles(graph);
+        graph.RecalculateDepths();
+        graph.UpdatedAt = DateTime.UtcNow;
+        graph.Version++;
+
+        await SaveGraphAsync(graph, ct);
+        OnGraphUpdated?.Invoke(graph.Id);
+    }
+
+    /// <summary>
+    /// Finds similar concepts using embedding similarity.
+    /// </summary>
+    public async Task<List<ConceptNode>> FindSimilarConceptsAsync(
+        string graphId,
+        string query,
+        int topK = 5,
+        CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null || graph.Nodes.Count == 0)
+            return [];
+
+        // Get query embedding
+        var queryEmbedding = await embeddingService.GetEmbeddingAsync(query, ct);
+        if (queryEmbedding.Length == 0)
+            return [];
+
+        // Use LSH for candidate generation
+        var querySig = lshService.GetSignature(queryEmbedding);
+        const int lshThreshold = 80;
+
+        var candidates = graph.Nodes.Values
+            .Where(n => n.SemanticSignature.Length > 0)
+            .Select(n => new
+            {
+                Node = n,
+                LshDist = LSHService.HammingDistance(querySig, n.SemanticSignature)
+            })
+            .Where(x => x.LshDist <= lshThreshold)
+            .ToList();
+
+        // Score candidates with full cosine similarity
+        var scored = candidates
+            .Select(c => new
+            {
+                c.Node,
+                Similarity = EmbeddingService.CosineSimilarity(queryEmbedding, c.Node.Embedding)
+            })
+            .OrderByDescending(x => x.Similarity)
+            .Take(topK)
+            .Select(x => x.Node)
+            .ToList();
+
+        return scored;
+    }
+
+    /// <summary>
+    /// Gets the complete learning path to understand a specific concept.
+    /// </summary>
+    public async Task<List<ConceptNode>> GetLearningPathToAsync(
+        string graphId,
+        string targetTerm,
+        CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return [];
+
+        var target = graph.FindByTerm(targetTerm);
+        if (target == null)
+            return [];
+
+        return graph.GetLearningPathTo(target.Id);
+    }
+
+    /// <summary>
+    /// Gets all concepts that build upon a starting concept.
+    /// </summary>
+    public async Task<List<ConceptNode>> GetLearningPathFromAsync(
+        string graphId,
+        string startTerm,
+        CancellationToken ct = default)
+    {
+        var graph = await LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return [];
+
+        var start = graph.FindByTerm(startTerm);
+        if (start == null)
+            return [];
+
+        return graph.GetLearningPathFrom(start.Id);
+    }
+
+    /// <summary>
+    /// Loads a graph from disk.
+    /// </summary>
+    public async Task<KnowledgeGraph?> LoadGraphAsync(string graphId, CancellationToken ct = default)
+    {
+        if (loadedGraphs.TryGetValue(graphId, out var cached))
+            return cached;
+
+        var filePath = GetGraphFilePath(graphId);
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(filePath, ct);
+            var graph = JsonSerializer.Deserialize<KnowledgeGraph>(json);
+            
+            if (graph != null)
+            {
+                graph.RebuildAdjacencyLists();
+                loadedGraphs[graph.Id] = graph;
+            }
+            
+            return graph;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Saves a graph to disk.
+    /// </summary>
+    public async Task SaveGraphAsync(KnowledgeGraph graph, CancellationToken ct = default)
+    {
+        var filePath = GetGraphFilePath(graph.Id);
+        var json = JsonSerializer.Serialize(graph, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(filePath, json, ct);
+        loadedGraphs[graph.Id] = graph;
+    }
+
+    /// <summary>
+    /// Gets all available graphs.
+    /// </summary>
+    public async Task<List<KnowledgeGraphInfo>> GetAllGraphsAsync(CancellationToken ct = default)
+    {
+        var infos = new List<KnowledgeGraphInfo>();
+
+        if (!Directory.Exists(graphsDirectory))
+            return infos;
+
+        foreach (var file in Directory.GetFiles(graphsDirectory, "*.json"))
+        {
+            try
+            {
+                var json = await File.ReadAllTextAsync(file, ct);
+                var graph = JsonSerializer.Deserialize<KnowledgeGraph>(json);
+                
+                if (graph != null)
+                {
+                    infos.Add(new KnowledgeGraphInfo
+                    {
+                        Id = graph.Id,
+                        Name = graph.Name,
+                        Description = graph.Description,
+                        CourseId = graph.CourseId,
+                        ConceptCount = graph.Nodes.Count,
+                        RelationshipCount = graph.Relationships.Count,
+                        CreatedAt = graph.CreatedAt,
+                        UpdatedAt = graph.UpdatedAt
+                    });
+                }
+            }
+            catch
+            {
+                // Skip invalid files
+            }
+        }
+
+        return infos.OrderByDescending(i => i.UpdatedAt).ToList();
+    }
+
+    /// <summary>
+    /// Deletes a graph.
+    /// </summary>
+    public Task DeleteGraphAsync(string graphId, CancellationToken ct = default)
+    {
+        loadedGraphs.Remove(graphId);
+        
+        var filePath = GetGraphFilePath(graphId);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Gets a graph by course ID.
+    /// </summary>
+    public async Task<KnowledgeGraph?> GetGraphForCourseAsync(string courseId, CancellationToken ct = default)
+    {
+        var graphs = await GetAllGraphsAsync(ct);
+        var info = graphs.FirstOrDefault(g => g.CourseId == courseId);
+        
+        if (info == null)
+            return null;
+
+        return await LoadGraphAsync(info.Id, ct);
+    }
+
+    private string GetGraphFilePath(string graphId)
+    {
+        return Path.Combine(graphsDirectory, $"{graphId}.json");
+    }
+}
+
+/// <summary>
+/// Summary information about a knowledge graph.
+/// </summary>
+public class KnowledgeGraphInfo
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string? CourseId { get; set; }
+    public int ConceptCount { get; set; }
+    public int RelationshipCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>
+/// Progress information for knowledge graph building.
+/// </summary>
+public class GraphBuildProgress
+{
+    public int CurrentStep { get; set; }
+    public int TotalSteps { get; set; }
+    public int PercentComplete { get; set; }
+    public string Message { get; set; } = "";
+    public string? Detail { get; set; }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
 PATH: Services/LSHService.cs
 TYPE: script
 EXT: .cs
@@ -3014,6 +5909,453 @@ public sealed class OpenAIOptions
     }
 }
 
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/ResourceProcessingService.cs
+TYPE: script
+EXT: .cs
+SHA256: D44E8C1313C6DCE2910EE722C80B52B556F79863198F51B901837E57857F8EFE
+BYTES: 15174
+LINES: 436
+<<<CONTENT START>>>
+using System.Collections.Concurrent;
+using System.Threading.Channels;
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Background service for processing resources asynchronously.
+/// Handles formatting, concept extraction, and knowledge graph building
+/// with throttling to prevent memory issues.
+/// </summary>
+public sealed class ResourceProcessingService : IDisposable
+{
+    private readonly CourseService courseService;
+    private readonly ContentFormatterService formatterService;
+    private readonly KnowledgeGraphService graphService;
+    private readonly ConceptExtractionService extractionService;
+    private readonly TableOfContentsService tocService;
+
+    // Throttling - limit concurrent AI operations
+    private readonly SemaphoreSlim aiThrottle = new(2, 2); // Max 2 concurrent AI calls
+    private readonly SemaphoreSlim processingThrottle = new(3, 3); // Max 3 resources processing at once
+
+    // Processing queue
+    private readonly Channel<ResourceProcessingTask> processingQueue;
+    private readonly ConcurrentDictionary<string, ResourceProcessingStatus> statusTracker = new();
+    private readonly CancellationTokenSource cts = new();
+    private readonly Task processingLoopTask;
+
+    // Events for UI updates
+    public event Action<ResourceProcessingStatus>? OnStatusChanged;
+    public event Action<string>? OnProcessingComplete;
+    public event Action<string, string>? OnProcessingError;
+
+    public ResourceProcessingService(
+        CourseService courseService,
+        ContentFormatterService formatterService,
+        KnowledgeGraphService graphService,
+        ConceptExtractionService extractionService,
+        TableOfContentsService tocService)
+    {
+        this.courseService = courseService;
+        this.formatterService = formatterService;
+        this.graphService = graphService;
+        this.extractionService = extractionService;
+        this.tocService = tocService;
+
+        // Unbounded channel for queuing
+        processingQueue = Channel.CreateUnbounded<ResourceProcessingTask>(new UnboundedChannelOptions
+        {
+            SingleReader = false,
+            SingleWriter = false
+        });
+
+        // Start the background processing loop
+        processingLoopTask = Task.Run(ProcessingLoopAsync);
+    }
+
+    /// <summary>
+    /// Queues a resource for async processing (format ? extract ? build graph).
+    /// Returns immediately - processing happens in background.
+    /// </summary>
+    public string QueueResourceForProcessing(
+        CourseResource resource,
+        string? courseId,
+        bool autoFormat = true,
+        bool buildGraph = true)
+    {
+        var taskId = Guid.NewGuid().ToString();
+
+        var status = new ResourceProcessingStatus
+        {
+            TaskId = taskId,
+            ResourceId = resource.Id,
+            ResourceTitle = resource.Title,
+            CourseId = courseId,
+            Stage = ProcessingStage.Queued,
+            QueuedAt = DateTime.UtcNow
+        };
+
+        statusTracker[taskId] = status;
+        NotifyStatusChanged(status);
+
+        var task = new ResourceProcessingTask
+        {
+            TaskId = taskId,
+            Resource = resource,
+            CourseId = courseId,
+            AutoFormat = autoFormat,
+            BuildGraph = buildGraph
+        };
+
+        // Queue for processing
+        processingQueue.Writer.TryWrite(task);
+
+        return taskId;
+    }
+
+    /// <summary>
+    /// Gets the current status of a processing task.
+    /// </summary>
+    public ResourceProcessingStatus? GetStatus(string taskId)
+    {
+        return statusTracker.TryGetValue(taskId, out var status) ? status : null;
+    }
+
+    /// <summary>
+    /// Gets all active processing statuses.
+    /// </summary>
+    public IEnumerable<ResourceProcessingStatus> GetAllStatuses()
+    {
+        return statusTracker.Values
+            .Where(s => s.Stage != ProcessingStage.Complete && s.Stage != ProcessingStage.Failed)
+            .OrderBy(s => s.QueuedAt);
+    }
+
+    /// <summary>
+    /// Gets count of items in queue or processing.
+    /// </summary>
+    public int GetActiveCount()
+    {
+        return statusTracker.Values.Count(s => 
+            s.Stage != ProcessingStage.Complete && s.Stage != ProcessingStage.Failed);
+    }
+
+    private async Task ProcessingLoopAsync()
+    {
+        await foreach (var task in processingQueue.Reader.ReadAllAsync(cts.Token))
+        {
+            // Don't await - let multiple tasks process concurrently (up to throttle limit)
+            _ = ProcessResourceAsync(task);
+        }
+    }
+
+    private async Task ProcessResourceAsync(ResourceProcessingTask task)
+    {
+        // Acquire processing slot
+        await processingThrottle.WaitAsync(cts.Token);
+
+        try
+        {
+            var status = statusTracker[task.TaskId];
+
+            // Stage 1: Save resource
+            UpdateStatus(task.TaskId, ProcessingStage.Saving, 0, "Saving resource...");
+            
+            var savedId = await courseService.SaveResourceCoreAsync(task.Resource);
+            task.Resource.Id = savedId;
+            status.ResourceId = savedId;
+
+            // Add to course if specified
+            if (!string.IsNullOrEmpty(task.CourseId))
+            {
+                await courseService.AddResourceToCourseAsync(task.CourseId, savedId);
+            }
+
+            // Stage 2: Format with AI (if enabled)
+            if (task.AutoFormat)
+            {
+                UpdateStatus(task.TaskId, ProcessingStage.Formatting, 10, "Formatting with AI...");
+
+                await aiThrottle.WaitAsync(cts.Token);
+                try
+                {
+                    await FormatResourceAsync(task, status);
+                }
+                finally
+                {
+                    aiThrottle.Release();
+                }
+            }
+
+            // Stage 3: Extract concepts (if building graph)
+            if (task.BuildGraph && !string.IsNullOrEmpty(task.CourseId))
+            {
+                UpdateStatus(task.TaskId, ProcessingStage.ExtractingConcepts, 50, "Extracting concepts...");
+
+                await aiThrottle.WaitAsync(cts.Token);
+                try
+                {
+                    await ExtractConceptsAsync(task, status);
+                }
+                finally
+                {
+                    aiThrottle.Release();
+                }
+
+                // Stage 4: Update knowledge graph
+                UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 75, "Updating knowledge graph...");
+                await UpdateKnowledgeGraphAsync(task, status);
+
+                // Stage 5: Regenerate TOC
+                UpdateStatus(task.TaskId, ProcessingStage.GeneratingToc, 90, "Generating table of contents...");
+                await RegenerateTocAsync(task, status);
+            }
+
+            // Complete
+            UpdateStatus(task.TaskId, ProcessingStage.Complete, 100, "Complete");
+            status.CompletedAt = DateTime.UtcNow;
+            OnProcessingComplete?.Invoke(task.TaskId);
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStatus(task.TaskId, ProcessingStage.Failed, 0, "Cancelled");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus(task.TaskId, ProcessingStage.Failed, 0, $"Error: {ex.Message}");
+            OnProcessingError?.Invoke(task.TaskId, ex.Message);
+        }
+        finally
+        {
+            processingThrottle.Release();
+        }
+    }
+
+    private async Task FormatResourceAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
+    {
+        try
+        {
+            var content = task.Resource.Content;
+            
+            UpdateStatus(task.TaskId, ProcessingStage.Formatting, 15, "Formatting content with AI...");
+
+            var formattedContent = await formatterService.FormatContentAsync(
+                content, 
+                (current, total) =>
+                {
+                    var progress = 10 + (int)((double)current / total * 35);
+                    UpdateStatus(task.TaskId, ProcessingStage.Formatting, progress, 
+                        $"Formatting section {current} of {total}...");
+                },
+                cts.Token);
+
+            // Save formatted version
+            task.Resource.FormattedContent = formattedContent;
+            await courseService.UpdateResourceContentAsync(task.Resource.Id, formattedContent, isFormatted: true);
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail - formatting is optional
+            status.Warnings.Add($"Formatting warning: {ex.Message}");
+        }
+    }
+
+    private async Task ExtractConceptsAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
+    {
+        try
+        {
+            var content = task.Resource.FormattedContent ?? task.Resource.Content;
+            var concepts = await extractionService.ExtractConceptsAsync(content, task.Resource.Id, cts.Token);
+            status.ConceptsExtracted = concepts.Count;
+            
+            UpdateStatus(task.TaskId, ProcessingStage.ExtractingConcepts, 65, 
+                $"Extracted {concepts.Count} concepts");
+        }
+        catch (Exception ex)
+        {
+            status.Warnings.Add($"Concept extraction warning: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateKnowledgeGraphAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
+    {
+        if (string.IsNullOrEmpty(task.CourseId))
+            return;
+
+        try
+        {
+            // Check if graph exists for this course
+            var existingGraph = await graphService.GetGraphForCourseAsync(task.CourseId, cts.Token);
+
+            if (existingGraph != null)
+            {
+                // Add resource to existing graph
+                var newConceptCount = await graphService.AddResourceToGraphAsync(
+                    existingGraph.Id, 
+                    task.Resource, 
+                    cts.Token);
+                
+                status.ConceptsExtracted = newConceptCount;
+            }
+            else
+            {
+                // Create new graph with just this resource
+                var resources = new List<CourseResource> { task.Resource };
+                var course = await courseService.GetCourseAsync(task.CourseId);
+                
+                await graphService.CreateGraphFromResourcesAsync(
+                    course?.Name ?? "Knowledge Graph",
+                    task.CourseId,
+                    resources,
+                    new Progress<GraphBuildProgress>(p =>
+                    {
+                        UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 
+                            75 + (int)(p.PercentComplete * 0.15), p.Message);
+                    }),
+                    cts.Token);
+            }
+        }
+        catch (Exception ex)
+        {
+            status.Warnings.Add($"Graph building warning: {ex.Message}");
+        }
+    }
+
+    private async Task RegenerateTocAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
+    {
+        if (string.IsNullOrEmpty(task.CourseId))
+            return;
+
+        try
+        {
+            var graph = await graphService.GetGraphForCourseAsync(task.CourseId, cts.Token);
+            if (graph != null)
+            {
+                var toc = await tocService.GenerateTableOfContentsAsync(graph.Id, cts.Token);
+                status.TocGenerated = toc.TotalConcepts > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            status.Warnings.Add($"TOC generation warning: {ex.Message}");
+        }
+    }
+
+    private void UpdateStatus(string taskId, ProcessingStage stage, int progress, string message)
+    {
+        if (statusTracker.TryGetValue(taskId, out var status))
+        {
+            status.Stage = stage;
+            status.Progress = progress;
+            status.CurrentOperation = message;
+            status.LastUpdated = DateTime.UtcNow;
+            NotifyStatusChanged(status);
+        }
+    }
+
+    private void NotifyStatusChanged(ResourceProcessingStatus status)
+    {
+        try
+        {
+            OnStatusChanged?.Invoke(status);
+        }
+        catch
+        {
+            // Ignore UI callback errors
+        }
+    }
+
+    /// <summary>
+    /// Clears completed/failed tasks from the tracker.
+    /// </summary>
+    public void ClearCompletedTasks()
+    {
+        var toRemove = statusTracker
+            .Where(kvp => kvp.Value.Stage == ProcessingStage.Complete || kvp.Value.Stage == ProcessingStage.Failed)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var key in toRemove)
+        {
+            statusTracker.TryRemove(key, out _);
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        processingQueue.Writer.Complete();
+        aiThrottle.Dispose();
+        processingThrottle.Dispose();
+        cts.Dispose();
+    }
+}
+
+/// <summary>
+/// Internal task representation for the processing queue.
+/// </summary>
+internal class ResourceProcessingTask
+{
+    public string TaskId { get; set; } = "";
+    public CourseResource Resource { get; set; } = new();
+    public string? CourseId { get; set; }
+    public bool AutoFormat { get; set; } = true;
+    public bool BuildGraph { get; set; } = true;
+}
+
+/// <summary>
+/// Processing stages for a resource.
+/// </summary>
+public enum ProcessingStage
+{
+    Queued,
+    Saving,
+    Formatting,
+    ExtractingConcepts,
+    BuildingGraph,
+    GeneratingToc,
+    Complete,
+    Failed
+}
+
+/// <summary>
+/// Status tracking for a resource being processed.
+/// </summary>
+public class ResourceProcessingStatus
+{
+    public string TaskId { get; set; } = "";
+    public string ResourceId { get; set; } = "";
+    public string ResourceTitle { get; set; } = "";
+    public string? CourseId { get; set; }
+    public ProcessingStage Stage { get; set; } = ProcessingStage.Queued;
+    public int Progress { get; set; }
+    public string CurrentOperation { get; set; } = "";
+    public DateTime QueuedAt { get; set; }
+    public DateTime LastUpdated { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public int ConceptsExtracted { get; set; }
+    public bool TocGenerated { get; set; }
+    public List<string> Warnings { get; set; } = [];
+
+    public string StageDisplayName => Stage switch
+    {
+        ProcessingStage.Queued => "Queued",
+        ProcessingStage.Saving => "Saving",
+        ProcessingStage.Formatting => "Formatting",
+        ProcessingStage.ExtractingConcepts => "Extracting Concepts",
+        ProcessingStage.BuildingGraph => "Building Graph",
+        ProcessingStage.GeneratingToc => "Generating TOC",
+        ProcessingStage.Complete => "Complete",
+        ProcessingStage.Failed => "Failed",
+        _ => "Unknown"
+    };
+}
 
 <<<CONTENT END>>>
 <<<FILE END>>>
@@ -3804,6 +7146,504 @@ public static class StorageSettings
             // Silently fail
         }
     }
+}
+
+<<<CONTENT END>>>
+<<<FILE END>>>
+
+<<<FILE START>>>
+PATH: Services/TableOfContentsService.cs
+TYPE: script
+EXT: .cs
+SHA256: A9D127B88ACA764BA3D1717902683EC6E4B9DE95BA5962BC553F8F04DCC0A78F
+BYTES: 16976
+LINES: 487
+<<<CONTENT START>>>
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for generating structured learning paths and tables of contents
+/// from knowledge graphs. Produces pedagogically ordered sequences that
+/// respect prerequisite relationships and can start from any concept.
+/// </summary>
+public sealed class TableOfContentsService
+{
+    private readonly KnowledgeGraphService graphService;
+
+    public TableOfContentsService(KnowledgeGraphService graphService)
+    {
+        this.graphService = graphService;
+    }
+
+    /// <summary>
+    /// Generates a complete table of contents for a knowledge graph.
+    /// Groups concepts by depth level and orders them for optimal learning.
+    /// </summary>
+    public async Task<TableOfContents> GenerateTableOfContentsAsync(
+        string graphId,
+        CancellationToken ct = default)
+    {
+        var graph = await graphService.LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return new TableOfContents { Title = "Unknown", Sections = [] };
+
+        var toc = new TableOfContents
+        {
+            Title = graph.Name,
+            Description = graph.Description,
+            GraphId = graph.Id
+        };
+
+        // Get topologically sorted concepts
+        var orderedConcepts = graph.GetFullLearningOrder();
+
+        // Group by depth level
+        var byDepth = orderedConcepts.GroupBy(c => c.HierarchyDepth).OrderBy(g => g.Key);
+
+        foreach (var depthGroup in byDepth)
+        {
+            var section = new TocSection
+            {
+                Level = depthGroup.Key,
+                Title = GetLevelTitle(depthGroup.Key, graph.MaxDepth),
+                Items = depthGroup.Select(concept => new TocItem
+                {
+                    ConceptId = concept.Id,
+                    Term = concept.Term,
+                    Description = concept.Description,
+                    PrerequisiteCount = concept.PrerequisiteIds.Count,
+                    DependentCount = concept.DependentIds.Count,
+                    IsFoundational = concept.IsFoundational,
+                    IsLeaf = concept.IsLeaf
+                }).ToList()
+            };
+
+            toc.Sections.Add(section);
+        }
+
+        toc.TotalConcepts = orderedConcepts.Count;
+        toc.MaxDepth = graph.MaxDepth;
+
+        return toc;
+    }
+
+    /// <summary>
+    /// Generates a focused learning path to understand a specific target concept.
+    /// Includes all prerequisites in the correct order.
+    /// </summary>
+    public async Task<LearningPath> GenerateLearningPathToAsync(
+        string graphId,
+        string targetTerm,
+        CancellationToken ct = default)
+    {
+        var graph = await graphService.LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return new LearningPath { Title = "Unknown", Steps = [] };
+
+        var target = graph.FindByTerm(targetTerm);
+        if (target == null)
+            return new LearningPath { Title = $"Path to '{targetTerm}' (not found)", Steps = [] };
+
+        var orderedConcepts = graph.GetLearningPathTo(target.Id);
+
+        var path = new LearningPath
+        {
+            Title = $"Learning Path to: {target.Term}",
+            Description = $"Complete prerequisite chain for understanding {target.Term}",
+            TargetConceptId = target.Id,
+            TargetTerm = target.Term,
+            Direction = LearningDirection.Prerequisites
+        };
+
+        int stepNumber = 1;
+        foreach (var concept in orderedConcepts)
+        {
+            var step = new LearningStep
+            {
+                StepNumber = stepNumber++,
+                ConceptId = concept.Id,
+                Term = concept.Term,
+                Description = concept.Description,
+                Depth = concept.HierarchyDepth,
+                IsTarget = concept.Id == target.Id,
+                Prerequisites = graph.GetPrerequisites(concept.Id).Select(p => p.Term).ToList(),
+                UnlocksNext = graph.GetDependents(concept.Id).Select(d => d.Term).ToList()
+            };
+
+            path.Steps.Add(step);
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// Generates a forward learning path showing what concepts build on a starting concept.
+    /// </summary>
+    public async Task<LearningPath> GenerateLearningPathFromAsync(
+        string graphId,
+        string startTerm,
+        CancellationToken ct = default)
+    {
+        var graph = await graphService.LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return new LearningPath { Title = "Unknown", Steps = [] };
+
+        var start = graph.FindByTerm(startTerm);
+        if (start == null)
+            return new LearningPath { Title = $"Path from '{startTerm}' (not found)", Steps = [] };
+
+        var orderedConcepts = graph.GetLearningPathFrom(start.Id);
+
+        var path = new LearningPath
+        {
+            Title = $"Learning Path from: {start.Term}",
+            Description = $"Concepts that build upon {start.Term}",
+            TargetConceptId = start.Id,
+            TargetTerm = start.Term,
+            Direction = LearningDirection.Dependents
+        };
+
+        int stepNumber = 1;
+        foreach (var concept in orderedConcepts)
+        {
+            var step = new LearningStep
+            {
+                StepNumber = stepNumber++,
+                ConceptId = concept.Id,
+                Term = concept.Term,
+                Description = concept.Description,
+                Depth = concept.HierarchyDepth,
+                IsTarget = concept.Id == start.Id,
+                Prerequisites = graph.GetPrerequisites(concept.Id).Select(p => p.Term).ToList(),
+                UnlocksNext = graph.GetDependents(concept.Id).Select(d => d.Term).ToList()
+            };
+
+            path.Steps.Add(step);
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// Generates a bidirectional path showing both prerequisites and dependents for a concept.
+    /// </summary>
+    public async Task<LearningPath> GenerateBidirectionalPathAsync(
+        string graphId,
+        string conceptTerm,
+        CancellationToken ct = default)
+    {
+        var graph = await graphService.LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return new LearningPath { Title = "Unknown", Steps = [] };
+
+        var concept = graph.FindByTerm(conceptTerm);
+        if (concept == null)
+            return new LearningPath { Title = $"Context for '{conceptTerm}' (not found)", Steps = [] };
+
+        // Get prerequisites and dependents
+        var prerequisites = graph.GetAllPrerequisites(concept.Id);
+        var dependents = graph.GetAllDependents(concept.Id);
+
+        var path = new LearningPath
+        {
+            Title = $"Complete Context: {concept.Term}",
+            Description = $"Prerequisites, the concept, and what it enables",
+            TargetConceptId = concept.Id,
+            TargetTerm = concept.Term,
+            Direction = LearningDirection.Bidirectional
+        };
+
+        int stepNumber = 1;
+
+        // Add prerequisites
+        foreach (var prereq in prerequisites)
+        {
+            path.Steps.Add(new LearningStep
+            {
+                StepNumber = stepNumber++,
+                ConceptId = prereq.Id,
+                Term = prereq.Term,
+                Description = prereq.Description,
+                Depth = prereq.HierarchyDepth,
+                IsTarget = false,
+                IsPrerequisiteOfTarget = true,
+                Prerequisites = graph.GetPrerequisites(prereq.Id).Select(p => p.Term).ToList(),
+                UnlocksNext = graph.GetDependents(prereq.Id).Select(d => d.Term).ToList()
+            });
+        }
+
+        // Add the target concept
+        path.Steps.Add(new LearningStep
+        {
+            StepNumber = stepNumber++,
+            ConceptId = concept.Id,
+            Term = concept.Term,
+            Description = concept.Description,
+            Depth = concept.HierarchyDepth,
+            IsTarget = true,
+            Prerequisites = graph.GetPrerequisites(concept.Id).Select(p => p.Term).ToList(),
+            UnlocksNext = graph.GetDependents(concept.Id).Select(d => d.Term).ToList()
+        });
+
+        // Add dependents
+        foreach (var dep in dependents)
+        {
+            path.Steps.Add(new LearningStep
+            {
+                StepNumber = stepNumber++,
+                ConceptId = dep.Id,
+                Term = dep.Term,
+                Description = dep.Description,
+                Depth = dep.HierarchyDepth,
+                IsTarget = false,
+                IsDependentOfTarget = true,
+                Prerequisites = graph.GetPrerequisites(dep.Id).Select(p => p.Term).ToList(),
+                UnlocksNext = graph.GetDependents(dep.Id).Select(d => d.Term).ToList()
+            });
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// Gets a filtered view of the TOC by tag/category.
+    /// </summary>
+    public async Task<TableOfContents> GenerateFilteredTocAsync(
+        string graphId,
+        string tag,
+        CancellationToken ct = default)
+    {
+        var graph = await graphService.LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return new TableOfContents { Title = "Unknown", Sections = [] };
+
+        // Filter concepts by tag
+        var taggedConcepts = graph.Nodes.Values
+            .Where(c => c.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        // Build a subgraph with these concepts
+        var conceptIds = new HashSet<string>(taggedConcepts.Select(c => c.Id));
+        var subgraphConcepts = graph.TopologicalSort(taggedConcepts);
+
+        var toc = new TableOfContents
+        {
+            Title = $"{graph.Name} - {tag}",
+            Description = $"Concepts tagged with '{tag}'",
+            GraphId = graph.Id,
+            FilterTag = tag
+        };
+
+        var byDepth = subgraphConcepts.GroupBy(c => c.HierarchyDepth).OrderBy(g => g.Key);
+
+        foreach (var depthGroup in byDepth)
+        {
+            var section = new TocSection
+            {
+                Level = depthGroup.Key,
+                Title = GetLevelTitle(depthGroup.Key, graph.MaxDepth),
+                Items = depthGroup.Select(concept => new TocItem
+                {
+                    ConceptId = concept.Id,
+                    Term = concept.Term,
+                    Description = concept.Description,
+                    PrerequisiteCount = concept.PrerequisiteIds.Count(id => conceptIds.Contains(id)),
+                    DependentCount = concept.DependentIds.Count(id => conceptIds.Contains(id)),
+                    IsFoundational = concept.IsFoundational,
+                    IsLeaf = concept.IsLeaf
+                }).ToList()
+            };
+
+            toc.Sections.Add(section);
+        }
+
+        toc.TotalConcepts = subgraphConcepts.Count;
+        toc.MaxDepth = subgraphConcepts.Count > 0 ? subgraphConcepts.Max(c => c.HierarchyDepth) : 0;
+
+        return toc;
+    }
+
+    /// <summary>
+    /// Generates suggested next concepts to learn based on current understanding.
+    /// </summary>
+    public async Task<List<ConceptSuggestion>> GetNextConceptsToLearnAsync(
+        string graphId,
+        IEnumerable<string> knownConceptTerms,
+        int maxSuggestions = 5,
+        CancellationToken ct = default)
+    {
+        var graph = await graphService.LoadGraphAsync(graphId, ct);
+        if (graph == null)
+            return [];
+
+        // Find concepts the user already knows
+        var knownIds = new HashSet<string>(
+            knownConceptTerms
+                .Select(t => graph.FindByTerm(t)?.Id)
+                .Where(id => id != null)!);
+
+        var suggestions = new List<ConceptSuggestion>();
+
+        // Find concepts where all prerequisites are known
+        foreach (var concept in graph.Nodes.Values)
+        {
+            if (knownIds.Contains(concept.Id))
+                continue; // Already known
+
+            var prereqsMet = concept.PrerequisiteIds.All(id => knownIds.Contains(id));
+            if (!prereqsMet)
+                continue;
+
+            // Calculate priority based on how many new concepts this unlocks
+            var unlocksCount = CountNewUnlocks(concept.Id, knownIds, graph);
+
+            suggestions.Add(new ConceptSuggestion
+            {
+                ConceptId = concept.Id,
+                Term = concept.Term,
+                Description = concept.Description,
+                Depth = concept.HierarchyDepth,
+                PrerequisitesMetCount = concept.PrerequisiteIds.Count,
+                UnlocksCount = unlocksCount,
+                Priority = unlocksCount + (concept.IsLeaf ? 0 : 1)
+            });
+        }
+
+        return suggestions
+            .OrderByDescending(s => s.Priority)
+            .ThenBy(s => s.Depth)
+            .Take(maxSuggestions)
+            .ToList();
+    }
+
+    private static int CountNewUnlocks(string conceptId, HashSet<string> knownIds, KnowledgeGraph graph)
+    {
+        var wouldKnow = new HashSet<string>(knownIds) { conceptId };
+        var unlocks = 0;
+
+        foreach (var depId in graph.Nodes[conceptId].DependentIds)
+        {
+            if (wouldKnow.Contains(depId))
+                continue;
+
+            var dep = graph.Nodes[depId];
+            if (dep.PrerequisiteIds.All(id => wouldKnow.Contains(id)))
+            {
+                unlocks++;
+            }
+        }
+
+        return unlocks;
+    }
+
+    private static string GetLevelTitle(int depth, int maxDepth)
+    {
+        if (depth == 0)
+            return "Foundations";
+        if (depth == maxDepth)
+            return "Advanced Topics";
+        if (depth == 1)
+            return "Core Concepts";
+        if (depth <= maxDepth / 3)
+            return "Building Blocks";
+        if (depth <= 2 * maxDepth / 3)
+            return "Intermediate Topics";
+        return "Advanced Concepts";
+    }
+}
+
+/// <summary>
+/// A structured table of contents for a knowledge graph.
+/// </summary>
+public class TableOfContents
+{
+    public string Title { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string GraphId { get; set; } = "";
+    public string? FilterTag { get; set; }
+    public List<TocSection> Sections { get; set; } = [];
+    public int TotalConcepts { get; set; }
+    public int MaxDepth { get; set; }
+}
+
+/// <summary>
+/// A section in the table of contents representing a depth level.
+/// </summary>
+public class TocSection
+{
+    public int Level { get; set; }
+    public string Title { get; set; } = "";
+    public List<TocItem> Items { get; set; } = [];
+}
+
+/// <summary>
+/// An item in the table of contents.
+/// </summary>
+public class TocItem
+{
+    public string ConceptId { get; set; } = "";
+    public string Term { get; set; } = "";
+    public string Description { get; set; } = "";
+    public int PrerequisiteCount { get; set; }
+    public int DependentCount { get; set; }
+    public bool IsFoundational { get; set; }
+    public bool IsLeaf { get; set; }
+}
+
+/// <summary>
+/// A learning path through the knowledge graph.
+/// </summary>
+public class LearningPath
+{
+    public string Title { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string TargetConceptId { get; set; } = "";
+    public string TargetTerm { get; set; } = "";
+    public LearningDirection Direction { get; set; }
+    public List<LearningStep> Steps { get; set; } = [];
+}
+
+/// <summary>
+/// Direction of traversal for a learning path.
+/// </summary>
+public enum LearningDirection
+{
+    Prerequisites,
+    Dependents,
+    Bidirectional
+}
+
+/// <summary>
+/// A step in a learning path.
+/// </summary>
+public class LearningStep
+{
+    public int StepNumber { get; set; }
+    public string ConceptId { get; set; } = "";
+    public string Term { get; set; } = "";
+    public string Description { get; set; } = "";
+    public int Depth { get; set; }
+    public bool IsTarget { get; set; }
+    public bool IsPrerequisiteOfTarget { get; set; }
+    public bool IsDependentOfTarget { get; set; }
+    public List<string> Prerequisites { get; set; } = [];
+    public List<string> UnlocksNext { get; set; } = [];
+}
+
+/// <summary>
+/// A suggested next concept to learn.
+/// </summary>
+public class ConceptSuggestion
+{
+    public string ConceptId { get; set; } = "";
+    public string Term { get; set; } = "";
+    public string Description { get; set; } = "";
+    public int Depth { get; set; }
+    public int PrerequisitesMetCount { get; set; }
+    public int UnlocksCount { get; set; }
+    public int Priority { get; set; }
 }
 
 <<<CONTENT END>>>

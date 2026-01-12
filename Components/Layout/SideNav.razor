@@ -1,0 +1,56 @@
+@using Tutor.Services
+@inject AppUiState UiState
+@implements IDisposable
+
+<div class="side-nav">
+    @if (Nodes.Count == 0)
+    {
+        <div class="side-nav-empty">
+            <span class="bi bi-folder2-open"></span>
+            <span>No items to display</span>
+        </div>
+    }
+    else
+    {
+        <div class="side-nav-tree">
+            @foreach (var node in Nodes)
+            {
+                <SideNavNode Node="@node" Level="0" OnNodeClick="HandleNodeClick" OnToggle="HandleToggle" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<NavNode> Nodes { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<NavNode> OnNodeSelected { get; set; }
+
+    protected override void OnInitialized()
+    {
+        UiState.OnSideNavChanged += HandleSideNavChanged;
+    }
+
+    private void HandleSideNavChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleNodeClick(NavNode node)
+    {
+        UiState.SelectNode(node.Id);
+        await OnNodeSelected.InvokeAsync(node);
+    }
+
+    private void HandleToggle(NavNode node)
+    {
+        UiState.ToggleNode(node.Id);
+    }
+
+    public void Dispose()
+    {
+        UiState.OnSideNavChanged -= HandleSideNavChanged;
+    }
+}

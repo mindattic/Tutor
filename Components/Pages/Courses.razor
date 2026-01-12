@@ -4,7 +4,8 @@
 @inject CourseService CourseService
 @inject KnowledgeGraphService GraphService
 @inject KnowledgeGraphBuildService BuildService
-@inject TableOfContentsService TocService
+@inject SideNavService SideNavService
+@inject AppUiState UiState
 @inject NavigationManager Nav
 @implements IDisposable
 
@@ -218,59 +219,6 @@
                             <span class="bi bi-play-fill"></span> Start Learning
                         </button>
                     </div>
-
-                    @if (tableOfContents != null)
-                    {
-                        <div class="curriculum-toc">
-                            <h4>Curriculum Overview</h4>
-                            <p class="toc-hint">Click any topic to start learning from that point.</p>
-                            
-                            @foreach (var tocSection in tableOfContents.Sections)
-                            {
-                                <div class="toc-level">
-                                    <div class="level-header" @onclick="() => ToggleSectionExpanded(tocSection.Level)">
-                                        <span class="level-badge">Level @tocSection.Level</span>
-                                        <span class="level-title">@tocSection.Title</span>
-                                        <span class="level-count">@tocSection.Items.Count concepts</span>
-                                        <span class="level-toggle bi @(IsExpanded(tocSection.Level) ? "bi-chevron-up" : "bi-chevron-down")"></span>
-                                    </div>
-                                    @if (IsExpanded(tocSection.Level))
-                                    {
-                                        <div class="level-concepts expanded">
-                                            @foreach (var item in tocSection.Items)
-                                            {
-                                                <button class="concept-tag clickable" 
-                                                        @onclick="() => StartLearningFromTopic(item.Term)"
-                                                        title="Start learning from: @item.Term">
-                                                    <span class="bi bi-play-circle"></span>
-                                                    @item.Term
-                                                </button>
-                                            }
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="level-concepts">
-                                            @foreach (var item in tocSection.Items.Take(5))
-                                            {
-                                                <button class="concept-tag clickable" 
-                                                        @onclick="() => StartLearningFromTopic(item.Term)"
-                                                        title="Start learning from: @item.Term">
-                                                    @item.Term
-                                                </button>
-                                            }
-                                            @if (tocSection.Items.Count > 5)
-                                            {
-                                                <span class="concept-more" @onclick="() => ToggleSectionExpanded(tocSection.Level)">
-                                                    +@(tocSection.Items.Count - 5) more
-                                                </span>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
                 </div>
             }
         </div>
@@ -284,7 +232,6 @@ private List<GraphBuildStatus> buildStatuses = [];
 private Course? selectedCourse;
 private KnowledgeGraph? graph;
 private KnowledgeGraphStats stats = new();
-private TableOfContents? tableOfContents;
     
 private bool isLoading = true;
 private bool isLoadingGraph;
@@ -295,6 +242,10 @@ private GraphBuildStatus? SelectedCourseBuildStatus =>
 
 protected override async Task OnInitializedAsync()
 {
+        // Set up side nav for Courses tab
+        UiState.SetActiveTab(TopTab.Courses);
+        await SideNavService.PopulateCoursesNavAsync();
+
         // Subscribe to build events
         BuildService.OnStatusChanged += OnBuildStatusChanged;
         BuildService.OnBuildComplete += OnBuildComplete;
@@ -339,7 +290,7 @@ protected override async Task OnInitializedAsync()
     private async Task LoadCoursesAsync()
     {
         isLoading = true;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -362,7 +313,7 @@ protected override async Task OnInitializedAsync()
     {
         selectedCourse = course;
         isLoadingGraph = true;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -387,12 +338,10 @@ protected override async Task OnInitializedAsync()
         if (graph != null)
         {
             stats = graph.GetStats();
-            tableOfContents = await TocService.GenerateTableOfContentsAsync(graph.Id);
         }
         else
         {
             stats = new();
-            tableOfContents = null;
         }
     }
 
@@ -400,8 +349,6 @@ protected override async Task OnInitializedAsync()
     {
         selectedCourse = null;
         graph = null;
-        tableOfContents = null;
-        expandedSections.Clear();
     }
 
     private void QueueGraphBuild(Course course, bool rebuild = false)
@@ -411,29 +358,9 @@ protected override async Task OnInitializedAsync()
         StateHasChanged();
     }
 
-    // Track which TOC sections are expanded
-    private HashSet<int> expandedSections = [];
-
-    private bool IsExpanded(int level) => expandedSections.Contains(level);
-
-    private void ToggleSectionExpanded(int level)
-    {
-        if (expandedSections.Contains(level))
-            expandedSections.Remove(level);
-        else
-            expandedSections.Add(level);
-    }
-
     private void StartLearning()
     {
-        // Navigate to chat with active course set (starts from beginning)
-        Nav.NavigateTo("/chat?action=lesson");
-    }
-
-    private void StartLearningFromTopic(string topic)
-    {
-        // Navigate to chat and start lesson from this specific topic
-        var encodedTopic = Uri.EscapeDataString(topic);
-        Nav.NavigateTo($"/chat?action=lesson&topic={encodedTopic}");
+        // Navigate to learn page with active course set (starts from beginning)
+        Nav.NavigateTo("/learn?action=lesson");
     }
 }

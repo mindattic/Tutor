@@ -1,11 +1,11 @@
+@page "/knowledge-bases"
 @page "/knowledge-graph"
 @using Tutor.Models
 @using Tutor.Services
 @inject KnowledgeGraphService GraphService
-@inject TableOfContentsService TocService
 @inject CourseService CourseService
 
-<div class="page-title">Knowledge Graph</div>
+<div class="page-title">Knowledge Bases</div>
 
 <div class="knowledge-graph-page">
     @if (isLoading)
@@ -140,115 +140,21 @@
         <div class="graph-content">
             @if (viewMode == "hierarchy")
             {
-                @if (tableOfContents != null)
-                {
-                    <div class="toc-view">
-                        @foreach (var tocSection in tableOfContents.Sections)
-                        {
-                            <div class="toc-section">
-                                <div class="section-header">
-                                    <span class="section-level">Level @tocSection.Level</span>
-                                    <span class="section-title">@tocSection.Title</span>
-                                    <span class="section-count">@tocSection.Items.Count concepts</span>
-                                </div>
-                                <div class="section-items">
-                                    @foreach (var item in tocSection.Items)
-                                    {
-                                        <div class="concept-card @(selectedConceptId == item.ConceptId ? "selected" : "")"
-                                             @onclick="@(() => SelectConcept(item.ConceptId))">
-                                            <div class="concept-term">
-                                                @item.Term
-                                                @if (item.IsFoundational)
-                                                {
-                                                    <span class="badge foundational">Foundation</span>
-                                                }
-                                                @if (item.IsLeaf)
-                                                {
-                                                    <span class="badge leaf">Advanced</span>
-                                                }
-                                            </div>
-                                            <div class="concept-description">@Truncate(item.Description, 100)</div>
-                                            <div class="concept-meta">
-                                                @if (item.PrerequisiteCount > 0)
-                                                {
-                                                    <span class="meta-item">
-                                                        <span class="bi bi-arrow-left"></span> @item.PrerequisiteCount prereqs
-                                                    </span>
-                                                }
-                                                @if (item.DependentCount > 0)
-                                                {
-                                                    <span class="meta-item">
-                                                        <span class="bi bi-arrow-right"></span> @item.DependentCount dependents
-                                                    </span>
-                                                }
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
+                <div class="toc-view">
+                    <div class="path-placeholder">
+                        <span class="bi bi-diagram-3"></span>
+                        <p>Hierarchy view is being updated</p>
+                        <p class="hint">Use the Courses page to build a KnowledgeBase and CourseStructure for a structured view.</p>
                     </div>
-                }
+                </div>
             }
             else if (viewMode == "path")
             {
-                @if (learningPath != null && learningPath.Steps.Count > 0)
-                {
-                    <div class="path-view">
-                        <div class="path-header">
-                            <span class="path-title">@learningPath.Title</span>
-                            <span class="path-description">@learningPath.Description</span>
-                        </div>
-                        <div class="path-steps">
-                            @foreach (var step in learningPath.Steps)
-                            {
-                                <div class="path-step @(step.IsTarget ? "target" : "") @(step.IsPrerequisiteOfTarget ? "prereq" : "") @(step.IsDependentOfTarget ? "dependent" : "")">
-                                    <div class="step-number">@step.StepNumber</div>
-                                    <div class="step-content">
-                                        <div class="step-term" @onclick="@(() => SelectConcept(step.ConceptId))">
-                                            @step.Term
-                                            @if (step.IsTarget)
-                                            {
-                                                <span class="badge target">Target</span>
-                                            }
-                                        </div>
-                                        <div class="step-description">@step.Description</div>
-                                        @if (step.Prerequisites.Count > 0)
-                                        {
-                                            <div class="step-connections">
-                                                <span class="bi bi-arrow-left"></span>
-                                                <span>Requires: @string.Join(", ", step.Prerequisites)</span>
-                                            </div>
-                                        }
-                                        @if (step.UnlocksNext.Count > 0)
-                                        {
-                                            <div class="step-connections">
-                                                <span class="bi bi-arrow-right"></span>
-                                                <span>Unlocks: @string.Join(", ", step.UnlocksNext.Take(3))@(step.UnlocksNext.Count > 3 ? $" +{step.UnlocksNext.Count - 3} more" : "")</span>
-                                            </div>
-                                        }
-                                    </div>
-                                    <div class="step-depth">Depth @step.Depth</div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-                else if (!string.IsNullOrEmpty(searchQuery))
-                {
-                    <div class="no-results">
-                        <p>No concept found matching "@searchQuery"</p>
-                        <p class="hint">Try a different term or check the hierarchy view for available concepts.</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="path-placeholder">
-                        <span class="bi bi-signpost-split"></span>
-                        <p>Enter a concept name above to see its learning path</p>
-                        <p class="hint">You'll see all prerequisites needed to understand the concept, or all concepts that build upon it.</p>
-                    </div>
-                }
+                <div class="path-placeholder">
+                    <span class="bi bi-signpost-split"></span>
+                    <p>Learning path view is being updated</p>
+                    <p class="hint">Use the Learn page to access the new structured learning experience.</p>
+                </div>
             }
             else if (viewMode == "search")
             {
@@ -371,8 +277,6 @@
     
     private KnowledgeGraph? graph;
     private KnowledgeGraphStats stats = new();
-    private TableOfContents? tableOfContents;
-    private LearningPath? learningPath;
     
     private string viewMode = "hierarchy";
     private string searchQuery = "";
@@ -382,6 +286,7 @@
     private ConceptNode? selectedConcept;
     private List<ConceptNode> selectedPrerequisites = [];
     private List<ConceptNode> selectedDependents = [];
+
 
     private bool isLoading = true;
     private bool isBuilding;
@@ -419,7 +324,6 @@
                     if (graph != null)
                     {
                         stats = graph.GetStats();
-                        tableOfContents = await TocService.GenerateTableOfContentsAsync(graph.Id);
                     }
                 }
             }
@@ -460,7 +364,6 @@
                 progress);
 
             stats = graph.GetStats();
-            tableOfContents = await TocService.GenerateTableOfContentsAsync(graph.Id);
         }
         catch (Exception ex)
         {
@@ -508,19 +411,12 @@
         if (graph == null || string.IsNullOrWhiteSpace(searchQuery))
             return;
 
-        if (viewMode == "path")
+        searchResults = await GraphService.FindSimilarConceptsAsync(graph.Id, searchQuery, 10);
+        
+        var exactMatch = graph.FindByTerm(searchQuery);
+        if (exactMatch != null && !searchResults.Any(c => c.Id == exactMatch.Id))
         {
-            learningPath = await TocService.GenerateBidirectionalPathAsync(graph.Id, searchQuery);
-        }
-        else
-        {
-            searchResults = await GraphService.FindSimilarConceptsAsync(graph.Id, searchQuery, 10);
-            
-            var exactMatch = graph.FindByTerm(searchQuery);
-            if (exactMatch != null && !searchResults.Any(c => c.Id == exactMatch.Id))
-            {
-                searchResults.Insert(0, exactMatch);
-            }
+            searchResults.Insert(0, exactMatch);
         }
     }
 
@@ -528,27 +424,18 @@
     {
         searchQuery = "";
         searchResults.Clear();
-        learningPath = null;
     }
 
-    private async Task ShowPathTo()
+    private void ShowPathTo()
     {
-        if (selectedConcept == null || graph == null)
-            return;
-
+        // Path view is being redesigned - redirect to Learn page
         viewMode = "path";
-        searchQuery = selectedConcept.Term;
-        learningPath = await TocService.GenerateLearningPathToAsync(graph.Id, selectedConcept.Term);
     }
 
-    private async Task ShowPathFrom()
+    private void ShowPathFrom()
     {
-        if (selectedConcept == null || graph == null)
-            return;
-
+        // Path view is being redesigned - redirect to Learn page
         viewMode = "path";
-        searchQuery = selectedConcept.Term;
-        learningPath = await TocService.GenerateLearningPathFromAsync(graph.Id, selectedConcept.Term);
     }
 
     private static string Truncate(string text, int maxLength)

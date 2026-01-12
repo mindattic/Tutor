@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Tutor.Models;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -15,7 +16,6 @@ public sealed class ResourceProcessingService : IDisposable
     private readonly ContentFormatterService formatterService;
     private readonly KnowledgeGraphService graphService;
     private readonly ConceptExtractionService extractionService;
-    private readonly TableOfContentsService tocService;
 
     // Throttling - limit concurrent AI operations
     private readonly SemaphoreSlim aiThrottle = new(2, 2); // Max 2 concurrent AI calls
@@ -36,14 +36,12 @@ public sealed class ResourceProcessingService : IDisposable
         CourseService courseService,
         ContentFormatterService formatterService,
         KnowledgeGraphService graphService,
-        ConceptExtractionService extractionService,
-        TableOfContentsService tocService)
+        ConceptExtractionService extractionService)
     {
         this.courseService = courseService;
         this.formatterService = formatterService;
         this.graphService = graphService;
         this.extractionService = extractionService;
-        this.tocService = tocService;
 
         // Unbounded channel for queuing
         processingQueue = Channel.CreateUnbounded<ResourceProcessingTask>(new UnboundedChannelOptions
@@ -54,6 +52,7 @@ public sealed class ResourceProcessingService : IDisposable
 
         // Start the background processing loop
         processingLoopTask = Task.Run(ProcessingLoopAsync);
+        Log.Info("ResourceProcessingService: Background processing loop started");
     }
 
     /// <summary>
@@ -67,6 +66,8 @@ public sealed class ResourceProcessingService : IDisposable
         bool buildGraph = true)
     {
         var taskId = Guid.NewGuid().ToString();
+        
+        Log.Info($"ResourceProcessing: Queuing '{resource.Title}' (format={autoFormat}, graph={buildGraph})");
 
         var status = new ResourceProcessingStatus
         {
@@ -92,6 +93,7 @@ public sealed class ResourceProcessingService : IDisposable
 
         // Queue for processing
         processingQueue.Writer.TryWrite(task);
+        Log.Debug($"ResourceProcessing: Task {taskId} queued for '{resource.Title}'");
 
         return taskId;
     }
@@ -136,33 +138,40 @@ public sealed class ResourceProcessingService : IDisposable
     {
         // Acquire processing slot
         await processingThrottle.WaitAsync(cts.Token);
+        
+        Log.Info($"ResourceProcessing: Starting '{task.Resource.Title}' (Task: {task.TaskId})");
 
         try
         {
             var status = statusTracker[task.TaskId];
 
             // Stage 1: Save resource
+            Log.Debug($"ResourceProcessing: Stage 1 - Saving resource '{task.Resource.Title}'");
             UpdateStatus(task.TaskId, ProcessingStage.Saving, 0, "Saving resource...");
             
             var savedId = await courseService.SaveResourceCoreAsync(task.Resource);
             task.Resource.Id = savedId;
             status.ResourceId = savedId;
+            Log.Debug($"ResourceProcessing: Resource saved with ID {savedId}");
 
             // Add to course if specified
             if (!string.IsNullOrEmpty(task.CourseId))
             {
                 await courseService.AddResourceToCourseAsync(task.CourseId, savedId);
+                Log.Debug($"ResourceProcessing: Resource added to course {task.CourseId}");
             }
 
             // Stage 2: Format with AI (if enabled)
             if (task.AutoFormat)
             {
+                Log.Debug($"ResourceProcessing: Stage 2 - Formatting '{task.Resource.Title}'");
                 UpdateStatus(task.TaskId, ProcessingStage.Formatting, 10, "Formatting with AI...");
 
                 await aiThrottle.WaitAsync(cts.Token);
                 try
                 {
                     await FormatResourceAsync(task, status);
+                    Log.Info($"ResourceProcessing: Formatting complete for '{task.Resource.Title}'");
                 }
                 finally
                 {
@@ -173,12 +182,14 @@ public sealed class ResourceProcessingService : IDisposable
             // Stage 3: Extract concepts (if building graph)
             if (task.BuildGraph && !string.IsNullOrEmpty(task.CourseId))
             {
+                Log.Debug($"ResourceProcessing: Stage 3 - Extracting concepts from '{task.Resource.Title}'");
                 UpdateStatus(task.TaskId, ProcessingStage.ExtractingConcepts, 50, "Extracting concepts...");
 
                 await aiThrottle.WaitAsync(cts.Token);
                 try
                 {
                     await ExtractConceptsAsync(task, status);
+                    Log.Info($"ResourceProcessing: Concept extraction complete for '{task.Resource.Title}'");
                 }
                 finally
                 {
@@ -186,25 +197,25 @@ public sealed class ResourceProcessingService : IDisposable
                 }
 
                 // Stage 4: Update knowledge graph
-                UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 75, "Updating knowledge graph...");
+                Log.Debug($"ResourceProcessing: Stage 4 - Building graph for '{task.Resource.Title}'");
+                UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 90, "Updating knowledge graph...");
                 await UpdateKnowledgeGraphAsync(task, status);
-
-                // Stage 5: Regenerate TOC
-                UpdateStatus(task.TaskId, ProcessingStage.GeneratingToc, 90, "Generating table of contents...");
-                await RegenerateTocAsync(task, status);
             }
 
             // Complete
             UpdateStatus(task.TaskId, ProcessingStage.Complete, 100, "Complete");
             status.CompletedAt = DateTime.UtcNow;
+            Log.Info($"ResourceProcessing: Completed '{task.Resource.Title}' in {(status.CompletedAt - status.QueuedAt)?.TotalSeconds:F1}s");
             OnProcessingComplete?.Invoke(task.TaskId);
         }
         catch (OperationCanceledException)
         {
+            Log.Warn($"ResourceProcessing: Cancelled '{task.Resource.Title}'");
             UpdateStatus(task.TaskId, ProcessingStage.Failed, 0, "Cancelled");
         }
         catch (Exception ex)
         {
+            Log.Error($"ResourceProcessing: Failed '{task.Resource.Title}' - {ex.Message}", ex);
             UpdateStatus(task.TaskId, ProcessingStage.Failed, 0, $"Error: {ex.Message}");
             OnProcessingError?.Invoke(task.TaskId, ex.Message);
         }
@@ -304,26 +315,6 @@ public sealed class ResourceProcessingService : IDisposable
         }
     }
 
-    private async Task RegenerateTocAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
-    {
-        if (string.IsNullOrEmpty(task.CourseId))
-            return;
-
-        try
-        {
-            var graph = await graphService.GetGraphForCourseAsync(task.CourseId, cts.Token);
-            if (graph != null)
-            {
-                var toc = await tocService.GenerateTableOfContentsAsync(graph.Id, cts.Token);
-                status.TocGenerated = toc.TotalConcepts > 0;
-            }
-        }
-        catch (Exception ex)
-        {
-            status.Warnings.Add($"TOC generation warning: {ex.Message}");
-        }
-    }
-
     private void UpdateStatus(string taskId, ProcessingStage stage, int progress, string message)
     {
         if (statusTracker.TryGetValue(taskId, out var status))
@@ -396,7 +387,6 @@ public enum ProcessingStage
     Formatting,
     ExtractingConcepts,
     BuildingGraph,
-    GeneratingToc,
     Complete,
     Failed
 }
@@ -417,7 +407,6 @@ public class ResourceProcessingStatus
     public DateTime LastUpdated { get; set; }
     public DateTime? CompletedAt { get; set; }
     public int ConceptsExtracted { get; set; }
-    public bool TocGenerated { get; set; }
     public List<string> Warnings { get; set; } = [];
 
     public string StageDisplayName => Stage switch
@@ -427,7 +416,6 @@ public class ResourceProcessingStatus
         ProcessingStage.Formatting => "Formatting",
         ProcessingStage.ExtractingConcepts => "Extracting Concepts",
         ProcessingStage.BuildingGraph => "Building Graph",
-        ProcessingStage.GeneratingToc => "Generating TOC",
         ProcessingStage.Complete => "Complete",
         ProcessingStage.Failed => "Failed",
         _ => "Unknown"

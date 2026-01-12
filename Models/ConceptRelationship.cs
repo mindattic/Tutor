@@ -138,6 +138,7 @@ public enum ConceptRelationType
     /// </summary>
     PartOf,
 
+
     /// <summary>
     /// Target is a specialization or subtype of the source.
     /// Example: "Traitor Primarch" specializes "Primarch"
@@ -147,5 +148,29 @@ public enum ConceptRelationType
     /// <summary>
     /// Concepts are frequently mentioned together but relationship type is unclear.
     /// </summary>
-    CoOccurs
+    CoOccurs,
+
+    /// <summary>
+    /// Source concept is a broader category containing the target.
+    /// Example: "Mammals" contains "Dogs"
+    /// </summary>
+    Contains,
+
+    /// <summary>
+    /// Source concept is a specific instance of the target.
+    /// Example: "Golden Retriever" is an instance of "Dogs"
+    /// </summary>
+    InstanceOf,
+
+    /// <summary>
+    /// Concepts are similar or easily confused.
+    /// Example: "Mitosis" is similar to "Meiosis"
+    /// </summary>
+    SimilarTo,
+
+    /// <summary>
+    /// Concepts are opposites or contrasting ideas.
+    /// Example: "Oxidation" contrasts with "Reduction"
+    /// </summary>
+    ContrastsWith
 }

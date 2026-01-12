@@ -1,0 +1,421 @@
+using Tutor.Models;
+
+namespace Tutor.Services;
+
+/// <summary>
+/// Service for populating side navigation based on the active context.
+/// 
+/// The Learn page has two navigation views:
+/// 1. Table of Contents: Static hierarchical navigation (Lessons -> Topics -> Concepts)
+/// 2. KnowledgeBase view: Concepts organized by relationships and complexity
+/// 
+/// Both views reference Concepts from the KnowledgeBase by ID.
+/// </summary>
+public sealed class SideNavService
+{
+    private readonly CourseService courseService;
+    private readonly KnowledgeBaseStorageService kbStorageService;
+    private readonly CourseStructureStorageService structureStorageService;
+    private readonly UserProgressService progressService;
+    private readonly AppUiState uiState;
+
+    public SideNavService(
+        CourseService courseService,
+        KnowledgeBaseStorageService kbStorageService,
+        CourseStructureStorageService structureStorageService,
+        UserProgressService progressService,
+        AppUiState uiState)
+    {
+        this.courseService = courseService;
+        this.kbStorageService = kbStorageService;
+        this.structureStorageService = structureStorageService;
+        this.progressService = progressService;
+        this.uiState = uiState;
+    }
+
+    /// <summary>
+    /// Populates the side nav with the course curriculum (Lessons -> Topics -> Concepts).
+    /// This is the Table of Contents view for guided learning.
+    /// </summary>
+    public async Task PopulateLearnNavAsync(string? courseId = null, CancellationToken ct = default)
+    {
+        var nodes = new List<NavNode>();
+
+        // Get the active course if not specified
+        if (string.IsNullOrEmpty(courseId))
+        {
+            var activeCourse = await courseService.GetActiveCourseAsync();
+            courseId = activeCourse?.Id;
+        }
+
+        if (string.IsNullOrEmpty(courseId))
+        {
+            uiState.SetSideNavNodes(nodes);
+            return;
+        }
+
+        // Get the course
+        var course = await courseService.GetCourseAsync(courseId);
+        if (course == null)
+        {
+            uiState.SetSideNavNodes(nodes);
+            return;
+        }
+
+        // Get user progress for this course
+        var progress = await progressService.GetProgressAsync(courseId);
+
+        // Check if course has required components
+        if (!course.HasKnowledgeBase || !course.HasCourseStructure)
+        {
+            nodes.Add(new NavNode
+            {
+                Id = "no-content",
+                Title = "No curriculum available",
+                Icon = "bi-info-circle",
+                Description = "Build a knowledge base and generate course structure in Courses."
+            });
+            uiState.SetSideNavNodes(nodes);
+            return;
+        }
+
+        // Load KnowledgeBase and CourseStructure
+        var kb = await kbStorageService.LoadAsync(course.KnowledgeBaseId!, ct);
+        var structure = await structureStorageService.LoadAsync(course.CourseStructureId!, ct);
+
+        if (kb == null || kb.Status != KnowledgeBaseStatus.Ready)
+        {
+            nodes.Add(new NavNode
+            {
+                Id = "kb-not-ready",
+                Title = "Knowledge base not ready",
+                Icon = "bi-hourglass-split",
+                Description = "The knowledge base is still being built."
+            });
+            uiState.SetSideNavNodes(nodes);
+            return;
+        }
+
+        if (structure == null || structure.Status != CourseStructureStatus.Ready)
+        {
+            nodes.Add(new NavNode
+            {
+                Id = "structure-not-ready",
+                Title = "Course structure not ready",
+                Icon = "bi-hourglass-split",
+                Description = "The course structure is still being generated."
+            });
+            uiState.SetSideNavNodes(nodes);
+            return;
+        }
+
+        // Build navigation from CourseStructure (references Concepts in KnowledgeBase)
+        nodes = BuildNavFromCourseStructure(structure, kb, progress);
+
+        // Expand to current concept
+        if (!string.IsNullOrEmpty(progress.CurrentConceptId))
+        {
+            ExpandToCurrentConcept(nodes, progress.CurrentConceptId);
+        }
+        else if (nodes.Count > 0)
+        {
+            // Expand the first lesson by default
+            nodes[0].IsExpanded = true;
+        }
+
+        uiState.SetSideNavNodes(nodes);
+    }
+
+    /// <summary>
+    /// Builds navigation nodes from CourseStructure.
+    /// The structure references Concepts in the KnowledgeBase by ID.
+    /// Hierarchy: Lessons -> Topics -> Concepts
+    /// </summary>
+    private List<NavNode> BuildNavFromCourseStructure(
+        CourseStructure structure, 
+        KnowledgeBase kb, 
+        UserProgress progress)
+    {
+        var nodes = new List<NavNode>();
+
+        foreach (var lesson in structure.GetLessonsInOrder())
+        {
+            var lessonNode = new NavNode
+            {
+                Id = $"lesson-{lesson.Id}",
+                Title = lesson.Title,
+                Icon = lesson.Icon ?? "bi-journal-text",
+                Description = lesson.Summary,
+                IsExpanded = false,
+                Data = lesson
+            };
+
+            // Add topics as children
+            foreach (var topic in lesson.Topics.OrderBy(t => t.Order))
+            {
+                var topicNode = new NavNode
+                {
+                    Id = $"topic-{topic.Id}",
+                    Title = topic.Title,
+                    Icon = topic.Icon ?? "bi-bookmark",
+                    Description = topic.Summary,
+                    IsExpanded = false,
+                    Data = topic
+                };
+
+                // Add concepts as children (look up from KnowledgeBase)
+                foreach (var conceptId in topic.ConceptIds)
+                {
+                    var concept = kb.GetConcept(conceptId);
+                    if (concept == null) continue;
+
+                    var isLearned = progress.IsConceptLearned(conceptId);
+                    var isVisited = progress.IsConceptVisited(conceptId);
+
+                    var conceptNode = new NavNode
+                    {
+                        Id = $"concept-{conceptId}",
+                        Title = concept.Title,
+                        Icon = isLearned ? "bi-check-circle-fill" : (isVisited ? "bi-circle-half" : "bi-circle"),
+                        Data = concept
+                    };
+
+                    topicNode.Children.Add(conceptNode);
+                }
+
+                // Calculate topic progress
+                var totalInTopic = topic.ConceptIds.Count;
+                var learnedInTopic = topic.ConceptIds.Count(id => progress.IsConceptLearned(id));
+                if (totalInTopic > 0)
+                {
+                    var pct = (int)((double)learnedInTopic / totalInTopic * 100);
+                    topicNode.Description = $"{learnedInTopic}/{totalInTopic} ({pct}%)";
+                }
+
+                lessonNode.Children.Add(topicNode);
+            }
+
+            // Calculate lesson progress
+            var totalInLesson = lesson.TotalConceptCount;
+            var learnedInLesson = lesson.GetAllConceptIds().Count(id => progress.IsConceptLearned(id));
+            if (totalInLesson > 0)
+            {
+                var pct = (int)((double)learnedInLesson / totalInLesson * 100);
+                lessonNode.Description = $"{learnedInLesson}/{totalInLesson} concepts ({pct}%)";
+            }
+
+            nodes.Add(lessonNode);
+        }
+
+        return nodes;
+    }
+
+    /// <summary>
+    /// Builds navigation nodes for the KnowledgeBase view.
+    /// This shows Concepts organized by complexity level, not the course hierarchy.
+    /// Allows exploration of related concepts outside the current lesson.
+    /// </summary>
+    public List<NavNode> BuildKnowledgeBaseNav(KnowledgeBase kb, UserProgress progress)
+    {
+        var nodes = new List<NavNode>();
+        var maxLevel = kb.MaxComplexityLevel;
+
+        // Group concepts by complexity level
+        for (int level = 0; level <= maxLevel; level++)
+        {
+            var conceptsAtLevel = kb.GetConceptsAtLevel(level).ToList();
+            if (conceptsAtLevel.Count == 0) continue;
+
+            var levelNode = new NavNode
+            {
+                Id = $"level-{level}",
+                Title = GetLevelTitle(level, maxLevel),
+                Icon = GetLevelIcon(level, maxLevel),
+                Description = $"{conceptsAtLevel.Count} concepts",
+                IsExpanded = level == 0 // Expand foundational level by default
+            };
+
+            foreach (var concept in conceptsAtLevel.OrderBy(c => c.Title))
+            {
+                var isLearned = progress.IsConceptLearned(concept.Id);
+                var isVisited = progress.IsConceptVisited(concept.Id);
+                var complexity = kb.GetComplexity(concept.Id);
+
+                var conceptNode = new NavNode
+                {
+                    Id = $"concept-{concept.Id}",
+                    Title = concept.Title,
+                    Icon = isLearned ? "bi-check-circle-fill" : (isVisited ? "bi-circle-half" : "bi-circle"),
+                    Description = $"{complexity?.PrerequisiteCount ?? 0} prerequisites",
+                    Data = concept
+                };
+
+                levelNode.Children.Add(conceptNode);
+            }
+
+            // Calculate level progress
+            var learnedAtLevel = conceptsAtLevel.Count(c => progress.IsConceptLearned(c.Id));
+            var pct = (int)((double)learnedAtLevel / conceptsAtLevel.Count * 100);
+            levelNode.Description = $"{learnedAtLevel}/{conceptsAtLevel.Count} learned ({pct}%)";
+
+            nodes.Add(levelNode);
+        }
+
+        return nodes;
+    }
+
+    private static string GetLevelTitle(int level, int maxLevel)
+    {
+        if (level == 0) return "Foundational";
+        if (level == maxLevel) return "Advanced";
+        if (level <= maxLevel / 3) return "Basic";
+        if (level <= 2 * maxLevel / 3) return "Intermediate";
+        return "Advanced";
+    }
+
+    private static string GetLevelIcon(int level, int maxLevel)
+    {
+        if (level == 0) return "bi-1-circle";
+        if (level == maxLevel) return "bi-star";
+        return $"bi-{Math.Min(level + 1, 9)}-circle";
+    }
+
+    private static void ExpandToCurrentConcept(List<NavNode> nodes, string conceptId)
+    {
+        foreach (var node in nodes)
+        {
+            if (ExpandToConceptRecursive(node, conceptId))
+                return;
+        }
+
+        // If not found, expand first node
+        if (nodes.Count > 0)
+            nodes[0].IsExpanded = true;
+    }
+
+    private static bool ExpandToConceptRecursive(NavNode node, string conceptId)
+    {
+        if (node.Id == $"concept-{conceptId}")
+            return true;
+
+        foreach (var child in node.Children)
+        {
+            if (ExpandToConceptRecursive(child, conceptId))
+            {
+                node.IsExpanded = true;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Populates the side nav with the list of courses.
+    /// </summary>
+    public async Task PopulateCoursesNavAsync(CancellationToken ct = default)
+    {
+        var nodes = new List<NavNode>();
+
+        var courses = await courseService.GetAllCoursesAsync();
+        var activeCourse = await courseService.GetActiveCourseAsync();
+
+        if (courses.Count == 0)
+        {
+            nodes.Add(new NavNode
+            {
+                Id = "no-courses",
+                Title = "No courses yet",
+                Icon = "bi-info-circle",
+                Description = "Create a course in the Courses page."
+            });
+        }
+        else
+        {
+            foreach (var course in courses.OrderBy(c => c.Name))
+            {
+                var isActive = course.Id == activeCourse?.Id;
+
+                nodes.Add(new NavNode
+                {
+                    Id = $"course-{course.Id}",
+                    Title = course.Name,
+                    Icon = isActive ? "bi-book-fill" : "bi-book",
+                    Description = course.Description,
+                    Data = course
+                });
+            }
+        }
+
+        uiState.SetSideNavNodes(nodes);
+    }
+
+    /// <summary>
+    /// Populates the side nav with settings sections.
+    /// </summary>
+    public void PopulateSettingsNav()
+    {
+        var nodes = new List<NavNode>
+        {
+            new()
+            {
+                Id = "settings-general",
+                Title = "General",
+                Icon = "bi-gear"
+            },
+            new()
+            {
+                Id = "settings-courses",
+                Title = "Courses",
+                Icon = "bi-book"
+            },
+            new()
+            {
+                Id = "settings-appearance",
+                Title = "Appearance",
+                Icon = "bi-palette"
+            },
+            new()
+            {
+                Id = "settings-storage",
+                Title = "Storage",
+                Icon = "bi-hdd"
+            },
+            new()
+            {
+                Id = "settings-quiz",
+                Title = "Quiz",
+                Icon = "bi-question-circle"
+            },
+            new()
+            {
+                Id = "settings-ai",
+                Title = "AI Models",
+                Icon = "bi-robot",
+                IsExpanded = false,
+                Children =
+                [
+                    new NavNode { Id = "settings-chatgpt", Title = "ChatGPT", Icon = "bi-chat" },
+                    new NavNode { Id = "settings-claude", Title = "Claude", Icon = "bi-chat" },
+                    new NavNode { Id = "settings-gemini", Title = "Gemini", Icon = "bi-chat" }
+                ]
+            },
+            new()
+            {
+                Id = "settings-about",
+                Title = "About",
+                Icon = "bi-info-circle"
+            }
+        };
+
+        uiState.SetSideNavNodes(nodes);
+    }
+
+    /// <summary>
+    /// Clears the side nav.
+    /// </summary>
+    public void ClearSideNav()
+    {
+        uiState.SetSideNavNodes([]);
+    }
+}

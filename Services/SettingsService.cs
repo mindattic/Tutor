@@ -1,5 +1,6 @@
 using Microsoft.Maui.Storage;
 using System.Text.Json;
+using Tutor.Services.Logging;
 
 public sealed class SettingsService
 {
@@ -7,6 +8,222 @@ public sealed class SettingsService
     private const string QuizQuestionCountKey = "QUIZ_QUESTION_COUNT";
     private const string GradingScaleKey = "GRADING_SCALE";
     private const string LessonStateKey = "LESSON_STATE";
+    private const string BorderRadiusKey = "BORDER_RADIUS";
+    private const string DateFormatKey = "DATE_FORMAT";
+    
+    // Log level settings keys
+    private const string LogTraceKey = "LOG_TRACE";
+    private const string LogDebugKey = "LOG_DEBUG";
+    private const string LogInfoKey = "LOG_INFO";
+    private const string LogWarningKey = "LOG_WARNING";
+    private const string LogErrorKey = "LOG_ERROR";
+    private const string LogCriticalKey = "LOG_CRITICAL";
+
+    /// <summary>
+    /// Current date format pattern. Updated when settings are loaded/changed.
+    /// </summary>
+    public static string CurrentDateFormat { get; private set; } = "yyyy-MM-dd hh:mm:ss tt";
+
+    /// <summary>
+    /// Formats a DateTime using the current date format setting.
+    /// </summary>
+    public static string FormatDate(DateTime dateTime)
+    {
+        return dateTime.ToString(CurrentDateFormat);
+    }
+
+    // Date format setting
+    public async Task<string> GetDateFormatAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(DateFormatKey);
+            var format = string.IsNullOrEmpty(value) ? "yyyy-MM-dd hh:mm:ss tt" : value;
+            CurrentDateFormat = format;
+            return format;
+        }
+        catch
+        {
+            return "yyyy-MM-dd hh:mm:ss tt";
+        }
+    }
+
+    public async Task SetDateFormatAsync(string format)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(DateFormatKey, format);
+            CurrentDateFormat = format;
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    // Log level settings
+    public async Task<bool> GetLogTraceEnabledAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(LogTraceKey);
+            return value == "true"; // Default false
+        }
+        catch { return false; }
+    }
+
+    public async Task SetLogTraceEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(LogTraceKey, enabled.ToString().ToLower());
+            Log.Settings.LogTrace = enabled;
+        }
+        catch { }
+    }
+
+    public async Task<bool> GetLogDebugEnabledAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(LogDebugKey);
+            return string.IsNullOrEmpty(value) || value == "true"; // Default true
+        }
+        catch { return true; }
+    }
+
+    public async Task SetLogDebugEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(LogDebugKey, enabled.ToString().ToLower());
+            Log.Settings.LogDebug = enabled;
+        }
+        catch { }
+    }
+
+    public async Task<bool> GetLogInfoEnabledAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(LogInfoKey);
+            return string.IsNullOrEmpty(value) || value == "true"; // Default true
+        }
+        catch { return true; }
+    }
+
+    public async Task SetLogInfoEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(LogInfoKey, enabled.ToString().ToLower());
+            Log.Settings.LogInfo = enabled;
+        }
+        catch { }
+    }
+
+    public async Task<bool> GetLogWarningEnabledAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(LogWarningKey);
+            return string.IsNullOrEmpty(value) || value == "true"; // Default true
+        }
+        catch { return true; }
+    }
+
+    public async Task SetLogWarningEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(LogWarningKey, enabled.ToString().ToLower());
+            Log.Settings.LogWarning = enabled;
+        }
+        catch { }
+    }
+
+    public async Task<bool> GetLogErrorEnabledAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(LogErrorKey);
+            return string.IsNullOrEmpty(value) || value == "true"; // Default true
+        }
+        catch { return true; }
+    }
+
+    public async Task SetLogErrorEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(LogErrorKey, enabled.ToString().ToLower());
+            Log.Settings.LogError = enabled;
+        }
+        catch { }
+    }
+
+    public async Task<bool> GetLogCriticalEnabledAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(LogCriticalKey);
+            return string.IsNullOrEmpty(value) || value == "true"; // Default true (always on)
+        }
+        catch { return true; }
+    }
+
+    public async Task SetLogCriticalEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(LogCriticalKey, enabled.ToString().ToLower());
+            Log.Settings.LogCritical = enabled;
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Loads all log level settings and applies them to Log.Settings.
+    /// Call this on app startup.
+    /// </summary>
+    public async Task LoadLogSettingsAsync()
+    {
+        Log.Settings.LogTrace = await GetLogTraceEnabledAsync();
+        Log.Settings.LogDebug = await GetLogDebugEnabledAsync();
+        Log.Settings.LogInfo = await GetLogInfoEnabledAsync();
+        Log.Settings.LogWarning = await GetLogWarningEnabledAsync();
+        Log.Settings.LogError = await GetLogErrorEnabledAsync();
+        Log.Settings.LogCritical = await GetLogCriticalEnabledAsync();
+        
+        // Also load date format
+        await GetDateFormatAsync();
+    }
+
+    // Border radius setting (0-10px, default 6px)
+    public async Task<int> GetBorderRadiusAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(BorderRadiusKey);
+            return int.TryParse(value, out var radius) ? Math.Clamp(radius, 0, 10) : 6;
+        }
+        catch
+        {
+            return 6;
+        }
+    }
+
+    public async Task SetBorderRadiusAsync(int radius)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(BorderRadiusKey, Math.Clamp(radius, 0, 10).ToString());
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
 
     // Enter to send setting
     public async Task<bool> GetEnterToSendAsync()

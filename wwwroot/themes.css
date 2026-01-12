@@ -1,5 +1,10 @@
 /* Theme Definitions */
 
+/* Default border radius - can be overridden via settings */
+:root {
+    --border-radius: 6px;
+}
+
 /* Light Theme (Default) */
 [data-theme="Light"] {
     --bg-primary: #ffffff;

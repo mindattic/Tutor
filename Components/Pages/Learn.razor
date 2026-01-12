@@ -1,0 +1,79 @@
+﻿@page "/learn"
+@using Tutor.Services
+@using Tutor.Models
+@inject CourseService CourseService
+@inject SideNavService SideNavService
+@inject AppUiState UiState
+@inject UserProgressService ProgressService
+@inject NavigationManager Nav
+@implements IDisposable
+
+@if (activeCourse != null)
+{
+    <div class="page-title">Learn: @activeCourse.Name</div>
+}
+else
+{
+    <div class="page-title">Learn</div>
+}
+
+<Tutor.Components.Chat @ref="learnComponent" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
+
+@code {
+    private Course? activeCourse;
+    private string? startTopic;
+    private bool autoStartLesson;
+    private Tutor.Components.Chat? learnComponent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeCourse = await CourseService.GetActiveCourseAsync();
+        
+        // Set up side nav for Learn tab
+        UiState.SetActiveTab(TopTab.Learn);
+        await SideNavService.PopulateLearnNavAsync(activeCourse?.Id);
+
+        // Subscribe to node selection
+        UiState.OnNodeSelected += HandleNodeSelected;
+        
+        // Parse query parameters manually (no external dependency needed)
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            if (queryParams["action"] == "lesson")
+            {
+                autoStartLesson = true;
+            }
+            
+            startTopic = queryParams["topic"];
+        }
+    }
+
+    private void HandleNodeSelected(NavNode? node)
+    {
+        if (node == null) return;
+
+        // Handle concept selection from side nav
+        if (node.Id.StartsWith("concept-") && node.Data is Concept concept)
+        {
+            // Navigate to the selected concept
+            startTopic = concept.Title;
+            autoStartLesson = true;
+            
+            // Mark as visited
+            if (activeCourse != null)
+            {
+                _ = ProgressService.MarkConceptVisitedAsync(activeCourse.Id, concept.Id);
+            }
+
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        UiState.OnNodeSelected -= HandleNodeSelected;
+    }
+}

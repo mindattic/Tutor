@@ -13,7 +13,6 @@ public sealed class KnowledgeGraphBuildService : IDisposable
 {
     private readonly CourseService courseService;
     private readonly KnowledgeGraphService graphService;
-    private readonly TableOfContentsService tocService;
 
     // Throttling - only one graph build at a time (they're expensive)
     private readonly SemaphoreSlim buildThrottle = new(1, 1);
@@ -31,12 +30,10 @@ public sealed class KnowledgeGraphBuildService : IDisposable
 
     public KnowledgeGraphBuildService(
         CourseService courseService,
-        KnowledgeGraphService graphService,
-        TableOfContentsService tocService)
+        KnowledgeGraphService graphService)
     {
         this.courseService = courseService;
         this.graphService = graphService;
-        this.tocService = tocService;
 
         // Unbounded channel for queuing builds
         buildQueue = Channel.CreateUnbounded<GraphBuildTask>(new UnboundedChannelOptions
@@ -241,12 +238,6 @@ public sealed class KnowledgeGraphBuildService : IDisposable
             status.ConceptsExtracted = graph.Nodes.Count;
             status.RelationshipsFound = graph.Relationships.Count;
 
-            // Stage 4: Generate Table of Contents
-            UpdateStatus(task.TaskId, GraphBuildStage.GeneratingToc, 95, "Generating table of contents...");
-            
-            var toc = await tocService.GenerateTableOfContentsAsync(graph.Id, cts.Token);
-            status.TocGenerated = toc.TotalConcepts > 0;
-
             // Complete
             UpdateStatus(task.TaskId, GraphBuildStage.Complete, 100, 
                 $"Complete: {graph.Nodes.Count} concepts, {graph.Relationships.Count} relationships");
@@ -340,7 +331,6 @@ public enum GraphBuildStage
     GeneratingEmbeddings,
     FindingRelationships,
     BuildingGraph,
-    GeneratingToc,
     Complete,
     Failed
 }
@@ -363,7 +353,6 @@ public class GraphBuildStatus
     public int TotalResources { get; set; }
     public int ConceptsExtracted { get; set; }
     public int RelationshipsFound { get; set; }
-    public bool TocGenerated { get; set; }
     public bool IsRebuild { get; set; }
 
     public string StageDisplayName => Stage switch
@@ -374,7 +363,6 @@ public class GraphBuildStatus
         GraphBuildStage.GeneratingEmbeddings => "Generating Embeddings",
         GraphBuildStage.FindingRelationships => "Finding Relationships",
         GraphBuildStage.BuildingGraph => "Building Graph",
-        GraphBuildStage.GeneratingToc => "Generating TOC",
         GraphBuildStage.Complete => "Complete",
         GraphBuildStage.Failed => "Failed",
         _ => "Unknown"
