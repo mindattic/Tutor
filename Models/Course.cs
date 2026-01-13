@@ -1,20 +1,22 @@
 namespace Tutor.Models;
 
 /// <summary>
-/// Represents a learning course that uses a KnowledgeBase to teach students.
+/// Represents a learning course that uses a KnowledgeBaseCollection to teach students.
 /// 
 /// Key architectural points:
-/// - A Course has one assigned KnowledgeBase (the totality of knowledge to teach).
+/// - Each Resource generates its own KnowledgeBase independently.
+/// - A Course combines Resources' KnowledgeBases into a KnowledgeBaseCollection.
+/// - The KnowledgeBaseCollection provides unified access to all concepts.
 /// - A Course has one CourseStructure (the curated learning path).
-/// - The Course itself stores metadata and references; the actual content is in the KnowledgeBase.
-/// - Resources are associated with the Course but used to build the KnowledgeBase.
+/// - The Course itself stores metadata and references.
 /// 
 /// Relationship flow:
 /// 1. Resources are uploaded to a Course.
-/// 2. Resources are combined to generate a KnowledgeBase.
-/// 3. A CourseStructure is generated from the KnowledgeBase.
-/// 4. Students navigate the CourseStructure (Lessons/Topics) which references
-///    Concepts from the KnowledgeBase.
+/// 2. Each Resource generates its own KnowledgeBase.
+/// 3. A KnowledgeBaseCollection is built from Resources' KnowledgeBases.
+/// 4. A CourseStructure is generated from the KnowledgeBaseCollection.
+/// 5. Students navigate the CourseStructure (Lessons/Topics) which references
+///    Concepts from any KnowledgeBase in the collection.
 /// </summary>
 public class Course
 {
@@ -35,15 +37,23 @@ public class Course
 
     /// <summary>
     /// IDs of Resources that belong to this course.
-    /// These are the raw source materials used to generate the KnowledgeBase.
+    /// These are the raw source materials used to generate individual KnowledgeBases.
     /// </summary>
     public List<string> ResourceIds { get; set; } = [];
 
     /// <summary>
-    /// ID of the KnowledgeBase assigned to this course.
-    /// The KnowledgeBase contains all Concepts and their relationships.
-    /// Null if no KnowledgeBase has been built/assigned yet.
+    /// ID of the KnowledgeBaseCollection for this course.
+    /// The collection aggregates KnowledgeBases from each Resource.
+    /// Null if no collection has been built yet.
     /// </summary>
+    public string? KnowledgeBaseCollectionId { get; set; }
+
+    /// <summary>
+    /// ID of the single KnowledgeBase assigned to this course.
+    /// Maintained for backward compatibility during migration.
+    /// New code should use KnowledgeBaseCollectionId instead.
+    /// </summary>
+    [Obsolete("Use KnowledgeBaseCollectionId instead. This property is maintained for backward compatibility.")]
     public string? KnowledgeBaseId { get; set; }
 
     /// <summary>
@@ -79,9 +89,10 @@ public class Course
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Whether the course has a KnowledgeBase assigned.
+    /// Whether the course has a KnowledgeBaseCollection (or legacy KnowledgeBase).
     /// </summary>
-    public bool HasKnowledgeBase => !string.IsNullOrEmpty(KnowledgeBaseId);
+    public bool HasKnowledgeBase => !string.IsNullOrEmpty(KnowledgeBaseCollectionId) 
+        || !string.IsNullOrEmpty(KnowledgeBaseId);
 
     /// <summary>
     /// Whether the course has a CourseStructure generated.

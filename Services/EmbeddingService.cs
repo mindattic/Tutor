@@ -33,15 +33,53 @@ public sealed class EmbeddingService
         return embeddings.Count > 0 ? embeddings[0] : [];
     }
 
+
     /// <summary>
-    /// Generate embedding vectors for multiple texts in a single API call (more efficient).
+    /// Generate embedding vectors for multiple texts, automatically batching to respect API limits.
     /// </summary>
+    // Maximum characters per text input (rough estimate: 8192 tokens * 4 chars/token)
+    // Being conservative to account for non-English text and tokenization variance
+    private const int MaxTextLength = 30000;
+    
+    // Maximum tokens per batch request (OpenAI limit is 300,000, we use 250,000 for safety margin)
+    private const int MaxTokensPerBatch = 250000;
+    
+    // Rough estimate: 1 token ? 4 characters for English text
+    private const int CharsPerToken = 4;
+
     public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, CancellationToken ct = default)
     {
         if (texts.Count == 0)
             return [];
 
-        Log.Debug($"EmbeddingService: Generating embeddings for {texts.Count} text(s)");
+        // Filter out empty or whitespace-only strings (OpenAI API rejects these with HTTP 400)
+        // Also truncate texts that are too long
+        var validTexts = texts
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Length > MaxTextLength ? t[..MaxTextLength] : t)
+            .ToList();
+            
+        if (validTexts.Count == 0)
+        {
+            Log.Warn("EmbeddingService: All input texts are empty or whitespace");
+            return [];
+        }
+
+        var filteredCount = texts.Count(t => string.IsNullOrWhiteSpace(t));
+        var truncatedCount = texts.Count(t => !string.IsNullOrWhiteSpace(t) && t.Length > MaxTextLength);
+        
+        if (filteredCount > 0)
+        {
+            Log.Warn($"EmbeddingService: Filtered out {filteredCount} empty/whitespace texts");
+        }
+        if (truncatedCount > 0)
+        {
+            Log.Warn($"EmbeddingService: Truncated {truncatedCount} texts exceeding {MaxTextLength} chars");
+        }
+
+        // Split into batches to respect token limits
+        var batches = CreateBatches(validTexts);
+        Log.Debug($"EmbeddingService: Processing {validTexts.Count} text(s) in {batches.Count} batch(es)");
 
         var apiKey = await opt.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -50,6 +88,129 @@ public sealed class EmbeddingService
             throw new InvalidOperationException("OpenAI API key is missing.");
         }
 
+
+        var allEmbeddings = new List<float[]>();
+        
+        // Log at Info level for visibility with large documents
+        if (batches.Count > 1)
+        {
+            Log.Info($"EmbeddingService: Large document - processing {validTexts.Count} texts in {batches.Count} batches");
+        }
+        
+        for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
+        {
+            ct.ThrowIfCancellationRequested();
+            
+            var batch = batches[batchIndex];
+            
+            if (batches.Count > 1)
+            {
+                Log.Info($"EmbeddingService: Processing batch {batchIndex + 1}/{batches.Count} ({batch.Count} texts, {allEmbeddings.Count}/{validTexts.Count} complete)");
+            }
+            else
+            {
+                Log.Debug($"EmbeddingService: Processing {batch.Count} texts");
+            }
+            
+            // Retry with exponential backoff for rate limiting
+            var batchEmbeddings = await GetEmbeddingsBatchWithRetryAsync(batch, apiKey, ct);
+            allEmbeddings.AddRange(batchEmbeddings);
+            
+            // Delay between batches to avoid rate limiting (longer for multi-batch)
+            if (batchIndex < batches.Count - 1)
+            {
+                var delayMs = batches.Count > 4 ? 1000 : 200; // Longer delay for very large documents
+                await Task.Delay(delayMs, ct);
+            }
+        }
+
+        Log.Info($"EmbeddingService: Generated {allEmbeddings.Count} embedding(s) total");
+        return allEmbeddings;
+    }
+
+    /// <summary>
+    /// Split texts into batches that fit within the token limit.
+    /// </summary>
+    private static List<List<string>> CreateBatches(List<string> texts)
+    {
+        var batches = new List<List<string>>();
+        var currentBatch = new List<string>();
+        var currentTokenCount = 0;
+
+        foreach (var text in texts)
+        {
+            var estimatedTokens = text.Length / CharsPerToken;
+            
+            // If adding this text would exceed the limit, start a new batch
+            if (currentBatch.Count > 0 && currentTokenCount + estimatedTokens > MaxTokensPerBatch)
+            {
+                batches.Add(currentBatch);
+                currentBatch = new List<string>();
+                currentTokenCount = 0;
+            }
+            
+            currentBatch.Add(text);
+            currentTokenCount += estimatedTokens;
+        }
+        
+        // Add the last batch if it has any items
+        if (currentBatch.Count > 0)
+        {
+            batches.Add(currentBatch);
+        }
+
+        return batches;
+    }
+
+    /// <summary>
+    /// Retry a batch request with exponential backoff for rate limiting.
+    /// </summary>
+    private async Task<List<float[]>> GetEmbeddingsBatchWithRetryAsync(
+        List<string> texts, 
+        string apiKey, 
+        CancellationToken ct,
+        int maxRetries = 5)
+    {
+        var baseDelayMs = 2000; // Start with 2 seconds
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                return await GetEmbeddingsBatchAsync(texts, apiKey, ct);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("429") || ex.Message.Contains("Rate"))
+            {
+                if (attempt == maxRetries)
+                {
+                    Log.Error($"EmbeddingService: Rate limit exceeded after {maxRetries + 1} attempts");
+                    throw;
+                }
+                
+                // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+                var delayMs = baseDelayMs * (int)Math.Pow(2, attempt);
+                
+                // Try to extract wait time from error message (e.g., "Please try again in 5.302s")
+                var waitMatch = System.Text.RegularExpressions.Regex.Match(ex.Message, @"try again in (\d+\.?\d*)s");
+                if (waitMatch.Success && double.TryParse(waitMatch.Groups[1].Value, out var waitSeconds))
+                {
+                    delayMs = (int)(waitSeconds * 1000) + 500; // Add 500ms buffer
+                }
+                
+                Log.Warn($"EmbeddingService: Rate limited, waiting {delayMs}ms before retry {attempt + 1}/{maxRetries}");
+                await Task.Delay(delayMs, ct);
+            }
+        }
+        
+        // Should never reach here, but compiler needs it
+        throw new InvalidOperationException("Unexpected retry loop exit");
+    }
+
+    /// <summary>
+    /// Send a single batch to the OpenAI API.
+    /// </summary>
+    private async Task<List<float[]>> GetEmbeddingsBatchAsync(List<string> texts, string apiKey, CancellationToken ct)
+    {
         var payload = new
         {
             model = EmbeddingModel,
@@ -63,7 +224,7 @@ public sealed class EmbeddingService
 
         try
         {
-            Log.Trace("EmbeddingService: Sending HTTP request...");
+            Log.Trace($"EmbeddingService: Sending batch request ({texts.Count} texts)...");
             using var resp = await http.SendAsync(req, ct);
             var statusCode = (int)resp.StatusCode;
             var json = await resp.Content.ReadAsStringAsync(ct);
@@ -71,12 +232,16 @@ public sealed class EmbeddingService
             // Log all non-200 responses with detailed info
             if (statusCode != 200)
             {
-                Log.Error($"EmbeddingService: API error HTTP {statusCode} {resp.ReasonPhrase}");
+                // Try to extract the actual error message from OpenAI's response
+                var apiErrorMessage = ExtractOpenAIErrorMessage(json);
+                
+                Log.Error($"EmbeddingService: API error HTTP {statusCode} {resp.ReasonPhrase}" + 
+                    (apiErrorMessage != null ? $" - {apiErrorMessage}" : ""));
                 Log.Debug($"EmbeddingService error body: {(json.Length > 500 ? json[..500] + "..." : json)}");
                 
                 var errorMessage = statusCode switch
                 {
-                    400 => "Bad Request - Invalid embedding parameters",
+                    400 => $"Bad Request - {apiErrorMessage ?? "Invalid embedding parameters"}",
                     401 => "Unauthorized - Invalid or expired API key",
                     403 => "Forbidden - API key lacks permissions",
                     404 => "Not Found - Invalid endpoint or model",
@@ -84,16 +249,14 @@ public sealed class EmbeddingService
                     500 => "OpenAI Server Error",
                     502 => "Bad Gateway - OpenAI temporarily unavailable",
                     503 => "Service Unavailable - OpenAI overloaded",
-                    _ => json
+                    _ => apiErrorMessage ?? json
                 };
                 
                 throw new InvalidOperationException($"Embedding HTTP {statusCode}: {errorMessage}");
             }
 
-            Log.Debug($"EmbeddingService: Response HTTP {statusCode} ({json.Length} chars)");
-            var result = ParseEmbeddingsResponse(json);
-            Log.Debug($"EmbeddingService: Generated {result.Count} embedding(s)");
-            return result;
+            Log.Trace($"EmbeddingService: Batch response HTTP {statusCode} ({json.Length} chars)");
+            return ParseEmbeddingsResponse(json);
         }
         catch (HttpRequestException ex)
         {
@@ -143,6 +306,29 @@ public sealed class EmbeddingService
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Extract error message from OpenAI's error response JSON.
+    /// </summary>
+    private static string? ExtractOpenAIErrorMessage(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("error", out var error))
+            {
+                if (error.TryGetProperty("message", out var message))
+                {
+                    return message.GetString();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        return null;
     }
 
 

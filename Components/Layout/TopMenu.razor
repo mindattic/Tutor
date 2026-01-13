@@ -12,17 +12,17 @@
     </div>
     
     <nav class="top-menu-nav">
-        <NavLink class="top-nav-link" href="learn" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Learn)">
-            <span class="bi bi-mortarboard-fill"></span>
-            <span>Learn</span>
+        <NavLink class="top-nav-link" href="" Match="NavLinkMatch.All" @onclick="() => OnTabSelected(TopTab.Home)">
+            <span class="bi bi-house-fill"></span>
+            <span>Home</span>
         </NavLink>
         <NavLink class="top-nav-link" href="courses" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Courses)">
             <span class="bi bi-book-fill"></span>
             <span>Courses</span>
         </NavLink>
-        <NavLink class="top-nav-link" href="knowledge-bases" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.KnowledgeGraph)">
-            <span class="bi bi-lightbulb"></span>
-            <span>Knowledge</span>
+        <NavLink class="top-nav-link" href="learn" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Learn)">
+            <span class="bi bi-mortarboard-fill"></span>
+            <span>Learn</span>
         </NavLink>
         <NavLink class="top-nav-link" href="settings" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Settings)">
             <span class="bi bi-gear-fill"></span>

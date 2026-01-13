@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Tutor.Components;
 using Tutor.Services.Logging;
 
@@ -21,7 +22,73 @@ public sealed class OpenAIService
         Log.Debug("OpenAIService initialized");
     }
 
+    /// <summary>
+    /// Get a chat reply with automatic retry for rate limiting.
+    /// </summary>
     public async Task<ChatReply> GetReplyAsync(IEnumerable<Chat.ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
+    {
+        return await GetReplyWithRetryAsync(messages, instructions, ct, maxRetries: 5);
+    }
+
+    /// <summary>
+    /// Get a chat reply with retry logic for rate limiting and transient errors.
+    /// </summary>
+    private async Task<ChatReply> GetReplyWithRetryAsync(
+        IEnumerable<Chat.ChatMessage> messages, 
+        string? instructions, 
+        CancellationToken ct,
+        int maxRetries = 5)
+    {
+        var baseDelayMs = 2000; // Start with 2 seconds
+        Exception? lastException = null;
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                return await GetReplyCoreAsync(messages, instructions, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("429") || 
+                ex.Message.Contains("Rate") ||
+                ex.Message.Contains("overloaded") ||
+                ex.Message.Contains("502") ||
+                ex.Message.Contains("503"))
+            {
+                lastException = ex;
+                
+                if (attempt == maxRetries)
+                {
+                    Log.Error($"OpenAI: API call failed after {maxRetries + 1} attempts");
+                    throw;
+                }
+                
+                // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+                var delayMs = baseDelayMs * (int)Math.Pow(2, attempt);
+                
+                // Try to extract wait time from error message
+                var waitMatch = Regex.Match(ex.Message, @"try again in (\d+\.?\d*)s");
+                if (waitMatch.Success && double.TryParse(waitMatch.Groups[1].Value, 
+                    System.Globalization.NumberStyles.Float, 
+                    System.Globalization.CultureInfo.InvariantCulture, 
+                    out var waitSeconds))
+                {
+                    delayMs = (int)(waitSeconds * 1000) + 500; // Add 500ms buffer
+                }
+                
+                Log.Warn($"OpenAI: Rate limited or server error, waiting {delayMs}ms before retry {attempt + 1}/{maxRetries}");
+                await Task.Delay(delayMs, ct);
+            }
+        }
+        
+        // Should never reach here, but compiler needs it
+        throw lastException ?? new InvalidOperationException("Unexpected retry loop exit");
+    }
+
+    /// <summary>
+    /// Core implementation of GetReply (no retry logic).
+    /// </summary>
+    private async Task<ChatReply> GetReplyCoreAsync(IEnumerable<Chat.ChatMessage> messages, string? instructions, CancellationToken ct)
     {
         Log.Info("OpenAI: Getting chat reply...");
         
@@ -79,17 +146,20 @@ public sealed class OpenAIService
                 Log.Error($"OpenAI: API error HTTP {statusCode} {resp.ReasonPhrase}");
                 Log.Debug($"OpenAI error body: {(json.Length > 500 ? json[..500] + "..." : json)}");
                 
+                // Try to extract actual error message from OpenAI response
+                var apiErrorMessage = ExtractOpenAIErrorMessage(json);
+                
                 var errorMessage = statusCode switch
                 {
-                    400 => $"Bad Request - Check your message format",
+                    400 => $"Bad Request - {apiErrorMessage ?? "Check your message format"}",
                     401 => "Unauthorized - Invalid or expired API key",
                     403 => "Forbidden - API key lacks permissions",
                     404 => "Not Found - Invalid endpoint or model name",
-                    429 => "Rate Limited - Too many requests, wait before retrying",
+                    429 => $"Rate Limited - {apiErrorMessage ?? "Too many requests, wait before retrying"}",
                     500 => "OpenAI Server Error - Try again later",
                     502 => "Bad Gateway - OpenAI temporarily unavailable",
                     503 => "Service Unavailable - OpenAI overloaded",
-                    _ => json
+                    _ => apiErrorMessage ?? json
                 };
                 
                 throw new InvalidOperationException($"OpenAI HTTP {statusCode}: {errorMessage}");
@@ -117,6 +187,29 @@ public sealed class OpenAIService
             Log.Error("OpenAI: Request timed out after waiting", ex);
             throw new InvalidOperationException("OpenAI API request timed out", ex);
         }
+    }
+
+    /// <summary>
+    /// Extract error message from OpenAI's error response JSON.
+    /// </summary>
+    private static string? ExtractOpenAIErrorMessage(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("error", out var error))
+            {
+                if (error.TryGetProperty("message", out var message))
+                {
+                    return message.GetString();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        return null;
     }
 
     private static string ExtractText(string json)

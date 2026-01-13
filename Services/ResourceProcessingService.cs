@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Tutor.Models;
 using Tutor.Services.Logging;
+using Tutor.Services.Queue;
 
 namespace Tutor.Services;
 
@@ -9,6 +10,9 @@ namespace Tutor.Services;
 /// Background service for processing resources asynchronously.
 /// Handles formatting, concept extraction, and knowledge graph building
 /// with throttling to prevent memory issues.
+/// 
+/// NOTE: This service now delegates to BackgroundQueueService for persistent,
+/// resumable processing. The legacy methods are preserved for backward compatibility.
 /// </summary>
 public sealed class ResourceProcessingService : IDisposable
 {
@@ -53,11 +57,127 @@ public sealed class ResourceProcessingService : IDisposable
         // Start the background processing loop
         processingLoopTask = Task.Run(ProcessingLoopAsync);
         Log.Info("ResourceProcessingService: Background processing loop started");
+        
+        // Subscribe to BackgroundQueueService events for bridging
+        BackgroundQueueService.OnStatusChanged += OnBackgroundQueueStatusChanged;
+        BackgroundQueueService.OnTaskCompleted += OnBackgroundQueueTaskCompleted;
+        BackgroundQueueService.OnTaskError += OnBackgroundQueueTaskError;
     }
+
+    #region New BackgroundQueueService Integration
+
+    /// <summary>
+    /// Queues a resource for processing using the new persistent background queue.
+    /// This method supports resume capability and rate limit handling.
+    /// </summary>
+    public string QueueResourceForPersistentProcessing(
+        CourseResource resource,
+        string? courseId,
+        bool autoFormat = true,
+        bool buildGraph = true)
+    {
+        Log.Info($"ResourceProcessing: Queuing '{resource.Title}' via persistent queue (format={autoFormat}, graph={buildGraph})");
+
+        // Use the static BackgroundQueueService for persistent processing
+        var taskId = BackgroundQueueService.EnqueueResourceUpload(
+            resource.Id,
+            resource.Title,
+            resource.Content,
+            courseId,
+            autoFormat,
+            buildGraph);
+
+        return taskId;
+    }
+
+    /// <summary>
+    /// Gets all active tasks from the persistent background queue.
+    /// </summary>
+    public IReadOnlyList<BackgroundQueueItem> GetPersistentQueueTasks()
+    {
+        return BackgroundQueueService.GetActiveTasks();
+    }
+
+    /// <summary>
+    /// Gets the count of active tasks in the persistent queue.
+    /// </summary>
+    public int GetPersistentQueueCount()
+    {
+        return BackgroundQueueService.ActiveCount;
+    }
+
+    /// <summary>
+    /// Checks if the persistent queue is rate limited.
+    /// </summary>
+    public bool IsPersistentQueueRateLimited()
+    {
+        return BackgroundQueueService.IsRateLimited;
+    }
+
+    private void OnBackgroundQueueStatusChanged(BackgroundQueueItem item)
+    {
+        // Bridge to legacy status tracking if needed
+        if (!string.IsNullOrEmpty(item.ResourceId))
+        {
+            var legacyStatus = new ResourceProcessingStatus
+            {
+                TaskId = item.Id,
+                ResourceId = item.ResourceId,
+                ResourceTitle = item.DisplayName,
+                CourseId = item.CourseId,
+                Stage = MapToLegacyStage(item.Status),
+                Progress = item.Progress,
+                CurrentOperation = item.CurrentOperation,
+                QueuedAt = item.CreatedAt,
+                LastUpdated = item.UpdatedAt
+            };
+
+            statusTracker[item.Id] = legacyStatus;
+            NotifyStatusChanged(legacyStatus);
+        }
+    }
+
+    private void OnBackgroundQueueTaskCompleted(BackgroundQueueItem item)
+    {
+        if (!string.IsNullOrEmpty(item.ResourceId))
+        {
+            OnProcessingComplete?.Invoke(item.Id);
+        }
+    }
+
+    private void OnBackgroundQueueTaskError(BackgroundQueueItem item, string error)
+    {
+        if (!string.IsNullOrEmpty(item.ResourceId))
+        {
+            OnProcessingError?.Invoke(item.Id, error);
+        }
+    }
+
+    private static ProcessingStage MapToLegacyStage(BackgroundTaskStatus status)
+    {
+        return status switch
+        {
+            BackgroundTaskStatus.Pending => ProcessingStage.Queued,
+            BackgroundTaskStatus.InProgress => ProcessingStage.Formatting,
+            BackgroundTaskStatus.Completed => ProcessingStage.Complete,
+            BackgroundTaskStatus.Failed => ProcessingStage.Failed,
+            BackgroundTaskStatus.Cancelled => ProcessingStage.Failed,
+            BackgroundTaskStatus.RateLimited => ProcessingStage.Queued,
+            BackgroundTaskStatus.PermanentlyFailed => ProcessingStage.Failed,
+            _ => ProcessingStage.Queued
+        };
+    }
+
+    #endregion
+
+    #region Legacy Implementation (preserved for backward compatibility)
 
     /// <summary>
     /// Queues a resource for async processing (format ? extract ? build graph).
     /// Returns immediately - processing happens in background.
+    /// 
+    /// NOTE: Consider using QueueResourceForPersistentProcessing for better
+    /// resume capability and rate limit handling.
     /// </summary>
     public string QueueResourceForProcessing(
         CourseResource resource,
@@ -97,6 +217,8 @@ public sealed class ResourceProcessingService : IDisposable
 
         return taskId;
     }
+
+
 
     /// <summary>
     /// Gets the current status of a processing task.
@@ -357,12 +479,19 @@ public sealed class ResourceProcessingService : IDisposable
 
     public void Dispose()
     {
+        // Unsubscribe from BackgroundQueueService events
+        BackgroundQueueService.OnStatusChanged -= OnBackgroundQueueStatusChanged;
+        BackgroundQueueService.OnTaskCompleted -= OnBackgroundQueueTaskCompleted;
+        BackgroundQueueService.OnTaskError -= OnBackgroundQueueTaskError;
+        
         cts.Cancel();
         processingQueue.Writer.Complete();
         aiThrottle.Dispose();
         processingThrottle.Dispose();
         cts.Dispose();
     }
+
+    #endregion
 }
 
 /// <summary>

@@ -2,6 +2,8 @@
 @using Tutor.Models
 @using Tutor.Services
 @inject KnowledgeBaseStorageService KbStorageService
+@inject KnowledgeBaseCollectionService KbCollectionService
+@inject CourseService CourseService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -45,13 +47,17 @@ else if (concepts.Count == 0)
 else
 {
 <div class="kb-graph-container">
-    <div class="kb-graph-header">
-        <h4>@(knowledgeBase?.Name ?? "Knowledge Base")</h4>
-        <div class="kb-graph-stats">
-            <span class="stat">@concepts.Count concepts</span>
-            <span class="stat">@relationships.Count relationships</span>
-        </div>
+<div class="kb-graph-header">
+    <h4>@graphTitle</h4>
+    <div class="kb-graph-stats">
+        <span class="stat">@concepts.Count concepts</span>
+        <span class="stat">@relationships.Count relationships</span>
+        @if (knowledgeBaseCount > 1)
+        {
+            <span class="stat">@knowledgeBaseCount sources</span>
+        }
     </div>
+</div>
     
     <div class="kb-graph-wrapper">
         <div id="kb-force-graph" class="force-graph-canvas" @ref="graphContainer"></div>
@@ -138,27 +144,55 @@ else
 }
 
 @code {
-    [Parameter] public string? KnowledgeBaseId { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
+/// <summary>
+/// Single KnowledgeBase ID (legacy/single KB mode)
+/// </summary>
+[Parameter] public string? KnowledgeBaseId { get; set; }
+    
+/// <summary>
+/// Course ID to load the KnowledgeBaseCollection from
+/// </summary>
+[Parameter] public string? CourseId { get; set; }
+    
+/// <summary>
+/// Direct KnowledgeBaseCollection ID to load
+/// </summary>
+[Parameter] public string? KnowledgeBaseCollectionId { get; set; }
+    
+[Parameter] public EventCallback OnClose { get; set; }
 
-    private KnowledgeBase? knowledgeBase;
-    private List<Concept> concepts = [];
-    private List<ConceptRelationship> relationships = [];
-    private Concept? selectedConcept;
-    private List<ConceptRelationship> relatedConcepts = [];
-    private List<ConceptRelationship> incomingRelationships = [];
-    private ElementReference graphContainer;
-    private DotNetObjectReference<KnowledgeBaseGraph>? dotNetRef;
-    private bool isInitialized;
-    private bool isLoading = true;
-    private string? errorMessage;
+private KnowledgeBase? knowledgeBase;
+private LoadedKnowledgeBaseCollection? loadedCollection;
+private List<Concept> concepts = [];
+private List<ConceptRelationship> relationships = [];
+private Concept? selectedConcept;
+private List<ConceptRelationship> relatedConcepts = [];
+private List<ConceptRelationship> incomingRelationships = [];
+private ElementReference graphContainer;
+private DotNetObjectReference<KnowledgeBaseGraph>? dotNetRef;
+private bool isInitialized;
+private bool isLoading = true;
+private string? errorMessage;
+private string graphTitle = "Knowledge Base";
+private int knowledgeBaseCount = 1;
 
     protected override async Task OnParametersSetAsync()
     {
-        // Load when parameter changes
-        if (!string.IsNullOrEmpty(KnowledgeBaseId) && !isInitialized)
+        // Load when parameter changes - prioritize CourseId, then CollectionId, then single KbId
+        if (!isInitialized)
         {
-            await LoadKnowledgeBase();
+            if (!string.IsNullOrEmpty(CourseId))
+            {
+                await LoadFromCourseAsync();
+            }
+            else if (!string.IsNullOrEmpty(KnowledgeBaseCollectionId))
+            {
+                await LoadFromCollectionAsync();
+            }
+            else if (!string.IsNullOrEmpty(KnowledgeBaseId))
+            {
+                await LoadSingleKnowledgeBase();
+            }
         }
     }
 
@@ -179,7 +213,125 @@ else
         }
     }
 
-    private async Task LoadKnowledgeBase()
+    /// <summary>
+    /// Loads the KnowledgeBaseCollection for a Course and aggregates all concepts/relationships.
+    /// </summary>
+    private async Task LoadFromCourseAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Loading from Course: {CourseId}");
+            
+            var course = await CourseService.GetCourseAsync(CourseId!);
+            if (course == null)
+            {
+                errorMessage = $"Course with ID '{CourseId}' not found.";
+                return;
+            }
+
+            graphTitle = $"{course.Name} Knowledge Graph";
+
+            // Get KB IDs from resources that have them built
+            var kbIds = await CourseService.GetResourceKnowledgeBaseIdsAsync(CourseId!);
+            
+            if (kbIds.Count == 0)
+            {
+                errorMessage = "No Knowledge Bases have been built for this course's resources yet.";
+                return;
+            }
+
+            // Load and aggregate all KnowledgeBases
+            await LoadAndAggregateKnowledgeBases(kbIds);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading Knowledge Bases: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads from a KnowledgeBaseCollection directly.
+    /// </summary>
+    private async Task LoadFromCollectionAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Loading Collection: {KnowledgeBaseCollectionId}");
+            
+            loadedCollection = await KbCollectionService.LoadWithKnowledgeBasesAsync(KnowledgeBaseCollectionId!);
+            
+            if (loadedCollection == null)
+            {
+                errorMessage = $"Knowledge Base Collection '{KnowledgeBaseCollectionId}' not found.";
+                return;
+            }
+
+            graphTitle = loadedCollection.Collection.Name;
+            knowledgeBaseCount = loadedCollection.KnowledgeBases.Count;
+            
+            // Aggregate concepts and relationships from the loaded collection
+            concepts = loadedCollection.GetAllConcepts().ToList();
+            relationships = loadedCollection.GetAllRelations().ToList();
+            
+            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Loaded collection with {concepts.Count} concepts, {relationships.Count} relationships from {knowledgeBaseCount} KBs");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading Collection: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads and aggregates multiple KnowledgeBases by their IDs.
+    /// </summary>
+    private async Task LoadAndAggregateKnowledgeBases(List<string> kbIds)
+    {
+        var allConcepts = new List<Concept>();
+        var allRelationships = new List<ConceptRelationship>();
+        var loadedKbs = new List<KnowledgeBase>();
+
+        foreach (var kbId in kbIds)
+        {
+            var kb = await KbStorageService.LoadAsync(kbId);
+            if (kb != null && kb.Status == KnowledgeBaseStatus.Ready)
+            {
+                loadedKbs.Add(kb);
+                allConcepts.AddRange(kb.Concepts);
+                allRelationships.AddRange(kb.Relations);
+            }
+        }
+
+        knowledgeBaseCount = loadedKbs.Count;
+        concepts = allConcepts;
+        relationships = allRelationships;
+
+        System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Aggregated {concepts.Count} concepts, {relationships.Count} relationships from {knowledgeBaseCount} KBs");
+    }
+
+    /// <summary>
+    /// Loads a single KnowledgeBase (legacy mode).
+    /// </summary>
+    private async Task LoadSingleKnowledgeBase()
     {
         isLoading = true;
         errorMessage = null;
@@ -193,11 +345,13 @@ else
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Loading KB: {KnowledgeBaseId}");
+            System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Loading single KB: {KnowledgeBaseId}");
             knowledgeBase = await KbStorageService.LoadAsync(KnowledgeBaseId);
             
             if (knowledgeBase != null)
             {
+                graphTitle = knowledgeBase.Name;
+                knowledgeBaseCount = 1;
                 concepts = knowledgeBase.Concepts ?? [];
                 relationships = knowledgeBase.Relations ?? [];
                 System.Diagnostics.Debug.WriteLine($"[KnowledgeBaseGraph] Loaded {concepts.Count} concepts, {relationships.Count} relationships");
@@ -245,23 +399,35 @@ else
     [JSInvokable]
     public void OnNodeClick(string conceptId)
     {
-        SelectConceptById(conceptId);
+        SelectConceptById(conceptId, smoothPan: false); // Already clicked on the node, no need to pan
         StateHasChanged();
     }
 
-    private void SelectConceptById(string conceptId)
+    private async void SelectConceptById(string conceptId, bool smoothPan = true)
     {
         selectedConcept = concepts.FirstOrDefault(c => c.Id == conceptId);
         if (selectedConcept != null)
         {
             relatedConcepts = relationships.Where(r => r.SourceConceptId == conceptId).ToList();
             incomingRelationships = relationships.Where(r => r.TargetConceptId == conceptId).ToList();
+            
+            // Smoothly pan to the selected node and highlight it
+            if (smoothPan)
+            {
+                await JS.InvokeVoidAsync("panToNode", conceptId);
+            }
+            else
+            {
+                // Just highlight the node without panning
+                await JS.InvokeVoidAsync("highlightNode", conceptId);
+            }
         }
         else
         {
             relatedConcepts = [];
             incomingRelationships = [];
         }
+        StateHasChanged();
     }
 
     private void ClearSelection()

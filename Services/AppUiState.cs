@@ -5,6 +5,7 @@ namespace Tutor.Services;
 /// </summary>
 public enum TopTab
 {
+    Home,
     Learn,
     Courses,
     KnowledgeGraph,

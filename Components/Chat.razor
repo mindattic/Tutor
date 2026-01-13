@@ -44,7 +44,8 @@ else if (isLessonMode)
         <div class="mode-spacer"></div>
         @if (lessonTopics.Count > 0)
         {
-            <button class="mode-exit-btn kb" @onclick="ShowKnowledgeBase" title="Knowledge Base"><span class="bi bi-lightbulb"></span> Knowledge Base</button>
+            <button class="mode-exit-btn explore" @onclick="OpenKnowledgeBaseExplorer" title="Explore Knowledge Base"><span class="bi bi-diagram-3"></span> Explore</button>
+            <button class="mode-exit-btn kb" @onclick="ShowKnowledgeBase" title="Terminology"><span class="bi bi-journal-text"></span> Terminology</button>
             <button class="mode-exit-btn toc" @onclick="ShowTableOfContents" title="Table of Contents"><span class="bi bi-list-ul"></span> Table of Contents</button>
         }
         <button class="mode-exit-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
@@ -120,13 +121,13 @@ else if (isLessonMode)
     </div>
 }
 
-@* Knowledge Base modal *@
+@* Knowledge Base modal (Terminology) *@
 @if (showKnowledgeBase)
 {
     <div class="modal-overlay" @onclick="CloseKnowledgeBase">
         <div class="modal-content kb-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span><span class="bi bi-lightbulb"></span> Knowledge Base</span>
+                <span><span class="bi bi-journal-text"></span> Terminology</span>
                 <button class="close-btn" @onclick="CloseKnowledgeBase"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body kb-body">
@@ -170,6 +171,22 @@ else if (isLessonMode)
                         <span class="kb-count">@knowledgeBaseConcepts.Count concepts total</span>
                     </div>
                 }
+            </div>
+        </div>
+    </div>
+}
+
+@* Knowledge Base Explorer modal (Force diagram) *@
+@if (showKnowledgeBaseExplorer)
+{
+    <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
+        <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span><span class="bi bi-diagram-3"></span> Knowledge Base Explorer</span>
+                <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body kb-explorer-body">
+                <KnowledgeBaseGraph KnowledgeBaseId="@explorerKnowledgeBaseId" />
             </div>
         </div>
     </div>
@@ -414,6 +431,10 @@ private bool showAllMessages;
     // Knowledge Base state
     private bool showKnowledgeBase;
     private List<Concept> knowledgeBaseConcepts = [];
+
+    // Knowledge Base Explorer state (Force diagram)
+    private bool showKnowledgeBaseExplorer;
+    private string? explorerKnowledgeBaseId;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -822,6 +843,22 @@ The questions should be specific to what you just taught, not generic.";
     private void CloseKnowledgeBase()
     {
         showKnowledgeBase = false;
+    }
+
+    // Knowledge Base Explorer (Force diagram)
+    private void OpenKnowledgeBaseExplorer()
+    {
+        if (activeCourse?.HasKnowledgeBase == true)
+        {
+            explorerKnowledgeBaseId = activeCourse.KnowledgeBaseId;
+            showKnowledgeBaseExplorer = true;
+        }
+    }
+
+    private void CloseKnowledgeBaseExplorer()
+    {
+        showKnowledgeBaseExplorer = false;
+        explorerKnowledgeBaseId = null;
     }
 
     private async Task LoadKnowledgeBaseConcepts()

@@ -12,7 +12,6 @@ public sealed class LSHService
     private const int DefaultBitCount = 256;
     private const int DefaultSeed = 1337;
 
-    private readonly string hyperplanesFilePath;
     private readonly object lockObj = new();
 
     private float[][]? hyperplanes;
@@ -33,6 +32,11 @@ public sealed class LSHService
     public int Seed { get; }
 
     /// <summary>
+    /// Gets the current hyperplanes file path (uses DataStorageSettings).
+    /// </summary>
+    private string HyperplanesFilePath => Path.Combine(DataStorageSettings.GetLSHDirectory(), HyperplanesFileName);
+
+    /// <summary>
     /// Creates a new LSH service with the specified parameters.
     /// </summary>
     /// <param name="embeddingDimension">Dimension of embedding vectors (default 1536 for OpenAI text-embedding-3-small).</param>
@@ -43,7 +47,6 @@ public sealed class LSHService
         EmbeddingDimension = embeddingDimension;
         BitCount = bitCount;
         Seed = seed;
-        hyperplanesFilePath = Path.Combine(FileSystem.AppDataDirectory, HyperplanesFileName);
     }
 
     /// <summary>
@@ -160,6 +163,7 @@ public sealed class LSHService
         }
     }
 
+
     /// <summary>
     /// Attempts to load hyperplanes from the persisted file.
     /// </summary>
@@ -167,10 +171,10 @@ public sealed class LSHService
     {
         try
         {
-            if (!File.Exists(hyperplanesFilePath))
+            if (!File.Exists(HyperplanesFilePath))
                 return false;
 
-            var json = File.ReadAllText(hyperplanesFilePath);
+            var json = File.ReadAllText(HyperplanesFilePath);
             var data = JsonSerializer.Deserialize<HyperplaneData>(json);
 
             if (data == null ||
@@ -279,7 +283,7 @@ public sealed class LSHService
             };
 
             var json = JsonSerializer.Serialize(data);
-            File.WriteAllText(hyperplanesFilePath, json);
+            File.WriteAllText(HyperplanesFilePath, json);
         }
         catch
         {

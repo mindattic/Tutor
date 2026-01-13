@@ -96,6 +96,10 @@
         // D3.js Force Directed Graph for Knowledge Base visualization
         var forceGraphDotNetRef = null;
         var forceSimulation = null;
+        var forceGraphSvg = null;
+        var forceGraphG = null;
+        var forceGraphZoom = null;
+        var forceGraphNodes = null;
 
         function initForceGraph(container, nodes, links, dotNetRef) {
             forceGraphDotNetRef = dotNetRef;
@@ -110,19 +114,20 @@
             var color = d3.scaleOrdinal(d3.schemeCategory10);
 
             // Create SVG
-            var svg = d3.select(container)
+            forceGraphSvg = d3.select(container)
                 .append('svg')
                 .attr('width', '100%')
                 .attr('height', '100%')
                 .attr('viewBox', [0, 0, width, height]);
 
             // Add zoom behavior
-            var g = svg.append('g');
-            svg.call(d3.zoom()
+            forceGraphG = forceGraphSvg.append('g');
+            forceGraphZoom = d3.zoom()
                 .scaleExtent([0.1, 4])
                 .on('zoom', function(event) {
-                    g.attr('transform', event.transform);
-                }));
+                    forceGraphG.attr('transform', event.transform);
+                });
+            forceGraphSvg.call(forceGraphZoom);
 
             // Create force simulation
             forceSimulation = d3.forceSimulation(nodes)
@@ -132,7 +137,7 @@
                 .force('collision', d3.forceCollide().radius(40));
 
             // Create links
-            var link = g.append('g')
+            var link = forceGraphG.append('g')
                 .attr('class', 'links')
                 .selectAll('line')
                 .data(links)
@@ -143,7 +148,7 @@
                 .attr('stroke-width', 2);
 
             // Create nodes
-            var node = g.append('g')
+            forceGraphNodes = forceGraphG.append('g')
                 .attr('class', 'nodes')
                 .selectAll('g')
                 .data(nodes)
@@ -155,14 +160,14 @@
                     .on('end', dragended));
 
             // Add circles to nodes
-            node.append('circle')
+            forceGraphNodes.append('circle')
                 .attr('r', 20)
                 .attr('fill', function(d) { return color(d.group); })
                 .attr('stroke', '#fff')
                 .attr('stroke-width', 2);
 
             // Add labels to nodes
-            node.append('text')
+            forceGraphNodes.append('text')
                 .attr('dy', 35)
                 .attr('text-anchor', 'middle')
                 .attr('class', 'node-label')
@@ -171,14 +176,13 @@
                 });
 
             // Add click handler
-            node.on('click', function(event, d) {
+            forceGraphNodes.on('click', function(event, d) {
                 event.stopPropagation();
                 if (forceGraphDotNetRef) {
                     forceGraphDotNetRef.invokeMethodAsync('OnNodeClick', d.id);
                 }
                 // Highlight selected node
-                node.selectAll('circle').attr('stroke', '#fff').attr('stroke-width', 2);
-                d3.select(this).select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+                highlightNodeElement(d3.select(this));
             });
 
             // Update positions on each tick
@@ -189,7 +193,7 @@
                     .attr('x2', function(d) { return d.target.x; })
                     .attr('y2', function(d) { return d.target.y; });
 
-                node.attr('transform', function(d) { 
+                forceGraphNodes.attr('transform', function(d) { 
                     return 'translate(' + d.x + ',' + d.y + ')'; 
                 });
             });
@@ -212,11 +216,56 @@
             }
         }
 
+        function highlightNodeElement(nodeElement) {
+            // Reset all nodes
+            d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
+            // Highlight the selected node
+            nodeElement.select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+        }
+
         function highlightNode(nodeId) {
             if (!forceSimulation) return;
             d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
             d3.selectAll('.node').filter(function(d) { return d.id === nodeId; })
                 .select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+        }
+
+        function panToNode(nodeId) {
+            if (!forceSimulation || !forceGraphSvg || !forceGraphZoom) return;
+            
+            // Find the node with the matching ID
+            var targetNode = null;
+            forceGraphNodes.each(function(d) {
+                if (d.id === nodeId) {
+                    targetNode = d;
+                }
+            });
+            
+            if (!targetNode) return;
+            
+            // Get the SVG dimensions
+            var svgElement = forceGraphSvg.node();
+            var width = svgElement.clientWidth || 800;
+            var height = svgElement.clientHeight || 500;
+            
+            // Calculate the transform to center on the node
+            var scale = 1.5; // Zoom in a bit when focusing
+            var x = width / 2 - targetNode.x * scale;
+            var y = height / 2 - targetNode.y * scale;
+            
+            // Smoothly transition to the new view
+            forceGraphSvg.transition()
+                .duration(750)
+                .ease(d3.easeCubicInOut)
+                .call(
+                    forceGraphZoom.transform,
+                    d3.zoomIdentity.translate(x, y).scale(scale)
+                );
+            
+            // Highlight the node after a small delay
+            setTimeout(function() {
+                highlightNode(nodeId);
+            }, 400);
         }
     </script>
 

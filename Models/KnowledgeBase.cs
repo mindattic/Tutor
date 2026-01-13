@@ -11,9 +11,9 @@ public enum KnowledgeBaseStatus
     NotStarted,
 
     /// <summary>
-    /// Currently combining resources into unified content.
+    /// Currently preparing the resource content for processing.
     /// </summary>
-    CombiningResources,
+    PreparingContent,
 
     /// <summary>
     /// Currently extracting concepts from combined content.
@@ -42,21 +42,24 @@ public enum KnowledgeBaseStatus
 }
 
 /// <summary>
-/// Represents an interconnected library of knowledge generated from Resources.
+/// Represents an interconnected library of knowledge generated from a single Resource.
 /// 
 /// Key architectural points:
+/// - Each Resource generates its own independent KnowledgeBase (1:1 relationship).
 /// - A KnowledgeBase is INDEPENDENT of any Course.
-/// - It contains all Concepts and their relationships (the totality of knowledge).
-/// - It can be assigned to one or more Courses.
+/// - It contains all Concepts and their relationships for a single resource.
+/// - Multiple KnowledgeBases are combined into a KnowledgeBaseCollection for a Course.
 /// - The Course creates its own learning structure (Lessons/Topics) that REFERENCES
-///   Concepts in the KnowledgeBase by ID (no duplication).
-/// - The KnowledgeBase stores Concept-to-Concept relationships ordered by complexity.
+///   Concepts from the KnowledgeBaseCollection by ID (no duplication).
+/// - This architecture allows dynamic composition of courses from any subset of resources.
+/// - Reduces overhead since resources don't need to be merged into a single KnowledgeBase.
 /// 
 /// Generation pipeline:
-/// 1. Resources are uploaded and stored as-is.
-/// 2. Resources are combined to generate a KnowledgeBase.
-/// 3. Concepts are extracted from the combined content.
+/// 1. Resource is uploaded and stored as-is.
+/// 2. KnowledgeBase is generated from the single resource.
+/// 3. Concepts are extracted from the content.
 /// 4. Concept relationships (prerequisites, related, complexity) are built.
+/// 5. Course combines multiple KnowledgeBases into a KnowledgeBaseCollection.
 /// </summary>
 public class KnowledgeBase
 {
@@ -76,9 +79,17 @@ public class KnowledgeBase
     public string Description { get; set; } = "";
 
     /// <summary>
-    /// IDs of Resources used to generate this KnowledgeBase.
-    /// Allows tracking the source material and potential re-generation.
+    /// ID of the Resource used to generate this KnowledgeBase.
+    /// Each KnowledgeBase is generated from exactly one Resource (1:1 relationship).
     /// </summary>
+    public string ResourceId { get; set; } = "";
+
+    /// <summary>
+    /// IDs of Resources used to generate this KnowledgeBase.
+    /// Maintained for backward compatibility during migration.
+    /// New code should use ResourceId instead.
+    /// </summary>
+    [Obsolete("Use ResourceId instead. This property is maintained for backward compatibility.")]
     public List<string> ResourceIds { get; set; } = [];
 
     /// <summary>
@@ -97,9 +108,17 @@ public class KnowledgeBase
     public int Progress { get; set; }
 
     /// <summary>
-    /// The combined text from all resources.
-    /// Stored to allow re-processing without re-fetching resources.
+    /// The processed content from the source resource.
+    /// Stored to allow re-processing without re-fetching the resource.
     /// </summary>
+    public string? SourceContent { get; set; }
+
+    /// <summary>
+    /// The combined text from all resources.
+    /// Maintained for backward compatibility during migration.
+    /// New code should use SourceContent instead.
+    /// </summary>
+    [Obsolete("Use SourceContent instead. This property is maintained for backward compatibility.")]
     public string? CombinedContent { get; set; }
 
     /// <summary>

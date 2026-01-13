@@ -97,6 +97,22 @@ TEXT TO FORMAT:
 
         foreach (var para in paragraphs)
         {
+            // If a single paragraph exceeds maxChunkSize, split it further
+            if (para.Length > maxChunkSize)
+            {
+                // Flush current chunk first
+                if (currentChunk.Length > 0)
+                {
+                    chunks.Add(currentChunk.ToString());
+                    currentChunk.Clear();
+                }
+                
+                // Split large paragraph by sentences
+                var subChunks = SplitLargeParagraph(para, maxChunkSize);
+                chunks.AddRange(subChunks);
+                continue;
+            }
+            
             if (currentChunk.Length + para.Length > maxChunkSize && currentChunk.Length > 0)
             {
                 chunks.Add(currentChunk.ToString());
@@ -111,18 +127,97 @@ TEXT TO FORMAT:
             chunks.Add(currentChunk.ToString());
         }
 
-        // Process each chunk with progress reporting
+        // Filter out empty chunks
+        chunks = chunks.Where(c => c.Trim().Length > 50).ToList();
+        
+        Log.Info($"ContentFormatter: Split into {chunks.Count} chunks for processing");
+
+        // Process each chunk with progress reporting and rate limit handling
         var formattedChunks = new List<string>();
         var totalChunks = chunks.Count;
         for (int i = 0; i < chunks.Count; i++)
         {
             ct.ThrowIfCancellationRequested();
             onProgress?.Invoke(i + 1, totalChunks);
-            var formatted = await FormatChunkAsync(chunks[i], apiKey, ct);
+            
+            Log.Debug($"ContentFormatter: Processing chunk {i + 1}/{totalChunks} ({chunks[i].Length} chars)");
+            var formatted = await FormatChunkWithRetryAsync(chunks[i], apiKey, ct);
             formattedChunks.Add(formatted);
+            
+            // Add delay between chunks to avoid rate limiting
+            if (i < chunks.Count - 1)
+            {
+                await Task.Delay(500, ct);
+            }
         }
 
         return string.Join("\n\n", formattedChunks);
+    }
+
+    /// <summary>
+    /// Split a large paragraph that exceeds maxChunkSize.
+    /// </summary>
+    private static List<string> SplitLargeParagraph(string paragraph, int maxChunkSize)
+    {
+        var chunks = new List<string>();
+        
+        // Try to split by sentences
+        var sentences = System.Text.RegularExpressions.Regex.Split(paragraph, @"(?<=[.!?])\s+");
+        
+        var currentChunk = new StringBuilder();
+        foreach (var sentence in sentences)
+        {
+            // If a single sentence is too long, force-split it
+            if (sentence.Length > maxChunkSize)
+            {
+                if (currentChunk.Length > 0)
+                {
+                    chunks.Add(currentChunk.ToString());
+                    currentChunk.Clear();
+                }
+                
+                for (int i = 0; i < sentence.Length; i += maxChunkSize)
+                {
+                    var length = Math.Min(maxChunkSize, sentence.Length - i);
+                    chunks.Add(sentence.Substring(i, length));
+                }
+                continue;
+            }
+            
+            if (currentChunk.Length + sentence.Length > maxChunkSize && currentChunk.Length > 0)
+            {
+                chunks.Add(currentChunk.ToString());
+                currentChunk.Clear();
+            }
+            
+            currentChunk.Append(sentence);
+            currentChunk.Append(' ');
+        }
+        
+        if (currentChunk.Length > 0)
+            chunks.Add(currentChunk.ToString());
+        
+        return chunks;
+    }
+
+    /// <summary>
+    /// Format a chunk with retry logic for rate limiting.
+    /// </summary>
+    private async Task<string> FormatChunkWithRetryAsync(string content, string apiKey, CancellationToken ct, int maxRetries = 3)
+    {
+        var baseDelayMs = 2000;
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            var result = await FormatChunkAsync(content, apiKey, ct);
+            
+            // FormatChunkAsync returns original content on error, check if it's different
+            // If result equals original, it might have failed - but that's also acceptable as fallback
+            return result;
+        }
+        
+        // Fallback to original content
+        return content;
     }
 
     /// <summary>

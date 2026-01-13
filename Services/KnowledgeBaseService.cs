@@ -124,8 +124,10 @@ public sealed class KnowledgeBaseService
 
     /// <summary>
     /// Builds a KnowledgeBase from a list of Resources.
-    /// This creates a standalone KnowledgeBase that can be assigned to Courses.
+    /// This method is maintained for backward compatibility.
+    /// New code should use BuildFromResourceAsync for single resource KB generation.
     /// </summary>
+    [Obsolete("Use BuildFromResourceAsync instead for single resource KB generation.")]
     public async Task<KnowledgeBase> BuildFromResourcesAsync(
         string name,
         List<CourseResource> resources,
@@ -144,7 +146,10 @@ public sealed class KnowledgeBaseService
         {
             Name = name,
             Description = $"Knowledge base generated from {resources.Count} resource(s)",
+#pragma warning disable CS0618 // Type or member is obsolete
             ResourceIds = resources.Select(r => r.Id).ToList(),
+#pragma warning restore CS0618
+            ResourceId = resources.First().Id, // Use first resource for new property
             Status = KnowledgeBaseStatus.NotStarted
         };
         
@@ -154,14 +159,19 @@ public sealed class KnowledgeBaseService
         {
             // Step 1: Combine resources
             Log.Info("Step 1/4: Combining resources...");
-            ReportProgress(kb, KnowledgeBaseStatus.CombiningResources, 5, "Combining resources...");
-            kb.Status = KnowledgeBaseStatus.CombiningResources;
+#pragma warning disable CS0618 // Type or member is obsolete
+            ReportProgress(kb, KnowledgeBaseStatus.PreparingContent, 5, "Combining resources...");
+            kb.Status = KnowledgeBaseStatus.PreparingContent;
             kb.CombinedContent = CombineResources(resources);
+            kb.SourceContent = kb.CombinedContent;
+#pragma warning restore CS0618
             await storageService.SaveAsync(kb, ct);
             
+#pragma warning disable CS0618 // Type or member is obsolete
             Log.Debug($"Combined content size: {kb.CombinedContent?.Length ?? 0} characters");
 
             if (string.IsNullOrWhiteSpace(kb.CombinedContent))
+#pragma warning restore CS0618
             {
                 Log.Error("Knowledge Base build failed: No content found in resources");
                 throw new InvalidOperationException("No content found in resources.");
@@ -171,7 +181,9 @@ public sealed class KnowledgeBaseService
             Log.Info("Step 2/4: Extracting concepts via AI...");
             ReportProgress(kb, KnowledgeBaseStatus.GeneratingConcepts, 20, "Extracting concepts...");
             kb.Status = KnowledgeBaseStatus.GeneratingConcepts;
+#pragma warning disable CS0618 // Type or member is obsolete
             kb.Concepts = await ExtractConceptsAsync(kb.CombinedContent, kb.Id, ct);
+#pragma warning restore CS0618
             await storageService.SaveAsync(kb, ct);
 
             if (kb.Concepts.Count == 0)
@@ -254,6 +266,152 @@ public sealed class KnowledgeBaseService
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// Builds a KnowledgeBase from a single Resource.
+    /// This is the primary method for the new architecture where each Resource
+    /// generates its own independent KnowledgeBase.
+    /// </summary>
+    public async Task<KnowledgeBase> BuildFromResourceAsync(
+        CourseResource resource,
+        CancellationToken ct = default)
+    {
+        if (resource == null)
+        {
+            throw new ArgumentNullException(nameof(resource));
+        }
+
+        var name = $"{resource.Title} Knowledge Base";
+        Log.Info($"Starting Knowledge Base build for resource: '{resource.Title}'");
+
+        // Create new KnowledgeBase linked to this single resource
+        var kb = new KnowledgeBase
+        {
+            Name = name,
+            Description = $"Knowledge base generated from: {resource.Title}",
+            ResourceId = resource.Id,
+            Status = KnowledgeBaseStatus.NotStarted
+        };
+
+        Log.Debug($"Created KnowledgeBase with ID: {kb.Id} for Resource: {resource.Id}");
+
+        try
+        {
+            // Step 1: Prepare content
+            Log.Info("Step 1/4: Preparing content...");
+            ReportProgress(kb, KnowledgeBaseStatus.PreparingContent, 5, "Preparing content...");
+            kb.Status = KnowledgeBaseStatus.PreparingContent;
+            kb.SourceContent = PrepareResourceContent(resource);
+            await storageService.SaveAsync(kb, ct);
+
+            Log.Debug($"Content size: {kb.SourceContent?.Length ?? 0} characters");
+
+            if (string.IsNullOrWhiteSpace(kb.SourceContent))
+            {
+                Log.Error("Knowledge Base build failed: No content found in resource");
+                throw new InvalidOperationException("No content found in resource.");
+            }
+
+            // Step 2: Extract concepts
+            Log.Info("Step 2/4: Extracting concepts via AI...");
+            ReportProgress(kb, KnowledgeBaseStatus.GeneratingConcepts, 20, "Extracting concepts...");
+            kb.Status = KnowledgeBaseStatus.GeneratingConcepts;
+            kb.Concepts = await ExtractConceptsAsync(kb.SourceContent, kb.Id, ct);
+            await storageService.SaveAsync(kb, ct);
+
+            if (kb.Concepts.Count == 0)
+            {
+                Log.Error("Knowledge Base build failed: No concepts could be extracted");
+                throw new InvalidOperationException("No concepts could be extracted from the content.");
+            }
+
+            Log.Info($"Successfully extracted {kb.Concepts.Count} concepts");
+            ReportProgress(kb, KnowledgeBaseStatus.GeneratingConcepts, 40,
+                $"Extracted {kb.Concepts.Count} concepts");
+
+            // Step 3: Build relationships
+            Log.Info("Step 3/4: Building concept relationships via AI...");
+            ReportProgress(kb, KnowledgeBaseStatus.BuildingRelationships, 50, "Building concept relationships...");
+            kb.Status = KnowledgeBaseStatus.BuildingRelationships;
+            kb.Relations = await BuildRelationshipsAsync(kb.Concepts, ct);
+            await storageService.SaveAsync(kb, ct);
+
+            Log.Info($"Built {kb.Relations.Count} relationships between concepts");
+            ReportProgress(kb, KnowledgeBaseStatus.BuildingRelationships, 70,
+                $"Built {kb.Relations.Count} relationships");
+
+            // Step 4: Calculate complexity ordering
+            Log.Info("Step 4/4: Calculating complexity order...");
+            ReportProgress(kb, KnowledgeBaseStatus.CalculatingComplexity, 80, "Calculating complexity order...");
+            kb.Status = KnowledgeBaseStatus.CalculatingComplexity;
+            kb.ComplexityOrder = CalculateComplexityOrder(kb.Concepts, kb.Relations);
+            await storageService.SaveAsync(kb, ct);
+
+            // Mark as ready
+            kb.Status = KnowledgeBaseStatus.Ready;
+            kb.Progress = 100;
+            kb.UpdatedAt = DateTime.UtcNow;
+            kb.Version++;
+            await storageService.SaveAsync(kb, ct);
+
+            ReportProgress(kb, KnowledgeBaseStatus.Ready, 100,
+                $"KnowledgeBase ready with {kb.Concepts.Count} concepts and {kb.Relations.Count} relationships");
+
+            Log.Info($"Knowledge Base for '{resource.Title}' build completed: {kb.Concepts.Count} concepts, {kb.Relations.Count} relationships");
+
+            return kb;
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Warn($"Knowledge Base build cancelled for resource: '{resource.Title}'");
+            kb.Status = KnowledgeBaseStatus.Failed;
+            kb.ErrorMessage = "Build was cancelled";
+            try
+            {
+                await storageService.SaveAsync(kb, CancellationToken.None);
+            }
+            catch (Exception saveEx)
+            {
+                Log.Error($"Failed to save cancelled KB state: {saveEx.Message}", saveEx);
+            }
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Knowledge Base build failed for resource: '{resource.Title}' - {ex.Message}", ex);
+            kb.Status = KnowledgeBaseStatus.Failed;
+            kb.ErrorMessage = ex.Message;
+            try
+            {
+                await storageService.SaveAsync(kb, CancellationToken.None);
+            }
+            catch (Exception saveEx)
+            {
+                Log.Error($"Failed to save failed KB state: {saveEx.Message}", saveEx);
+            }
+
+            ReportProgress(kb, KnowledgeBaseStatus.Failed, kb.Progress, "Build failed", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Prepares content from a single resource for processing.
+    /// </summary>
+    public string PrepareResourceContent(CourseResource resource)
+    {
+        var sb = new StringBuilder();
+        
+        sb.AppendLine($"# {resource.Title}");
+        if (!string.IsNullOrEmpty(resource.Author))
+            sb.AppendLine($"Author: {resource.Author}");
+        if (!string.IsNullOrEmpty(resource.Year))
+            sb.AppendLine($"Year: {resource.Year}");
+        sb.AppendLine();
+        sb.AppendLine(resource.GetEffectiveContent());
+
+        return sb.ToString();
     }
 
     /// <summary>
@@ -684,7 +842,73 @@ public sealed class KnowledgeBaseService
 
     // Helper methods
 
+    /// <summary>
+    /// Call OpenAI API with automatic retry for rate limiting.
+    /// </summary>
     private async Task<T?> CallAiAsync<T>(string systemPrompt, string content, CancellationToken ct)
+    {
+        return await CallAiWithRetryAsync<T>(systemPrompt, content, ct, maxRetries: 5);
+    }
+
+    /// <summary>
+    /// Call OpenAI API with retry logic for rate limiting and transient errors.
+    /// </summary>
+    private async Task<T?> CallAiWithRetryAsync<T>(
+        string systemPrompt, 
+        string content, 
+        CancellationToken ct,
+        int maxRetries = 5)
+    {
+        var baseDelayMs = 2000; // Start with 2 seconds
+        Exception? lastException = null;
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                return await CallAiCoreAsync<T>(systemPrompt, content, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("429") || 
+                ex.Message.Contains("Rate") ||
+                ex.Message.Contains("overloaded") ||
+                ex.Message.Contains("502") ||
+                ex.Message.Contains("503"))
+            {
+                lastException = ex;
+                
+                if (attempt == maxRetries)
+                {
+                    Log.Error($"KnowledgeBaseService: API call failed after {maxRetries + 1} attempts");
+                    throw;
+                }
+                
+                // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+                var delayMs = baseDelayMs * (int)Math.Pow(2, attempt);
+                
+                // Try to extract wait time from error message
+                var waitMatch = System.Text.RegularExpressions.Regex.Match(ex.Message, @"try again in (\d+\.?\d*)s");
+                if (waitMatch.Success && double.TryParse(waitMatch.Groups[1].Value, 
+                    System.Globalization.NumberStyles.Float, 
+                    System.Globalization.CultureInfo.InvariantCulture, 
+                    out var waitSeconds))
+                {
+                    delayMs = (int)(waitSeconds * 1000) + 500; // Add 500ms buffer
+                }
+                
+                Log.Warn($"KnowledgeBaseService: Rate limited or server error, waiting {delayMs}ms before retry {attempt + 1}/{maxRetries}");
+                await Task.Delay(delayMs, ct);
+            }
+        }
+        
+        // Should never reach here, but compiler needs it
+        throw lastException ?? new InvalidOperationException("Unexpected retry loop exit");
+    }
+
+    /// <summary>
+    /// Core API call implementation (no retry logic).
+    /// </summary>
+    private async Task<T?> CallAiCoreAsync<T>(string systemPrompt, string content, CancellationToken ct)
     {
         var apiKey = await opt.GetApiKeyAsync();
         
@@ -900,11 +1124,28 @@ public sealed class KnowledgeBaseService
         if (string.IsNullOrWhiteSpace(content))
             return chunks;
 
+        // First try to split by paragraphs
         var paragraphs = content.Split(["\n\n", "\r\n\r\n"], StringSplitOptions.RemoveEmptyEntries);
 
         var currentChunk = new StringBuilder();
         foreach (var para in paragraphs)
         {
+            // If a single paragraph exceeds maxChunkSize, we need to split it further
+            if (para.Length > maxChunkSize)
+            {
+                // Flush current chunk first if not empty
+                if (currentChunk.Length > 0)
+                {
+                    chunks.Add(currentChunk.ToString());
+                    currentChunk.Clear();
+                }
+                
+                // Split the large paragraph by sentences or force-split
+                var subChunks = SplitLargeParagraph(para, maxChunkSize);
+                chunks.AddRange(subChunks);
+                continue;
+            }
+
             if (currentChunk.Length + para.Length > maxChunkSize && currentChunk.Length > 0)
             {
                 chunks.Add(currentChunk.ToString());
@@ -918,6 +1159,54 @@ public sealed class KnowledgeBaseService
         if (currentChunk.Length > 0)
             chunks.Add(currentChunk.ToString());
 
+        // Filter out tiny chunks that are just whitespace or too small to be useful
+        return chunks.Where(c => c.Trim().Length > 50).ToList();
+    }
+
+    /// <summary>
+    /// Split a large paragraph that exceeds maxChunkSize by sentences or force-splitting.
+    /// </summary>
+    private static List<string> SplitLargeParagraph(string paragraph, int maxChunkSize)
+    {
+        var chunks = new List<string>();
+        
+        // Try to split by sentences first
+        var sentences = System.Text.RegularExpressions.Regex.Split(paragraph, @"(?<=[.!?])\s+");
+        
+        var currentChunk = new StringBuilder();
+        foreach (var sentence in sentences)
+        {
+            // If a single sentence is too long, force-split it
+            if (sentence.Length > maxChunkSize)
+            {
+                if (currentChunk.Length > 0)
+                {
+                    chunks.Add(currentChunk.ToString());
+                    currentChunk.Clear();
+                }
+                
+                // Force split by character count
+                for (int i = 0; i < sentence.Length; i += maxChunkSize)
+                {
+                    var length = Math.Min(maxChunkSize, sentence.Length - i);
+                    chunks.Add(sentence.Substring(i, length));
+                }
+                continue;
+            }
+            
+            if (currentChunk.Length + sentence.Length > maxChunkSize && currentChunk.Length > 0)
+            {
+                chunks.Add(currentChunk.ToString());
+                currentChunk.Clear();
+            }
+            
+            currentChunk.Append(sentence);
+            currentChunk.Append(' ');
+        }
+        
+        if (currentChunk.Length > 0)
+            chunks.Add(currentChunk.ToString());
+        
         return chunks;
     }
 

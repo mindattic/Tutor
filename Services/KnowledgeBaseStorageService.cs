@@ -14,9 +14,6 @@ namespace Tutor.Services;
 /// </summary>
 public sealed class KnowledgeBaseStorageService
 {
-    private const string KnowledgeBasesDirectoryName = "KnowledgeBases";
-    private readonly string storagePath;
-
     // In-memory cache of loaded knowledge bases (keyed by KB ID)
     private readonly Dictionary<string, KnowledgeBase> cache = [];
 
@@ -25,11 +22,14 @@ public sealed class KnowledgeBaseStorageService
     /// </summary>
     public event Action<string>? OnKnowledgeBaseSaved;
 
+    /// <summary>
+    /// Gets the current storage path (uses DataStorageSettings).
+    /// </summary>
+    private string StoragePath => DataStorageSettings.GetKnowledgeBasesDirectory();
+
     public KnowledgeBaseStorageService()
     {
-        storagePath = Path.Combine(FileSystem.AppDataDirectory, KnowledgeBasesDirectoryName);
-        Directory.CreateDirectory(storagePath);
-        Log.Debug($"KnowledgeBaseStorageService initialized at: {storagePath}");
+        Log.Debug($"KnowledgeBaseStorageService initialized at: {StoragePath}");
     }
 
     /// <summary>
@@ -133,6 +133,7 @@ public sealed class KnowledgeBaseStorageService
         }
     }
 
+
     /// <summary>
     /// Gets all knowledge bases.
     /// </summary>
@@ -140,10 +141,10 @@ public sealed class KnowledgeBaseStorageService
     {
         var result = new List<KnowledgeBase>();
 
-        if (!Directory.Exists(storagePath))
+        if (!Directory.Exists(StoragePath))
             return result;
 
-        foreach (var file in Directory.GetFiles(storagePath, "*.json"))
+        foreach (var file in Directory.GetFiles(StoragePath, "*.json"))
         {
             try
             {
@@ -168,13 +169,76 @@ public sealed class KnowledgeBaseStorageService
     /// <summary>
     /// Finds knowledge bases that were built from specific resources.
     /// </summary>
+    [Obsolete("Use FindByResourceIdAsync instead for single resource lookups.")]
     public async Task<List<KnowledgeBase>> FindByResourceIdsAsync(
         List<string> resourceIds, 
         CancellationToken ct = default)
     {
         var all = await GetAllAsync(ct);
+#pragma warning disable CS0618
         return all.Where(kb => 
-            kb.ResourceIds.Any(r => resourceIds.Contains(r))).ToList();
+            kb.ResourceIds.Any(r => resourceIds.Contains(r)) ||
+            resourceIds.Contains(kb.ResourceId)).ToList();
+#pragma warning restore CS0618
+    }
+
+    /// <summary>
+    /// Finds the KnowledgeBase built from a specific resource.
+    /// Returns null if no KB exists for that resource.
+    /// </summary>
+    public async Task<KnowledgeBase?> FindByResourceIdAsync(
+        string resourceId,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(resourceId))
+            return null;
+
+        var all = await GetAllAsync(ct);
+        
+        // First try to find by new ResourceId property
+        var kb = all.FirstOrDefault(kb => kb.ResourceId == resourceId);
+        if (kb != null)
+            return kb;
+
+#pragma warning disable CS0618
+        // Fall back to legacy ResourceIds for backward compatibility
+        return all.FirstOrDefault(kb => kb.ResourceIds.Contains(resourceId));
+#pragma warning restore CS0618
+    }
+
+    /// <summary>
+    /// Gets KnowledgeBases for multiple resources.
+    /// Returns a dictionary mapping ResourceId to KnowledgeBase.
+    /// </summary>
+    public async Task<Dictionary<string, KnowledgeBase>> GetForResourcesAsync(
+        List<string> resourceIds,
+        CancellationToken ct = default)
+    {
+        var result = new Dictionary<string, KnowledgeBase>();
+        var all = await GetAllAsync(ct);
+
+        foreach (var kb in all)
+        {
+            // Check new ResourceId property
+            if (!string.IsNullOrEmpty(kb.ResourceId) && resourceIds.Contains(kb.ResourceId))
+            {
+                result[kb.ResourceId] = kb;
+                continue;
+            }
+
+#pragma warning disable CS0618
+            // Check legacy ResourceIds for backward compatibility
+            foreach (var resId in kb.ResourceIds)
+            {
+                if (resourceIds.Contains(resId) && !result.ContainsKey(resId))
+                {
+                    result[resId] = kb;
+                }
+            }
+#pragma warning restore CS0618
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -237,7 +301,7 @@ public sealed class KnowledgeBaseStorageService
             Status = kb.Status,
             ConceptCount = kb.TotalConcepts,
             RelationCount = kb.TotalRelations,
-            ResourceCount = kb.ResourceIds.Count,
+            ResourceId = kb.ResourceId,
             Version = kb.Version,
             UpdatedAt = kb.UpdatedAt
         }).ToList();
@@ -253,7 +317,7 @@ public sealed class KnowledgeBaseStorageService
 
     private string GetFilePath(string knowledgeBaseId)
     {
-        return Path.Combine(storagePath, $"{knowledgeBaseId}.json");
+        return Path.Combine(StoragePath, $"{knowledgeBaseId}.json");
     }
 }
 
@@ -267,7 +331,17 @@ public class KnowledgeBaseSummary
     public KnowledgeBaseStatus Status { get; set; }
     public int ConceptCount { get; set; }
     public int RelationCount { get; set; }
-    public int ResourceCount { get; set; }
+    
+    /// <summary>
+    /// ID of the source resource (new architecture - 1:1 relationship).
+    /// </summary>
+    public string ResourceId { get; set; } = "";
+    
+    /// <summary>
+    /// Name of the source resource for display purposes.
+    /// </summary>
+    public string? ResourceName { get; set; }
+    
     public int Version { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

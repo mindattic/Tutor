@@ -17,6 +17,7 @@ public sealed class CourseService
     private readonly FileResourceService fileResourceService;
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
+    private readonly KnowledgeBaseCollectionService? kbCollectionService;
 
     private List<CourseResource>? cachedResources;
     private List<Course>? cachedCourses;
@@ -28,7 +29,8 @@ public sealed class CourseService
         ContentFormatterService contentFormatterService,
         FileResourceService fileResourceService,
         LSHService lshService,
-        SimHashService simHashService)
+        SimHashService simHashService,
+        KnowledgeBaseCollectionService? kbCollectionService = null)
     {
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;
@@ -37,6 +39,7 @@ public sealed class CourseService
         this.fileResourceService = fileResourceService;
         this.lshService = lshService;
         this.simHashService = simHashService;
+        this.kbCollectionService = kbCollectionService;
         Log.Debug("CourseService initialized");
     }
 
@@ -278,6 +281,14 @@ public sealed class CourseService
         await SecureStorage.SetAsync(ResourcesKey, json);
     }
 
+    /// <summary>
+    /// Saves all resources to storage (used for batch updates/migrations).
+    /// </summary>
+    public async Task SaveAllResourcesAsync(List<CourseResource> resources)
+    {
+        await SaveResourcesAsync(resources);
+    }
+
     // Course management
     public async Task<List<Course>> GetAllCoursesAsync()
     {
@@ -399,6 +410,9 @@ public sealed class CourseService
             
             // Chunk and embed the resource for RAG
             await ChunkAndEmbedResourceAsync(resourceId, courseId);
+            
+            // Rebuild KnowledgeBaseCollection for the course
+            await RebuildCourseKnowledgeBaseCollectionAsync(course);
         }
     }
 
@@ -420,17 +434,36 @@ public sealed class CourseService
         if (textChunks.Count == 0)
             return;
 
-        // Generate embeddings for all chunks (batch API call)
-        var embeddings = await embeddingService.GetEmbeddingsAsync(textChunks, ct);
-        if (embeddings.Count != textChunks.Count)
+        // Filter out empty chunks (shouldn't happen but safeguard)
+        var validChunks = textChunks
+            .Select((text, index) => (text, index))
+            .Where(x => !string.IsNullOrWhiteSpace(x.text))
+            .ToList();
+
+        if (validChunks.Count == 0)
             return;
+
+        var textsToEmbed = validChunks.Select(x => x.text).ToList();
+
+        // Generate embeddings for all chunks (EmbeddingService handles batching automatically)
+        Log.Debug($"CourseService: Embedding {textsToEmbed.Count} chunks for resource '{resource.Title}'");
+        var embeddings = await embeddingService.GetEmbeddingsAsync(textsToEmbed, ct);
+        
+        if (embeddings.Count != textsToEmbed.Count)
+        {
+            Log.Error($"CourseService: Embedding count mismatch - expected {textsToEmbed.Count}, got {embeddings.Count}");
+            return;
+        }
+
+        Log.Debug($"CourseService: Successfully generated {embeddings.Count} embeddings");
 
         // Create ContentChunk objects with embeddings and signatures
         var chunks = new List<ContentChunk>();
-        for (int i = 0; i < textChunks.Count; i++)
+        for (int i = 0; i < validChunks.Count; i++)
         {
             var embedding = embeddings[i];
-            var content = textChunks[i];
+            var content = validChunks[i].text;
+            var originalIndex = validChunks[i].index;
 
             // Compute semantic signature from embedding using LSH
             var semanticSignature = lshService.GetSignature(embedding);
@@ -442,7 +475,7 @@ public sealed class CourseService
             {
                 ResourceId = resourceId,
                 CurriculumId = courseId, // Note: ContentChunk still uses CurriculumId internally for storage
-                ChunkIndex = i,
+                ChunkIndex = originalIndex,
                 Content = content,
                 Embedding = embedding,
                 SemanticSignature = semanticSignature,
@@ -486,6 +519,9 @@ public sealed class CourseService
             
             // Remove chunks for this resource
             await vectorStoreService.RemoveChunksForResourceAsync(resourceId);
+            
+            // Rebuild KnowledgeBaseCollection for the course
+            await RebuildCourseKnowledgeBaseCollectionAsync(course);
         }
     }
 
@@ -497,6 +533,55 @@ public sealed class CourseService
 
         var allResources = await GetAllResourcesAsync();
         return allResources.Where(r => course.ResourceIds.Contains(r.Id)).ToList();
+    }
+
+    /// <summary>
+    /// Rebuilds the KnowledgeBaseCollection for a course from its resources' KnowledgeBases.
+    /// This should be called whenever resources are added/removed from a course.
+    /// </summary>
+    public async Task RebuildCourseKnowledgeBaseCollectionAsync(Course course, CancellationToken ct = default)
+    {
+        if (kbCollectionService == null)
+        {
+            Log.Warn("CourseService: KnowledgeBaseCollectionService not available, skipping KB collection rebuild");
+            return;
+        }
+
+        var resources = await GetCourseResourcesAsync(course.Id);
+        
+        // Rebuild the collection from resources that have KnowledgeBases
+        var collection = await kbCollectionService.RebuildForCourseAsync(course, resources, ct);
+        
+        // Update course with the collection ID
+        if (course.KnowledgeBaseCollectionId != collection.Id)
+        {
+            course.KnowledgeBaseCollectionId = collection.Id;
+            var courses = await GetAllCoursesAsync();
+            var existingCourse = courses.FirstOrDefault(c => c.Id == course.Id);
+            if (existingCourse != null)
+            {
+                existingCourse.KnowledgeBaseCollectionId = collection.Id;
+                await SaveCoursesAsync(courses);
+            }
+        }
+        
+        Log.Info($"CourseService: Rebuilt KB collection for '{course.Name}' with {collection.KnowledgeBaseIds.Count} KBs");
+    }
+
+    /// <summary>
+    /// Gets the LoadedKnowledgeBaseCollection for a course (all KBs loaded in memory).
+    /// Returns null if no collection exists or if KnowledgeBaseCollectionService is not available.
+    /// </summary>
+    public async Task<LoadedKnowledgeBaseCollection?> GetCourseKnowledgeBaseCollectionAsync(string courseId, CancellationToken ct = default)
+    {
+        if (kbCollectionService == null)
+            return null;
+
+        var course = await GetCourseAsync(courseId);
+        if (course == null || string.IsNullOrEmpty(course.KnowledgeBaseCollectionId))
+            return null;
+
+        return await kbCollectionService.LoadWithKnowledgeBasesAsync(course.KnowledgeBaseCollectionId, ct);
     }
 
     // Active course management
@@ -751,6 +836,71 @@ public sealed class CourseService
         }
         sb.AppendLine();
 
+        // Include concepts from the KnowledgeBaseCollection if available
+        var kbCollection = await GetCourseKnowledgeBaseCollectionAsync(course.Id, ct);
+        if (kbCollection != null && kbCollection.TotalConcepts > 0)
+        {
+            sb.AppendLine("=== KEY CONCEPTS FROM KNOWLEDGE BASES ===");
+            sb.AppendLine($"Total concepts across all resources: {kbCollection.TotalConcepts}");
+            sb.AppendLine();
+            
+            // Group concepts by their source KB and list the most important ones
+            foreach (var kb in kbCollection.KnowledgeBases)
+            {
+                var resource = resources.FirstOrDefault(r => r.KnowledgeBaseId == kb.Id);
+                var sourceName = resource?.Title ?? kb.Name;
+                
+                sb.AppendLine($"--- Concepts from: {sourceName} ({kb.Concepts.Count} concepts) ---");
+                
+                // Get concepts ordered by complexity (foundational first)
+                var orderedConcepts = kb.ComplexityOrder
+                    .OrderBy(c => c.Level)
+                    .ThenBy(c => c.PrerequisiteCount)
+                    .Take(15)  // Limit to top 15 per resource
+                    .Select(c => kb.GetConcept(c.ConceptId))
+                    .Where(c => c != null)
+                    .ToList();
+                
+                if (orderedConcepts.Count > 0)
+                {
+                    foreach (var concept in orderedConcepts)
+                    {
+                        sb.AppendLine($"  - {concept!.Title}: {concept.Summary}");
+                    }
+                }
+                else
+                {
+                    // Fallback: just list first 10 concepts
+                    foreach (var concept in kb.Concepts.Take(10))
+                    {
+                        sb.AppendLine($"  - {concept.Title}: {concept.Summary}");
+                    }
+                }
+                sb.AppendLine();
+            }
+            
+            // Show cross-resource relationships if any exist
+            var allRelations = kbCollection.GetAllRelations().ToList();
+            if (allRelations.Count > 0)
+            {
+                sb.AppendLine("=== KEY CONCEPT RELATIONSHIPS ===");
+                var prereqs = allRelations
+                    .Where(r => r.RelationType == ConceptRelationType.Prerequisite)
+                    .Take(10)
+                    .ToList();
+                
+                if (prereqs.Count > 0)
+                {
+                    sb.AppendLine("Prerequisites (learn these first):");
+                    foreach (var rel in prereqs)
+                    {
+                        sb.AppendLine($"  - {rel.SourceConceptId} -> {rel.TargetConceptId}");
+                    }
+                }
+                sb.AppendLine();
+            }
+        }
+
         // For each resource, get representative chunks to capture key topics
         sb.AppendLine("=== KEY CONTENT FROM EACH RESOURCE ===");
         foreach (var resource in resources)
@@ -798,7 +948,58 @@ public sealed class CourseService
         sb.AppendLine("IMPORTANT: Create a curriculum that synthesizes knowledge ACROSS all these resources.");
         sb.AppendLine("Topics should integrate information from multiple resources where relevant.");
         sb.AppendLine("Consider common themes, complementary information, and logical learning progression.");
+        sb.AppendLine("Use the key concepts and relationships to structure the learning path.");
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Gets all resources for a course along with their KnowledgeBase build status.
+    /// Useful for displaying resource status in the UI.
+    /// </summary>
+    public async Task<List<(CourseResource Resource, bool HasKnowledgeBase)>> GetCourseResourcesWithKbStatusAsync(string courseId)
+    {
+        var resources = await GetCourseResourcesAsync(courseId);
+        return resources.Select(r => (r, r.HasKnowledgeBase)).ToList();
+    }
+
+    /// <summary>
+    /// Gets the count of resources that have KnowledgeBases built.
+    /// </summary>
+    public async Task<(int Total, int WithKb)> GetResourceKbCountsAsync(string courseId)
+    {
+        var resources = await GetCourseResourcesAsync(courseId);
+        var withKb = resources.Count(r => r.HasKnowledgeBase);
+        return (resources.Count, withKb);
+    }
+
+    /// <summary>
+    /// Gets KnowledgeBase IDs for all resources in a course that have them built.
+    /// Used to build or update the course's KnowledgeBaseCollection.
+    /// </summary>
+    public async Task<List<string>> GetResourceKnowledgeBaseIdsAsync(string courseId)
+    {
+        var resources = await GetCourseResourcesAsync(courseId);
+        return resources
+            .Where(r => r.HasKnowledgeBase && !string.IsNullOrEmpty(r.KnowledgeBaseId))
+            .Select(r => r.KnowledgeBaseId!)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Updates the KnowledgeBaseCollectionId for a course.
+    /// Called after building or updating the course's collection.
+    /// </summary>
+    public async Task UpdateCourseKnowledgeBaseCollectionAsync(string courseId, string collectionId)
+    {
+        var course = await GetCourseAsync(courseId);
+        if (course == null)
+            return;
+
+        course.KnowledgeBaseCollectionId = collectionId;
+        course.UpdatedAt = DateTime.UtcNow;
+        await SaveCourseAsync(course);
+        
+        Log.Info($"CourseService: Updated course '{course.Name}' with KB collection: {collectionId}");
     }
 }

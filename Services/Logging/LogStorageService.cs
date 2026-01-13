@@ -7,16 +7,17 @@ namespace Tutor.Services.Logging;
 /// </summary>
 public sealed class LogStorageService
 {
-    private readonly string _logFilePath;
+    private const string LogFileName = "app-logs.json";
     private readonly object _saveLock = new();
     private bool _isInitialized;
 
+    /// <summary>
+    /// Gets the current log file path (uses DataStorageSettings).
+    /// </summary>
+    private string LogFilePath => Path.Combine(DataStorageSettings.GetLogsDirectory(), LogFileName);
+
     public LogStorageService()
     {
-        var appDataPath = FileSystem.AppDataDirectory;
-        var logsDir = Path.Combine(appDataPath, "Logs");
-        Directory.CreateDirectory(logsDir);
-        _logFilePath = Path.Combine(logsDir, "app-logs.json");
     }
 
     /// <summary>
@@ -58,9 +59,9 @@ public sealed class LogStorageService
     {
         try
         {
-            if (!File.Exists(_logFilePath)) return;
+            if (!File.Exists(LogFilePath)) return;
 
-            var json = File.ReadAllText(_logFilePath);
+            var json = File.ReadAllText(LogFilePath);
             var dtos = JsonSerializer.Deserialize<List<LogEntryDto>>(json, JsonOptions);
 
             if (dtos != null && dtos.Count > 0)
@@ -112,7 +113,7 @@ public sealed class LogStorageService
             {
                 lock (_saveLock)
                 {
-                    File.WriteAllText(_logFilePath, json);
+                    File.WriteAllText(LogFilePath, json);
                 }
             });
         }
@@ -146,7 +147,7 @@ public sealed class LogStorageService
                 }).ToList();
 
                 var json = JsonSerializer.Serialize(dtos, JsonOptions);
-                File.WriteAllText(_logFilePath, json);
+                File.WriteAllText(LogFilePath, json);
             }
             catch (Exception ex)
             {
@@ -165,9 +166,9 @@ public sealed class LogStorageService
         {
             try
             {
-                if (File.Exists(_logFilePath))
+                if (File.Exists(LogFilePath))
                 {
-                    File.Delete(_logFilePath);
+                    File.Delete(LogFilePath);
                 }
             }
             catch (Exception ex)

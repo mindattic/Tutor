@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 using Tutor.Services;
 using Tutor.Services.Logging;
+using Tutor.Services.Queue;
 
 namespace Tutor
 {
@@ -105,6 +106,9 @@ namespace Tutor
             // Knowledge base storage service (persistence for KnowledgeBases)
             builder.Services.AddSingleton<KnowledgeBaseStorageService>();
 
+            // Knowledge base collection service (manages collections for courses)
+            builder.Services.AddSingleton<KnowledgeBaseCollectionService>();
+
             // Course structure storage service (persistence for CourseStructures)
             builder.Services.AddSingleton<CourseStructureStorageService>();
 
@@ -128,6 +132,12 @@ namespace Tutor
 
             // Logging storage service (persists logs to file)
             builder.Services.AddSingleton<LogStorageService>();
+
+            // Background queue services
+            builder.Services.AddSingleton<BackgroundQueueStorageService>();
+            builder.Services.AddSingleton<ResourceUploadTaskHandler>();
+            builder.Services.AddSingleton<ResourceFormatTaskHandler>();
+            builder.Services.AddSingleton<KnowledgeBaseBuildTaskHandler>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

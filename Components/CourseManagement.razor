@@ -78,6 +78,7 @@
                     <span><strong>@activeCourse.Name</strong> is active. Chat will only use knowledge from the @activeCourse.ResourceIds.Count selected resource(s).</span>
                 </div>
                 
+                
                 @* Knowledge Base Section *@
                 <div class="kb-section">
                     <div class="kb-status-row">
@@ -92,26 +93,33 @@
                                     <div class="progress-bar" style="width: @(kbGenerationProgress)%"></div>
                                 </div>
                             }
-                            else if (activeCourse.HasKnowledgeBase)
+                            else if (resourcesWithKb > 0)
                             {
-                                <span class="kb-status @(kbNeedsRegeneration ? "needs-update" : "ready")">
-                                    @if (kbNeedsRegeneration)
+                                <span class="kb-status @(resourcesWithKb < totalResourcesInCourse ? "needs-update" : "ready")">
+                                    @if (resourcesWithKb < totalResourcesInCourse)
                                     {
                                         <span class="bi bi-arrow-clockwise"></span>
-                                        <span>Knowledge Base needs update (@knowledgeBaseConceptCount concepts)</span>
+                                        <span>@resourcesWithKb/@totalResourcesInCourse resources have Knowledge Bases (@knowledgeBaseConceptCount concepts)</span>
                                     }
                                     else
                                     {
                                         <span class="bi bi-check-circle-fill"></span>
-                                        <span>Knowledge Base Ready (@knowledgeBaseConceptCount concepts)</span>
+                                        <span>All resources ready (@knowledgeBaseConceptCount concepts from @resourcesWithKb sources)</span>
                                     }
+                                </span>
+                            }
+                            else if (totalResourcesInCourse > 0)
+                            {
+                                <span class="kb-status not-built">
+                                    <span class="bi bi-exclamation-circle"></span>
+                                    <span>No Knowledge Bases - Build them to enable concept exploration</span>
                                 </span>
                             }
                             else
                             {
                                 <span class="kb-status not-built">
-                                    <span class="bi bi-exclamation-circle"></span>
-                                    <span>No Knowledge Base - Generate one to enable concept exploration</span>
+                                    <span class="bi bi-info-circle"></span>
+                                    <span>Add resources to build Knowledge Bases</span>
                                 </span>
                             }
                         </div>
@@ -125,16 +133,9 @@
                             }
                             else
                             {
-                                <button class="settings-btn @(kbNeedsRegeneration ? "warning" : "primary") small" 
-                                        @onclick="GenerateKnowledgeBase" 
-                                        disabled="@(activeCourse.ResourceIds.Count == 0)"
-                                        title="@(activeCourse.HasKnowledgeBase ? "Regenerate Knowledge Base" : "Generate Knowledge Base")">
-                                    <span class="bi bi-lightbulb"></span>
-                                    @(activeCourse.HasKnowledgeBase ? "Regenerate" : "Generate") Knowledge Base
-                                </button>
-                                @if (activeCourse.HasKnowledgeBase)
+                                @if (resourcesWithKb > 0)
                                 {
-                                    <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Explore Knowledge Base">
+                                    <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Explore Knowledge Bases">
                                         <span class="bi bi-diagram-3"></span>
                                         Explore
                                     </button>
@@ -192,53 +193,175 @@
                         <p class="library-hint">Select a course above to manage which resources are included.</p>
                     }
                     
+                    
                     <div class="resource-list">
                         @foreach (var item in resources)
                         {
                             var isInCourse = !string.IsNullOrEmpty(selectedCourseId) && 
                                 courses.FirstOrDefault(c => c.Id == selectedCourseId)?.ResourceIds.Contains(item.Id) == true;
+                            var isExpanded = IsResourceExpanded(item.Id);
+                            var kbDetails = GetResourceKbDetails(item.Id);
                             
-                            <div class="resource-item @(isInCourse ? "in-curriculum" : "")">
-                                @if (!string.IsNullOrEmpty(selectedCourseId))
+                            <div class="resource-item @(isInCourse ? "in-curriculum" : "") @(isExpanded ? "expanded" : "")">
+                                <div class="resource-item-header">
+                                    @if (!string.IsNullOrEmpty(selectedCourseId))
+                                    {
+                                        <div class="resource-checkbox">
+                                            <input type="checkbox" 
+                                                   checked="@isInCourse"
+                                                   @onchange="@(() => ToggleResourceInCourse(item.Id))" />
+                                        </div>
+                                    }
+                                    <div class="resource-info" @onclick="@(() => ToggleResourceExpanded(item.Id))">
+                                        <div class="resource-title">
+                                            <span class="expand-icon bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></span>
+                                            @item.Title
+                                            @if (isInCourse)
+                                            {
+                                                <span class="in-curriculum-badge">In Course</span>
+                                            }
+                                        </div>
+                                        <div class="resource-meta">
+                                            @if (!string.IsNullOrEmpty(item.Author))
+                                            {
+                                                <span>@item.Author</span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Year))
+                                            {
+                                                <span>(@item.Year)</span>
+                                            }
+                                            <span class="resource-type">@item.Type</span>
+                                            @* Status indicators *@
+                                            @if (!string.IsNullOrEmpty(item.FormattedContent))
+                                            {
+                                                <span class="status-badge formatted" title="Content has been formatted">
+                                                    <span class="bi bi-check-circle-fill"></span> Formatted
+                                                </span>
+                                            }
+                                            @if (item.HasKnowledgeBase || (kbDetails?.ConceptCount > 0))
+                                            {
+                                                <span class="status-badge has-kb" title="Has Knowledge Base">
+                                                    <span class="bi bi-lightbulb-fill"></span> @(kbDetails?.ConceptCount ?? 0) concepts
+                                                </span>
+                                            }
+                                            else if (!string.IsNullOrEmpty(item.KnowledgeBaseId) && item.KnowledgeBaseStatus != KnowledgeBaseStatus.Ready)
+                                            {
+                                                <span class="status-badge kb-pending" title="Knowledge Base building">
+                                                    <span class="bi bi-hourglass-split"></span> Building...
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="resource-actions">
+                                        <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
+                                            <span class="icon-edit"></span>
+                                        </button>
+                                        <button class="icon-btn danger" title="Delete" @onclick="@(() => ConfirmDeleteResource(item))">
+                                            <span class="icon-delete"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                @* Expandable details panel *@
+                                @if (isExpanded)
                                 {
-                                    <div class="resource-checkbox">
-                                        <input type="checkbox" 
-                                               checked="@isInCourse"
-                                               @onchange="@(() => ToggleResourceInCourse(item.Id))" />
+                                    <div class="resource-details-panel">
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <div class="resource-description">@item.Description</div>
+                                        }
+                                        
+                                        <div class="details-grid">
+                                            @* Content Section *@
+                                            <div class="details-section">
+                                                <h5><span class="bi bi-file-text"></span> Content</h5>
+                                                <div class="details-row">
+                                                    <span class="details-label">Original:</span>
+                                                    <span class="details-value">@((item.Content?.Length ?? 0).ToString("N0")) characters</span>
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(item.FormattedContent))
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Formatted:</span>
+                                                        <span class="details-value success">
+                                                            <span class="bi bi-check-circle-fill"></span>
+                                                            @(item.FormattedContent.Length.ToString("N0")) characters
+                                                        </span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Formatted:</span>
+                                                        <span class="details-value muted">
+                                                            <span class="bi bi-x-circle"></span> Not formatted
+                                                        </span>
+                                                    </div>
+                                                }
+                                            </div>
+                                            
+                                            @* Knowledge Base Section *@
+                                            <div class="details-section">
+                                                <h5><span class="bi bi-diagram-3"></span> Knowledge Base</h5>
+                                                @if (kbDetails != null && kbDetails.ConceptCount > 0)
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Status:</span>
+                                                        <span class="details-value success">
+                                                            <span class="bi bi-check-circle-fill"></span> Ready
+                                                        </span>
+                                                    </div>
+                                                    <div class="details-row">
+                                                        <span class="details-label">Concepts:</span>
+                                                        <span class="details-value">@kbDetails.ConceptCount.ToString("N0")</span>
+                                                    </div>
+                                                    <div class="details-row">
+                                                        <span class="details-label">Relations:</span>
+                                                        <span class="details-value">@kbDetails.RelationCount.ToString("N0")</span>
+                                                    </div>
+                                                    @if (kbDetails.KnowledgeBaseUpdatedAt.HasValue)
+                                                    {
+                                                        <div class="details-row">
+                                                            <span class="details-label">Built:</span>
+                                                            <span class="details-value">@kbDetails.KnowledgeBaseUpdatedAt.Value.ToString("MMM d, yyyy")</span>
+                                                        </div>
+                                                    }
+                                                }
+                                                else if (!string.IsNullOrEmpty(item.KnowledgeBaseId))
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Status:</span>
+                                                        <span class="details-value warning">
+                                                            <span class="bi bi-hourglass-split"></span> @item.KnowledgeBaseStatus
+                                                        </span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Status:</span>
+                                                        <span class="details-value muted">
+                                                            <span class="bi bi-x-circle"></span> Not built
+                                                        </span>
+                                                    </div>
+                                                    <div class="details-row hint">
+                                                        <span class="bi bi-info-circle"></span>
+                                                        Knowledge Base will be built when resource is processed.
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        
+                                        @* Course Association Info *@
+                                        @if (kbDetails != null && kbDetails.ConceptCount > 0)
+                                        {
+                                            <div class="course-association-hint">
+                                                <span class="bi bi-info-circle"></span>
+                                                This resource's Knowledge Base can be combined with others when added to a Course.
+                                            </div>
+                                        }
                                     </div>
                                 }
-                                <div class="resource-info">
-                                    <div class="resource-title">
-                                        @item.Title
-                                        @if (isInCourse)
-                                        {
-                                            <span class="in-curriculum-badge">In Course</span>
-                                        }
-                                    </div>
-                                    <div class="resource-meta">
-                                        @if (!string.IsNullOrEmpty(item.Author))
-                                        {
-                                            <span>@item.Author</span>
-                                        }
-                                        @if (!string.IsNullOrEmpty(item.Year))
-                                        {
-                                            <span>(@item.Year)</span>
-                                        }
-                                        <span class="resource-type">@item.Type</span>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(item.Description))
-                                    {
-                                        <div class="resource-description">@item.Description</div>
-                                    }
-                                </div>
-                                <div class="resource-actions">
-                                    <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
-                                        <span class="icon-edit"></span>
-                                    </button>
-                                    <button class="icon-btn danger" title="Delete" @onclick="@(() => ConfirmDeleteResource(item))">
-                                        <span class="icon-delete"></span>
-                                    </button>
-                                </div>
                             </div>
                         }
                     </div>
@@ -303,13 +426,27 @@
 
                 <div class="form-group">
                     <label>Content *</label>
-                    <textarea class="settings-input content-textarea" 
-                              @bind="resourceContent" 
-                              placeholder="Paste your educational content here..."
-                              rows="10"></textarea>
-                    @if (!string.IsNullOrEmpty(resourceContent))
+                    @if (contentSource == "file" && !string.IsNullOrEmpty(fullFileContent))
                     {
-                        <div class="content-stats">@resourceContent.Length.ToString("N0") characters</div>
+                        <div class="content-preview">
+                            <div class="preview-text">@GetContentPreview()</div>
+                            @if (fullFileContent.Length > 500)
+                            {
+                                <div class="preview-truncated">... (truncated)</div>
+                            }
+                        </div>
+                        <div class="content-stats">@fullFileContent.Length.ToString("N0") characters total</div>
+                    }
+                    else
+                    {
+                        <textarea class="settings-input content-textarea" 
+                                  @bind="resourceContent" 
+                                  placeholder="Paste your educational content here..."
+                                  rows="10"></textarea>
+                        @if (!string.IsNullOrEmpty(resourceContent))
+                        {
+                            <div class="content-stats">@resourceContent.Length.ToString("N0") characters</div>
+                        }
                     }
                 </div>
 
@@ -451,7 +588,7 @@
 }
 
 @* Knowledge Base Explorer Modal *@
-@if (showKnowledgeBaseExplorer && !string.IsNullOrEmpty(explorerKnowledgeBaseId))
+@if (showKnowledgeBaseExplorer && !string.IsNullOrEmpty(explorerCourseId))
 {
     <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
         <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
@@ -460,7 +597,7 @@
                 <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body kb-explorer-body">
-                <KnowledgeBaseGraph KnowledgeBaseId="@explorerKnowledgeBaseId" />
+                <KnowledgeBaseGraph CourseId="@explorerCourseId" />
             </div>
         </div>
     </div>
@@ -480,6 +617,8 @@ private int kbGenerationProgress;
 private string kbGenerationStatus = "";
 private string kbErrorMessage = "";
 private int knowledgeBaseConceptCount;
+private int resourcesWithKb;
+private int totalResourcesInCourse;
 private CancellationTokenSource? kbCancellationTokenSource;
 
 // Add/Edit form
@@ -489,6 +628,7 @@ private string resourceAuthor = "";
 private string resourceYear = "";
 private string resourceDescription = "";
 private string resourceContent = "";
+private string fullFileContent = ""; // Full content when uploaded via file
     private string contentSource = "text";
     private string uploadedFileName = "";
     private ResourceType uploadedFileType = ResourceType.Text;
@@ -505,7 +645,11 @@ private string resourceContent = "";
 
     // Knowledge Base Explorer modal
     private bool showKnowledgeBaseExplorer;
-    private string? explorerKnowledgeBaseId;
+    private string? explorerCourseId;
+
+    // Expandable resource details
+    private HashSet<string> expandedResources = new();
+    private Dictionary<string, ResourceKbDetails> resourceKbDetailsCache = new();
 
     // Delete confirmation modal
     private bool showDeleteConfirmModal;
@@ -581,15 +725,46 @@ private string resourceContent = "";
     private async Task LoadKnowledgeBaseInfo()
     {
         knowledgeBaseConceptCount = 0;
+        resourcesWithKb = 0;
+        totalResourcesInCourse = 0;
+        
         if (!string.IsNullOrEmpty(selectedCourseId))
         {
             var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-            if (course?.HasKnowledgeBase == true)
+            if (course != null)
             {
-                var kb = await KnowledgeBaseStorageService.LoadAsync(course.KnowledgeBaseId!);
-                if (kb != null)
+                totalResourcesInCourse = course.ResourceIds.Count;
+                bool needsSave = false;
+                
+                // Count concepts across all resource KnowledgeBases
+                foreach (var resourceId in course.ResourceIds)
                 {
-                    knowledgeBaseConceptCount = kb.Concepts.Count;
+                    var resource = resources.FirstOrDefault(r => r.Id == resourceId);
+                    if (resource == null) continue;
+                    
+                    // Check if resource has a KB ID set
+                    if (!string.IsNullOrEmpty(resource.KnowledgeBaseId))
+                    {
+                        var kb = await KnowledgeBaseStorageService.LoadAsync(resource.KnowledgeBaseId);
+                        if (kb != null && kb.Status == KnowledgeBaseStatus.Ready)
+                        {
+                            knowledgeBaseConceptCount += kb.Concepts.Count;
+                            resourcesWithKb++;
+                            
+                            // Fix up stale resource status if needed (migration for older data)
+                            if (resource.KnowledgeBaseStatus != KnowledgeBaseStatus.Ready)
+                            {
+                                resource.KnowledgeBaseStatus = KnowledgeBaseStatus.Ready;
+                                needsSave = true;
+                            }
+                        }
+                    }
+                }
+                
+                // Save fixed resources if any were updated
+                if (needsSave)
+                {
+                    await CourseService.SaveAllResourcesAsync(resources);
                 }
             }
         }
@@ -657,6 +832,7 @@ private string resourceContent = "";
         resourceYear = "";
         resourceDescription = "";
         resourceContent = "";
+        fullFileContent = "";
         uploadedFileName = "";
         uploadedFileType = ResourceType.Text;
         autoFormatContent = true;
@@ -748,18 +924,18 @@ private string resourceContent = "";
                         uploadedFileType = ResourceType.Txt;
                         using (var reader = new StreamReader(stream))
                         {
-                            resourceContent = await reader.ReadToEndAsync();
+                            fullFileContent = await reader.ReadToEndAsync();
                         }
                         break;
 
                     case ".docx":
                         uploadedFileType = ResourceType.Docx;
-                        resourceContent = await ReadDocxAsync(stream);
+                        fullFileContent = await ReadDocxAsync(stream);
                         break;
 
                     case ".pdf":
                         uploadedFileType = ResourceType.Pdf;
-                        resourceContent = await ReadPdfAsync(stream);
+                        fullFileContent = await ReadPdfAsync(stream);
                         break;
 
                     default:
@@ -767,18 +943,31 @@ private string resourceContent = "";
                         return;
                 }
 
+                // Also set resourceContent for saving
+                resourceContent = fullFileContent;
+
                 if (string.IsNullOrEmpty(resourceTitle))
                 {
                     resourceTitle = Path.GetFileNameWithoutExtension(result.FileName);
                 }
 
-                statusMessage = $"File loaded: {resourceContent.Length} characters";
+                statusMessage = $"File loaded: {fullFileContent.Length} characters";
             }
         }
         catch (Exception ex)
         {
             statusMessage = "Error reading file: " + ex.Message;
         }
+    }
+
+    private string GetContentPreview()
+    {
+        if (string.IsNullOrEmpty(fullFileContent))
+            return "";
+        
+        return fullFileContent.Length <= 500 
+            ? fullFileContent 
+            : fullFileContent[..500];
     }
 
     private async Task<string> ReadDocxAsync(Stream stream)
@@ -836,9 +1025,9 @@ private string resourceContent = "";
     private void OpenKnowledgeBaseExplorer()
     {
         var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-        if (course?.HasKnowledgeBase == true)
+        if (course != null && HasAnyKnowledgeBases(course))
         {
-            explorerKnowledgeBaseId = course.KnowledgeBaseId;
+            explorerCourseId = course.Id;
             showKnowledgeBaseExplorer = true;
         }
     }
@@ -846,7 +1035,20 @@ private string resourceContent = "";
     private void CloseKnowledgeBaseExplorer()
     {
         showKnowledgeBaseExplorer = false;
-        explorerKnowledgeBaseId = null;
+        explorerCourseId = null;
+    }
+
+    /// <summary>
+    /// Checks if any resources in the course have built KnowledgeBases.
+    /// </summary>
+    private bool HasAnyKnowledgeBases(Course course)
+    {
+        if (course == null) return false;
+        
+        // Check if any resource in the course has a KB
+        return resources
+            .Where(r => course.ResourceIds.Contains(r.Id))
+            .Any(r => r.HasKnowledgeBase);
     }
 
     private void ConfirmDeleteCourse()
@@ -919,82 +1121,82 @@ private string resourceContent = "";
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task GenerateKnowledgeBase()
-    {
-        if (string.IsNullOrEmpty(selectedCourseId))
-        {
-            Log.Warn("GenerateKnowledgeBase called with no course selected");
-            return;
-        }
-
-        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-        if (course == null || course.ResourceIds.Count == 0)
-        {
-            kbErrorMessage = "Add at least one resource to the course before generating a Knowledge Base.";
-            Log.Warn($"Cannot generate KB for course '{course?.Name ?? selectedCourseId}': No resources");
-            return;
-        }
-
-        // Get resources for this course
-        var courseResources = resources.Where(r => course.ResourceIds.Contains(r.Id)).ToList();
-        if (courseResources.Count == 0)
-        {
-            kbErrorMessage = "No resources found for this course.";
-            Log.Warn($"Cannot generate KB for course '{course.Name}': Resources not found in library");
-            return;
-        }
-
-        Log.Info($"Starting Knowledge Base generation for course '{course.Name}' with {courseResources.Count} resource(s)");
-        
-        isGeneratingKnowledgeBase = true;
-        kbGenerationProgress = 0;
-        kbGenerationStatus = "Starting Knowledge Base generation...";
-        kbErrorMessage = "";
-        kbCancellationTokenSource = new CancellationTokenSource();
-
-        try
-        {
-            var kb = await KnowledgeBaseService.BuildFromResourcesAsync(
-                $"{course.Name} Knowledge Base",
-                courseResources,
-                kbCancellationTokenSource.Token);
-
-
-            // Link the Knowledge Base to the course
-            course.KnowledgeBaseId = kb.Id;
-            course.UpdatedAt = DateTime.UtcNow;
-            await CourseService.SaveCourseAsync(course);
-
-            knowledgeBaseConceptCount = kb.Concepts.Count;
-            kbGenerationStatus = $"Knowledge Base generated with {kb.Concepts.Count} concepts!";
-            kbNeedsRegeneration = false; // Clear the flag after successful generation
-            
-            Log.Info($"Knowledge Base generation completed for '{course.Name}': {kb.Concepts.Count} concepts, {kb.Relations.Count} relationships");
-            
-            await LoadData();
-        }
-        catch (OperationCanceledException)
-        {
-            kbGenerationStatus = "Knowledge Base generation cancelled.";
-            Log.Warn($"Knowledge Base generation cancelled for course '{course.Name}'");
-        }
-        catch (Exception ex)
-        {
-            kbErrorMessage = $"Failed to generate Knowledge Base: {ex.Message}";
-            Log.Error($"Knowledge Base generation failed for course '{course.Name}': {ex.Message}", ex);
-        }
-        finally
-        {
-            isGeneratingKnowledgeBase = false;
-            kbCancellationTokenSource?.Dispose();
-            kbCancellationTokenSource = null;
-            StateHasChanged();
-        }
-    }
-
     private void CancelKnowledgeBaseGeneration()
     {
         Log.Info("User cancelled Knowledge Base generation");
         kbCancellationTokenSource?.Cancel();
+    }
+
+    // Expandable resource details
+    private async Task ToggleResourceExpanded(string resourceId)
+    {
+        if (expandedResources.Contains(resourceId))
+        {
+            expandedResources.Remove(resourceId);
+        }
+        else
+        {
+            expandedResources.Add(resourceId);
+            // Load KB details if not cached
+            if (!resourceKbDetailsCache.ContainsKey(resourceId))
+            {
+                await LoadResourceKbDetails(resourceId);
+            }
+        }
+    }
+
+    private async Task LoadResourceKbDetails(string resourceId)
+    {
+        var resource = resources.FirstOrDefault(r => r.Id == resourceId);
+        if (resource == null) return;
+
+        var details = new ResourceKbDetails
+        {
+            ContentLength = resource.Content?.Length ?? 0,
+            FormattedContentLength = resource.FormattedContent?.Length ?? 0,
+            HasFormattedContent = !string.IsNullOrEmpty(resource.FormattedContent),
+            KnowledgeBaseStatus = resource.KnowledgeBaseStatus
+        };
+
+        // Load KB if exists
+        if (!string.IsNullOrEmpty(resource.KnowledgeBaseId))
+        {
+            var kb = await KnowledgeBaseStorageService.LoadAsync(resource.KnowledgeBaseId);
+            if (kb != null)
+            {
+                details.KnowledgeBaseId = kb.Id;
+                details.ConceptCount = kb.Concepts.Count;
+                details.RelationCount = kb.Relations.Count;
+                details.KnowledgeBaseName = kb.Name;
+                details.KnowledgeBaseStatus = kb.Status;
+                details.KnowledgeBaseCreatedAt = kb.CreatedAt;
+                details.KnowledgeBaseUpdatedAt = kb.UpdatedAt;
+            }
+        }
+
+        resourceKbDetailsCache[resourceId] = details;
+    }
+
+    private bool IsResourceExpanded(string resourceId) => expandedResources.Contains(resourceId);
+
+    private ResourceKbDetails? GetResourceKbDetails(string resourceId)
+    {
+        resourceKbDetailsCache.TryGetValue(resourceId, out var details);
+        return details;
+    }
+
+    // Helper class for caching KB details
+    private class ResourceKbDetails
+    {
+        public int ContentLength { get; set; }
+        public int FormattedContentLength { get; set; }
+        public bool HasFormattedContent { get; set; }
+        public string? KnowledgeBaseId { get; set; }
+        public string? KnowledgeBaseName { get; set; }
+        public int ConceptCount { get; set; }
+        public int RelationCount { get; set; }
+        public KnowledgeBaseStatus KnowledgeBaseStatus { get; set; }
+        public DateTime? KnowledgeBaseCreatedAt { get; set; }
+        public DateTime? KnowledgeBaseUpdatedAt { get; set; }
     }
 }

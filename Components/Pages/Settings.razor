@@ -12,6 +12,7 @@
 @inject AppUiState UiState
 @inject IJSRuntime JS
 @inject LogStorageService LogStorageService
+@inject KnowledgeBaseStorageService KnowledgeBaseStorageService
 @implements IDisposable
 
 
@@ -20,7 +21,6 @@
 <div style="max-width: 720px;">
     <div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
-        <button class="tab @(activeTab == "Courses" ? "active" : "")" @onclick="@(() => activeTab = "Courses")">Courses</button>
         <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
         <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
         <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
@@ -61,10 +61,6 @@
                 </div>
                 <p>When enabled, press Enter to send. Use Shift+Enter for new line.</p>
             </div>
-        }
-        else if (activeTab == "Courses")
-        {
-            <CourseManagement />
         }
         else if (activeTab == "Appearance")
         {
@@ -254,12 +250,66 @@
             </div>
 
             <div class="settings-section">
+                <h4>Knowledge Bases Directory</h4>
+                <div class="path-input-row">
+                    <input type="text" class="settings-input path-input" value="@knowledgeBasesPath" readonly />
+                    <button class="settings-btn" @onclick="OpenKnowledgeBasesFolder" title="Open folder">
+                        <span class="bi bi-folder2-open"></span>
+                    </button>
+                </div>
+                <p>Knowledge bases contain extracted concepts and relationships for courses.</p>
+                
+                <div class="folder-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Knowledge bases:</span>
+                        <span class="stat-value">@knowledgeBaseCount</span>
+                    </div>
+                </div>
+
+                @if (knowledgeBases.Count > 0)
+                {
+                    <div class="kb-list" style="margin-top: 15px;">
+                        <table class="kb-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Concepts</th>
+                                    <th>Relations</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var kb in knowledgeBases)
+                                {
+                                    <tr>
+                                        <td>@kb.Name</td>
+                                        <td>@kb.ConceptCount</td>
+                                        <td>@kb.RelationCount</td>
+                                        <td>
+                                            <span class="kb-status @kb.Status.ToString().ToLower()">@kb.Status</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn-icon-small danger" @onclick="() => DeleteKnowledgeBaseAsync(kb.Id)" title="Delete">
+                                                <span class="bi bi-trash"></span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="settings-section">
                 <h4>Folder Structure</h4>
                 <div class="folder-tree">
                     <div class="folder-item">📁 Resources/</div>
                     <div class="folder-item indent">📁 Original/ - Original uploaded files</div>
                     <div class="folder-item indent">📁 Formatted/ - AI-formatted markdown files</div>
                     <div class="folder-item indent">📁 Courses/ - Course definitions</div>
+                    <div class="folder-item">📁 KnowledgeBases/ - AI-generated concept graphs</div>
                 </div>
             </div>
         }
@@ -564,6 +614,11 @@
     private int originalFileCount = 0;
     private int formattedFileCount = 0;
 
+    // Knowledge Base storage settings
+    private string knowledgeBasesPath = "";
+    private int knowledgeBaseCount = 0;
+    private List<KnowledgeBaseSummary> knowledgeBases = [];
+
 
     // Avatar settings
     private string userDisplayName = "User";
@@ -629,6 +684,7 @@
         await LoadAppearanceSettingsAsync();
         await LoadLogLevelSettingsAsync();
         LoadStorageSettings();
+        await LoadKnowledgeBaseSettingsAsync();
         LoadLogs();
 
         // Subscribe to log updates
@@ -865,6 +921,39 @@
         // Count files
         originalFileCount = FileResourceService.GetOriginalFiles().Count;
         formattedFileCount = FileResourceService.GetFormattedFiles().Count;
+    }
+
+    private async Task LoadKnowledgeBaseSettingsAsync()
+    {
+        knowledgeBasesPath = Path.Combine(FileSystem.AppDataDirectory, "KnowledgeBases");
+        knowledgeBases = await KnowledgeBaseStorageService.GetSummariesAsync();
+        knowledgeBaseCount = knowledgeBases.Count;
+    }
+
+    private void OpenKnowledgeBasesFolder()
+    {
+        try
+        {
+            if (Directory.Exists(knowledgeBasesPath))
+            {
+#if WINDOWS
+                System.Diagnostics.Process.Start("explorer.exe", knowledgeBasesPath);
+#elif MACCATALYST
+                System.Diagnostics.Process.Start("open", knowledgeBasesPath);
+#endif
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Could not open folder: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteKnowledgeBaseAsync(string id)
+    {
+        await KnowledgeBaseStorageService.DeleteAsync(id);
+        await LoadKnowledgeBaseSettingsAsync();
+        status = "Knowledge base deleted.";
     }
 
     private void SaveStorageOptionsAsync()

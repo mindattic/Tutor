@@ -12,7 +12,6 @@ namespace Tutor.Services;
 public sealed class VectorStoreService
 {
     private const string ChunksFileName = "content_chunks.json";
-    private readonly string chunksFilePath;
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
     private List<ContentChunk>? cachedChunks;
@@ -25,12 +24,16 @@ public sealed class VectorStoreService
     private const float SemanticWeight = 0.20f;
     private const float LexicalWeight = 0.10f;
 
+    /// <summary>
+    /// Gets the current chunks file path (uses DataStorageSettings).
+    /// </summary>
+    private string ChunksFilePath => Path.Combine(DataStorageSettings.GetVectorStoreDirectory(), ChunksFileName);
+
     public VectorStoreService(LSHService lshService, SimHashService simHashService)
     {
-        chunksFilePath = Path.Combine(FileSystem.AppDataDirectory, ChunksFileName);
         this.lshService = lshService;
         this.simHashService = simHashService;
-        Log.Debug($"VectorStoreService initialized at: {chunksFilePath}");
+        Log.Debug($"VectorStoreService initialized at: {ChunksFilePath}");
     }
 
     /// <summary>
@@ -255,9 +258,9 @@ public sealed class VectorStoreService
 
         try
         {
-            if (File.Exists(chunksFilePath))
+            if (File.Exists(ChunksFilePath))
             {
-                var json = await File.ReadAllTextAsync(chunksFilePath);
+                var json = await File.ReadAllTextAsync(ChunksFilePath);
                 cachedChunks = JsonSerializer.Deserialize<List<ContentChunk>>(json) ?? [];
             }
             else
@@ -280,7 +283,7 @@ public sealed class VectorStoreService
         try
         {
             var json = JsonSerializer.Serialize(chunks, new JsonSerializerOptions { WriteIndented = false });
-            await File.WriteAllTextAsync(chunksFilePath, json);
+            await File.WriteAllTextAsync(ChunksFilePath, json);
         }
         catch
         {
@@ -296,9 +299,9 @@ public sealed class VectorStoreService
         cachedChunks = [];
         try
         {
-            if (File.Exists(chunksFilePath))
+            if (File.Exists(ChunksFilePath))
             {
-                File.Delete(chunksFilePath);
+                File.Delete(ChunksFilePath);
             }
         }
         catch { }
