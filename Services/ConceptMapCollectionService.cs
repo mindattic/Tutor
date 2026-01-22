@@ -5,14 +5,14 @@ using Tutor.Services.Logging;
 namespace Tutor.Services;
 
 /// <summary>
-/// Service for managing KnowledgeBaseCollections.
+/// Service for managing ConceptMapCollections.
 /// 
-/// A KnowledgeBaseCollection aggregates multiple KnowledgeBases (one per Resource)
+/// A ConceptMapCollection aggregates multiple ConceptMaps (one per Resource)
 /// for a Course. This allows dynamic composition of courses from any subset of resources.
 /// </summary>
-public sealed class KnowledgeBaseCollectionService
+public sealed class ConceptMapCollectionService
 {
-    private readonly KnowledgeBaseStorageService kbStorageService;
+    private readonly ConceptMapStorageService conceptMapStorageService;
 
     // In-memory cache of collections (keyed by collection ID)
     private readonly Dictionary<string, KnowledgeBaseCollection> cache = [];
@@ -27,18 +27,18 @@ public sealed class KnowledgeBaseCollectionService
     /// </summary>
     private string StoragePath => Path.Combine(DataStorageSettings.GetKnowledgeBasesDirectory(), "collections");
 
-    public KnowledgeBaseCollectionService(KnowledgeBaseStorageService kbStorageService)
+    public ConceptMapCollectionService(ConceptMapStorageService conceptMapStorageService)
     {
-        this.kbStorageService = kbStorageService;
-        Log.Debug($"KnowledgeBaseCollectionService initialized at: {StoragePath}");
+        this.conceptMapStorageService = conceptMapStorageService;
+        Log.Debug($"ConceptMapCollectionService initialized at: {StoragePath}");
     }
 
     /// <summary>
-    /// Creates a new empty KnowledgeBaseCollection.
+    /// Creates a new empty ConceptMapCollection.
     /// </summary>
     public async Task<KnowledgeBaseCollection> CreateAsync(string name, string description = "", CancellationToken ct = default)
     {
-        Log.Info($"KbCollection: Creating new collection '{name}'");
+        Log.Info($"ConceptMapCollection: Creating new collection '{name}'");
         var collection = new KnowledgeBaseCollection
         {
             Name = name,
@@ -50,22 +50,22 @@ public sealed class KnowledgeBaseCollectionService
     }
 
     /// <summary>
-    /// Creates a KnowledgeBaseCollection for a course from its resource KnowledgeBases.
+    /// Creates a ConceptMapCollection for a course from its resource ConceptMaps.
     /// </summary>
     public async Task<KnowledgeBaseCollection> CreateForCourseAsync(
         string courseId,
         string courseName,
-        List<string> knowledgeBaseIds,
+        List<string> conceptMapIds,
         CancellationToken ct = default)
     {
-        Log.Info($"KbCollection: Creating collection for course '{courseName}' with {knowledgeBaseIds.Count} KBs");
+        Log.Info($"ConceptMapCollection: Creating collection for course '{courseName}' with {conceptMapIds.Count} ConceptMaps");
         
         var collection = new KnowledgeBaseCollection
         {
             Id = $"collection_{courseId}", // Use predictable ID based on course
-            Name = $"{courseName} Knowledge Collection",
-            Description = $"Combined knowledge from {knowledgeBaseIds.Count} resource(s)",
-            KnowledgeBaseIds = knowledgeBaseIds.ToList()
+            Name = $"{courseName} Concept Map Collection",
+            Description = $"Combined concepts from {conceptMapIds.Count} resource(s)",
+            KnowledgeBaseIds = conceptMapIds.ToList()
         };
 
         await SaveAsync(collection, ct);
@@ -80,7 +80,7 @@ public sealed class KnowledgeBaseCollectionService
         collection.UpdatedAt = DateTime.UtcNow;
 
         var filePath = GetFilePath(collection.Id);
-        Log.Debug($"KbCollection: Saving collection '{collection.Name}' (ID: {collection.Id}) to {filePath}");
+        Log.Debug($"ConceptMapCollection: Saving collection '{collection.Name}' (ID: {collection.Id}) to {filePath}");
 
         var json = JsonSerializer.Serialize(collection, new JsonSerializerOptions
         {
@@ -110,13 +110,13 @@ public sealed class KnowledgeBaseCollectionService
 
             // Update cache
             cache[collection.Id] = collection;
-            Log.Debug($"KbCollection: Collection '{collection.Name}' saved successfully ({json.Length} bytes)");
+            Log.Debug($"ConceptMapCollection: Collection '{collection.Name}' saved successfully ({json.Length} bytes)");
 
             OnCollectionSaved?.Invoke(collection.Id);
         }
         catch (Exception ex)
         {
-            Log.Error($"KbCollection: Failed to save collection '{collection.Name}' - {ex.Message}", ex);
+            Log.Error($"ConceptMapCollection: Failed to save collection '{collection.Name}' - {ex.Message}", ex);
             throw;
         }
     }
@@ -129,14 +129,14 @@ public sealed class KnowledgeBaseCollectionService
         // Check cache first
         if (cache.TryGetValue(collectionId, out var cached))
         {
-            Log.Debug($"KbCollection: Returning cached collection '{cached.Name}'");
+            Log.Debug($"ConceptMapCollection: Returning cached collection '{cached.Name}'");
             return cached;
         }
 
         var filePath = GetFilePath(collectionId);
         if (!File.Exists(filePath))
         {
-            Log.Debug($"KbCollection: Collection file not found: {filePath}");
+            Log.Debug($"ConceptMapCollection: Collection file not found: {filePath}");
             return null;
         }
 
@@ -148,22 +148,22 @@ public sealed class KnowledgeBaseCollectionService
             if (collection != null)
             {
                 cache[collection.Id] = collection;
-                Log.Debug($"KbCollection: Loaded collection '{collection.Name}'");
+                Log.Debug($"ConceptMapCollection: Loaded collection '{collection.Name}'");
             }
 
             return collection;
         }
         catch (Exception ex)
         {
-            Log.Error($"KbCollection: Failed to load collection {collectionId} - {ex.Message}", ex);
+            Log.Error($"ConceptMapCollection: Failed to load collection {collectionId} - {ex.Message}", ex);
             return null;
         }
     }
 
     /// <summary>
-    /// Loads a collection and all its KnowledgeBases.
+    /// Loads a collection and all its ConceptMaps.
     /// </summary>
-    public async Task<LoadedKnowledgeBaseCollection?> LoadWithKnowledgeBasesAsync(
+    public async Task<LoadedKnowledgeBaseCollection?> LoadWithConceptMapsAsync(
         string collectionId,
         CancellationToken ct = default)
     {
@@ -171,43 +171,52 @@ public sealed class KnowledgeBaseCollectionService
         if (collection == null)
             return null;
 
-        var knowledgeBases = new List<KnowledgeBase>();
-        foreach (var kbId in collection.KnowledgeBaseIds)
+        var conceptMaps = new List<KnowledgeBase>();
+        foreach (var cmId in collection.KnowledgeBaseIds)
         {
-            var kb = await kbStorageService.LoadAsync(kbId, ct);
-            if (kb != null)
+            var cm = await conceptMapStorageService.LoadAsync(cmId, ct);
+            if (cm != null)
             {
-                knowledgeBases.Add(kb);
+                conceptMaps.Add(cm);
             }
             else
             {
-                Log.Warn($"KbCollection: KnowledgeBase {kbId} not found for collection '{collection.Name}'");
+                Log.Warn($"ConceptMapCollection: ConceptMap {cmId} not found for collection '{collection.Name}'");
             }
         }
 
-        Log.Debug($"KbCollection: Loaded {knowledgeBases.Count}/{collection.KnowledgeBaseIds.Count} KBs for '{collection.Name}'");
-        return new LoadedKnowledgeBaseCollection(collection, knowledgeBases);
+        Log.Debug($"ConceptMapCollection: Loaded {conceptMaps.Count}/{collection.KnowledgeBaseIds.Count} ConceptMaps for '{collection.Name}'");
+        return new LoadedKnowledgeBaseCollection(collection, conceptMaps);
     }
 
     /// <summary>
-    /// Adds a KnowledgeBase to a collection.
+    /// Legacy method - use LoadWithConceptMapsAsync instead.
     /// </summary>
-    public async Task<bool> AddKnowledgeBaseAsync(
+    [Obsolete("Use LoadWithConceptMapsAsync instead")]
+    public Task<LoadedKnowledgeBaseCollection?> LoadWithKnowledgeBasesAsync(
         string collectionId,
-        string knowledgeBaseId,
+        CancellationToken ct = default)
+        => LoadWithConceptMapsAsync(collectionId, ct);
+
+    /// <summary>
+    /// Adds a ConceptMap to a collection.
+    /// </summary>
+    public async Task<bool> AddConceptMapAsync(
+        string collectionId,
+        string conceptMapId,
         CancellationToken ct = default)
     {
         var collection = await LoadAsync(collectionId, ct);
         if (collection == null)
         {
-            Log.Warn($"KbCollection: Cannot add KB to non-existent collection {collectionId}");
+            Log.Warn($"ConceptMapCollection: Cannot add ConceptMap to non-existent collection {collectionId}");
             return false;
         }
 
-        if (collection.AddKnowledgeBase(knowledgeBaseId))
+        if (collection.AddKnowledgeBase(conceptMapId))
         {
             await SaveAsync(collection, ct);
-            Log.Info($"KbCollection: Added KB {knowledgeBaseId} to collection '{collection.Name}'");
+            Log.Info($"ConceptMapCollection: Added ConceptMap {conceptMapId} to collection '{collection.Name}'");
             return true;
         }
 
@@ -215,21 +224,21 @@ public sealed class KnowledgeBaseCollectionService
     }
 
     /// <summary>
-    /// Removes a KnowledgeBase from a collection.
+    /// Removes a ConceptMap from a collection.
     /// </summary>
-    public async Task<bool> RemoveKnowledgeBaseAsync(
+    public async Task<bool> RemoveConceptMapAsync(
         string collectionId,
-        string knowledgeBaseId,
+        string conceptMapId,
         CancellationToken ct = default)
     {
         var collection = await LoadAsync(collectionId, ct);
         if (collection == null)
             return false;
 
-        if (collection.RemoveKnowledgeBase(knowledgeBaseId))
+        if (collection.RemoveKnowledgeBase(conceptMapId))
         {
             await SaveAsync(collection, ct);
-            Log.Info($"KbCollection: Removed KB {knowledgeBaseId} from collection '{collection.Name}'");
+            Log.Info($"ConceptMapCollection: Removed ConceptMap {conceptMapId} from collection '{collection.Name}'");
             return true;
         }
 
@@ -238,34 +247,34 @@ public sealed class KnowledgeBaseCollectionService
 
     /// <summary>
     /// Rebuilds a collection from a course's resources.
-    /// This loads each resource's KnowledgeBase ID and creates/updates the collection.
-    /// Also verifies KBs exist on disk to handle stale resource status.
+    /// This loads each resource's ConceptMap ID and creates/updates the collection.
+    /// Also verifies ConceptMaps exist on disk to handle stale resource status.
     /// </summary>
     public async Task<KnowledgeBaseCollection> RebuildForCourseAsync(
         Course course,
         List<CourseResource> resources,
         CancellationToken ct = default)
     {
-        Log.Info($"KbCollection: Rebuilding collection for course '{course.Name}'");
+        Log.Info($"ConceptMapCollection: Rebuilding collection for course '{course.Name}'");
 
-        // Gather KnowledgeBase IDs from resources, verifying they exist on disk
-        var kbIds = new List<string>();
+        // Gather ConceptMap IDs from resources, verifying they exist on disk
+        var conceptMapIds = new List<string>();
         foreach (var resource in resources)
         {
-            if (string.IsNullOrEmpty(resource.KnowledgeBaseId))
+            if (string.IsNullOrEmpty(resource.ConceptMapId))
                 continue;
                 
-            // Verify the KB exists and is ready
-            var kb = await kbStorageService.LoadAsync(resource.KnowledgeBaseId, ct);
-            if (kb != null && kb.Status == KnowledgeBaseStatus.Ready)
+            // Verify the ConceptMap exists and is ready
+            var cm = await conceptMapStorageService.LoadAsync(resource.ConceptMapId, ct);
+            if (cm != null && cm.Status == KnowledgeBaseStatus.Ready)
             {
-                kbIds.Add(resource.KnowledgeBaseId);
+                conceptMapIds.Add(resource.ConceptMapId);
                 
                 // Fix up stale resource status if needed
-                if (resource.KnowledgeBaseStatus != KnowledgeBaseStatus.Ready)
+                if (resource.ConceptMapStatus != ConceptMapStatus.Ready)
                 {
-                    resource.KnowledgeBaseStatus = KnowledgeBaseStatus.Ready;
-                    Log.Debug($"KbCollection: Fixed stale KB status for resource '{resource.Title}'");
+                    resource.ConceptMapStatus = ConceptMapStatus.Ready;
+                    Log.Debug($"ConceptMapCollection: Fixed stale status for resource '{resource.Title}'");
                 }
             }
         }
@@ -279,19 +288,19 @@ public sealed class KnowledgeBaseCollectionService
             collection = new KnowledgeBaseCollection
             {
                 Id = collectionId,
-                Name = $"{course.Name} Knowledge Collection",
-                Description = $"Combined knowledge from {kbIds.Count} resource(s)"
+                Name = $"{course.Name} Concept Map Collection",
+                Description = $"Combined concepts from {conceptMapIds.Count} resource(s)"
             };
         }
 
-        // Update the collection's KnowledgeBase IDs
-        collection.KnowledgeBaseIds = kbIds;
-        collection.Description = $"Combined knowledge from {kbIds.Count} resource(s)";
+        // Update the collection's ConceptMap IDs
+        collection.KnowledgeBaseIds = conceptMapIds;
+        collection.Description = $"Combined concepts from {conceptMapIds.Count} resource(s)";
         collection.UpdatedAt = DateTime.UtcNow;
 
         await SaveAsync(collection, ct);
 
-        Log.Info($"KbCollection: Collection for '{course.Name}' now has {kbIds.Count} KBs");
+        Log.Info($"ConceptMapCollection: Collection for '{course.Name}' now has {conceptMapIds.Count} ConceptMaps");
         return collection;
     }
 
@@ -316,12 +325,12 @@ public sealed class KnowledgeBaseCollectionService
             }
         }
 
-        Log.Debug($"KbCollection: Found {collections.Count} collections");
+        Log.Debug($"ConceptMapCollection: Found {collections.Count} collections");
         return collections;
     }
 
     /// <summary>
-    /// Deletes a collection (does not delete the underlying KnowledgeBases).
+    /// Deletes a collection (does not delete the underlying ConceptMaps).
     /// </summary>
     public async Task DeleteAsync(string collectionId, CancellationToken ct = default)
     {
@@ -330,7 +339,7 @@ public sealed class KnowledgeBaseCollectionService
         {
             File.Delete(filePath);
             cache.Remove(collectionId);
-            Log.Info($"KbCollection: Deleted collection {collectionId}");
+            Log.Info($"ConceptMapCollection: Deleted collection {collectionId}");
         }
         await Task.CompletedTask;
     }

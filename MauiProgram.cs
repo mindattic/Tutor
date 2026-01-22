@@ -103,16 +103,16 @@ namespace Tutor
             // User progress service (learning progress tracking)
             builder.Services.AddSingleton<UserProgressService>();
 
-            // Knowledge base storage service (persistence for KnowledgeBases)
-            builder.Services.AddSingleton<KnowledgeBaseStorageService>();
+            // ConceptMap storage service (persistence for individual ConceptMaps)
+            builder.Services.AddSingleton<ConceptMapStorageService>();
 
-            // Knowledge base collection service (manages collections for courses)
-            builder.Services.AddSingleton<KnowledgeBaseCollectionService>();
+            // ConceptMap collection service (manages collections for courses)
+            builder.Services.AddSingleton<ConceptMapCollectionService>();
 
             // Course structure storage service (persistence for CourseStructures)
             builder.Services.AddSingleton<CourseStructureStorageService>();
 
-            // Knowledge base service (builds KnowledgeBase from Resources) (with extended timeout)
+            // Knowledge base service (builds ConceptMap from Resources) (with extended timeout)
             builder.Services.AddHttpClient<KnowledgeBaseService>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(5);

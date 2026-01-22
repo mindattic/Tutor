@@ -1,4 +1,6 @@
+using System.Runtime.Versioning;
 using System.Text.Json;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -172,7 +174,11 @@ public static class StorageSettings
 
     /// <summary>
     /// Opens the resources directory in the file explorer.
+    /// Only supported on Windows, macOS (via Catalyst), and Android.
     /// </summary>
+    [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("maccatalyst")]
+    [SupportedOSPlatform("android")]
     public static void OpenInExplorer()
     {
         try
@@ -185,11 +191,16 @@ public static class StorageSettings
                     FileName = dir,
                     UseShellExecute = true
                 });
+                Log.Debug($"StorageSettings: Opened directory in explorer: {dir}");
+            }
+            else
+            {
+                Log.Warn($"StorageSettings: Directory does not exist: {dir}");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail
+            Log.Error($"StorageSettings: Failed to open explorer - {ex.Message}");
         }
     }
 }

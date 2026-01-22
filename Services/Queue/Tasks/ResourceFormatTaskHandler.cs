@@ -95,15 +95,15 @@ public sealed class ResourceFormatTaskHandler : IBackgroundTaskHandler
                 context.ReportProgress(item, 95, "Formatting complete");
                 Log.Info($"ResourceFormatTask: Completed formatting for '{payload.Title}'");
 
-                // Queue KB build for this resource (new architecture: 1 resource = 1 KB)
-                if (!resource.HasKnowledgeBase)
+                // Queue ConceptMap build for this resource (new architecture: 1 resource = 1 ConceptMap)
+                if (!resource.HasConceptMap)
                 {
-                    context.ReportProgress(item, 98, "Queuing knowledge base build...");
+                    context.ReportProgress(item, 98, "Queuing concept map build...");
                     BackgroundQueueService.EnqueueKnowledgeBaseBuildForResource(
                         payload.ResourceId,
                         payload.Title,
                         updateResource: true);
-                    Log.Info($"ResourceFormatTask: Queued KB build for '{payload.Title}'");
+                    Log.Info($"ResourceFormatTask: Queued ConceptMap build for '{payload.Title}'");
                 }
 
                 context.ReportProgress(item, 100, "Complete");

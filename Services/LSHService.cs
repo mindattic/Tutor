@@ -1,4 +1,6 @@
+using System.Numerics;
 using System.Text.Json;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -111,17 +113,11 @@ public sealed class LSHService
     }
 
     /// <summary>
-    /// Counts the number of set bits (1s) in a byte.
+    /// Counts the number of set bits (1s) in a byte using hardware intrinsics when available.
     /// </summary>
     private static int PopCount(byte value)
     {
-        int count = 0;
-        while (value != 0)
-        {
-            count += value & 1;
-            value >>= 1;
-        }
-        return count;
+        return BitOperations.PopCount(value);
     }
 
     /// <summary>
@@ -185,14 +181,17 @@ public sealed class LSHService
                 data.Hyperplanes.Length != BitCount)
             {
                 // Mismatch in parameters, regenerate
+                Log.Debug("LSH: Hyperplane parameters changed, regenerating");
                 return false;
             }
 
+            Log.Debug($"LSH: Loaded {BitCount} hyperplanes from disk");
             hyperplanes = data.Hyperplanes;
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warn($"LSH: Failed to load hyperplanes - {ex.Message}");
             return false;
         }
     }
@@ -203,6 +202,7 @@ public sealed class LSHService
     /// </summary>
     private void GenerateHyperplanes()
     {
+        Log.Debug($"LSH: Generating {BitCount} hyperplanes for {EmbeddingDimension}-dimensional space (seed={Seed})");
         var rng = new Random(Seed);
         hyperplanes = new float[BitCount][];
 
@@ -284,10 +284,12 @@ public sealed class LSHService
 
             var json = JsonSerializer.Serialize(data);
             File.WriteAllText(HyperplanesFilePath, json);
+            Log.Debug($"LSH: Saved {BitCount} hyperplanes to disk");
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail - hyperplanes are still in memory
+            Log.Warn($"LSH: Failed to save hyperplanes - {ex.Message}");
+            // Hyperplanes are still in memory, continue operation
         }
     }
 

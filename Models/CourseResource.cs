@@ -32,22 +32,50 @@ public class CourseResource
     public bool IsProcessed { get; set; }
 
     /// <summary>
-    /// ID of the KnowledgeBase generated from this resource.
-    /// Each resource generates its own independent KnowledgeBase.
-    /// Null if no KnowledgeBase has been built yet.
+    /// ID of the ConceptMap generated from this resource.
+    /// Each resource generates its own independent ConceptMap.
+    /// Null if no ConceptMap has been built yet.
     /// </summary>
-    public string? KnowledgeBaseId { get; set; }
+    public string? ConceptMapId { get; set; }
+
+    /// <summary>
+    /// Current status of the ConceptMap generation for this resource.
+    /// </summary>
+    public ConceptMapStatus ConceptMapStatus { get; set; } = ConceptMapStatus.NotStarted;
+
+    /// <summary>
+    /// Whether this resource has a ConceptMap built.
+    /// </summary>
+    public bool HasConceptMap => !string.IsNullOrEmpty(ConceptMapId) 
+        && ConceptMapStatus == ConceptMapStatus.Ready;
+
+    // Legacy properties for backward compatibility
+    
+    /// <summary>
+    /// ID of the KnowledgeBase generated from this resource.
+    /// </summary>
+    [Obsolete("Use ConceptMapId instead. This property is maintained for backward compatibility.")]
+    public string? KnowledgeBaseId 
+    { 
+        get => ConceptMapId; 
+        set => ConceptMapId = value; 
+    }
 
     /// <summary>
     /// Current status of the KnowledgeBase generation for this resource.
     /// </summary>
-    public KnowledgeBaseStatus KnowledgeBaseStatus { get; set; } = KnowledgeBaseStatus.NotStarted;
+    [Obsolete("Use ConceptMapStatus instead. This property is maintained for backward compatibility.")]
+    public KnowledgeBaseStatus KnowledgeBaseStatus 
+    { 
+        get => (KnowledgeBaseStatus)(int)ConceptMapStatus;
+        set => ConceptMapStatus = (ConceptMapStatus)(int)value;
+    }
 
     /// <summary>
     /// Whether this resource has a KnowledgeBase built.
     /// </summary>
-    public bool HasKnowledgeBase => !string.IsNullOrEmpty(KnowledgeBaseId) 
-        && KnowledgeBaseStatus == KnowledgeBaseStatus.Ready;
+    [Obsolete("Use HasConceptMap instead. This property is maintained for backward compatibility.")]
+    public bool HasKnowledgeBase => HasConceptMap;
 
     /// <summary>
     /// Gets the best available content (formatted if available, otherwise original).

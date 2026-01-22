@@ -8,7 +8,7 @@
 @inject InstructionsService Instructions
 @inject SettingsService Settings
 @inject CourseService CourseService
-@inject KnowledgeBaseStorageService KbStorageService
+@inject ConceptMapStorageService ConceptMapStorageService
 @implements IDisposable
 
 @* Mode indicators at the top *@
@@ -177,7 +177,7 @@ else if (isLessonMode)
 }
 
 @* Knowledge Base Explorer modal (Force diagram) *@
-@if (showKnowledgeBaseExplorer)
+@if (showKnowledgeBaseExplorer && activeCourse != null)
 {
     <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
         <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
@@ -186,7 +186,7 @@ else if (isLessonMode)
                 <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body kb-explorer-body">
-                <KnowledgeBaseGraph KnowledgeBaseId="@explorerKnowledgeBaseId" />
+                <KnowledgeBaseGraph CourseId="@activeCourse.Id" />
             </div>
         </div>
     </div>
@@ -418,11 +418,11 @@ private bool showAllMessages;
     private string confirmModalActionText = "";
     private Func<Task>? confirmedAction;
 
+
     // Quiz state
     private bool isQuizMode;
     private int totalQuestions;
     private int currentQuestionNumber;
-    private int correctAnswers;
     private GradingScale gradingScale;
 
     // Table of Contents state
@@ -434,7 +434,6 @@ private bool showAllMessages;
 
     // Knowledge Base Explorer state (Force diagram)
     private bool showKnowledgeBaseExplorer;
-    private string? explorerKnowledgeBaseId;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -848,9 +847,9 @@ The questions should be specific to what you just taught, not generic.";
     // Knowledge Base Explorer (Force diagram)
     private void OpenKnowledgeBaseExplorer()
     {
-        if (activeCourse?.HasKnowledgeBase == true)
+        if (activeCourse != null)
         {
-            explorerKnowledgeBaseId = activeCourse.KnowledgeBaseId;
+            // Use CourseId to load aggregated KBs from all resources
             showKnowledgeBaseExplorer = true;
         }
     }
@@ -858,25 +857,43 @@ The questions should be specific to what you just taught, not generic.";
     private void CloseKnowledgeBaseExplorer()
     {
         showKnowledgeBaseExplorer = false;
-        explorerKnowledgeBaseId = null;
     }
 
     private async Task LoadKnowledgeBaseConcepts()
     {
-        if (activeCourse == null || string.IsNullOrEmpty(activeCourse.KnowledgeBaseId))
+        if (activeCourse == null)
             return;
 
-        var kb = await KbStorageService.LoadAsync(activeCourse.KnowledgeBaseId);
-        if (kb != null && kb.Status == KnowledgeBaseStatus.Ready)
+        // Load concepts from all resources' ConceptMaps in this course
+        var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(activeCourse.Id);
+        
+        if (conceptMapIds.Count == 0)
         {
-            knowledgeBaseConcepts = kb.Concepts;
+            Log.Debug("Chat: No ConceptMaps found for course resources");
+            return;
         }
+
+
+        var allConcepts = new List<Concept>();
+        
+        foreach (var cmId in conceptMapIds)
+        {
+            var conceptMap = await ConceptMapStorageService.LoadAsync(cmId);
+            if (conceptMap != null && conceptMap.Status == KnowledgeBaseStatus.Ready)
+            {
+                allConcepts.AddRange(conceptMap.Concepts);
+            }
+        }
+        
+        knowledgeBaseConcepts = allConcepts;
+        Log.Debug($"Chat: Loaded {knowledgeBaseConcepts.Count} concepts from {conceptMapIds.Count} ConceptMaps");
     }
 
     private async Task SelectConcept(Concept concept)
     {
-        // Close the KB modal
+        // Close the ConceptMap modal
         showKnowledgeBase = false;
+
 
         // Teach this concept
         var teachPrompt = $@"Teach me about ""{concept.Title}"".
@@ -943,12 +960,12 @@ __Third specific question about {concept.Title}?__";
             }
         }
 
+
         // Get quiz settings
         var questionCount = Math.Min(await Settings.GetQuizQuestionCountAsync(), Math.Max(3, learnedConcepts.Count));
         gradingScale = await Settings.GetGradingScaleAsync();
         currentQuestionNumber = 1;
         totalQuestions = questionCount;
-        correctAnswers = 0;
         isQuizMode = true;
         // Keep lesson mode active so we can return to it
 
@@ -987,7 +1004,6 @@ Please start with Question 1.";
         totalQuestions = await Settings.GetQuizQuestionCountAsync();
         gradingScale = await Settings.GetGradingScaleAsync();
         currentQuestionNumber = 1;
-        correctAnswers = 0;
         isQuizMode = true;
         isLessonMode = false;
 
@@ -1021,7 +1037,6 @@ Please start with Question 1.";
         isQuizMode = false;
         currentQuestionNumber = 0;
         totalQuestions = 0;
-        correctAnswers = 0;
         messages.Clear();
         
         // Restart quiz from the beginning
@@ -1034,7 +1049,6 @@ Please start with Question 1.";
         isQuizMode = false;
         currentQuestionNumber = 0;
         totalQuestions = 0;
-        correctAnswers = 0;
         messages.Add(new ChatMessage("assistant", "Quiz cancelled. You can continue with your lesson or start a new quiz anytime.", "Quiz cancelled by user."));
         StateHasChanged();
     }
@@ -1489,9 +1503,17 @@ Keep track of the running score.";
         // Inline code: `code`
         text = Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
 
-
-        // Links: [text](url)
+        // Links: [text](url) - must be processed BEFORE square bracket questions
         text = Regex.Replace(text, @"\[(.+?)\]\((.+?)\)", "<a href=\"$2\" target=\"_blank\">$1</a>");
+        
+        // Suggested question link: [text?] - follow-up questions in square brackets ending with ?
+        // This must come AFTER markdown link processing to avoid conflicts
+        text = Regex.Replace(text, @"\[([^\]\(]+\?)\]", match =>
+        {
+            var question = match.Groups[1].Value;
+            var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
+            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{EscapeJsString(question)}')\" title=\"Click to ask this question\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
+        });
 
         return text;
     }

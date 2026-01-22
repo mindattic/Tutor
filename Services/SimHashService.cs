@@ -1,3 +1,6 @@
+using System.Numerics;
+using Tutor.Services.Logging;
+
 namespace Tutor.Services;
 
 /// <summary>
@@ -75,15 +78,11 @@ public sealed class SimHashService
     }
 
     /// <summary>
-    /// Counts the number of set bits in a 64-bit value.
+    /// Counts the number of set bits in a 64-bit value using hardware intrinsics when available.
     /// </summary>
     private static int PopCount(ulong value)
     {
-        // Use efficient bit manipulation
-        value = value - ((value >> 1) & 0x5555555555555555UL);
-        value = (value & 0x3333333333333333UL) + ((value >> 2) & 0x3333333333333333UL);
-        value = (value + (value >> 4)) & 0x0F0F0F0F0F0F0F0FUL;
-        return (int)((value * 0x0101010101010101UL) >> 56);
+        return BitOperations.PopCount(value);
     }
 
     /// <summary>

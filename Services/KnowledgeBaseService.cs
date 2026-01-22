@@ -24,7 +24,7 @@ public sealed class KnowledgeBaseService
 {
     private readonly HttpClient http;
     private readonly OpenAIOptions opt;
-    private readonly KnowledgeBaseStorageService storageService;
+    private readonly ConceptMapStorageService storageService;
 
     // Throttling settings for parallel API calls
     private const int MaxConcurrentApiCalls = 3;  // Max parallel requests to avoid rate limiting
@@ -114,7 +114,7 @@ public sealed class KnowledgeBaseService
     public KnowledgeBaseService(
         HttpClient http,
         OpenAIOptions opt,
-        KnowledgeBaseStorageService storageService)
+        ConceptMapStorageService storageService)
     {
         this.http = http;
         this.opt = opt;
@@ -123,11 +123,11 @@ public sealed class KnowledgeBaseService
 
 
     /// <summary>
-    /// Builds a KnowledgeBase from a list of Resources.
+    /// Builds a ConceptMap from a list of Resources.
     /// This method is maintained for backward compatibility.
-    /// New code should use BuildFromResourceAsync for single resource KB generation.
+    /// New code should use BuildFromResourceAsync for single resource ConceptMap generation.
     /// </summary>
-    [Obsolete("Use BuildFromResourceAsync instead for single resource KB generation.")]
+    [Obsolete("Use BuildFromResourceAsync instead for single resource ConceptMap generation.")]
     public async Task<KnowledgeBase> BuildFromResourcesAsync(
         string name,
         List<CourseResource> resources,

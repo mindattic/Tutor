@@ -7,27 +7,27 @@ namespace Tutor.Services;
 /// 
 /// The Learn page has two navigation views:
 /// 1. Table of Contents: Static hierarchical navigation (Lessons -> Topics -> Concepts)
-/// 2. KnowledgeBase view: Concepts organized by relationships and complexity
+/// 2. ConceptMap view: Concepts organized by relationships and complexity
 /// 
-/// Both views reference Concepts from the KnowledgeBase by ID.
+/// Both views reference Concepts from the ConceptMap by ID.
 /// </summary>
 public sealed class SideNavService
 {
     private readonly CourseService courseService;
-    private readonly KnowledgeBaseStorageService kbStorageService;
+    private readonly ConceptMapStorageService conceptMapStorageService;
     private readonly CourseStructureStorageService structureStorageService;
     private readonly UserProgressService progressService;
     private readonly AppUiState uiState;
 
     public SideNavService(
         CourseService courseService,
-        KnowledgeBaseStorageService kbStorageService,
+        ConceptMapStorageService conceptMapStorageService,
         CourseStructureStorageService structureStorageService,
         UserProgressService progressService,
         AppUiState uiState)
     {
         this.courseService = courseService;
-        this.kbStorageService = kbStorageService;
+        this.conceptMapStorageService = conceptMapStorageService;
         this.structureStorageService = structureStorageService;
         this.progressService = progressService;
         this.uiState = uiState;
@@ -66,31 +66,31 @@ public sealed class SideNavService
         var progress = await progressService.GetProgressAsync(courseId);
 
         // Check if course has required components
-        if (!course.HasKnowledgeBase || !course.HasCourseStructure)
+        if (!course.HasConceptMapCollection || !course.HasCourseStructure)
         {
             nodes.Add(new NavNode
             {
                 Id = "no-content",
                 Title = "No curriculum available",
                 Icon = "bi-info-circle",
-                Description = "Build a knowledge base and generate course structure in Courses."
+                Description = "Build concept maps and generate course structure in Courses."
             });
             uiState.SetSideNavNodes(nodes);
             return;
         }
 
-        // Load KnowledgeBase and CourseStructure
-        var kb = await kbStorageService.LoadAsync(course.KnowledgeBaseId!, ct);
+        // Load ConceptMap collection and CourseStructure
+        var conceptMap = await conceptMapStorageService.LoadAsync(course.ConceptMapCollectionId!, ct);
         var structure = await structureStorageService.LoadAsync(course.CourseStructureId!, ct);
 
-        if (kb == null || kb.Status != KnowledgeBaseStatus.Ready)
+        if (conceptMap == null || conceptMap.Status != KnowledgeBaseStatus.Ready)
         {
             nodes.Add(new NavNode
             {
                 Id = "kb-not-ready",
-                Title = "Knowledge base not ready",
+                Title = "Concept maps not ready",
                 Icon = "bi-hourglass-split",
-                Description = "The knowledge base is still being built."
+                Description = "The concept maps are still being built."
             });
             uiState.SetSideNavNodes(nodes);
             return;
@@ -109,8 +109,8 @@ public sealed class SideNavService
             return;
         }
 
-        // Build navigation from CourseStructure (references Concepts in KnowledgeBase)
-        nodes = BuildNavFromCourseStructure(structure, kb, progress);
+        // Build navigation from CourseStructure (references Concepts in ConceptMap)
+        nodes = BuildNavFromCourseStructure(structure, conceptMap, progress);
 
         // Expand to current concept
         if (!string.IsNullOrEmpty(progress.CurrentConceptId))
@@ -123,17 +123,18 @@ public sealed class SideNavService
             nodes[0].IsExpanded = true;
         }
 
+
         uiState.SetSideNavNodes(nodes);
     }
 
     /// <summary>
     /// Builds navigation nodes from CourseStructure.
-    /// The structure references Concepts in the KnowledgeBase by ID.
+    /// The structure references Concepts in the ConceptMap by ID.
     /// Hierarchy: Lessons -> Topics -> Concepts
     /// </summary>
     private List<NavNode> BuildNavFromCourseStructure(
         CourseStructure structure, 
-        KnowledgeBase kb, 
+        KnowledgeBase conceptMap, 
         UserProgress progress)
     {
         var nodes = new List<NavNode>();
@@ -163,10 +164,11 @@ public sealed class SideNavService
                     Data = topic
                 };
 
-                // Add concepts as children (look up from KnowledgeBase)
+
+                // Add concepts as children (look up from ConceptMap)
                 foreach (var conceptId in topic.ConceptIds)
                 {
-                    var concept = kb.GetConcept(conceptId);
+                    var concept = conceptMap.GetConcept(conceptId);
                     if (concept == null) continue;
 
                     var isLearned = progress.IsConceptLearned(conceptId);
@@ -211,19 +213,19 @@ public sealed class SideNavService
     }
 
     /// <summary>
-    /// Builds navigation nodes for the KnowledgeBase view.
+    /// Builds navigation nodes for the ConceptMap view.
     /// This shows Concepts organized by complexity level, not the course hierarchy.
     /// Allows exploration of related concepts outside the current lesson.
     /// </summary>
-    public List<NavNode> BuildKnowledgeBaseNav(KnowledgeBase kb, UserProgress progress)
+    public List<NavNode> BuildConceptMapNav(KnowledgeBase conceptMap, UserProgress progress)
     {
         var nodes = new List<NavNode>();
-        var maxLevel = kb.MaxComplexityLevel;
+        var maxLevel = conceptMap.MaxComplexityLevel;
 
         // Group concepts by complexity level
         for (int level = 0; level <= maxLevel; level++)
         {
-            var conceptsAtLevel = kb.GetConceptsAtLevel(level).ToList();
+            var conceptsAtLevel = conceptMap.GetConceptsAtLevel(level).ToList();
             if (conceptsAtLevel.Count == 0) continue;
 
             var levelNode = new NavNode
@@ -239,7 +241,7 @@ public sealed class SideNavService
             {
                 var isLearned = progress.IsConceptLearned(concept.Id);
                 var isVisited = progress.IsConceptVisited(concept.Id);
-                var complexity = kb.GetComplexity(concept.Id);
+                var complexity = conceptMap.GetComplexity(concept.Id);
 
                 var conceptNode = new NavNode
                 {

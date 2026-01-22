@@ -1,0 +1,481 @@
+﻿@using Microsoft.JSInterop
+@using Tutor.Models
+@using Tutor.Services
+@inject ConceptMapStorageService ConceptMapStorageService
+@inject ConceptMapCollectionService ConceptMapCollectionService
+@inject CourseService CourseService
+@inject IJSRuntime JS
+@implements IDisposable
+
+@if (isLoading)
+{
+    <div class="kb-graph-container">
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading Concept Maps...</p>
+        </div>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="kb-graph-container">
+        <div class="empty-state">
+            <div class="empty-icon">
+                <span class="bi bi-exclamation-circle"></span>
+            </div>
+            <h4>Concept Maps Not Found</h4>
+            <p>@errorMessage</p>
+        </div>
+    </div>
+}
+else if (concepts.Count == 0)
+{
+    <div class="kb-graph-container">
+        <div class="empty-state">
+            <div class="empty-icon">
+                <span class="bi bi-diagram-3"></span>
+            </div>
+            <h4>No Concepts Found</h4>
+            <p>The concept maps have no concepts. Try regenerating them with more content.</p>
+        </div>
+    </div>
+}
+else
+{
+<div class="kb-graph-container">
+<div class="kb-graph-header">
+    <h4>@graphTitle</h4>
+    <div class="kb-graph-stats">
+        <span class="stat">@concepts.Count concepts</span>
+        <span class="stat">@relationships.Count relationships</span>
+        @if (conceptMapCount > 1)
+        {
+            <span class="stat">@conceptMapCount sources</span>
+        }
+    </div>
+</div>
+    
+    <div class="kb-graph-wrapper">
+        <div id="kb-force-graph" class="force-graph-canvas" @ref="graphContainer"></div>
+    </div>
+
+    @if (selectedConcept != null)
+    {
+        <div class="concept-detail-panel">
+            <div class="concept-detail-header">
+                <h5>@selectedConcept.Title</h5>
+                <button class="close-btn small" @onclick="ClearSelection">
+                    <span class="bi bi-x-lg"></span>
+                </button>
+            </div>
+            
+            @if (!string.IsNullOrEmpty(selectedConcept.Summary))
+            {
+                <div class="concept-summary">@selectedConcept.Summary</div>
+            }
+
+            @if (selectedConcept.Aliases.Count > 0)
+            {
+                <div class="concept-aliases">
+                    <span class="label">Also known as:</span>
+                    <span class="value">@string.Join(", ", selectedConcept.Aliases)</span>
+                </div>
+            }
+
+            @if (selectedConcept.Tags.Count > 0)
+            {
+                <div class="concept-tags">
+                    @foreach (var tag in selectedConcept.Tags)
+                    {
+                        <span class="kb-tag">@tag</span>
+                    }
+                </div>
+            }
+
+            @if (relatedConcepts.Count > 0)
+            {
+                <div class="concept-relationships">
+                    <h6>Related Concepts</h6>
+                    <div class="relationship-list">
+                        @foreach (var rel in relatedConcepts)
+                        {
+                            <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.TargetConceptId))">
+                                <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
+                                <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
+                                <span class="bi bi-arrow-right"></span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (incomingRelationships.Count > 0)
+            {
+                <div class="concept-relationships incoming">
+                    <h6>Referenced By</h6>
+                    <div class="relationship-list">
+                        @foreach (var rel in incomingRelationships)
+                        {
+                            <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.SourceConceptId))">
+                                <span class="rel-source">@GetConceptTitle(rel.SourceConceptId)</span>
+                                <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
+                                <span class="bi bi-arrow-left"></span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="concept-detail-panel empty">
+            <div class="empty-hint">
+                <span class="bi bi-hand-index"></span>
+                <span>Click on a concept node to view details</span>
+            </div>
+        </div>
+    }
+</div>
+}
+
+@code {
+    /// <summary>
+    /// Single ConceptMap ID (legacy/single mode)
+    /// </summary>
+    [Parameter] public string? ConceptMapId { get; set; }
+
+    /// <summary>
+    /// Legacy parameter - use ConceptMapId instead
+    /// </summary>
+    [Parameter] public string? KnowledgeBaseId { get; set; }
+    
+    /// <summary>
+    /// Course ID to load the ConceptMapCollection from
+    /// </summary>
+    [Parameter] public string? CourseId { get; set; }
+    
+    /// <summary>
+    /// Direct ConceptMapCollection ID to load
+    /// </summary>
+    [Parameter] public string? ConceptMapCollectionId { get; set; }
+
+    /// <summary>
+    /// Legacy parameter - use ConceptMapCollectionId instead
+    /// </summary>
+    [Parameter] public string? KnowledgeBaseCollectionId { get; set; }
+    
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private KnowledgeBase? conceptMap;
+    private LoadedKnowledgeBaseCollection? loadedCollection;
+    private List<Concept> concepts = [];
+    private List<ConceptRelationship> relationships = [];
+    private Concept? selectedConcept;
+    private List<ConceptRelationship> relatedConcepts = [];
+    private List<ConceptRelationship> incomingRelationships = [];
+    private ElementReference graphContainer;
+    private DotNetObjectReference<ConceptMapCollectionGraph>? dotNetRef;
+    private bool isInitialized;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string graphTitle = "Concept Map Collection";
+    private int conceptMapCount = 1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Resolve legacy parameters
+        var effectiveConceptMapId = ConceptMapId ?? KnowledgeBaseId;
+        var effectiveCollectionId = ConceptMapCollectionId ?? KnowledgeBaseCollectionId;
+        
+        // Load when parameter changes - prioritize CourseId, then CollectionId, then single ConceptMapId
+        if (!isInitialized)
+        {
+            if (!string.IsNullOrEmpty(CourseId))
+            {
+                await LoadFromCourseAsync();
+            }
+            else if (!string.IsNullOrEmpty(effectiveCollectionId))
+            {
+                await LoadFromCollectionAsync(effectiveCollectionId);
+            }
+            else if (!string.IsNullOrEmpty(effectiveConceptMapId))
+            {
+                await LoadSingleConceptMap(effectiveConceptMapId);
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (concepts.Count > 0 && !isInitialized && !isLoading)
+        {
+            // Small delay to ensure the DOM element is fully rendered
+            await Task.Delay(50);
+            
+            dotNetRef = DotNetObjectReference.Create(this);
+            await InitializeGraph();
+            isInitialized = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the ConceptMapCollection for a Course and aggregates all concepts/relationships.
+    /// </summary>
+    private async Task LoadFromCourseAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loading from Course: {CourseId}");
+            
+            var course = await CourseService.GetCourseAsync(CourseId!);
+            if (course == null)
+            {
+                errorMessage = $"Course with ID '{CourseId}' not found.";
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Course not found: {CourseId}");
+                return;
+            }
+
+            graphTitle = $"{course.Name} - Concept Map";
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Course found: {course.Name}, ResourceIds: {course.ResourceIds.Count}");
+
+            // Get ConceptMap IDs from resources that have them built
+            var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(CourseId!);
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] ConceptMap IDs found: {conceptMapIds.Count}");
+            
+            if (conceptMapIds.Count == 0)
+            {
+                // Try to get more details about why no ConceptMaps were found
+                var resources = await CourseService.GetCourseResourcesAsync(CourseId!);
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Course resources: {resources.Count}");
+                foreach (var r in resources)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph]   Resource '{r.Title}': HasConceptMap={r.HasConceptMap}, ConceptMapId={r.ConceptMapId ?? "null"}, Status={r.ConceptMapStatus}");
+                }
+                
+                errorMessage = "No Concept Maps have been built for this course's resources yet.";
+                return;
+            }
+
+            // Load and aggregate all ConceptMaps
+            await LoadAndAggregateConceptMaps(conceptMapIds);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading Concept Maps: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads from a ConceptMapCollection directly.
+    /// </summary>
+    private async Task LoadFromCollectionAsync(string collectionId)
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loading Collection: {collectionId}");
+            
+            loadedCollection = await ConceptMapCollectionService.LoadWithConceptMapsAsync(collectionId);
+            
+            if (loadedCollection == null)
+            {
+                errorMessage = $"Concept Map Collection '{collectionId}' not found.";
+                return;
+            }
+
+            graphTitle = loadedCollection.Collection.Name;
+            conceptMapCount = loadedCollection.KnowledgeBases.Count;
+            
+            // Aggregate concepts and relationships from the loaded collection
+            concepts = loadedCollection.GetAllConcepts().ToList();
+            relationships = loadedCollection.GetAllRelations().ToList();
+            
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loaded collection with {concepts.Count} concepts, {relationships.Count} relationships from {conceptMapCount} ConceptMaps");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading Collection: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads and aggregates multiple ConceptMaps by their IDs.
+    /// </summary>
+    private async Task LoadAndAggregateConceptMaps(List<string> cmIds)
+    {
+        var allConcepts = new List<Concept>();
+        var allRelationships = new List<ConceptRelationship>();
+        var loadedMaps = new List<KnowledgeBase>();
+
+        foreach (var cmId in cmIds)
+        {
+            var cm = await ConceptMapStorageService.LoadAsync(cmId);
+            if (cm != null && cm.Status == KnowledgeBaseStatus.Ready)
+            {
+                loadedMaps.Add(cm);
+                allConcepts.AddRange(cm.Concepts);
+                allRelationships.AddRange(cm.Relations);
+            }
+        }
+
+        conceptMapCount = loadedMaps.Count;
+        concepts = allConcepts;
+        relationships = allRelationships;
+
+        System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Aggregated {concepts.Count} concepts, {relationships.Count} relationships from {conceptMapCount} ConceptMaps");
+    }
+
+    /// <summary>
+    /// Loads a single ConceptMap (legacy mode).
+    /// </summary>
+    private async Task LoadSingleConceptMap(string cmId)
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loading single ConceptMap: {cmId}");
+            conceptMap = await ConceptMapStorageService.LoadAsync(cmId);
+            
+            if (conceptMap != null)
+            {
+                graphTitle = conceptMap.Name;
+                conceptMapCount = 1;
+                concepts = conceptMap.Concepts ?? [];
+                relationships = conceptMap.Relations ?? [];
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loaded {concepts.Count} concepts, {relationships.Count} relationships");
+            }
+            else
+            {
+                errorMessage = $"Concept Map with ID '{cmId}' not found.";
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] ConceptMap not found: {cmId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading Concept Map: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InitializeGraph()
+    {
+        if (concepts.Count == 0) return;
+
+        // Prepare data for D3.js force layout
+        var nodes = concepts.Select(c => new
+        {
+            id = c.Id,
+            title = c.Title,
+            group = c.Tags.FirstOrDefault() ?? "default"
+        }).ToArray();
+
+        var links = relationships.Select(r => new
+        {
+            source = r.SourceConceptId,
+            target = r.TargetConceptId,
+            type = r.RelationType.ToString()
+        }).ToArray();
+
+        try
+        {
+            await JS.InvokeVoidAsync("initForceGraph", graphContainer, nodes, links, dotNetRef);
+        }
+        catch (JSException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] JS Error initializing graph: {ex.Message}");
+            // Reset flag to allow retry on next render
+            isInitialized = false;
+        }
+    }
+
+    [JSInvokable]
+    public void OnNodeClick(string conceptId)
+    {
+        SelectConceptById(conceptId, smoothPan: false);
+        StateHasChanged();
+    }
+
+    private async void SelectConceptById(string conceptId, bool smoothPan = true)
+    {
+        selectedConcept = concepts.FirstOrDefault(c => c.Id == conceptId);
+        if (selectedConcept != null)
+        {
+            relatedConcepts = relationships.Where(r => r.SourceConceptId == conceptId).ToList();
+            incomingRelationships = relationships.Where(r => r.TargetConceptId == conceptId).ToList();
+            
+            if (smoothPan)
+            {
+                await JS.InvokeVoidAsync("panToNode", conceptId);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("highlightNode", conceptId);
+            }
+        }
+        else
+        {
+            relatedConcepts = [];
+            incomingRelationships = [];
+        }
+        StateHasChanged();
+    }
+
+    private void ClearSelection()
+    {
+        selectedConcept = null;
+        relatedConcepts = [];
+        incomingRelationships = [];
+    }
+
+    private string GetConceptTitle(string conceptId)
+    {
+        return concepts.FirstOrDefault(c => c.Id == conceptId)?.Title ?? "Unknown";
+    }
+
+    private string FormatRelationType(ConceptRelationType type)
+    {
+        return type switch
+        {
+            ConceptRelationType.Prerequisite => "requires",
+            ConceptRelationType.Related => "related to",
+            ConceptRelationType.Contains => "contains",
+            ConceptRelationType.InstanceOf => "instance of",
+            ConceptRelationType.SimilarTo => "similar to",
+            ConceptRelationType.ContrastsWith => "contrasts",
+            _ => type.ToString().ToLower()
+        };
+    }
+
+    public void Dispose()
+    {
+        dotNetRef?.Dispose();
+    }
+}

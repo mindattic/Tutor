@@ -5,7 +5,7 @@
 @inject CourseService CourseService
 @inject ResourceProcessingService ProcessingService
 @inject KnowledgeBaseService KnowledgeBaseService
-@inject KnowledgeBaseStorageService KnowledgeBaseStorageService
+@inject ConceptMapStorageService ConceptMapStorageService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -17,6 +17,7 @@
             <div class="queue-header">
                 <span class="bi bi-hourglass-split"></span>
                 <span>Processing @processingTasks.Count resource(s)...</span>
+                <span class="processing-note">(Resources will appear in library when complete)</span>
             </div>
             @foreach (var task in processingTasks.Values.OrderBy(t => t.QueuedAt))
             {
@@ -24,6 +25,7 @@
                     <div class="queue-item-header">
                         <span class="queue-item-title">@task.ResourceTitle</span>
                         <span class="queue-item-stage">@task.StageDisplayName</span>
+                        <span class="queue-item-time">@task.ElapsedTimeFormatted</span>
                     </div>
                     <div class="progress-bar-container small">
                         <div class="progress-bar" style="width: @(task.Progress)%"></div>
@@ -31,6 +33,10 @@
                     <div class="queue-item-status">@task.CurrentOperation</div>
                 </div>
             }
+            <div class="queue-footer">
+                <span class="bi bi-clock"></span>
+                <span>Total Processing Time: @GetCumulativeProcessingTime()</span>
+            </div>
         </div>
     }
 
@@ -73,33 +79,23 @@
             var activeCourse = courses.FirstOrDefault(c => c.Id == selectedCourseId);
             if (activeCourse != null)
             {
-                <div class="curriculum-info-box active">
+            <div class="curriculum-info-box active">
                     <span class="icon-book"></span>
                     <span><strong>@activeCourse.Name</strong> is active. Chat will only use knowledge from the @activeCourse.ResourceIds.Count selected resource(s).</span>
                 </div>
                 
                 
-                @* Knowledge Base Section *@
+                @* Concept Map Section *@
                 <div class="kb-section">
                     <div class="kb-status-row">
                         <div class="kb-status-info">
-                            @if (isGeneratingKnowledgeBase)
-                            {
-                                <span class="kb-status generating">
-                                    <span class="bi bi-hourglass-split"></span>
-                                    <span>@kbGenerationStatus</span>
-                                </span>
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" style="width: @(kbGenerationProgress)%"></div>
-                                </div>
-                            }
-                            else if (resourcesWithKb > 0)
+                            @if (resourcesWithKb > 0)
                             {
                                 <span class="kb-status @(resourcesWithKb < totalResourcesInCourse ? "needs-update" : "ready")">
                                     @if (resourcesWithKb < totalResourcesInCourse)
                                     {
                                         <span class="bi bi-arrow-clockwise"></span>
-                                        <span>@resourcesWithKb/@totalResourcesInCourse resources have Knowledge Bases (@knowledgeBaseConceptCount concepts)</span>
+                                        <span>@resourcesWithKb/@totalResourcesInCourse resources have Concept Maps (@knowledgeBaseConceptCount concepts)</span>
                                     }
                                     else
                                     {
@@ -112,34 +108,24 @@
                             {
                                 <span class="kb-status not-built">
                                     <span class="bi bi-exclamation-circle"></span>
-                                    <span>No Knowledge Bases - Build them to enable concept exploration</span>
+                                    <span>No Concept Maps - Build them to enable concept exploration</span>
                                 </span>
                             }
                             else
                             {
                                 <span class="kb-status not-built">
                                     <span class="bi bi-info-circle"></span>
-                                    <span>Add resources to build Knowledge Bases</span>
+                                    <span>Add resources to build Concept Maps</span>
                                 </span>
                             }
                         </div>
                         <div class="kb-actions">
-                            @if (isGeneratingKnowledgeBase)
+                            @if (resourcesWithKb > 0)
                             {
-                                <button class="settings-btn danger small" @onclick="CancelKnowledgeBaseGeneration" title="Cancel">
-                                    <span class="bi bi-x-lg"></span>
-                                    Cancel
+                                <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Explore Concept Maps">
+                                    <span class="bi bi-diagram-3"></span>
+                                    Explore
                                 </button>
-                            }
-                            else
-                            {
-                                @if (resourcesWithKb > 0)
-                                {
-                                    <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Explore Knowledge Bases">
-                                        <span class="bi bi-diagram-3"></span>
-                                        Explore
-                                    </button>
-                                }
                             }
                         </div>
                     </div>
@@ -175,27 +161,37 @@
         @if (activeTab == "Library")
         {
             <div class="library-section">
-                @if (resources.Count == 0)
-                {
-                    <div class="empty-state">
-                        <p>No resources yet. Add some resources to build your knowledge base.</p>
-                        <button class="settings-btn primary" @onclick="@(() => activeTab = "Add")">Add First Resource</button>
-                    </div>
-                }
-                else
-                {
-                    @if (!string.IsNullOrEmpty(selectedCourseId))
+            @{
+                var processedResources = resources.Where(r => r.IsProcessed && r.HasConceptMap).ToList();
+            }
+            @if (processedResources.Count == 0)
+            {
+                <div class="empty-state">
+                    @if (processingTasks.Count > 0)
                     {
-                        <p class="library-hint">Check resources to add them to the active course. Uncheck to remove.</p>
+                        <p>Resources are being processed. They will appear here once AI formatting and Concept Map generation is complete.</p>
                     }
                     else
                     {
-                        <p class="library-hint">Select a course above to manage which resources are included.</p>
+                        <p>No resources yet. Add some resources to build your knowledge base.</p>
+                        <button class="settings-btn primary" @onclick="@(() => activeTab = "Add")">Add First Resource</button>
                     }
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(selectedCourseId))
+                {
+                    <p class="library-hint">Check resources to add them to the active course. Uncheck to remove.</p>
+                }
+                else
+                {
+                    <p class="library-hint">Select a course above to manage which resources are included.</p>
+                }
                     
                     
-                    <div class="resource-list">
-                        @foreach (var item in resources)
+                <div class="resource-list">
+                    @foreach (var item in processedResources)
                         {
                             var isInCourse = !string.IsNullOrEmpty(selectedCourseId) && 
                                 courses.FirstOrDefault(c => c.Id == selectedCourseId)?.ResourceIds.Contains(item.Id) == true;
@@ -238,15 +234,15 @@
                                                     <span class="bi bi-check-circle-fill"></span> Formatted
                                                 </span>
                                             }
-                                            @if (item.HasKnowledgeBase || (kbDetails?.ConceptCount > 0))
+                                            @if (item.HasConceptMap || (kbDetails?.ConceptCount > 0))
                                             {
-                                                <span class="status-badge has-kb" title="Has Knowledge Base">
+                                                <span class="status-badge has-kb" title="Has Concept Map">
                                                     <span class="bi bi-lightbulb-fill"></span> @(kbDetails?.ConceptCount ?? 0) concepts
                                                 </span>
                                             }
-                                            else if (!string.IsNullOrEmpty(item.KnowledgeBaseId) && item.KnowledgeBaseStatus != KnowledgeBaseStatus.Ready)
+                                            else if (!string.IsNullOrEmpty(item.ConceptMapId) && item.ConceptMapStatus != ConceptMapStatus.Ready)
                                             {
-                                                <span class="status-badge kb-pending" title="Knowledge Base building">
+                                                <span class="status-badge kb-pending" title="Concept Map building">
                                                     <span class="bi bi-hourglass-split"></span> Building...
                                                 </span>
                                             }
@@ -302,7 +298,7 @@
                                             
                                             @* Knowledge Base Section *@
                                             <div class="details-section">
-                                                <h5><span class="bi bi-diagram-3"></span> Knowledge Base</h5>
+                                                <h5><span class="bi bi-diagram-3"></span> Concept Map</h5>
                                                 @if (kbDetails != null && kbDetails.ConceptCount > 0)
                                                 {
                                                     <div class="details-row">
@@ -326,13 +322,36 @@
                                                             <span class="details-value">@kbDetails.KnowledgeBaseUpdatedAt.Value.ToString("MMM d, yyyy")</span>
                                                         </div>
                                                     }
+                                                    <div class="details-actions">
+                                                        <button class="settings-btn small" 
+                                                                @onclick="@(() => ExportConceptMap(item))"
+                                                                title="Export to markdown file">
+                                                            <span class="bi bi-file-earmark-text"></span>
+                                                            <span>Export</span>
+                                                        </button>
+                                                        <button class="settings-btn small" 
+                                                                @onclick="@(() => RegenerateConceptMap(item))"
+                                                                disabled="@IsRegeneratingConceptMap(item.Id)"
+                                                                title="Regenerate from formatted content">
+                                                            @if (IsRegeneratingConceptMap(item.Id))
+                                                            {
+                                                                <span class="bi bi-hourglass-split"></span>
+                                                                <span>Regenerating...</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="bi bi-arrow-clockwise"></span>
+                                                                <span>Regenerate</span>
+                                                            }
+                                                        </button>
+                                                    </div>
                                                 }
-                                                else if (!string.IsNullOrEmpty(item.KnowledgeBaseId))
+                                                else if (!string.IsNullOrEmpty(item.ConceptMapId))
                                                 {
                                                     <div class="details-row">
                                                         <span class="details-label">Status:</span>
                                                         <span class="details-value warning">
-                                                            <span class="bi bi-hourglass-split"></span> @item.KnowledgeBaseStatus
+                                                            <span class="bi bi-hourglass-split"></span> @item.ConceptMapStatus
                                                         </span>
                                                     </div>
                                                 }
@@ -346,7 +365,7 @@
                                                     </div>
                                                     <div class="details-row hint">
                                                         <span class="bi bi-info-circle"></span>
-                                                        Knowledge Base will be built when resource is processed.
+                                                        Concept Map will be built when resource is processed.
                                                     </div>
                                                 }
                                             </div>
@@ -357,7 +376,7 @@
                                         {
                                             <div class="course-association-hint">
                                                 <span class="bi bi-info-circle"></span>
-                                                This resource's Knowledge Base can be combined with others when added to a Course.
+                                                This resource's Concept Map can be combined with others when added to a Course.
                                             </div>
                                         }
                                     </div>
@@ -452,42 +471,10 @@
 
                 @if (editingResource == null)
                 {
-                    <div class="form-group">
-                        <div class="checkbox-row">
-                            <input type="checkbox" id="autoFormat" @bind="autoFormatContent" />
-                            <label for="autoFormat">Auto-format with AI</label>
-                        </div>
-                        <p class="format-hint">
-                            @if (autoFormatContent)
-                            {
-                                <span><span class="bi bi-check-lg"></span> Content will be automatically structured into clear sections with markdown formatting.</span>
-                            }
-                            else
-                            {
-                                <span>Content will be saved as-is without formatting.</span>
-                            }
-                        </p>
+                    <div class="processing-info-box">
+                        <span class="bi bi-info-circle"></span>
+                        <span>New resources are automatically formatted with AI and a Knowledge Base is generated. This may take several minutes depending on content size.</span>
                     </div>
-
-                    @if (!string.IsNullOrEmpty(selectedCourseId))
-                    {
-                        <div class="form-group">
-                            <div class="checkbox-row">
-                                <input type="checkbox" id="buildGraph" @bind="buildKnowledgeGraph" />
-                                <label for="buildGraph">Build Knowledge Graph</label>
-                            </div>
-                            <p class="format-hint">
-                                @if (buildKnowledgeGraph)
-                                {
-                                    <span><span class="bi bi-check-lg"></span> Concepts will be extracted and added to the course knowledge graph.</span>
-                                }
-                                else
-                                {
-                                    <span>Resource will be saved without updating the knowledge graph.</span>
-                                }
-                            </p>
-                        </div>
-                    }
                 }
 
                 <div class="form-actions">
@@ -587,17 +574,17 @@
     </div>
 }
 
-@* Knowledge Base Explorer Modal *@
+@* Concept Map Collection Explorer Modal *@
 @if (showKnowledgeBaseExplorer && !string.IsNullOrEmpty(explorerCourseId))
 {
     <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
         <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span><span class="bi bi-diagram-3"></span> Knowledge Base Explorer</span>
+                <span><span class="bi bi-diagram-3"></span> Concept Map Explorer</span>
                 <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body kb-explorer-body">
-                <KnowledgeBaseGraph CourseId="@explorerCourseId" />
+                <ConceptMapCollectionGraph CourseId="@explorerCourseId" />
             </div>
         </div>
     </div>
@@ -610,16 +597,12 @@ private List<Course> courses = new();
 private string? selectedCourseId;
 private Dictionary<string, ResourceProcessingStatus> processingTasks = new();
 
-// Knowledge Base generation state
-private bool isGeneratingKnowledgeBase;
-private bool kbNeedsRegeneration;
-private int kbGenerationProgress;
-private string kbGenerationStatus = "";
+// Concept Map state
 private string kbErrorMessage = "";
 private int knowledgeBaseConceptCount;
 private int resourcesWithKb;
 private int totalResourcesInCourse;
-private CancellationTokenSource? kbCancellationTokenSource;
+private HashSet<string> regeneratingConceptMaps = new();
 
 // Add/Edit form
 private CourseResource? editingResource;
@@ -628,12 +611,10 @@ private string resourceAuthor = "";
 private string resourceYear = "";
 private string resourceDescription = "";
 private string resourceContent = "";
-private string fullFileContent = ""; // Full content when uploaded via file
+    private string fullFileContent = ""; // Full content when uploaded via file
     private string contentSource = "text";
     private string uploadedFileName = "";
     private ResourceType uploadedFileType = ResourceType.Text;
-    private bool autoFormatContent = true;
-    private bool buildKnowledgeGraph = true;
 
     // Modals
     private bool showNewCourseModal;
@@ -657,7 +638,11 @@ private string fullFileContent = ""; // Full content when uploaded via file
     private string deleteConfirmMessage = "";
     private Func<Task>? pendingDeleteAction;
 
+
     private string statusMessage = "";
+    
+    // Timer for updating processing time display
+    private System.Threading.Timer? processingTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -671,16 +656,22 @@ private string fullFileContent = ""; // Full content when uploaded via file
 
         await LoadData();
         RefreshProcessingTasks();
+        
+        // Start timer to update processing time display every second
+        processingTimer = new System.Threading.Timer(
+            _ => InvokeAsync(StateHasChanged),
+            null,
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(1));
     }
 
     public void Dispose()
     {
+        processingTimer?.Dispose();
         ProcessingService.OnStatusChanged -= OnProcessingStatusChanged;
         ProcessingService.OnProcessingComplete -= OnProcessingComplete;
         ProcessingService.OnProcessingError -= OnProcessingError;
         KnowledgeBaseService.OnProgressChanged -= OnKnowledgeBaseProgressChanged;
-        kbCancellationTokenSource?.Cancel();
-        kbCancellationTokenSource?.Dispose();
     }
 
     private void OnProcessingStatusChanged(ResourceProcessingStatus status)
@@ -736,25 +727,25 @@ private string fullFileContent = ""; // Full content when uploaded via file
                 totalResourcesInCourse = course.ResourceIds.Count;
                 bool needsSave = false;
                 
-                // Count concepts across all resource KnowledgeBases
+                // Count concepts across all resource ConceptMaps
                 foreach (var resourceId in course.ResourceIds)
                 {
                     var resource = resources.FirstOrDefault(r => r.Id == resourceId);
                     if (resource == null) continue;
                     
-                    // Check if resource has a KB ID set
-                    if (!string.IsNullOrEmpty(resource.KnowledgeBaseId))
+                    // Check if resource has a ConceptMap ID set
+                    if (!string.IsNullOrEmpty(resource.ConceptMapId))
                     {
-                        var kb = await KnowledgeBaseStorageService.LoadAsync(resource.KnowledgeBaseId);
-                        if (kb != null && kb.Status == KnowledgeBaseStatus.Ready)
+                        var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
+                        if (conceptMap != null && conceptMap.Status == KnowledgeBaseStatus.Ready)
                         {
-                            knowledgeBaseConceptCount += kb.Concepts.Count;
+                            knowledgeBaseConceptCount += conceptMap.Concepts.Count;
                             resourcesWithKb++;
                             
                             // Fix up stale resource status if needed (migration for older data)
-                            if (resource.KnowledgeBaseStatus != KnowledgeBaseStatus.Ready)
+                            if (resource.ConceptMapStatus != ConceptMapStatus.Ready)
                             {
-                                resource.KnowledgeBaseStatus = KnowledgeBaseStatus.Ready;
+                                resource.ConceptMapStatus = ConceptMapStatus.Ready;
                                 needsSave = true;
                             }
                         }
@@ -798,11 +789,10 @@ private string fullFileContent = ""; // Full content when uploaded via file
 
         await LoadData();
 
-        // If a resource was added and course has a KB, prompt to regenerate
-        if (wasAdded && course.HasKnowledgeBase)
+        // If a resource was added and course has a ConceptMapCollection, show regeneration hint
+        if (wasAdded && course.HasConceptMapCollection)
         {
-            kbNeedsRegeneration = true;
-            statusMessage = "Resource added. Consider regenerating the Knowledge Base to include the new content.";
+            statusMessage = "Resource added. Consider regenerating the Concept Map to include the new content.";
         }
     }
 
@@ -835,9 +825,12 @@ private string fullFileContent = ""; // Full content when uploaded via file
         fullFileContent = "";
         uploadedFileName = "";
         uploadedFileType = ResourceType.Text;
-        autoFormatContent = true;
-        buildKnowledgeGraph = true;
         statusMessage = "";
+    }
+
+    private string GetCumulativeProcessingTime()
+    {
+        return ProcessingService.GetCumulativeProcessingTimeFormatted();
     }
 
     private void QueueResource()
@@ -869,14 +862,14 @@ private string fullFileContent = ""; // Full content when uploaded via file
             resource.Id = Guid.NewGuid().ToString();
         }
 
-        // Queue for async processing - returns immediately
+        // Queue for async processing - always formats and builds KB for new resources
         var taskId = ProcessingService.QueueResourceForProcessing(
             resource,
             selectedCourseId,
-            autoFormat: autoFormatContent && isNew,
-            buildGraph: buildKnowledgeGraph && !string.IsNullOrEmpty(selectedCourseId));
+            autoFormat: isNew,  // Always format new resources
+            buildGraph: isNew); // Always build KB for new resources
 
-        statusMessage = "Resource queued for processing. You can add more resources.";
+        statusMessage = "Resource queued for processing. AI formatting and Knowledge Base generation will begin shortly.";
         editingResource = null;
         ClearForm();
         
@@ -889,6 +882,108 @@ private string fullFileContent = ""; // Full content when uploaded via file
     {
         await CourseService.DeleteResourceAsync(id);
         await LoadData();
+    }
+
+    private bool IsRegeneratingConceptMap(string resourceId)
+    {
+        return regeneratingConceptMaps.Contains(resourceId);
+    }
+
+    private async Task RegenerateConceptMap(CourseResource resource)
+    {
+        if (regeneratingConceptMaps.Contains(resource.Id))
+            return;
+
+        // Check if the resource has formatted content
+        var content = resource.GetEffectiveContent();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            Log.Warn($"Cannot regenerate ConceptMap for '{resource.Title}': No content available");
+            return;
+        }
+
+        try
+        {
+            regeneratingConceptMaps.Add(resource.Id);
+            StateHasChanged();
+
+            Log.Info($"Regenerating ConceptMap for resource: {resource.Title}");
+
+            // Clear existing ConceptMap data
+            if (!string.IsNullOrEmpty(resource.ConceptMapId))
+            {
+                await ConceptMapStorageService.DeleteAsync(resource.ConceptMapId);
+            }
+
+            // Reset resource state
+            resource.ConceptMapId = null;
+            resource.ConceptMapStatus = ConceptMapStatus.NotStarted;
+            await CourseService.SaveResourceAsync(resource);
+
+            // Invalidate the cached details
+            resourceKbDetailsCache.Remove(resource.Id);
+
+
+            // Queue the resource for processing (only rebuild ConceptMap, don't re-format)
+            ProcessingService.QueueResourceForProcessing(
+                resource,
+                selectedCourseId,
+                autoFormat: false,  // Don't re-format, use existing formatted content
+                buildGraph: true);  // Build the ConceptMap
+            
+            RefreshProcessingTasks();
+            
+            Log.Info($"ConceptMap regeneration queued for: {resource.Title}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to queue ConceptMap regeneration: {ex.Message}", ex);
+        }
+        finally
+        {
+            regeneratingConceptMaps.Remove(resource.Id);
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportConceptMap(CourseResource resource)
+    {
+        if (string.IsNullOrEmpty(resource.ConceptMapId))
+        {
+            Log.Warn($"Cannot export ConceptMap for '{resource.Title}': No ConceptMap exists");
+            return;
+        }
+
+        try
+        {
+            // Load the ConceptMap and trigger export by re-saving it
+            var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
+            if (conceptMap != null && conceptMap.Status == KnowledgeBaseStatus.Ready)
+            {
+                await ConceptMapStorageService.SaveAsync(conceptMap);
+                
+                // Show success message
+                statusMessage = $"Concept Map exported to Resources/ConceptMaps/{SanitizeFileName(conceptMap.Name)}_concept-map.md";
+                StateHasChanged();
+                
+                Log.Info($"ConceptMap exported for: {resource.Title}");
+            }
+            else
+            {
+                Log.Warn($"Cannot export ConceptMap for '{resource.Title}': ConceptMap not ready");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to export ConceptMap: {ex.Message}", ex);
+        }
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return sanitized.ToLowerInvariant().Replace(' ', '-');
     }
 
     private async Task PickFile()
@@ -1025,7 +1120,7 @@ private string fullFileContent = ""; // Full content when uploaded via file
     private void OpenKnowledgeBaseExplorer()
     {
         var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-        if (course != null && HasAnyKnowledgeBases(course))
+        if (course != null && HasAnyConceptMaps(course))
         {
             explorerCourseId = course.Id;
             showKnowledgeBaseExplorer = true;
@@ -1039,16 +1134,16 @@ private string fullFileContent = ""; // Full content when uploaded via file
     }
 
     /// <summary>
-    /// Checks if any resources in the course have built KnowledgeBases.
+    /// Checks if any resources in the course have built ConceptMaps.
     /// </summary>
-    private bool HasAnyKnowledgeBases(Course course)
+    private bool HasAnyConceptMaps(Course course)
     {
         if (course == null) return false;
         
-        // Check if any resource in the course has a KB
+        // Check if any resource in the course has a ConceptMap
         return resources
             .Where(r => course.ResourceIds.Contains(r.Id))
-            .Any(r => r.HasKnowledgeBase);
+            .Any(r => r.HasConceptMap);
     }
 
     private void ConfirmDeleteCourse()
@@ -1057,7 +1152,7 @@ private string fullFileContent = ""; // Full content when uploaded via file
         if (course == null) return;
 
         deleteConfirmTitle = "Delete Course";
-        deleteConfirmMessage = $"Are you sure you want to delete \"{course.Name}\"? This will remove the course and its Knowledge Base, but resources will remain in the library.";
+        deleteConfirmMessage = $"Are you sure you want to delete \"{course.Name}\"? This will remove the course and its Concept Maps, but resources will remain in the library.";
         pendingDeleteAction = async () =>
         {
             await CourseService.DeleteCourseAsync(selectedCourseId!);
@@ -1113,18 +1208,12 @@ private string fullFileContent = ""; // Full content when uploaded via file
         CloseModals();
     }
 
-    // Knowledge Base generation
+    // Knowledge Base generation progress handler
     private void OnKnowledgeBaseProgressChanged(KnowledgeBaseBuildProgress progress)
     {
-        kbGenerationProgress = progress.Progress;
-        kbGenerationStatus = progress.Message;
+        // Progress is now tracked via the background queue service
+        // This handler keeps the UI responsive during builds
         InvokeAsync(StateHasChanged);
-    }
-
-    private void CancelKnowledgeBaseGeneration()
-    {
-        Log.Info("User cancelled Knowledge Base generation");
-        kbCancellationTokenSource?.Cancel();
     }
 
     // Expandable resource details
@@ -1155,22 +1244,22 @@ private string fullFileContent = ""; // Full content when uploaded via file
             ContentLength = resource.Content?.Length ?? 0,
             FormattedContentLength = resource.FormattedContent?.Length ?? 0,
             HasFormattedContent = !string.IsNullOrEmpty(resource.FormattedContent),
-            KnowledgeBaseStatus = resource.KnowledgeBaseStatus
+            ConceptMapStatus = resource.ConceptMapStatus
         };
 
-        // Load KB if exists
-        if (!string.IsNullOrEmpty(resource.KnowledgeBaseId))
+        // Load ConceptMap if exists
+        if (!string.IsNullOrEmpty(resource.ConceptMapId))
         {
-            var kb = await KnowledgeBaseStorageService.LoadAsync(resource.KnowledgeBaseId);
-            if (kb != null)
+            var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
+            if (conceptMap != null)
             {
-                details.KnowledgeBaseId = kb.Id;
-                details.ConceptCount = kb.Concepts.Count;
-                details.RelationCount = kb.Relations.Count;
-                details.KnowledgeBaseName = kb.Name;
-                details.KnowledgeBaseStatus = kb.Status;
-                details.KnowledgeBaseCreatedAt = kb.CreatedAt;
-                details.KnowledgeBaseUpdatedAt = kb.UpdatedAt;
+                details.ConceptMapId = conceptMap.Id;
+                details.ConceptCount = conceptMap.Concepts.Count;
+                details.RelationCount = conceptMap.Relations.Count;
+                details.ConceptMapName = conceptMap.Name;
+                details.ConceptMapStatus = (ConceptMapStatus)(int)conceptMap.Status;
+                details.KnowledgeBaseCreatedAt = conceptMap.CreatedAt;
+                details.KnowledgeBaseUpdatedAt = conceptMap.UpdatedAt;
             }
         }
 
@@ -1185,17 +1274,17 @@ private string fullFileContent = ""; // Full content when uploaded via file
         return details;
     }
 
-    // Helper class for caching KB details
+    // Helper class for caching ConceptMap details
     private class ResourceKbDetails
     {
         public int ContentLength { get; set; }
         public int FormattedContentLength { get; set; }
         public bool HasFormattedContent { get; set; }
-        public string? KnowledgeBaseId { get; set; }
-        public string? KnowledgeBaseName { get; set; }
+        public string? ConceptMapId { get; set; }
+        public string? ConceptMapName { get; set; }
         public int ConceptCount { get; set; }
         public int RelationCount { get; set; }
-        public KnowledgeBaseStatus KnowledgeBaseStatus { get; set; }
+        public ConceptMapStatus ConceptMapStatus { get; set; }
         public DateTime? KnowledgeBaseCreatedAt { get; set; }
         public DateTime? KnowledgeBaseUpdatedAt { get; set; }
     }

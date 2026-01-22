@@ -17,7 +17,7 @@ public sealed class CourseService
     private readonly FileResourceService fileResourceService;
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
-    private readonly KnowledgeBaseCollectionService? kbCollectionService;
+    private readonly ConceptMapCollectionService? conceptMapCollectionService;
 
     private List<CourseResource>? cachedResources;
     private List<Course>? cachedCourses;
@@ -30,7 +30,7 @@ public sealed class CourseService
         FileResourceService fileResourceService,
         LSHService lshService,
         SimHashService simHashService,
-        KnowledgeBaseCollectionService? kbCollectionService = null)
+        ConceptMapCollectionService? conceptMapCollectionService = null)
     {
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;
@@ -39,7 +39,7 @@ public sealed class CourseService
         this.fileResourceService = fileResourceService;
         this.lshService = lshService;
         this.simHashService = simHashService;
-        this.kbCollectionService = kbCollectionService;
+        this.conceptMapCollectionService = conceptMapCollectionService;
         Log.Debug("CourseService initialized");
     }
 
@@ -188,7 +188,7 @@ public sealed class CourseService
                 Description = $"AI-formatted version of: {resource.Title}",
                 Content = formattedContent,
                 Type = resource.Type,
-                FileName = AppendGuidToFileName(resource.FileName, newId),
+                FileName = AppendGuidToFileName(resource.FileName ?? "", newId),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -408,11 +408,12 @@ public sealed class CourseService
             course.ResourceIds.Add(resourceId);
             await SaveCoursesAsync(courses);
             
+            
             // Chunk and embed the resource for RAG
             await ChunkAndEmbedResourceAsync(resourceId, courseId);
             
-            // Rebuild KnowledgeBaseCollection for the course
-            await RebuildCourseKnowledgeBaseCollectionAsync(course);
+            // Rebuild ConceptMap collection for the course
+            await RebuildCourseConceptMapCollectionAsync(course);
         }
     }
 
@@ -517,11 +518,12 @@ public sealed class CourseService
             course.ResourceIds.Remove(resourceId);
             await SaveCoursesAsync(courses);
             
+            
             // Remove chunks for this resource
             await vectorStoreService.RemoveChunksForResourceAsync(resourceId);
             
-            // Rebuild KnowledgeBaseCollection for the course
-            await RebuildCourseKnowledgeBaseCollectionAsync(course);
+            // Rebuild ConceptMap collection for the course
+            await RebuildCourseConceptMapCollectionAsync(course);
         }
     }
 
@@ -539,49 +541,49 @@ public sealed class CourseService
     /// Rebuilds the KnowledgeBaseCollection for a course from its resources' KnowledgeBases.
     /// This should be called whenever resources are added/removed from a course.
     /// </summary>
-    public async Task RebuildCourseKnowledgeBaseCollectionAsync(Course course, CancellationToken ct = default)
+    public async Task RebuildCourseConceptMapCollectionAsync(Course course, CancellationToken ct = default)
     {
-        if (kbCollectionService == null)
+        if (conceptMapCollectionService == null)
         {
-            Log.Warn("CourseService: KnowledgeBaseCollectionService not available, skipping KB collection rebuild");
+            Log.Warn("CourseService: ConceptMapCollectionService not available, skipping collection rebuild");
             return;
         }
 
         var resources = await GetCourseResourcesAsync(course.Id);
         
-        // Rebuild the collection from resources that have KnowledgeBases
-        var collection = await kbCollectionService.RebuildForCourseAsync(course, resources, ct);
+        // Rebuild the collection from resources that have ConceptMaps
+        var collection = await conceptMapCollectionService.RebuildForCourseAsync(course, resources, ct);
         
         // Update course with the collection ID
-        if (course.KnowledgeBaseCollectionId != collection.Id)
+        if (course.ConceptMapCollectionId != collection.Id)
         {
-            course.KnowledgeBaseCollectionId = collection.Id;
+            course.ConceptMapCollectionId = collection.Id;
             var courses = await GetAllCoursesAsync();
             var existingCourse = courses.FirstOrDefault(c => c.Id == course.Id);
             if (existingCourse != null)
             {
-                existingCourse.KnowledgeBaseCollectionId = collection.Id;
+                existingCourse.ConceptMapCollectionId = collection.Id;
                 await SaveCoursesAsync(courses);
             }
         }
         
-        Log.Info($"CourseService: Rebuilt KB collection for '{course.Name}' with {collection.KnowledgeBaseIds.Count} KBs");
+        Log.Info($"CourseService: Rebuilt ConceptMap collection for '{course.Name}' with {collection.KnowledgeBaseIds.Count} ConceptMaps");
     }
 
     /// <summary>
-    /// Gets the LoadedKnowledgeBaseCollection for a course (all KBs loaded in memory).
-    /// Returns null if no collection exists or if KnowledgeBaseCollectionService is not available.
+    /// Gets the LoadedKnowledgeBaseCollection for a course (all ConceptMaps loaded in memory).
+    /// Returns null if no collection exists or if ConceptMapCollectionService is not available.
     /// </summary>
-    public async Task<LoadedKnowledgeBaseCollection?> GetCourseKnowledgeBaseCollectionAsync(string courseId, CancellationToken ct = default)
+    public async Task<LoadedKnowledgeBaseCollection?> GetCourseConceptMapCollectionAsync(string courseId, CancellationToken ct = default)
     {
-        if (kbCollectionService == null)
+        if (conceptMapCollectionService == null)
             return null;
 
         var course = await GetCourseAsync(courseId);
-        if (course == null || string.IsNullOrEmpty(course.KnowledgeBaseCollectionId))
+        if (course == null || string.IsNullOrEmpty(course.ConceptMapCollectionId))
             return null;
 
-        return await kbCollectionService.LoadWithKnowledgeBasesAsync(course.KnowledgeBaseCollectionId, ct);
+        return await conceptMapCollectionService.LoadWithConceptMapsAsync(course.ConceptMapCollectionId, ct);
     }
 
     // Active course management
@@ -836,18 +838,18 @@ public sealed class CourseService
         }
         sb.AppendLine();
 
-        // Include concepts from the KnowledgeBaseCollection if available
-        var kbCollection = await GetCourseKnowledgeBaseCollectionAsync(course.Id, ct);
-        if (kbCollection != null && kbCollection.TotalConcepts > 0)
+        // Include concepts from the ConceptMapCollection if available
+        var conceptMapCollection = await GetCourseConceptMapCollectionAsync(course.Id, ct);
+        if (conceptMapCollection != null && conceptMapCollection.TotalConcepts > 0)
         {
-            sb.AppendLine("=== KEY CONCEPTS FROM KNOWLEDGE BASES ===");
-            sb.AppendLine($"Total concepts across all resources: {kbCollection.TotalConcepts}");
+            sb.AppendLine("=== KEY CONCEPTS FROM CONCEPT MAPS ===");
+            sb.AppendLine($"Total concepts across all resources: {conceptMapCollection.TotalConcepts}");
             sb.AppendLine();
             
-            // Group concepts by their source KB and list the most important ones
-            foreach (var kb in kbCollection.KnowledgeBases)
+            // Group concepts by their source ConceptMap and list the most important ones
+            foreach (var kb in conceptMapCollection.KnowledgeBases)
             {
-                var resource = resources.FirstOrDefault(r => r.KnowledgeBaseId == kb.Id);
+                var resource = resources.FirstOrDefault(r => r.ConceptMapId == kb.Id);
                 var sourceName = resource?.Title ?? kb.Name;
                 
                 sb.AppendLine($"--- Concepts from: {sourceName} ({kb.Concepts.Count} concepts) ---");
@@ -880,7 +882,7 @@ public sealed class CourseService
             }
             
             // Show cross-resource relationships if any exist
-            var allRelations = kbCollection.GetAllRelations().ToList();
+            var allRelations = conceptMapCollection.GetAllRelations().ToList();
             if (allRelations.Count > 0)
             {
                 sb.AppendLine("=== KEY CONCEPT RELATIONSHIPS ===");
@@ -953,53 +955,73 @@ public sealed class CourseService
         return sb.ToString();
     }
 
+
     /// <summary>
-    /// Gets all resources for a course along with their KnowledgeBase build status.
+    /// Gets all resources for a course along with their ConceptMap build status.
     /// Useful for displaying resource status in the UI.
     /// </summary>
-    public async Task<List<(CourseResource Resource, bool HasKnowledgeBase)>> GetCourseResourcesWithKbStatusAsync(string courseId)
+    public async Task<List<(CourseResource Resource, bool HasConceptMap)>> GetCourseResourcesWithConceptMapStatusAsync(string courseId)
     {
         var resources = await GetCourseResourcesAsync(courseId);
-        return resources.Select(r => (r, r.HasKnowledgeBase)).ToList();
+        return resources.Select(r => (r, r.HasConceptMap)).ToList();
     }
 
     /// <summary>
-    /// Gets the count of resources that have KnowledgeBases built.
+    /// Gets the count of resources that have ConceptMaps built.
     /// </summary>
-    public async Task<(int Total, int WithKb)> GetResourceKbCountsAsync(string courseId)
+    public async Task<(int Total, int WithConceptMap)> GetResourceConceptMapCountsAsync(string courseId)
     {
         var resources = await GetCourseResourcesAsync(courseId);
-        var withKb = resources.Count(r => r.HasKnowledgeBase);
-        return (resources.Count, withKb);
+        var withCm = resources.Count(r => r.HasConceptMap);
+        return (resources.Count, withCm);
     }
 
     /// <summary>
-    /// Gets KnowledgeBase IDs for all resources in a course that have them built.
-    /// Used to build or update the course's KnowledgeBaseCollection.
+    /// Gets ConceptMap IDs for all resources in a course that have them built.
+    /// Used to build or update the course's ConceptMapCollection.
     /// </summary>
-    public async Task<List<string>> GetResourceKnowledgeBaseIdsAsync(string courseId)
+    public async Task<List<string>> GetResourceConceptMapIdsAsync(string courseId)
     {
         var resources = await GetCourseResourcesAsync(courseId);
         return resources
-            .Where(r => r.HasKnowledgeBase && !string.IsNullOrEmpty(r.KnowledgeBaseId))
-            .Select(r => r.KnowledgeBaseId!)
+            .Where(r => r.HasConceptMap && !string.IsNullOrEmpty(r.ConceptMapId))
+            .Select(r => r.ConceptMapId!)
             .ToList();
     }
 
     /// <summary>
-    /// Updates the KnowledgeBaseCollectionId for a course.
+    /// Updates the ConceptMapCollectionId for a course.
     /// Called after building or updating the course's collection.
     /// </summary>
-    public async Task UpdateCourseKnowledgeBaseCollectionAsync(string courseId, string collectionId)
+    public async Task UpdateCourseConceptMapCollectionAsync(string courseId, string collectionId)
     {
         var course = await GetCourseAsync(courseId);
         if (course == null)
             return;
 
-        course.KnowledgeBaseCollectionId = collectionId;
+        course.ConceptMapCollectionId = collectionId;
         course.UpdatedAt = DateTime.UtcNow;
         await SaveCourseAsync(course);
         
-        Log.Info($"CourseService: Updated course '{course.Name}' with KB collection: {collectionId}");
+        Log.Info($"CourseService: Updated course '{course.Name}' with ConceptMap collection: {collectionId}");
     }
+
+    // Legacy method aliases for backward compatibility
+    
+    [Obsolete("Use GetCourseResourcesWithConceptMapStatusAsync instead.")]
+    public Task<List<(CourseResource Resource, bool HasKnowledgeBase)>> GetCourseResourcesWithKbStatusAsync(string courseId)
+        => GetCourseResourcesWithConceptMapStatusAsync(courseId).ContinueWith(t => 
+            t.Result.Select(r => (r.Resource, r.HasConceptMap)).ToList());
+
+    [Obsolete("Use GetResourceConceptMapCountsAsync instead.")]
+    public Task<(int Total, int WithKb)> GetResourceKbCountsAsync(string courseId)
+        => GetResourceConceptMapCountsAsync(courseId).ContinueWith(t => (t.Result.Total, t.Result.WithConceptMap));
+
+    [Obsolete("Use GetResourceConceptMapIdsAsync instead.")]
+    public Task<List<string>> GetResourceKnowledgeBaseIdsAsync(string courseId)
+        => GetResourceConceptMapIdsAsync(courseId);
+
+    [Obsolete("Use UpdateCourseConceptMapCollectionAsync instead.")]
+    public Task UpdateCourseKnowledgeBaseCollectionAsync(string courseId, string collectionId)
+        => UpdateCourseConceptMapCollectionAsync(courseId, collectionId);
 }

@@ -12,7 +12,7 @@
 @inject AppUiState UiState
 @inject IJSRuntime JS
 @inject LogStorageService LogStorageService
-@inject KnowledgeBaseStorageService KnowledgeBaseStorageService
+@inject ConceptMapStorageService ConceptMapStorageService
 @implements IDisposable
 
 
@@ -614,10 +614,10 @@
     private int originalFileCount = 0;
     private int formattedFileCount = 0;
 
-    // Knowledge Base storage settings
+    // Concept Map storage settings
     private string knowledgeBasesPath = "";
     private int knowledgeBaseCount = 0;
-    private List<KnowledgeBaseSummary> knowledgeBases = [];
+    private List<ConceptMapSummary> knowledgeBases = [];
 
 
     // Avatar settings
@@ -627,6 +627,7 @@
     private string assistantAvatarIcon = "bi-robot";
     private string? userCustomAvatar;
     private string? assistantCustomAvatar;
+
 
     // Appearance settings
     private int borderRadius = 6;
@@ -926,7 +927,7 @@
     private async Task LoadKnowledgeBaseSettingsAsync()
     {
         knowledgeBasesPath = Path.Combine(FileSystem.AppDataDirectory, "KnowledgeBases");
-        knowledgeBases = await KnowledgeBaseStorageService.GetSummariesAsync();
+        knowledgeBases = await ConceptMapStorageService.GetSummariesAsync();
         knowledgeBaseCount = knowledgeBases.Count;
     }
 
@@ -951,9 +952,9 @@
 
     private async Task DeleteKnowledgeBaseAsync(string id)
     {
-        await KnowledgeBaseStorageService.DeleteAsync(id);
+        await ConceptMapStorageService.DeleteAsync(id);
         await LoadKnowledgeBaseSettingsAsync();
-        status = "Knowledge base deleted.";
+        status = "Concept map deleted.";
     }
 
     private void SaveStorageOptionsAsync()

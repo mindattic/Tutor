@@ -62,7 +62,7 @@ public sealed class KnowledgeBaseBuildTaskHandler : IBackgroundTaskHandler
 
             var courseService = context.GetService<CourseService>();
             var kbService = context.GetService<KnowledgeBaseService>();
-            var kbStorageService = context.GetService<KnowledgeBaseStorageService>();
+            var conceptMapStorageService = context.GetService<ConceptMapStorageService>();
 
             context.ReportProgress(item, 5, "Loading resource...");
 
@@ -77,47 +77,47 @@ public sealed class KnowledgeBaseBuildTaskHandler : IBackgroundTaskHandler
 
             if (resource == null)
             {
-                return BackgroundTaskResult.Failed("Resource not found to build knowledge base", isTransient: false);
+                return BackgroundTaskResult.Failed("Resource not found to build ConceptMap", isTransient: false);
             }
 
-            // Check if we're resuming an existing KB or creating new
-            KnowledgeBase? kb = null;
+            // Check if we're resuming an existing ConceptMap or creating new
+            KnowledgeBase? conceptMap = null;
             if (!string.IsNullOrEmpty(payload.KnowledgeBaseId))
             {
-                kb = await kbStorageService.LoadAsync(payload.KnowledgeBaseId, ct);
+                conceptMap = await conceptMapStorageService.LoadAsync(payload.KnowledgeBaseId, ct);
             }
 
-            if (kb == null)
+            if (conceptMap == null)
             {
-                kb = new KnowledgeBase
+                conceptMap = new KnowledgeBase
                 {
                     Id = string.IsNullOrEmpty(payload.KnowledgeBaseId) ? Guid.NewGuid().ToString() : payload.KnowledgeBaseId,
                     Name = payload.Name,
-                    Description = $"Knowledge base generated from: {resource.Title}",
+                    Description = $"Concept map generated from: {resource.Title}",
                     ResourceId = resource.Id,
                     Status = KnowledgeBaseStatus.NotStarted
                 };
-                await kbStorageService.SaveAsync(kb, ct);
+                await conceptMapStorageService.SaveAsync(conceptMap, ct);
             }
 
-            item.KnowledgeBaseId = kb.Id;
+            item.KnowledgeBaseId = conceptMap.Id;
 
             // Stage 1: Prepare content (if not already done)
             if (!checkpoint.ContentCombined)
             {
                 context.ReportProgress(item, 10, "Preparing content...");
                 
-                kb.Status = KnowledgeBaseStatus.PreparingContent;
-                kb.SourceContent = kbService.PrepareResourceContent(resource);
-                await kbStorageService.SaveAsync(kb, ct);
+                conceptMap.Status = KnowledgeBaseStatus.PreparingContent;
+                conceptMap.SourceContent = kbService.PrepareResourceContent(resource);
+                await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
                 checkpoint.ContentCombined = true;
                 SaveCheckpoint(item, context, checkpoint);
 
-                Log.Debug($"KnowledgeBaseBuildTask: Prepared content for '{resource.Title}' ({kb.SourceContent?.Length ?? 0} chars)");
+                Log.Debug($"KnowledgeBaseBuildTask: Prepared content for '{resource.Title}' ({conceptMap.SourceContent?.Length ?? 0} chars)");
             }
 
-            if (string.IsNullOrWhiteSpace(kb.SourceContent))
+            if (string.IsNullOrWhiteSpace(conceptMap.SourceContent))
             {
                 return BackgroundTaskResult.Failed("No content found in resource", isTransient: false);
             }
@@ -142,22 +142,22 @@ public sealed class KnowledgeBaseBuildTaskHandler : IBackgroundTaskHandler
                             "Rate limited during concept extraction");
                     }
 
-                    kb.Status = KnowledgeBaseStatus.GeneratingConcepts;
-                    await kbStorageService.SaveAsync(kb, ct);
+                    conceptMap.Status = KnowledgeBaseStatus.GeneratingConcepts;
+                    await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
                     // Extract concepts with progress reporting (use SourceContent)
-                    kb.Concepts = await kbService.ExtractConceptsAsync(kb.SourceContent!, kb.Id, ct);
+                    conceptMap.Concepts = await kbService.ExtractConceptsAsync(conceptMap.SourceContent!, conceptMap.Id, ct);
                     
                     context.RateLimitState.RecordSuccess();
 
                     checkpoint.ConceptsExtracted = true;
-                    checkpoint.ExtractedConceptIds = kb.Concepts.Select(c => c.Id).ToList();
+                    checkpoint.ExtractedConceptIds = conceptMap.Concepts.Select(c => c.Id).ToList();
                     SaveCheckpoint(item, context, checkpoint);
 
-                    await kbStorageService.SaveAsync(kb, ct);
+                    await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
-                    Log.Info($"KnowledgeBaseBuildTask: Extracted {kb.Concepts.Count} concepts");
-                    context.ReportProgress(item, 50, $"Extracted {kb.Concepts.Count} concepts");
+                    Log.Info($"KnowledgeBaseBuildTask: Extracted {conceptMap.Concepts.Count} concepts");
+                    context.ReportProgress(item, 50, $"Extracted {conceptMap.Concepts.Count} concepts");
                 }
                 catch (HttpRequestException ex) when (IsRateLimitError(ex))
                 {
@@ -173,10 +173,13 @@ public sealed class KnowledgeBaseBuildTaskHandler : IBackgroundTaskHandler
                 }
             }
 
-            if (kb.Concepts == null || kb.Concepts.Count == 0)
+            if (conceptMap.Concepts == null || conceptMap.Concepts.Count == 0)
             {
                 return BackgroundTaskResult.Failed("No concepts could be extracted", isTransient: false);
             }
+
+
+
 
             // Stage 3: Build relationships (with checkpoint support)
             if (!checkpoint.RelationshipsBuilt)
@@ -195,20 +198,20 @@ public sealed class KnowledgeBaseBuildTaskHandler : IBackgroundTaskHandler
                             "Rate limited during relationship building");
                     }
 
-                    kb.Status = KnowledgeBaseStatus.BuildingRelationships;
-                    await kbStorageService.SaveAsync(kb, ct);
+                    conceptMap.Status = KnowledgeBaseStatus.BuildingRelationships;
+                    await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
-                    kb.Relations = await kbService.BuildRelationshipsAsync(kb.Concepts, ct);
+                    conceptMap.Relations = await kbService.BuildRelationshipsAsync(conceptMap.Concepts, ct);
                     
                     context.RateLimitState.RecordSuccess();
 
                     checkpoint.RelationshipsBuilt = true;
                     SaveCheckpoint(item, context, checkpoint);
 
-                    await kbStorageService.SaveAsync(kb, ct);
+                    await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
-                    Log.Info($"KnowledgeBaseBuildTask: Built {kb.Relations.Count} relationships");
-                    context.ReportProgress(item, 80, $"Built {kb.Relations.Count} relationships");
+                    Log.Info($"KnowledgeBaseBuildTask: Built {conceptMap.Relations.Count} relationships");
+                    context.ReportProgress(item, 80, $"Built {conceptMap.Relations.Count} relationships");
                 }
                 catch (HttpRequestException ex) when (IsRateLimitError(ex))
                 {
@@ -229,40 +232,41 @@ public sealed class KnowledgeBaseBuildTaskHandler : IBackgroundTaskHandler
             {
                 context.ReportProgress(item, 85, "Calculating complexity order...");
 
-                kb.Status = KnowledgeBaseStatus.CalculatingComplexity;
-                kb.ComplexityOrder = kbService.CalculateComplexityOrder(kb.Concepts, kb.Relations);
+                conceptMap.Status = KnowledgeBaseStatus.CalculatingComplexity;
+                conceptMap.ComplexityOrder = kbService.CalculateComplexityOrder(conceptMap.Concepts, conceptMap.Relations);
 
                 checkpoint.ComplexityCalculated = true;
-                await kbStorageService.SaveAsync(kb, ct);
+                await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
-                Log.Debug($"KnowledgeBaseBuildTask: Calculated complexity order for {kb.ComplexityOrder.Count} concepts");
+                Log.Debug($"KnowledgeBaseBuildTask: Calculated complexity order for {conceptMap.ComplexityOrder.Count} concepts");
             }
+
 
             // Mark as complete
-            kb.Status = KnowledgeBaseStatus.Ready;
-            kb.Progress = 100;
-            kb.UpdatedAt = DateTime.UtcNow;
-            kb.Version++;
-            await kbStorageService.SaveAsync(kb, ct);
+            conceptMap.Status = KnowledgeBaseStatus.Ready;
+            conceptMap.Progress = 100;
+            conceptMap.UpdatedAt = DateTime.UtcNow;
+            conceptMap.Version++;
+            await conceptMapStorageService.SaveAsync(conceptMap, ct);
 
-            // Update the source resource with the KnowledgeBase ID (new architecture)
+            // Update the source resource with the ConceptMap ID (new architecture)
             if (payload.UpdateResource && resource != null)
             {
-                resource.KnowledgeBaseId = kb.Id;
-                resource.KnowledgeBaseStatus = KnowledgeBaseStatus.Ready;
+                resource.ConceptMapId = conceptMap.Id;
+                resource.ConceptMapStatus = ConceptMapStatus.Ready;
                 await courseService.SaveResourceAsync(resource);
-                Log.Info($"KnowledgeBaseBuildTask: Updated resource '{resource.Title}' with KB ID: {kb.Id}");
+                Log.Info($"KnowledgeBaseBuildTask: Updated resource '{resource.Title}' with ConceptMap ID: {conceptMap.Id}");
             }
 
-            context.ReportProgress(item, 100, "Knowledge base complete");
-            Log.Info($"KnowledgeBaseBuildTask: Completed '{payload.Name}' with {kb.Concepts.Count} concepts and {kb.Relations.Count} relationships");
+            context.ReportProgress(item, 100, "Concept map complete");
+            Log.Info($"KnowledgeBaseBuildTask: Completed '{payload.Name}' with {conceptMap.Concepts.Count} concepts and {conceptMap.Relations.Count} relationships");
 
             return BackgroundTaskResult.Succeeded(JsonSerializer.Serialize(new
             {
-                KnowledgeBaseId = kb.Id,
+                ConceptMapId = conceptMap.Id,
                 ResourceId = resource?.Id,
-                ConceptCount = kb.Concepts.Count,
-                RelationCount = kb.Relations.Count
+                ConceptCount = conceptMap.Concepts.Count,
+                RelationCount = conceptMap.Relations.Count
             }));
         }
         catch (OperationCanceledException)

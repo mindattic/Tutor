@@ -205,19 +205,9 @@ TEXT TO FORMAT:
     /// </summary>
     private async Task<string> FormatChunkWithRetryAsync(string content, string apiKey, CancellationToken ct, int maxRetries = 3)
     {
-        var baseDelayMs = 2000;
-        
-        for (int attempt = 0; attempt <= maxRetries; attempt++)
-        {
-            var result = await FormatChunkAsync(content, apiKey, ct);
-            
-            // FormatChunkAsync returns original content on error, check if it's different
-            // If result equals original, it might have failed - but that's also acceptable as fallback
-            return result;
-        }
-        
-        // Fallback to original content
-        return content;
+        // FormatChunkAsync returns original content on error as fallback
+        // Retry logic is not needed since fallback is acceptable
+        return await FormatChunkAsync(content, apiKey, ct);
     }
 
     /// <summary>

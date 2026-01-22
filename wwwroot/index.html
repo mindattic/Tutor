@@ -102,6 +102,12 @@
         var forceGraphNodes = null;
 
         function initForceGraph(container, nodes, links, dotNetRef) {
+            // Validate container element
+            if (!container || !container.clientWidth) {
+                console.warn('initForceGraph: Invalid container element');
+                return;
+            }
+            
             forceGraphDotNetRef = dotNetRef;
             
             // Clear any existing graph

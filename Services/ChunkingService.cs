@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Tutor.Services.Logging;
 
 namespace Tutor.Services;
 
@@ -94,6 +95,7 @@ public sealed partial class ChunkingService
             chunks.Add(currentChunk.ToString().Trim());
         }
 
+        Log.Debug($"ChunkingService: Split {content.Length} chars into {chunks.Count} chunks");
         return chunks;
     }
 

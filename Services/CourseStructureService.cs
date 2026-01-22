@@ -25,7 +25,7 @@ public sealed class CourseStructureService
     private readonly HttpClient http;
     private readonly OpenAIOptions opt;
     private readonly CourseStructureStorageService storageService;
-    private readonly KnowledgeBaseStorageService kbStorageService;
+    private readonly ConceptMapStorageService conceptMapStorageService;
 
     private const string LessonGenerationPrompt = """
         You are an expert curriculum designer. Given a list of concepts from an educational domain,
@@ -81,47 +81,47 @@ public sealed class CourseStructureService
         HttpClient http,
         OpenAIOptions opt,
         CourseStructureStorageService storageService,
-        KnowledgeBaseStorageService kbStorageService)
+        ConceptMapStorageService conceptMapStorageService)
     {
         this.http = http;
         this.opt = opt;
         this.storageService = storageService;
-        this.kbStorageService = kbStorageService;
+        this.conceptMapStorageService = conceptMapStorageService;
     }
 
     /// <summary>
-    /// Generates a CourseStructure from a KnowledgeBase.
+    /// Generates a CourseStructure from a ConceptMap.
     /// </summary>
-    public async Task<CourseStructure> GenerateFromKnowledgeBaseAsync(
+    public async Task<CourseStructure> GenerateFromConceptMapAsync(
         string courseId,
-        string knowledgeBaseId,
+        string conceptMapId,
         CancellationToken ct = default)
     {
-        Log.Info($"CourseStructure: Generating from KB {knowledgeBaseId} for course {courseId}");
+        Log.Info($"CourseStructure: Generating from ConceptMap {conceptMapId} for course {courseId}");
         
-        // Load the KnowledgeBase
-        var kb = await kbStorageService.LoadAsync(knowledgeBaseId, ct);
-        if (kb == null)
+        // Load the ConceptMap
+        var conceptMap = await conceptMapStorageService.LoadAsync(conceptMapId, ct);
+        if (conceptMap == null)
         {
-            Log.Error($"CourseStructure: KnowledgeBase not found: {knowledgeBaseId}");
-            throw new InvalidOperationException($"KnowledgeBase not found: {knowledgeBaseId}");
+            Log.Error($"CourseStructure: ConceptMap not found: {conceptMapId}");
+            throw new InvalidOperationException($"ConceptMap not found: {conceptMapId}");
         }
 
-        if (kb.Status != KnowledgeBaseStatus.Ready)
+        if (conceptMap.Status != KnowledgeBaseStatus.Ready)
         {
-            Log.Error($"CourseStructure: KnowledgeBase not ready. Status: {kb.Status}");
-            throw new InvalidOperationException($"KnowledgeBase is not ready. Status: {kb.Status}");
+            Log.Error($"CourseStructure: ConceptMap not ready. Status: {conceptMap.Status}");
+            throw new InvalidOperationException($"ConceptMap is not ready. Status: {conceptMap.Status}");
         }
         
-        Log.Debug($"CourseStructure: KB '{kb.Name}' has {kb.Concepts.Count} concepts");
+        Log.Debug($"CourseStructure: ConceptMap '{conceptMap.Name}' has {conceptMap.Concepts.Count} concepts");
 
         // Create new CourseStructure
         var structure = new CourseStructure
         {
-            Name = $"Learning Path for {kb.Name}",
-            Description = $"Structured curriculum based on {kb.Name}",
+            Name = $"Learning Path for {conceptMap.Name}",
+            Description = $"Structured curriculum based on {conceptMap.Name}",
             CourseId = courseId,
-            KnowledgeBaseId = knowledgeBaseId,
+            KnowledgeBaseId = conceptMapId,
             Status = CourseStructureStatus.NotStarted
         };
 
@@ -133,7 +133,8 @@ public sealed class CourseStructureService
                 "Generating lesson structure...");
             structure.Status = CourseStructureStatus.GeneratingLessons;
 
-            var lessonData = await GenerateLessonsAsync(kb, ct);
+
+            var lessonData = await GenerateLessonsAsync(conceptMap, ct);
             
             // Step 2: Organize topics
             Log.Info("CourseStructure: Step 2 - Organizing topics...");
@@ -147,12 +148,13 @@ public sealed class CourseStructureService
                 "Ordering concepts...");
             structure.Status = CourseStructureStatus.OrderingConcepts;
 
+
             // Build the structure from AI response
-            structure.Lessons = BuildLessonsFromResponse(lessonData, kb, structure.Id);
+            structure.Lessons = BuildLessonsFromResponse(lessonData, conceptMap, structure.Id);
 
             // Validate that all concepts are included
             var includedConceptIds = structure.GetAllConceptIdsInOrder().ToHashSet();
-            var missingConcepts = kb.Concepts.Where(c => !includedConceptIds.Contains(c.Id)).ToList();
+            var missingConcepts = conceptMap.Concepts.Where(c => !includedConceptIds.Contains(c.Id)).ToList();
 
             if (missingConcepts.Count > 0)
             {
@@ -191,11 +193,12 @@ public sealed class CourseStructureService
         }
     }
 
+
     /// <summary>
     /// Generates lesson organization using AI.
     /// </summary>
     private async Task<LessonGenerationResponse?> GenerateLessonsAsync(
-        KnowledgeBase kb,
+        KnowledgeBase conceptMap,
         CancellationToken ct)
     {
         var apiKey = await opt.GetApiKeyAsync();
@@ -204,9 +207,9 @@ public sealed class CourseStructureService
 
         // Build concept list with complexity info
         var conceptList = new StringBuilder();
-        foreach (var concept in kb.GetConceptsByComplexity())
+        foreach (var concept in conceptMap.GetConceptsByComplexity())
         {
-            var complexity = kb.GetComplexity(concept.Id);
+            var complexity = conceptMap.GetComplexity(concept.Id);
             var level = complexity?.Level ?? 0;
             conceptList.AppendLine($"- {concept.Title} (Level {level}): {concept.Summary}");
         }
@@ -216,22 +219,23 @@ public sealed class CourseStructureService
         return await CallAiAsync<LessonGenerationResponse>(prompt, "", ct);
     }
 
+
     /// <summary>
     /// Builds Lesson objects from the AI response.
     /// </summary>
     private List<Lesson> BuildLessonsFromResponse(
         LessonGenerationResponse? response,
-        KnowledgeBase kb,
+        KnowledgeBase conceptMap,
         string structureId)
     {
         if (response?.Lessons == null || response.Lessons.Count == 0)
         {
             // Fallback: create a single lesson with all concepts
-            return [CreateDefaultLesson(kb, structureId)];
+            return [CreateDefaultLesson(conceptMap, structureId)];
         }
 
         var lessons = new List<Lesson>();
-        var conceptLookup = kb.Concepts.ToDictionary(
+        var conceptLookup = conceptMap.Concepts.ToDictionary(
             c => c.Title.ToLowerInvariant(),
             c => c.Id);
 
@@ -284,7 +288,7 @@ public sealed class CourseStructureService
     /// <summary>
     /// Creates a default lesson containing all concepts (fallback).
     /// </summary>
-    private Lesson CreateDefaultLesson(KnowledgeBase kb, string structureId)
+    private Lesson CreateDefaultLesson(KnowledgeBase conceptMap, string structureId)
     {
         var lesson = new Lesson
         {
@@ -302,7 +306,7 @@ public sealed class CourseStructureService
         };
 
         // Add concepts in complexity order
-        foreach (var concept in kb.GetConceptsByComplexity())
+        foreach (var concept in conceptMap.GetConceptsByComplexity())
         {
             topic.ConceptIds.Add(concept.Id);
         }
@@ -342,9 +346,9 @@ public sealed class CourseStructureService
 
     /// <summary>
     /// Reorders concepts within the structure to respect prerequisites.
-    /// Uses the KnowledgeBase's complexity ordering as a guide.
+    /// Uses the ConceptMap's complexity ordering as a guide.
     /// </summary>
-    public void ReorderByPrerequisites(CourseStructure structure, KnowledgeBase kb)
+    public void ReorderByPrerequisites(CourseStructure structure, KnowledgeBase conceptMap)
     {
         foreach (var lesson in structure.Lessons)
         {
@@ -352,15 +356,15 @@ public sealed class CourseStructureService
             {
                 // Sort concepts by their complexity level
                 topic.ConceptIds = topic.ConceptIds
-                    .OrderBy(id => kb.GetComplexity(id)?.Level ?? 0)
-                    .ThenBy(id => kb.GetComplexity(id)?.PrerequisiteCount ?? 0)
+                    .OrderBy(id => conceptMap.GetComplexity(id)?.Level ?? 0)
+                    .ThenBy(id => conceptMap.GetComplexity(id)?.PrerequisiteCount ?? 0)
                     .ToList();
             }
 
             // Sort topics by the average complexity of their concepts
             lesson.Topics = lesson.Topics
                 .OrderBy(t => t.ConceptIds.Count > 0
-                    ? t.ConceptIds.Average(id => kb.GetComplexity(id)?.Level ?? 0)
+                    ? t.ConceptIds.Average(id => conceptMap.GetComplexity(id)?.Level ?? 0)
                     : 0)
                 .Select((t, i) => { t.Order = i; return t; })
                 .ToList();
@@ -370,7 +374,7 @@ public sealed class CourseStructureService
         structure.Lessons = structure.Lessons
             .OrderBy(l => l.Topics.Count > 0
                 ? l.Topics.Average(t => t.ConceptIds.Count > 0
-                    ? t.ConceptIds.Average(id => kb.GetComplexity(id)?.Level ?? 0)
+                    ? t.ConceptIds.Average(id => conceptMap.GetComplexity(id)?.Level ?? 0)
                     : 0)
                 : 0)
             .Select((l, i) => { l.Order = i; return l; })
@@ -378,6 +382,7 @@ public sealed class CourseStructureService
     }
 
     // Helper methods
+
 
     private async Task<T?> CallAiAsync<T>(string systemPrompt, string content, CancellationToken ct)
     {

@@ -20,10 +20,12 @@ public sealed class ResourceProcessingService : IDisposable
     private readonly ContentFormatterService formatterService;
     private readonly KnowledgeGraphService graphService;
     private readonly ConceptExtractionService extractionService;
+    private readonly KnowledgeBaseService knowledgeBaseService;
+    private readonly ConceptMapStorageService conceptMapStorageService;
 
-    // Throttling - limit concurrent AI operations
-    private readonly SemaphoreSlim aiThrottle = new(2, 2); // Max 2 concurrent AI calls
-    private readonly SemaphoreSlim processingThrottle = new(3, 3); // Max 3 resources processing at once
+    // Throttling - process ONE resource at a time sequentially to avoid API spam
+    private readonly SemaphoreSlim aiThrottle = new(1, 1); // Max 1 concurrent AI call
+    private readonly SemaphoreSlim processingThrottle = new(1, 1); // Max 1 resource processing at once (sequential)
 
     // Processing queue
     private readonly Channel<ResourceProcessingTask> processingQueue;
@@ -40,12 +42,16 @@ public sealed class ResourceProcessingService : IDisposable
         CourseService courseService,
         ContentFormatterService formatterService,
         KnowledgeGraphService graphService,
-        ConceptExtractionService extractionService)
+        ConceptExtractionService extractionService,
+        KnowledgeBaseService knowledgeBaseService,
+        ConceptMapStorageService conceptMapStorageService)
     {
         this.courseService = courseService;
         this.formatterService = formatterService;
         this.graphService = graphService;
         this.extractionService = extractionService;
+        this.knowledgeBaseService = knowledgeBaseService;
+        this.conceptMapStorageService = conceptMapStorageService;
 
         // Unbounded channel for queuing
         processingQueue = Channel.CreateUnbounded<ResourceProcessingTask>(new UnboundedChannelOptions
@@ -239,6 +245,32 @@ public sealed class ResourceProcessingService : IDisposable
     }
 
     /// <summary>
+    /// Gets all processing statuses including completed ones (for time display).
+    /// </summary>
+    public IEnumerable<ResourceProcessingStatus> GetAllStatusesIncludingCompleted()
+    {
+        return statusTracker.Values.OrderBy(s => s.QueuedAt);
+    }
+
+    /// <summary>
+    /// Gets the cumulative processing time across all active and recent tasks.
+    /// </summary>
+    public TimeSpan GetCumulativeProcessingTime()
+    {
+        return statusTracker.Values
+            .Where(s => s.StartedAt.HasValue)
+            .Aggregate(TimeSpan.Zero, (total, s) => total + s.ElapsedTime);
+    }
+
+    /// <summary>
+    /// Gets the formatted cumulative processing time (HH:MM:SS).
+    /// </summary>
+    public string GetCumulativeProcessingTimeFormatted()
+    {
+        return GetCumulativeProcessingTime().ToString(@"hh\:mm\:ss");
+    }
+
+    /// <summary>
     /// Gets count of items in queue or processing.
     /// </summary>
     public int GetActiveCount()
@@ -258,7 +290,7 @@ public sealed class ResourceProcessingService : IDisposable
 
     private async Task ProcessResourceAsync(ResourceProcessingTask task)
     {
-        // Acquire processing slot
+        // Acquire processing slot - ensures sequential processing
         await processingThrottle.WaitAsync(cts.Token);
         
         Log.Info($"ResourceProcessing: Starting '{task.Resource.Title}' (Task: {task.TaskId})");
@@ -266,6 +298,7 @@ public sealed class ResourceProcessingService : IDisposable
         try
         {
             var status = statusTracker[task.TaskId];
+            status.StartedAt = DateTime.UtcNow;
 
             // Stage 1: Save resource
             Log.Debug($"ResourceProcessing: Stage 1 - Saving resource '{task.Resource.Title}'");
@@ -283,51 +316,47 @@ public sealed class ResourceProcessingService : IDisposable
                 Log.Debug($"ResourceProcessing: Resource added to course {task.CourseId}");
             }
 
-            // Stage 2: Format with AI (if enabled)
-            if (task.AutoFormat)
-            {
-                Log.Debug($"ResourceProcessing: Stage 2 - Formatting '{task.Resource.Title}'");
-                UpdateStatus(task.TaskId, ProcessingStage.Formatting, 10, "Formatting with AI...");
+            // Stage 2: Format with AI (always enabled now)
+            Log.Debug($"ResourceProcessing: Stage 2 - Formatting '{task.Resource.Title}'");
+            UpdateStatus(task.TaskId, ProcessingStage.Formatting, 10, "Formatting with AI...");
 
-                await aiThrottle.WaitAsync(cts.Token);
-                try
-                {
-                    await FormatResourceAsync(task, status);
-                    Log.Info($"ResourceProcessing: Formatting complete for '{task.Resource.Title}'");
-                }
-                finally
-                {
-                    aiThrottle.Release();
-                }
+            await aiThrottle.WaitAsync(cts.Token);
+            try
+            {
+                await FormatResourceAsync(task, status);
+                Log.Info($"ResourceProcessing: Formatting complete for '{task.Resource.Title}'");
+            }
+            finally
+            {
+                aiThrottle.Release();
+            }
+            
+            // Small delay between AI calls to avoid rate limiting
+            await Task.Delay(500, cts.Token);
+
+            // Stage 3: Build Knowledge Base (always enabled now)
+            Log.Debug($"ResourceProcessing: Stage 3 - Building Knowledge Base for '{task.Resource.Title}'");
+            UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 50, "Building Knowledge Base...");
+
+            await aiThrottle.WaitAsync(cts.Token);
+            try
+            {
+                await BuildKnowledgeBaseAsync(task, status);
+                Log.Info($"ResourceProcessing: Knowledge Base complete for '{task.Resource.Title}'");
+            }
+            finally
+            {
+                aiThrottle.Release();
             }
 
-            // Stage 3: Extract concepts (if building graph)
-            if (task.BuildGraph && !string.IsNullOrEmpty(task.CourseId))
-            {
-                Log.Debug($"ResourceProcessing: Stage 3 - Extracting concepts from '{task.Resource.Title}'");
-                UpdateStatus(task.TaskId, ProcessingStage.ExtractingConcepts, 50, "Extracting concepts...");
-
-                await aiThrottle.WaitAsync(cts.Token);
-                try
-                {
-                    await ExtractConceptsAsync(task, status);
-                    Log.Info($"ResourceProcessing: Concept extraction complete for '{task.Resource.Title}'");
-                }
-                finally
-                {
-                    aiThrottle.Release();
-                }
-
-                // Stage 4: Update knowledge graph
-                Log.Debug($"ResourceProcessing: Stage 4 - Building graph for '{task.Resource.Title}'");
-                UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 90, "Updating knowledge graph...");
-                await UpdateKnowledgeGraphAsync(task, status);
-            }
+            // Mark resource as fully processed
+            task.Resource.IsProcessed = true;
+            await courseService.SaveResourceAsync(task.Resource);
 
             // Complete
             UpdateStatus(task.TaskId, ProcessingStage.Complete, 100, "Complete");
             status.CompletedAt = DateTime.UtcNow;
-            Log.Info($"ResourceProcessing: Completed '{task.Resource.Title}' in {(status.CompletedAt - status.QueuedAt)?.TotalSeconds:F1}s");
+            Log.Info($"ResourceProcessing: Completed '{task.Resource.Title}' in {status.ElapsedTimeFormatted}");
             OnProcessingComplete?.Invoke(task.TaskId);
         }
         catch (OperationCanceledException)
@@ -376,64 +405,44 @@ public sealed class ResourceProcessingService : IDisposable
         }
     }
 
-    private async Task ExtractConceptsAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
+    private async Task BuildKnowledgeBaseAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
     {
         try
         {
-            var content = task.Resource.FormattedContent ?? task.Resource.Content;
-            var concepts = await extractionService.ExtractConceptsAsync(content, task.Resource.Id, cts.Token);
-            status.ConceptsExtracted = concepts.Count;
-            
-            UpdateStatus(task.TaskId, ProcessingStage.ExtractingConcepts, 65, 
-                $"Extracted {concepts.Count} concepts");
-        }
-        catch (Exception ex)
-        {
-            status.Warnings.Add($"Concept extraction warning: {ex.Message}");
-        }
-    }
+            UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 55, "Building Knowledge Base...");
 
-    private async Task UpdateKnowledgeGraphAsync(ResourceProcessingTask task, ResourceProcessingStatus status)
-    {
-        if (string.IsNullOrEmpty(task.CourseId))
-            return;
-
-        try
-        {
-            // Check if graph exists for this course
-            var existingGraph = await graphService.GetGraphForCourseAsync(task.CourseId, cts.Token);
-
-            if (existingGraph != null)
+            // Subscribe to progress updates from the KB service
+            void OnProgress(KnowledgeBaseBuildProgress progress)
             {
-                // Add resource to existing graph
-                var newConceptCount = await graphService.AddResourceToGraphAsync(
-                    existingGraph.Id, 
-                    task.Resource, 
-                    cts.Token);
-                
-                status.ConceptsExtracted = newConceptCount;
+                var adjustedProgress = 50 + (int)(progress.Progress * 0.45);
+                UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, adjustedProgress, progress.Message);
             }
-            else
+
+
+            knowledgeBaseService.OnProgressChanged += OnProgress;
+            try
             {
-                // Create new graph with just this resource
-                var resources = new List<CourseResource> { task.Resource };
-                var course = await courseService.GetCourseAsync(task.CourseId);
-                
-                await graphService.CreateGraphFromResourcesAsync(
-                    course?.Name ?? "Knowledge Graph",
-                    task.CourseId,
-                    resources,
-                    new Progress<GraphBuildProgress>(p =>
-                    {
-                        UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 
-                            75 + (int)(p.PercentComplete * 0.15), p.Message);
-                    }),
-                    cts.Token);
+                // Build the ConceptMap for this resource
+                var kb = await knowledgeBaseService.BuildFromResourceAsync(task.Resource, cts.Token);
+
+                // Link the ConceptMap to the resource
+                task.Resource.ConceptMapId = kb.Id;
+                task.Resource.ConceptMapStatus = (ConceptMapStatus)(int)kb.Status;
+                status.ConceptsExtracted = kb.Concepts.Count;
+
+                UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 95, 
+                    $"Concept Map ready: {kb.Concepts.Count} concepts, {kb.Relations.Count} relationships");
+            }
+            finally
+            {
+                knowledgeBaseService.OnProgressChanged -= OnProgress;
             }
         }
         catch (Exception ex)
         {
-            status.Warnings.Add($"Graph building warning: {ex.Message}");
+            Log.Error($"Concept Map build failed: {ex.Message}", ex);
+            status.Warnings.Add($"Concept Map warning: {ex.Message}");
+            throw; // Re-throw to fail the resource processing
         }
     }
 
@@ -514,7 +523,6 @@ public enum ProcessingStage
     Queued,
     Saving,
     Formatting,
-    ExtractingConcepts,
     BuildingGraph,
     Complete,
     Failed
@@ -533,18 +541,36 @@ public class ResourceProcessingStatus
     public int Progress { get; set; }
     public string CurrentOperation { get; set; } = "";
     public DateTime QueuedAt { get; set; }
+    public DateTime? StartedAt { get; set; }
     public DateTime LastUpdated { get; set; }
     public DateTime? CompletedAt { get; set; }
     public int ConceptsExtracted { get; set; }
     public List<string> Warnings { get; set; } = [];
 
+    /// <summary>
+    /// Gets the elapsed processing time for this resource.
+    /// </summary>
+    public TimeSpan ElapsedTime
+    {
+        get
+        {
+            if (StartedAt == null) return TimeSpan.Zero;
+            var endTime = CompletedAt ?? DateTime.UtcNow;
+            return endTime - StartedAt.Value;
+        }
+    }
+
+    /// <summary>
+    /// Gets the formatted elapsed time string (HH:MM:SS).
+    /// </summary>
+    public string ElapsedTimeFormatted => ElapsedTime.ToString(@"hh\:mm\:ss");
+
     public string StageDisplayName => Stage switch
     {
         ProcessingStage.Queued => "Queued",
         ProcessingStage.Saving => "Saving",
-        ProcessingStage.Formatting => "Formatting",
-        ProcessingStage.ExtractingConcepts => "Extracting Concepts",
-        ProcessingStage.BuildingGraph => "Building Graph",
+        ProcessingStage.Formatting => "AI Formatting",
+        ProcessingStage.BuildingGraph => "Building Knowledge Base",
         ProcessingStage.Complete => "Complete",
         ProcessingStage.Failed => "Failed",
         _ => "Unknown"

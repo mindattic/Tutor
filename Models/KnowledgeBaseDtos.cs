@@ -2,10 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace Tutor.Models;
 
-/// <summary>
-/// DTOs for AI responses during knowledge base generation.
-/// These define the expected JSON structure from AI API calls.
-/// </summary>
+// ============================================================================
+// DTOs for AI responses during knowledge base generation.
+// These define the expected JSON structure from AI API calls.
+// ============================================================================
 
 // ============================================================================
 // Concept Extraction DTOs
