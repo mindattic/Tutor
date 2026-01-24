@@ -53,6 +53,33 @@ public class CourseResource
     /// Gets the best available content (formatted if available, otherwise original).
     /// </summary>
     public string GetEffectiveContent() => FormattedContent ?? Content;
+
+    // Orphan Linking Override Settings (per-resource)
+    // When null, uses global settings from SettingsService
+
+    /// <summary>
+    /// Override for maximum orphan linking iterations. 
+    /// When null, uses the global setting.
+    /// </summary>
+    public int? OrphanLinkingMaxIterations { get; set; }
+
+    /// <summary>
+    /// Override for minimum confidence threshold for orphan linking.
+    /// When null, uses the global setting.
+    /// </summary>
+    public float? OrphanLinkingMinConfidence { get; set; }
+
+    /// <summary>
+    /// Gets the effective max iterations (resource override or global default).
+    /// </summary>
+    public int GetEffectiveMaxIterations(int globalDefault) 
+        => OrphanLinkingMaxIterations ?? globalDefault;
+
+    /// <summary>
+    /// Gets the effective min confidence (resource override or global default).
+    /// </summary>
+    public float GetEffectiveMinConfidence(float globalDefault) 
+        => OrphanLinkingMinConfidence ?? globalDefault;
 }
 
 public enum ResourceType

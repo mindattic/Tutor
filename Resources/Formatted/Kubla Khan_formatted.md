@@ -1,13 +1,13 @@
 ---
 title: Kubla Khan
 source: Kubla Khan.txt
-formatted: 2026-01-24T18:40:27.2725828Z
+formatted: 2026-01-24T20:59:20.2570205Z
 ---
 
 ## Kubla Khan
 
 ### By **Samuel Taylor Coleridge**  
-**Or, a vision in a dream. A Fragment.**
+Or, a vision in a dream. A Fragment.
 
 ---
 
@@ -26,17 +26,19 @@ Enfolding sunny spots of greenery.
 
 ---
 
-But oh! that deep romantic chasm which slanted  
+But oh! that deep **romantic chasm** which slanted  
 Down the green hill athwart a cedarn cover!  
-A **savage place!** as holy and enchanted  
+A **savage place**! as holy and enchanted  
 As e’er beneath a waning moon was haunted  
-By woman wailing for her demon-lover!  
+By woman wailing for her **demon-lover**!  
+
 And from this chasm, with ceaseless turmoil seething,  
 As if this earth in fast thick pants were breathing,  
-A mighty fountain momently was forced:  
+A mighty **fountain** momently was forced:  
 Amid whose swift half-intermitted burst  
 Huge fragments vaulted like rebounding hail,  
 Or chaffy grain beneath the thresher’s flail:  
+
 And mid these dancing rocks at once and ever  
 It flung up momently the sacred river.  
 
@@ -44,6 +46,7 @@ Five miles meandering with a mazy motion
 Through wood and dale the sacred river ran,  
 Then reached the caverns measureless to man,  
 And sank in tumult to a lifeless ocean;  
+
 And ’mid this tumult Kubla heard from far  
 **Ancestral voices prophesying war!**  
 
@@ -51,6 +54,7 @@ And ’mid this tumult Kubla heard from far
 
 The shadow of the dome of pleasure  
 Floated midway on the waves;  
+
 Where was heard the mingled measure  
 From the fountain and the caves.  
 
@@ -59,11 +63,11 @@ A sunny pleasure-dome with caves of ice!
 
 ---
 
-A damsel with a dulcimer  
+A damsel with a **dulcimer**  
 In a vision once I saw:  
 It was an **Abyssinian maid**  
 And on her dulcimer she played,  
-Singing of Mount Abora.  
+Singing of **Mount Abora**.  
 
 Could I revive within me  
 Her symphony and song,  
@@ -75,7 +79,8 @@ That sunny dome! those caves of ice!
 And all who heard should see them there,  
 And all should cry, **Beware! Beware!**  
 His flashing eyes, his floating hair!  
+
 Weave a circle round him thrice,  
 And close your eyes with holy dread  
-For he on honey-dew hath fed,  
-And drunk the milk of Paradise.
+For he on **honey-dew** hath fed,  
+And drunk the **milk of Paradise**.

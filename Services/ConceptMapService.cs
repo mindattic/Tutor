@@ -18,13 +18,15 @@ namespace Tutor.Services;
 /// 1. Prepare Resource content
 /// 2. Extract atomic Concepts from the content (parallel with throttling)
 /// 3. Build Concept relationships (prerequisites, related, etc.)
-/// 4. Calculate complexity ordering for progressive learning
+/// 4. Link orphaned concepts (iterative AI-powered linking)
+/// 5. Calculate complexity ordering for progressive learning
 /// </summary>
 public sealed class ConceptMapService
 {
     private readonly HttpClient http;
     private readonly OpenAIOptions opt;
     private readonly ConceptMapStorageService storageService;
+    private readonly OrphanConceptLinkerService orphanLinkerService;
 
     // Throttling settings for parallel API calls
     private const int MaxConcurrentApiCalls = 3;  // Max parallel requests to avoid rate limiting
@@ -114,11 +116,13 @@ public sealed class ConceptMapService
     public ConceptMapService(
         HttpClient http,
         OpenAIOptions opt,
-        ConceptMapStorageService storageService)
+        ConceptMapStorageService storageService,
+        OrphanConceptLinkerService orphanLinkerService)
     {
         this.http = http;
         this.opt = opt;
         this.storageService = storageService;
+        this.orphanLinkerService = orphanLinkerService;
     }
 
 
@@ -170,7 +174,7 @@ public sealed class ConceptMapService
             }
 
             // Step 2: Extract concepts
-            Log.Info("Step 2/4: Extracting concepts via AI...");
+            Log.Info("Step 2/5: Extracting concepts via AI...");
             ReportProgress(cm, ConceptMapStatus.ExtractingConcepts, 20, "Extracting concepts...");
             cm.Status = ConceptMapStatus.ExtractingConcepts;
             cm.Concepts = await ExtractConceptsAsync(cm.SourceContent, cm.Id, ct);
@@ -184,24 +188,54 @@ public sealed class ConceptMapService
             
             Log.Info($"Successfully extracted {cm.Concepts.Count} concepts");
 
-            ReportProgress(cm, ConceptMapStatus.ExtractingConcepts, 40, 
+            ReportProgress(cm, ConceptMapStatus.ExtractingConcepts, 35, 
                 $"Extracted {cm.Concepts.Count} concepts");
 
             // Step 3: Build relationships
-            Log.Info("Step 3/4: Building concept relationships via AI...");
-            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 50, "Building concept relationships...");
+            Log.Info("Step 3/5: Building concept relationships via AI...");
+            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 45, "Building concept relationships...");
             cm.Status = ConceptMapStatus.BuildingRelationships;
             cm.Relations = await BuildRelationshipsAsync(cm.Concepts, ct);
             await storageService.SaveAsync(cm, ct);
             
             Log.Info($"Built {cm.Relations.Count} relationships between concepts");
 
-            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 70,
+            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 60,
                 $"Built {cm.Relations.Count} relationships");
 
-            // Step 4: Calculate complexity ordering
-            Log.Info("Step 4/4: Calculating complexity order...");
-            ReportProgress(cm, ConceptMapStatus.CalculatingComplexity, 80, "Calculating complexity order...");
+            // Step 4: Link orphaned concepts (iterative)
+            var legacyConnectivity = cm.GetConnectivityInfo();
+            if (!legacyConnectivity.IsFullyConnected && legacyConnectivity.OrphanedConceptCount > 0)
+            {
+                Log.Info($"Step 4/5: Linking {legacyConnectivity.OrphanedConceptCount} orphaned concepts...");
+                ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 65, 
+                    $"Linking {legacyConnectivity.OrphanedConceptCount} orphaned concepts...");
+                
+                try
+                {
+                    var linkResult = await orphanLinkerService.LinkAllOrphansIterativelyAsync(
+                        cm, maxIterations: 10, minConfidence: 0.3f, ct);
+                    
+                    if (linkResult.AppliedLinkCount > 0)
+                    {
+                        await storageService.SaveAsync(cm, ct);
+                        Log.Info($"Linked {linkResult.AppliedLinkCount} orphaned concepts. " +
+                            (linkResult.IsFullyConnected ? "Graph is fully connected!" : $"Remaining: {linkResult.RemainingOrphanCount}"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"Orphan linking failed (non-critical): {ex.Message}");
+                }
+            }
+            else
+            {
+                Log.Debug("Step 4/5: Graph is fully connected, no orphan linking needed");
+            }
+
+            // Step 5: Calculate complexity ordering
+            Log.Info("Step 5/5: Calculating complexity order...");
+            ReportProgress(cm, ConceptMapStatus.CalculatingComplexity, 85, "Calculating complexity order...");
             cm.Status = ConceptMapStatus.CalculatingComplexity;
             cm.ComplexityOrder = CalculateComplexityOrder(cm.Concepts, cm.Relations);
             await storageService.SaveAsync(cm, ct);
@@ -263,8 +297,14 @@ public sealed class ConceptMapService
     /// This is the primary method for the new architecture where each Resource
     /// generates its own independent ConceptMap.
     /// </summary>
+    /// <param name="resource">The resource to build a ConceptMap from.</param>
+    /// <param name="maxLinkingIterations">Max iterations for orphan linking (null = use default).</param>
+    /// <param name="minLinkingConfidence">Min confidence for orphan linking (null = use default).</param>
+    /// <param name="ct">Cancellation token.</param>
     public async Task<ConceptMap> BuildFromResourceAsync(
         CourseResource resource,
+        int? maxLinkingIterations = null,
+        float? minLinkingConfidence = null,
         CancellationToken ct = default)
     {
         if (resource == null)
@@ -272,8 +312,12 @@ public sealed class ConceptMapService
             throw new ArgumentNullException(nameof(resource));
         }
 
+        // Use provided values or defaults
+        var effectiveMaxIterations = maxLinkingIterations ?? SettingsService.DefaultOrphanLinkingMaxIterations;
+        var effectiveMinConfidence = minLinkingConfidence ?? SettingsService.DefaultOrphanLinkingMinConfidence;
+
         var name = $"{resource.Title} Concept Map";
-        Log.Info($"Starting Concept Map build for resource: '{resource.Title}'");
+        Log.Info($"Starting Concept Map build for resource: '{resource.Title}' (linking: maxIter={effectiveMaxIterations}, minConf={effectiveMinConfidence})");
 
         // Create new ConceptMap linked to this single resource
         var cm = new ConceptMap
@@ -304,7 +348,7 @@ public sealed class ConceptMapService
             }
 
             // Step 2: Extract concepts
-            Log.Info("Step 2/4: Extracting concepts via AI...");
+            Log.Info("Step 2/5: Extracting concepts via AI...");
             ReportProgress(cm, ConceptMapStatus.ExtractingConcepts, 20, "Extracting concepts...");
             cm.Status = ConceptMapStatus.ExtractingConcepts;
             cm.Concepts = await ExtractConceptsAsync(cm.SourceContent, cm.Id, ct);
@@ -317,23 +361,59 @@ public sealed class ConceptMapService
             }
 
             Log.Info($"Successfully extracted {cm.Concepts.Count} concepts");
-            ReportProgress(cm, ConceptMapStatus.ExtractingConcepts, 40,
+            ReportProgress(cm, ConceptMapStatus.ExtractingConcepts, 35,
                 $"Extracted {cm.Concepts.Count} concepts");
 
             // Step 3: Build relationships
-            Log.Info("Step 3/4: Building concept relationships via AI...");
-            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 50, "Building concept relationships...");
+            Log.Info("Step 3/5: Building concept relationships via AI...");
+            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 45, "Building concept relationships...");
             cm.Status = ConceptMapStatus.BuildingRelationships;
             cm.Relations = await BuildRelationshipsAsync(cm.Concepts, ct);
             await storageService.SaveAsync(cm, ct);
 
             Log.Info($"Built {cm.Relations.Count} relationships between concepts");
-            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 70,
+            ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 60,
                 $"Built {cm.Relations.Count} relationships");
 
-            // Step 4: Calculate complexity ordering
-            Log.Info("Step 4/4: Calculating complexity order...");
-            ReportProgress(cm, ConceptMapStatus.CalculatingComplexity, 80, "Calculating complexity order...");
+            // Step 4: Link orphaned concepts (iterative)
+            var connectivity = cm.GetConnectivityInfo();
+            if (!connectivity.IsFullyConnected && connectivity.OrphanedConceptCount > 0)
+            {
+                Log.Info($"Step 4/5: Linking {connectivity.OrphanedConceptCount} orphaned concepts (maxIter={effectiveMaxIterations}, minConf={effectiveMinConfidence})...");
+                ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 65, 
+                    $"Linking {connectivity.OrphanedConceptCount} orphaned concepts...");
+                
+                try
+                {
+                    var linkResult = await orphanLinkerService.LinkAllOrphansIterativelyAsync(
+                        cm, maxIterations: effectiveMaxIterations, minConfidence: effectiveMinConfidence, ct);
+                    
+                    if (linkResult.AppliedLinkCount > 0)
+                    {
+                        await storageService.SaveAsync(cm, ct);
+                        Log.Info($"Linked {linkResult.AppliedLinkCount} orphaned concepts. " +
+                            (linkResult.IsFullyConnected ? "Graph is fully connected!" : $"Remaining: {linkResult.RemainingOrphanCount}"));
+                        
+                        ReportProgress(cm, ConceptMapStatus.BuildingRelationships, 75,
+                            linkResult.IsFullyConnected 
+                                ? $"Linked all orphans! {cm.Relations.Count} total relationships"
+                                : $"Linked {linkResult.AppliedLinkCount} orphans, {linkResult.RemainingOrphanCount} remaining");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Orphan linking is not critical - log and continue
+                    Log.Warn($"Orphan linking failed (non-critical): {ex.Message}");
+                }
+            }
+            else
+            {
+                Log.Debug("Step 4/5: Graph is fully connected, no orphan linking needed");
+            }
+
+            // Step 5: Calculate complexity ordering
+            Log.Info("Step 5/5: Calculating complexity order...");
+            ReportProgress(cm, ConceptMapStatus.CalculatingComplexity, 85, "Calculating complexity order...");
             cm.Status = ConceptMapStatus.CalculatingComplexity;
             cm.ComplexityOrder = CalculateComplexityOrder(cm.Concepts, cm.Relations);
             await storageService.SaveAsync(cm, ct);

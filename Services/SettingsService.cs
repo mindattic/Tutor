@@ -588,6 +588,64 @@ public sealed class SettingsService
         }
         catch { }
     }
+
+    // Orphan Linking Settings
+    private const string OrphanLinkingMaxIterationsKey = "ORPHAN_LINKING_MAX_ITERATIONS";
+    private const string OrphanLinkingMinConfidenceKey = "ORPHAN_LINKING_MIN_CONFIDENCE";
+
+    /// <summary>
+    /// Default maximum iterations for orphan linking (default: 10).
+    /// </summary>
+    public const int DefaultOrphanLinkingMaxIterations = 10;
+
+    /// <summary>
+    /// Default minimum confidence threshold for orphan linking (default: 0.3).
+    /// </summary>
+    public const float DefaultOrphanLinkingMinConfidence = 0.3f;
+
+    public async Task<int> GetOrphanLinkingMaxIterationsAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(OrphanLinkingMaxIterationsKey);
+            return int.TryParse(value, out var iterations) ? iterations : DefaultOrphanLinkingMaxIterations;
+        }
+        catch
+        {
+            return DefaultOrphanLinkingMaxIterations;
+        }
+    }
+
+    public async Task SetOrphanLinkingMaxIterationsAsync(int iterations)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(OrphanLinkingMaxIterationsKey, iterations.ToString());
+        }
+        catch { }
+    }
+
+    public async Task<float> GetOrphanLinkingMinConfidenceAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(OrphanLinkingMinConfidenceKey);
+            return float.TryParse(value, out var confidence) ? confidence : DefaultOrphanLinkingMinConfidence;
+        }
+        catch
+        {
+            return DefaultOrphanLinkingMinConfidence;
+        }
+    }
+
+    public async Task SetOrphanLinkingMinConfidenceAsync(float confidence)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(OrphanLinkingMinConfidenceKey, confidence.ToString());
+        }
+        catch { }
+    }
 }
 
 public enum GradingScale

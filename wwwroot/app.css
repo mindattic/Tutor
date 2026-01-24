@@ -128,6 +128,7 @@ h1:focus {
     flex-direction: column;
     gap: 8px;
     margin-top: auto;
+    margin-left: 8px;
     flex-shrink: 0;
     padding-top: 8px;
 }
@@ -137,7 +138,9 @@ h1:focus {
     overflow-y: auto;
     padding: 12px;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    border-left: none;
+    border-top: none;
+    border-radius: 0;
     background: var(--bg-primary);
     min-height: 0;
 }
@@ -1659,6 +1662,62 @@ border: 1px solid var(--border-color);
 
 .course-association-hint .bi {
     color: #17a2b8;
+}
+
+/* Resource Advanced Settings */
+.resource-advanced-settings {
+    margin-top: 12px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 12px;
+}
+
+.advanced-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    transition: color 0.2s;
+}
+
+.advanced-toggle:hover {
+    color: var(--accent-primary);
+}
+
+.advanced-settings-panel {
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.advanced-settings-panel .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.advanced-settings-panel .settings-row label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 100px;
+}
+
+.advanced-settings-panel .settings-row select {
+    flex: 1;
+    max-width: 200px;
+}
+
+.advanced-settings-panel .hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin: 8px 0 0 0;
+    font-style: italic;
 }
 
 .icon-btn {
@@ -4430,6 +4489,333 @@ border: 1px solid var(--border-color);
 .curriculum-stats .stat {
     display: flex;
     flex-direction: column;
+}
+
+/* ========================================
+   LEARN TAB - NEW LAYOUT STYLES
+   ======================================== */
+
+/* Learn header bar */
+.learn-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+}
+
+.learn-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.learn-header-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.learn-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Course selector */
+.course-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.course-selector label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.course-selector select {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    min-width: 180px;
+    max-width: 280px;
+    cursor: pointer;
+}
+
+.course-selector select:hover:not(:disabled) {
+    border-color: var(--accent-primary);
+}
+
+.course-selector select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Mode badge in header */
+.mode-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
+}
+
+.mode-badge.quiz {
+    background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+}
+
+.mode-badge.lesson {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+}
+
+.mode-badge .mode-detail,
+.mode-badge .mode-progress {
+    opacity: 0.9;
+    font-size: 11px;
+}
+
+/* Header action buttons */
+.header-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.header-action-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.header-action-btn.danger:hover {
+    color: var(--accent-danger);
+    border-color: var(--accent-danger);
+}
+
+.header-action-btn.quiz:hover {
+    color: #6f42c1;
+    border-color: #6f42c1;
+}
+
+/* Learn container with sidebar */
+.learn-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* TOC Sidebar */
+.toc-sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.toc-sidebar-header {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+}
+
+.toc-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.toc-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.toc-sidebar-item:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+.toc-sidebar-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.toc-sidebar-item.current {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+}
+
+.toc-sidebar-item.current:hover {
+    background: var(--accent-primary-hover);
+}
+
+.toc-sidebar-item.completed {
+    border-color: var(--accent-success);
+}
+
+.toc-sidebar-item.visited:not(.completed):not(.current) {
+    border-color: var(--border-color);
+}
+
+.toc-sidebar-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    background: var(--bg-tertiary);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.toc-sidebar-item.current .toc-sidebar-number {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.toc-sidebar-topic {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.toc-sidebar-item.current .toc-sidebar-topic {
+    color: white;
+}
+
+.toc-sidebar-status {
+    font-size: 14px;
+    color: var(--accent-success);
+    flex-shrink: 0;
+}
+
+.toc-sidebar-item.current .toc-sidebar-status {
+    color: white;
+}
+
+/* Chat shell adjustments for sidebar layout */
+.chat-shell.with-sidebar {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Lesson navigation bar (at bottom of message) */
+.lesson-nav-bar {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+}
+
+.lesson-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    white-space: nowrap;
+}
+
+.lesson-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.lesson-nav-btn.previous {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    flex: 1;
+    justify-content: flex-start;
+}
+
+.lesson-nav-btn.previous:hover:not(:disabled) {
+    background: var(--accent-primary-hover);
+}
+
+.lesson-nav-btn.continue {
+    background: var(--accent-primary);
+    color: white;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.lesson-nav-btn.continue:hover:not(:disabled) {
+    background: var(--accent-primary-hover);
+}
+
+.lesson-nav-btn.quiz {
+    background: #6f42c1;
+}
+
+.lesson-nav-btn.quiz:hover:not(:disabled) {
+    background: #5a32a3;
+}
+
+.lesson-nav-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lesson-nav-btn .bi {
+    font-size: 14px;
+    flex-shrink: 0;
+}
     align-items: center;
 }
 

@@ -22,6 +22,7 @@ public sealed class ResourceProcessingService : IDisposable
     private readonly ConceptExtractionService extractionService;
     private readonly ConceptMapService conceptMapService;
     private readonly ConceptMapStorageService conceptMapStorageService;
+    private readonly SettingsService settingsService;
 
     // Throttling - process ONE resource at a time sequentially to avoid API spam
     private readonly SemaphoreSlim aiThrottle = new(1, 1); // Max 1 concurrent AI call
@@ -44,7 +45,8 @@ public sealed class ResourceProcessingService : IDisposable
         KnowledgeGraphService graphService,
         ConceptExtractionService extractionService,
         ConceptMapService conceptMapService,
-        ConceptMapStorageService conceptMapStorageService)
+        ConceptMapStorageService conceptMapStorageService,
+        SettingsService settingsService)
     {
         this.courseService = courseService;
         this.formatterService = formatterService;
@@ -52,6 +54,7 @@ public sealed class ResourceProcessingService : IDisposable
         this.extractionService = extractionService;
         this.conceptMapService = conceptMapService;
         this.conceptMapStorageService = conceptMapStorageService;
+        this.settingsService = settingsService;
 
         // Unbounded channel for queuing
         processingQueue = Channel.CreateUnbounded<ResourceProcessingTask>(new UnboundedChannelOptions
@@ -411,6 +414,13 @@ public sealed class ResourceProcessingService : IDisposable
         {
             UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 55, "Building Concept Map...");
 
+            // Get global settings and apply resource overrides
+            var globalMaxIterations = await settingsService.GetOrphanLinkingMaxIterationsAsync();
+            var globalMinConfidence = await settingsService.GetOrphanLinkingMinConfidenceAsync();
+            
+            var effectiveMaxIterations = task.Resource.GetEffectiveMaxIterations(globalMaxIterations);
+            var effectiveMinConfidence = task.Resource.GetEffectiveMinConfidence(globalMinConfidence);
+
             // Subscribe to progress updates from the CM service
             void OnProgress(ConceptMapBuildProgress progress)
             {
@@ -422,8 +432,12 @@ public sealed class ResourceProcessingService : IDisposable
             conceptMapService.OnProgressChanged += OnProgress;
             try
             {
-                // Build the ConceptMap for this resource
-                var cm = await conceptMapService.BuildFromResourceAsync(task.Resource, cts.Token);
+                // Build the ConceptMap for this resource with settings
+                var cm = await conceptMapService.BuildFromResourceAsync(
+                    task.Resource, 
+                    effectiveMaxIterations, 
+                    effectiveMinConfidence, 
+                    cts.Token);
 
                 // Link the ConceptMap to the resource
                 task.Resource.ConceptMapId = cm.Id;

@@ -270,6 +270,288 @@ public sealed class OrphanConceptLinkerService
         return result;
     }
 
+    /// <summary>
+    /// Performs iterative orphan linking until the graph is fully connected or max iterations reached.
+    /// This is more aggressive and will keep trying to connect clusters.
+    /// </summary>
+    public async Task<OrphanLinkingResult> LinkAllOrphansIterativelyAsync(
+        ConceptMap conceptMap,
+        int maxIterations = 10,
+        float minConfidence = 0.3f,
+        CancellationToken ct = default)
+    {
+        Log.Info($"OrphanLinker: Starting iterative linking for ConceptMap '{conceptMap.Name}'");
+        
+        var totalApplied = 0;
+        var iteration = 0;
+        OrphanLinkingResult lastResult = new();
+
+        while (iteration < maxIterations)
+        {
+            ct.ThrowIfCancellationRequested();
+            iteration++;
+
+            var connectivity = conceptMap.GetConnectivityInfo();
+            
+            if (connectivity.IsFullyConnected)
+            {
+                Log.Info($"OrphanLinker: Graph is fully connected after {iteration - 1} iteration(s)");
+                return new OrphanLinkingResult
+                {
+                    IsFullyConnected = true,
+                    AppliedLinkCount = totalApplied,
+                    Message = $"Graph is fully connected! Applied {totalApplied} links over {iteration - 1} iteration(s)"
+                };
+            }
+
+            Log.Info($"OrphanLinker: Iteration {iteration} - {connectivity.OrphanedConceptCount} orphans in {connectivity.OrphanedComponentCount} clusters");
+
+            // Use aggressive linking with lower confidence threshold
+            lastResult = await AnalyzeOrphansAggressiveAsync(conceptMap, iteration, ct);
+
+            if (lastResult.SuggestedLinks.Count == 0)
+            {
+                Log.Warn($"OrphanLinker: No more suggestions at iteration {iteration}");
+                break;
+            }
+
+            var applied = ApplySuggestedLinks(conceptMap, lastResult.SuggestedLinks, minConfidence);
+            totalApplied += applied.Count;
+
+            if (applied.Count == 0)
+            {
+                Log.Warn($"OrphanLinker: No links applied at iteration {iteration} (all below confidence threshold)");
+                break;
+            }
+
+            Log.Info($"OrphanLinker: Applied {applied.Count} links in iteration {iteration}");
+
+            // Small delay to avoid rate limiting
+            await Task.Delay(500, ct);
+        }
+
+        var finalConnectivity = conceptMap.GetConnectivityInfo();
+        return new OrphanLinkingResult
+        {
+            IsFullyConnected = finalConnectivity.IsFullyConnected,
+            OrphanedComponentCount = finalConnectivity.OrphanedComponentCount,
+            OrphanedConceptCount = finalConnectivity.OrphanedConceptCount,
+            RemainingOrphanCount = finalConnectivity.OrphanedConceptCount,
+            AppliedLinkCount = totalApplied,
+            Message = finalConnectivity.IsFullyConnected
+                ? $"Graph is fully connected! Applied {totalApplied} links over {iteration} iteration(s)"
+                : $"Applied {totalApplied} links over {iteration} iteration(s). {finalConnectivity.OrphanedConceptCount} concepts still orphaned."
+        };
+    }
+
+    /// <summary>
+    /// More aggressive orphan analysis that processes in batches and prioritizes hub concepts.
+    /// </summary>
+    private async Task<OrphanLinkingResult> AnalyzeOrphansAggressiveAsync(
+        ConceptMap conceptMap,
+        int iteration,
+        CancellationToken ct)
+    {
+        var connectivity = conceptMap.GetConnectivityInfo();
+        var mainComponent = conceptMap.GetMainComponent();
+
+        if (mainComponent == null || mainComponent.Size == 0)
+        {
+            // If no clear main component, find the largest one
+            var allComponents = connectivity.OrphanedComponents.Prepend(mainComponent!).Where(c => c != null);
+            mainComponent = allComponents.OrderByDescending(c => c?.Size ?? 0).FirstOrDefault();
+        }
+
+        if (mainComponent == null)
+        {
+            return new OrphanLinkingResult { Message = "No components found" };
+        }
+
+        // Get hub concepts (most connected) as primary link targets
+        var hubConcepts = GetHubConcepts(conceptMap, mainComponent, 30);
+        
+        // Get orphaned concepts, prioritizing smaller clusters first (easier to link)
+        var orphanedClusters = connectivity.OrphanedComponents
+            .OrderBy(c => c.Size)
+            .ToList();
+
+        // Process a batch of orphans per iteration
+        var orphansToProcess = orphanedClusters
+            .SelectMany(c => c.Concepts)
+            .Take(50) // Process 50 orphans at a time
+            .ToList();
+
+        if (orphansToProcess.Count == 0)
+        {
+            return new OrphanLinkingResult { IsFullyConnected = true };
+        }
+
+        var prompt = BuildAggressiveLinkingPrompt(hubConcepts, orphansToProcess, conceptMap.SourceContent, iteration);
+
+        try
+        {
+            var response = await CallAiAsync<OrphanLinkingResponse>(prompt, ct);
+
+            if (response?.SuggestedLinks == null)
+            {
+                return new OrphanLinkingResult { Message = "No suggestions from AI" };
+            }
+
+            var conceptLookup = conceptMap.Concepts.ToDictionary(
+                c => c.Title.ToLowerInvariant(),
+                c => c);
+
+            // Also build alias lookup
+            foreach (var concept in conceptMap.Concepts)
+            {
+                foreach (var alias in concept.Aliases)
+                {
+                    var key = alias.ToLowerInvariant();
+                    if (!conceptLookup.ContainsKey(key))
+                    {
+                        conceptLookup[key] = concept;
+                    }
+                }
+            }
+
+            var suggestedLinks = new List<SuggestedLink>();
+
+            foreach (var link in response.SuggestedLinks)
+            {
+                var orphanKey = link.OrphanConceptTerm?.ToLowerInvariant() ?? "";
+                var mainKey = link.MainConceptTerm?.ToLowerInvariant() ?? "";
+
+                // Try exact match first, then partial match
+                if (!conceptLookup.TryGetValue(orphanKey, out var orphanConcept))
+                {
+                    orphanConcept = conceptMap.Concepts.FirstOrDefault(c => 
+                        c.Title.Contains(link.OrphanConceptTerm ?? "", StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!conceptLookup.TryGetValue(mainKey, out var mainConcept))
+                {
+                    mainConcept = conceptMap.Concepts.FirstOrDefault(c => 
+                        c.Title.Contains(link.MainConceptTerm ?? "", StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (orphanConcept == null || mainConcept == null)
+                {
+                    continue;
+                }
+
+                var (sourceId, targetId) = link.Direction?.ToLowerInvariant() == "maintoorphan"
+                    ? (mainConcept.Id, orphanConcept.Id)
+                    : (orphanConcept.Id, mainConcept.Id);
+
+                suggestedLinks.Add(new SuggestedLink
+                {
+                    SourceConceptId = sourceId,
+                    TargetConceptId = targetId,
+                    SourceConceptTitle = conceptMap.Concepts.First(c => c.Id == sourceId).Title,
+                    TargetConceptTitle = conceptMap.Concepts.First(c => c.Id == targetId).Title,
+                    RelationType = ParseRelationType(link.RelationshipType),
+                    Confidence = link.Confidence,
+                    Justification = link.Justification ?? ""
+                });
+            }
+
+            return new OrphanLinkingResult
+            {
+                SuggestedLinks = suggestedLinks,
+                OrphanedConceptCount = connectivity.OrphanedConceptCount,
+                OrphanedComponentCount = connectivity.OrphanedComponentCount,
+                Message = $"Generated {suggestedLinks.Count} suggestions for iteration {iteration}"
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"OrphanLinker: Error in aggressive analysis - {ex.Message}", ex);
+            return new OrphanLinkingResult { Message = $"Error: {ex.Message}" };
+        }
+    }
+
+    /// <summary>
+    /// Gets the most connected concepts as hub link targets.
+    /// </summary>
+    private static List<Concept> GetHubConcepts(ConceptMap conceptMap, ConnectedComponent mainComponent, int count)
+    {
+        var connectionCounts = new Dictionary<string, int>();
+
+        foreach (var rel in conceptMap.Relations)
+        {
+            connectionCounts.TryGetValue(rel.SourceConceptId, out var sourceCount);
+            connectionCounts[rel.SourceConceptId] = sourceCount + 1;
+
+            connectionCounts.TryGetValue(rel.TargetConceptId, out var targetCount);
+            connectionCounts[rel.TargetConceptId] = targetCount + 1;
+        }
+
+        return mainComponent.Concepts
+            .OrderByDescending(c => connectionCounts.GetValueOrDefault(c.Id, 0))
+            .Take(count)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Builds an aggressive linking prompt optimized for maximum connectivity.
+    /// </summary>
+    private static string BuildAggressiveLinkingPrompt(
+        List<Concept> hubConcepts,
+        List<Concept> orphanConcepts,
+        string? sourceContent,
+        int iteration)
+    {
+        var hubList = string.Join("\n", hubConcepts.Select(c => 
+            $"- {c.Title}: {c.Summary}" + (c.Aliases.Count > 0 ? $" (also: {string.Join(", ", c.Aliases)})" : "")));
+
+        var orphanList = string.Join("\n", orphanConcepts.Select(c => 
+            $"- {c.Title}: {c.Summary}"));
+
+        var contextSnippet = sourceContent?.Length > 3000 
+            ? sourceContent[..3000] + "..." 
+            : sourceContent ?? "";
+
+        return $$"""
+            You are connecting orphaned concepts to a knowledge graph. This is iteration {{iteration}} of linking.
+            
+            GOAL: Create a FULLY CONNECTED graph where every concept can reach every other concept.
+            
+            HUB CONCEPTS (well-connected, good link targets):
+            {{hubList}}
+            
+            ORPHANED CONCEPTS (MUST be connected to at least one hub):
+            {{orphanList}}
+            
+            SOURCE CONTEXT:
+            {{contextSnippet}}
+            
+            RULES:
+            1. EVERY orphaned concept MUST have at least one connection suggested
+            2. Link to the most semantically related hub concept
+            3. Use "related" relationship type for any thematic connection
+            4. Be generous with confidence scores - if there's any reasonable connection, score it 0.5+
+            5. Characters should link to other characters they interact with
+            6. Objects/items should link to characters who own/use them
+            7. Places should link to characters who visit them or events that happen there
+            
+            Return JSON:
+            {
+                "suggestedLinks": [
+                    {
+                        "orphanConceptTerm": "Exact name of orphaned concept",
+                        "mainConceptTerm": "Exact name of hub concept to link to",
+                        "relationshipType": "related",
+                        "direction": "orphanToMain",
+                        "confidence": 0.7,
+                        "justification": "Why these connect"
+                    }
+                ]
+            }
+            
+            IMPORTANT: Do not leave any orphan unlinked. Find a connection for EVERY orphaned concept.
+            """;
+    }
+
     private async Task<T?> CallAiAsync<T>(string prompt, CancellationToken ct)
     {
         var apiKey = await opt.GetApiKeyAsync();

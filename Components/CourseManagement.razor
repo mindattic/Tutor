@@ -6,6 +6,7 @@
 @inject ResourceProcessingService ProcessingService
 @inject ConceptMapService ConceptMapService
 @inject ConceptMapStorageService ConceptMapStorageService
+@inject SettingsService Settings
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -324,10 +325,10 @@
                                                     }
                                                     <div class="details-actions">
                                                         <button class="settings-btn small" 
-                                                                @onclick="@(() => ExportConceptMap(item))"
-                                                                title="Export to markdown file">
-                                                            <span class="bi bi-file-earmark-text"></span>
-                                                            <span>Export</span>
+                                                                @onclick="@(() => OpenConceptMapFile(item))"
+                                                                title="Open ConceptMap JSON file">
+                                                            <span class="bi bi-folder2-open"></span>
+                                                            <span>Open</span>
                                                         </button>
                                                         <button class="settings-btn small" 
                                                                 @onclick="@(() => RegenerateConceptMap(item))"
@@ -379,6 +380,49 @@
                                                 This resource's Concept Map can be combined with others when added to a Course.
                                             </div>
                                         }
+
+                                        @* Advanced Linking Settings (per-resource override) *@
+                                        <div class="resource-advanced-settings">
+                                            <button class="advanced-toggle" @onclick="@(() => ToggleAdvancedSettings(item.Id))">
+                                                <span class="bi @(expandedAdvancedSettings.Contains(item.Id) ? "bi-chevron-up" : "bi-chevron-down")"></span>
+                                                Advanced Linking Settings
+                                            </button>
+                                            @if (expandedAdvancedSettings.Contains(item.Id))
+                                            {
+                                                <div class="advanced-settings-panel">
+                                                    <div class="settings-row">
+                                                        <label>Max Iterations:</label>
+                                                        <select class="theme-select small" 
+                                                                value="@(item.OrphanLinkingMaxIterations?.ToString() ?? "")"
+                                                                @onchange="@(e => UpdateResourceMaxIterations(item, e))">
+                                                            <option value="">Use global (@globalMaxIterations)</option>
+                                                            <option value="1">1 (minimal)</option>
+                                                            <option value="3">3 (light)</option>
+                                                            <option value="5">5 (moderate)</option>
+                                                            <option value="10">10</option>
+                                                            <option value="15">15 (aggressive)</option>
+                                                            <option value="20">20 (very aggressive)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="settings-row">
+                                                        <label>Min Confidence:</label>
+                                                        <select class="theme-select small"
+                                                                value="@(item.OrphanLinkingMinConfidence?.ToString("0.0") ?? "")"
+                                                                @onchange="@(e => UpdateResourceMinConfidence(item, e))">
+                                                            <option value="">Use global (@globalMinConfidence.ToString("0.0"))</option>
+                                                            <option value="0.1">0.1 (very permissive)</option>
+                                                            <option value="0.2">0.2 (permissive)</option>
+                                                            <option value="0.3">0.3</option>
+                                                            <option value="0.4">0.4 (moderate)</option>
+                                                            <option value="0.5">0.5 (selective)</option>
+                                                            <option value="0.6">0.6 (strict)</option>
+                                                            <option value="0.7">0.7 (very strict)</option>
+                                                        </select>
+                                                    </div>
+                                                    <p class="hint">Override global settings for this resource only.</p>
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -638,6 +682,10 @@ private string resourceContent = "";
     private string deleteConfirmMessage = "";
     private Func<Task>? pendingDeleteAction;
 
+    // Advanced settings per resource
+    private HashSet<string> expandedAdvancedSettings = new();
+    private int globalMaxIterations = SettingsService.DefaultOrphanLinkingMaxIterations;
+    private float globalMinConfidence = SettingsService.DefaultOrphanLinkingMinConfidence;
 
     private string statusMessage = "";
     
@@ -708,6 +756,10 @@ private string resourceContent = "";
         resources = await CourseService.GetAllResourcesAsync();
         courses = await CourseService.GetAllCoursesAsync();
         selectedCourseId = await CourseService.GetActiveCourseIdAsync();
+        
+        // Load global linking settings
+        globalMaxIterations = await Settings.GetOrphanLinkingMaxIterationsAsync();
+        globalMinConfidence = await Settings.GetOrphanLinkingMinConfidenceAsync();
         
         // Load concept count for active course
         await LoadKnowledgeBaseInfo();
@@ -946,36 +998,65 @@ private string resourceContent = "";
         }
     }
 
-    private async Task ExportConceptMap(CourseResource resource)
+    /// <summary>
+    /// Opens the ConceptMap JSON file for the given resource in the OS file explorer.
+    /// </summary>
+    private async Task OpenConceptMapFile(CourseResource resource)
     {
         if (string.IsNullOrEmpty(resource.ConceptMapId))
         {
-            Log.Warn($"Cannot export ConceptMap for '{resource.Title}': No ConceptMap exists");
+            Log.Warn($"Cannot open ConceptMap for '{resource.Title}': No ConceptMap exists");
             return;
         }
 
         try
         {
-            // Load the ConceptMap and trigger export by re-saving it
+            // Ensure the ConceptMap is saved so the JSON file exists
             var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
-            if (conceptMap != null && conceptMap.Status == ConceptMapStatus.Ready)
+            if (conceptMap == null)
             {
-                await ConceptMapStorageService.SaveAsync(conceptMap);
-                
-                // Show success message
-                statusMessage = $"Concept Map exported to Resources/ConceptMaps/{SanitizeFileName(conceptMap.Name)}_concept-map.md";
-                StateHasChanged();
-                
-                Log.Info($"ConceptMap exported for: {resource.Title}");
+                Log.Warn($"Cannot open ConceptMap for '{resource.Title}': ConceptMap not found");
+                return;
             }
-            else
+
+            await ConceptMapStorageService.SaveAsync(conceptMap);
+
+            // Build the expected JSON path based on storage settings
+            var kbDir = DataStorageSettings.GetKnowledgeBasesDirectory();
+            var jsonPath = Path.Combine(kbDir, conceptMap.Id + ".json");
+
+            if (!File.Exists(jsonPath))
             {
-                Log.Warn($"Cannot export ConceptMap for '{resource.Title}': ConceptMap not ready");
+                Log.Warn($"ConceptMap JSON file not found at: {jsonPath}");
+                statusMessage = "ConceptMap JSON file not found on disk.";
+                return;
+            }
+
+            // Open the file in the default associated editor/viewer
+            try
+            {
+#if WINDOWS
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = jsonPath,
+                    UseShellExecute = true
+                });
+#else
+                System.Diagnostics.Process.Start(jsonPath);
+#endif
+
+                statusMessage = "Opened ConceptMap JSON in your default editor.";
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Failed to open ConceptMap JSON: {ex.Message}", ex);
+                statusMessage = "Failed to open ConceptMap JSON file.";
             }
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to export ConceptMap: {ex.Message}", ex);
+            Log.Error($"Failed to open ConceptMap: {ex.Message}", ex);
+            statusMessage = "Error opening ConceptMap JSON file.";
         }
     }
 
@@ -1288,4 +1369,50 @@ private string resourceContent = "";
         public DateTime? KnowledgeBaseCreatedAt { get; set; }
         public DateTime? KnowledgeBaseUpdatedAt { get; set; }
     }
+
+    // Advanced settings toggle
+    private void ToggleAdvancedSettings(string resourceId)
+    {
+        if (expandedAdvancedSettings.Contains(resourceId))
+        {
+            expandedAdvancedSettings.Remove(resourceId);
+        }
+        else
+        {
+            expandedAdvancedSettings.Add(resourceId);
+        }
+    }
+
+    private async Task UpdateResourceMaxIterations(CourseResource resource, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrEmpty(value))
+        {
+            resource.OrphanLinkingMaxIterations = null; // Use global
+        }
+        else if (int.TryParse(value, out var iterations))
+        {
+            resource.OrphanLinkingMaxIterations = iterations;
+        }
+        
+        await CourseService.SaveResourceAsync(resource);
+        statusMessage = $"Linking iterations updated for '{resource.Title}'";
+    }
+
+    private async Task UpdateResourceMinConfidence(CourseResource resource, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrEmpty(value))
+        {
+            resource.OrphanLinkingMinConfidence = null; // Use global
+        }
+        else if (float.TryParse(value, out var confidence))
+        {
+            resource.OrphanLinkingMinConfidence = confidence;
+        }
+        
+        await CourseService.SaveResourceAsync(resource);
+        statusMessage = $"Linking confidence updated for '{resource.Title}'";
+    }
 }
+

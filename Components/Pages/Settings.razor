@@ -359,6 +359,38 @@
                     }
                 </div>
             </div>
+
+            <div class="settings-section">
+                <h4>Concept Map Linking</h4>
+                <p>Control how aggressively the AI links orphaned concepts in the knowledge graph.</p>
+                
+                <div class="settings-row" style="margin-top: 10px;">
+                    <label>Max Linking Iterations:</label>
+                    <select class="theme-select small" @bind="orphanLinkingMaxIterations" @bind:after="SaveOrphanLinkingMaxIterationsAsync">
+                        <option value="1">1 (minimal)</option>
+                        <option value="3">3 (light)</option>
+                        <option value="5">5 (moderate)</option>
+                        <option value="10">10 (default)</option>
+                        <option value="15">15 (aggressive)</option>
+                        <option value="20">20 (very aggressive)</option>
+                    </select>
+                </div>
+                <p class="hint">Higher values mean more AI calls to find connections. Default: 10</p>
+                
+                <div class="settings-row" style="margin-top: 10px;">
+                    <label>Min Confidence Threshold:</label>
+                    <select class="theme-select small" @bind="orphanLinkingMinConfidenceStr" @bind:after="SaveOrphanLinkingMinConfidenceAsync">
+                        <option value="0.1">0.1 (very permissive)</option>
+                        <option value="0.2">0.2 (permissive)</option>
+                        <option value="0.3">0.3 (default)</option>
+                        <option value="0.4">0.4 (moderate)</option>
+                        <option value="0.5">0.5 (selective)</option>
+                        <option value="0.6">0.6 (strict)</option>
+                        <option value="0.7">0.7 (very strict)</option>
+                    </select>
+                </div>
+                <p class="hint">Lower values allow weaker connections. Default: 0.3</p>
+            </div>
         }
         else if (activeTab == "Credentials")
         {
@@ -601,6 +633,10 @@
     // Quiz settings
     private int quizQuestionCount = 3;
     private GradingScale gradingScale = GradingScale.Standard;
+
+    // Orphan linking settings
+    private int orphanLinkingMaxIterations = 10;
+    private string orphanLinkingMinConfidenceStr = "0.3";
 
     // Log settings - display filters
     private HashSet<LogSeverity> logFilters = [LogSeverity.Information, LogSeverity.Warning, LogSeverity.Error, LogSeverity.Critical];
@@ -992,6 +1028,9 @@
     {
         quizQuestionCount = await SettingsService.GetQuizQuestionCountAsync();
         gradingScale = await SettingsService.GetGradingScaleAsync();
+        orphanLinkingMaxIterations = await SettingsService.GetOrphanLinkingMaxIterationsAsync();
+        var minConfidence = await SettingsService.GetOrphanLinkingMinConfidenceAsync();
+        orphanLinkingMinConfidenceStr = minConfidence.ToString("0.0");
     }
 
     private async Task SaveQuizQuestionCountAsync()
@@ -1004,6 +1043,21 @@
     {
         await SettingsService.SetGradingScaleAsync(gradingScale);
         status = $"Grading scale set to {gradingScale}.";
+    }
+
+    private async Task SaveOrphanLinkingMaxIterationsAsync()
+    {
+        await SettingsService.SetOrphanLinkingMaxIterationsAsync(orphanLinkingMaxIterations);
+        status = $"Max linking iterations set to {orphanLinkingMaxIterations}.";
+    }
+
+    private async Task SaveOrphanLinkingMinConfidenceAsync()
+    {
+        if (float.TryParse(orphanLinkingMinConfidenceStr, out var confidence))
+        {
+            await SettingsService.SetOrphanLinkingMinConfidenceAsync(confidence);
+            status = $"Min linking confidence set to {confidence:0.0}.";
+        }
     }
 
     private List<(string Letter, string Range)> GetGradingPreview()

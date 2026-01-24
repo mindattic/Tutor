@@ -235,8 +235,16 @@ public sealed class ConceptMapBuildTaskHandler : IBackgroundTaskHandler
                 
                 if (!connectivity.IsFullyConnected && connectivity.OrphanedConceptCount > 0)
                 {
-                    Log.Info($"ConceptMapBuildTask: Found {connectivity.OrphanedConceptCount} orphaned concept(s) in {connectivity.OrphanedComponentCount} component(s)");
-                    context.ReportProgress(item, 83, $"Linking {connectivity.OrphanedConceptCount} orphaned concepts...");
+                    // Load settings and apply resource overrides
+                    var settingsService = context.GetService<SettingsService>();
+                    var globalMaxIterations = await settingsService.GetOrphanLinkingMaxIterationsAsync();
+                    var globalMinConfidence = await settingsService.GetOrphanLinkingMinConfidenceAsync();
+                    
+                    var effectiveMaxIterations = resource.GetEffectiveMaxIterations(globalMaxIterations);
+                    var effectiveMinConfidence = resource.GetEffectiveMinConfidence(globalMinConfidence);
+
+                    Log.Info($"ConceptMapBuildTask: Found {connectivity.OrphanedConceptCount} orphaned concept(s) (maxIter={effectiveMaxIterations}, minConf={effectiveMinConfidence})");
+                    context.ReportProgress(item, 83, $"Linking {connectivity.OrphanedConceptCount} orphaned concepts (iterative)...");
 
                     await context.AiThrottle.WaitAsync(ct);
 
@@ -251,14 +259,23 @@ public sealed class ConceptMapBuildTaskHandler : IBackgroundTaskHandler
                         }
 
                         var orphanLinker = context.GetService<OrphanConceptLinkerService>();
-                        var linkResult = await orphanLinker.DetectAndLinkOrphansAsync(conceptMap, minConfidence: 0.5f, ct);
+                        
+                        // Use iterative linking with settings
+                        var linkResult = await orphanLinker.LinkAllOrphansIterativelyAsync(
+                            conceptMap, 
+                            maxIterations: effectiveMaxIterations, 
+                            minConfidence: effectiveMinConfidence, 
+                            ct);
 
                         context.RateLimitState.RecordSuccess();
 
                         if (linkResult.AppliedLinkCount > 0)
                         {
                             await conceptMapStorageService.SaveAsync(conceptMap, ct);
-                            Log.Info($"ConceptMapBuildTask: Linked {linkResult.AppliedLinkCount} orphaned concepts. Remaining orphans: {linkResult.RemainingOrphanCount}");
+                            Log.Info($"ConceptMapBuildTask: Linked {linkResult.AppliedLinkCount} orphaned concepts. " +
+                                (linkResult.IsFullyConnected 
+                                    ? "Graph is now fully connected!" 
+                                    : $"Remaining orphans: {linkResult.RemainingOrphanCount}"));
                         }
                         else
                         {

@@ -1,12 +1,12 @@
 ---
 title: "Kubla Khan Concept Map"
-id: 2f0171a0-54de-4973-84f5-210565b66c0d
+id: 5cf97516-1e09-4b63-b086-e8408f75620b
 resource_id: b2e3a9f6-753a-4151-9e42-8c69eb94ec2f
 status: Ready
-concepts: 10
-relations: 12
-created: 2026-01-24T18:40:27.7816729Z
-updated: 2026-01-24T18:57:01.3001859Z
+concepts: 14
+relations: 20
+created: 2026-01-24T20:59:20.7739813Z
+updated: 2026-01-24T21:00:06.5830163Z
 version: 2
 ---
 
@@ -14,8 +14,8 @@ version: 2
 
 Concept map generated from: Kubla Khan
 
-**Total Concepts (Nodes):** 10
-**Total Relations (Edges):** 12
+**Total Concepts (Nodes):** 14
+**Total Relations (Edges):** 20
 
 ---
 
@@ -23,99 +23,79 @@ Concept map generated from: Kubla Khan
 
 ### Level 0 - Foundational
 
-#### Weave a circle round him thrice
-
-A symbolic line in the poem indicating a magical or protective ritual meant to contain or protect a visionary figure.
-
-**Tags:** literature, symbolism, ritual imagery
-
-**Related:** Kubla Khan, Ancestral voices prophesying war, Pleasure-dome with caves of ice
-
----
-
-#### Pleasure-dome with caves of ice
-
-A paradoxical image from the poem describing a dome of warmth and beauty juxtaposed with caves of ice, reflecting contrasts in nature and imagination.
-
-**Also known as:** sunny pleasure-dome with caves of ice
-
-**Tags:** literature, imagery, symbolism, poetry
-
-**Related:** Pleasure-dome, Weave a circle round him thrice
-
----
-
 #### Mount Abora
 
-A fictional or symbolic mountain referenced in the poem, associated with the Abyssinian maid’s song, representing a place or idea of artistic inspiration.
+A mythical mountain referenced in 'Kubla Khan' in the song of the Abyssinian maid, symbolizing spiritual or artistic inspiration.
 
-**Tags:** literature, symbolism, geographical imagery
+**Tags:** literature, mythical place, symbolism
 
-**Related:** Abyssinian maid, Dulcimer
-
----
-
-#### Dulcimer
-
-A musical string instrument mentioned in 'Kubla Khan', played by the Abyssinian maid, symbolizing artistic inspiration.
-
-**Tags:** music, literature, instrument
-
-**Related:** Abyssinian maid, Mount Abora
+**Related:** Abyssinian maid, Kubla Khan
 
 ---
 
-#### Abyssinian maid
+#### Fountain
 
-A mystical figure in Coleridge's poem who plays a dulcimer and sings of Mount Abora, representing inspiration or artistic muse.
+In 'Kubla Khan', a mighty fountain is described as forcefully projecting water and fragments amid rocks, symbolizing chaotic natural energy.
 
-**Tags:** literature, poetry symbolism, musical imagery
+**Tags:** literature, symbolism, natural imagery
 
-**Related:** Dulcimer, Mount Abora, Kubla Khan
-
----
-
-#### Ancestral voices prophesying war
-
-A phrase from 'Kubla Khan' referring to mysterious voices heard by Kubla, symbolizing an ominous or prophetic warning related to conflict.
-
-**Tags:** literature, symbolism, poetry imagery
-
-**Related:** Kubla Khan, Weave a circle round him thrice
+**Related:** Alph
 
 ---
 
-#### Alph
+#### Demon-lover
 
-The sacred river flowing through caverns and the land of Xanadu in Coleridge’s poem, embodying a sense of mystery and the sublime.
+A spectral or supernatural figure representing obsession or anguish, mentioned in 'Kubla Khan' as wailing beneath the moon in a savage place.
 
-**Also known as:** Alph (river)
+**Also known as:** demon lover
 
-**Tags:** literature, symbolism, nature imagery
+**Tags:** literature, supernatural, imagery
+
+**Related:** Holy dread
+
+---
+
+#### Romantic chasm
+
+A deep, picturesque ravine featured in 'Kubla Khan' that evokes feelings of mystery and the sublime, often related to romantic imagery.
+
+**Tags:** literature, imagery, Romanticism
 
 **Related:** Kubla Khan
 
 ---
 
+#### Alph
+
+The sacred river that runs through caverns measureless to man in 'Kubla Khan', symbolizing mystery and natural forces.
+
+**Also known as:** river Alph
+
+**Tags:** literature, symbolism, geographical feature (fictional)
+
+**Related:** Kubla Khan, Fountain
+
+---
+
 #### Pleasure-dome
 
-A magnificent and stately architectural structure decreed by Kubla Khan in the poem, symbolizing luxury and exotic beauty.
+A grand, luxurious architectural structure described in 'Kubla Khan' as decreed by Kubla Khan in Xanadu, symbolizing opulence and artistic beauty.
 
-**Also known as:** pleasure dome
+**Also known as:** dome of pleasure
 
-**Tags:** literature, architecture (fictional), poetry symbolism
+**Tags:** literature, architecture, symbolism
 
-**Related:** Xanadu, Pleasure-dome with caves of ice
+**Related:** Xanadu, Kubla Khan
 
 ---
 
 #### Xanadu
 
-A mythical place described in Coleridge's poem 'Kubla Khan' as the location where Kubla Khan decreed a grand pleasure dome, symbolizing an exotic and opulent palace.
+A legendary and exotic palace and gardens described in Coleridge's poem 'Kubla Khan' as the site of Kubla Khan's pleasure dome.
 
 **Also known as:** Shangdu
 
-**Tags:** literature, mythology, locations, poetry
+**Tags:** literature, place, mythical location
 
 **Related:** Kubla Khan, Pleasure-dome
 
@@ -123,13 +103,91 @@ A mythical place described in Coleridge's poem 'Kubla Khan' as the location wher
 
 #### Kubla Khan
 
-A poem written by Samuel Taylor Coleridge, depicting the creation of a magnificent pleasure dome in the mythical land of Xanadu as a vision or dream fragment.
+A poem by Samuel Taylor Coleridge that depicts a vivid, dream-like vision of the Mongol ruler Kubla Khan and his pleasure dome in Xanadu.
 
-**Also known as:** Kubla Khan (poem)
+**Also known as:** Kubla Khan poem
 
-**Tags:** literature, poetry, romanticism, Samuel Taylor Coleridge
+**Tags:** literature, poetry, Romanticism
 
-**Related:** Xanadu, Alph, Weave a circle round him thrice, Ancestral voices prophesying war, Abyssinian maid
+**Related:** Xanadu, Pleasure-dome, Mount Abora, Alph, Holy dread, Milk of Paradise, Romantic chasm
+
+---
+
+### Level 1 - Basic
+
+#### Holy dread
+
+A feeling of reverent fear or awe referred to in 'Kubla Khan', associated with mystical or supernatural experiences during poetic visions.
+
+**Tags:** literature, emotion, Romanticism
+
+**Prerequisites:** Kubla Khan
+
+**Related:** Kubla Khan, Demon-lover, Ancestral voices prophesying war
+
+---
+
+#### Honey-dew
+
+A metaphorical substance mentioned in 'Kubla Khan' symbolizing sweetness and divine inspiration linked to poetic creativity.
+
+**Tags:** literature, symbolism
+
+**Prerequisites:** Kubla Khan
+
+**Related:** Milk of Paradise
+
+---
+
+#### Milk of Paradise
+
+A symbolic phrase in 'Kubla Khan' representing a celestial or divine nourishment that the visionary speaker has drunk to inspire poetic creation.
+
+**Tags:** literature, symbolism, Romanticism
+
+**Prerequisites:** Kubla Khan
+
+**Related:** Honey-dew, Kubla Khan
+
+---
+
+#### Abyssinian maid
+
+A mysterious female figure in 'Kubla Khan' who plays the dulcimer and sings of Mount Abora, symbolizing artistic inspiration.
+
+**Tags:** literature, character, symbolism
+
+**Prerequisites:** Kubla Khan
+
+**Related:** Dulcimer, Mount Abora
+
+---
+
+#### Ancestral voices prophesying war
+
+A phrase from 'Kubla Khan' suggesting ominous forewarnings from past generations, invoking a sense of destiny and conflict.
+
+**Also known as:** ancestral voices
+
+**Tags:** literature, symbolism, foreshadowing
+
+**Prerequisites:** Kubla Khan
+
+**Related:** Holy dread
+
+---
+
+### Level 2 - Intermediate
+
+#### Dulcimer
+
+A stringed musical instrument mentioned in 'Kubla Khan', played by the Abyssinian maid in the poem's vision.
+
+**Tags:** music, instrument, literature
+
+**Prerequisites:** Abyssinian maid
+
+**Related:** Abyssinian maid
 
 ---
 
@@ -137,31 +195,49 @@ A poem written by Samuel Taylor Coleridge, depicting the creation of a magnifice
 
 | Source | Relationship | Target |
 |--------|--------------|--------|
+| Abyssinian maid | → requires | Dulcimer |
+| Kubla Khan | → requires | Holy dread |
+| Kubla Khan | → requires | Honey-dew |
+| Kubla Khan | → requires | Milk of Paradise |
+| Kubla Khan | → requires | Abyssinian maid |
+| Kubla Khan | → requires | Ancestral voices prophesying war |
 | Abyssinian maid | ↔ related to | Dulcimer |
 | Abyssinian maid | ↔ related to | Mount Abora |
-| Mount Abora | ↔ related to | Dulcimer |
-| Pleasure-dome with caves of ice | ↔ related to | Weave a circle round him thrice |
-| Weave a circle round him thrice | ↔ related to | Ancestral voices prophesying war |
-| Abyssinian maid | ⊃ contains | Kubla Khan |
+| Alph | ↔ related to | Kubla Khan |
+| Ancestral voices prophesying war | ↔ related to | Holy dread |
+| Demon-lover | ↔ related to | Holy dread |
+| Fountain | ↔ related to | Alph |
+| Holy dread | ↔ related to | Kubla Khan |
+| Honey-dew | ↔ related to | Milk of Paradise |
+| Milk of Paradise | ↔ related to | Kubla Khan |
+| Mount Abora | ↔ related to | Kubla Khan |
+| Pleasure-dome | ↔ related to | Kubla Khan |
+| Romantic chasm | ↔ related to | Kubla Khan |
 | Kubla Khan | ⊃ contains | Xanadu |
-| Kubla Khan | ⊃ contains | Alph |
-| Kubla Khan | ⊃ contains | Weave a circle round him thrice |
-| Kubla Khan | ⊃ contains | Ancestral voices prophesying war |
-| Pleasure-dome | ⊃ contains | Pleasure-dome with caves of ice |
 | Xanadu | ⊃ contains | Pleasure-dome |
 
 ## Learning Path (by Complexity)
 
 ### Level 0
 
-- **Weave a circle round him thrice** (prereqs: 0, dependents: 0)
-- **Pleasure-dome with caves of ice** (prereqs: 0, dependents: 0)
 - **Mount Abora** (prereqs: 0, dependents: 0)
-- **Dulcimer** (prereqs: 0, dependents: 0)
-- **Abyssinian maid** (prereqs: 0, dependents: 0)
-- **Ancestral voices prophesying war** (prereqs: 0, dependents: 0)
+- **Fountain** (prereqs: 0, dependents: 0)
+- **Demon-lover** (prereqs: 0, dependents: 0)
+- **Romantic chasm** (prereqs: 0, dependents: 0)
 - **Alph** (prereqs: 0, dependents: 0)
 - **Pleasure-dome** (prereqs: 0, dependents: 0)
 - **Xanadu** (prereqs: 0, dependents: 0)
-- **Kubla Khan** (prereqs: 0, dependents: 0)
+- **Kubla Khan** (prereqs: 0, dependents: 5)
+
+### Level 1
+
+- **Holy dread** (prereqs: 1, dependents: 0)
+- **Honey-dew** (prereqs: 1, dependents: 0)
+- **Milk of Paradise** (prereqs: 1, dependents: 0)
+- **Abyssinian maid** (prereqs: 1, dependents: 1)
+- **Ancestral voices prophesying war** (prereqs: 1, dependents: 0)
+
+### Level 2
+
+- **Dulcimer** (prereqs: 1, dependents: 0)
 

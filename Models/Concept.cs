@@ -76,4 +76,22 @@ public class Concept
     /// When this concept was last modified.
     /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Whether this concept was dynamically created through user query expansion
+    /// (as opposed to being extracted during initial ConceptMap build).
+    /// </summary>
+    public bool IsDynamicallyExpanded { get; set; }
+
+    /// <summary>
+    /// The original user query that triggered the dynamic creation of this concept.
+    /// Only set if IsDynamicallyExpanded is true.
+    /// </summary>
+    public string? ExpansionQuery { get; set; }
+
+    /// <summary>
+    /// Source excerpt from the resource that supports this concept's existence.
+    /// Used for citation and validation that the concept is grounded in source material.
+    /// </summary>
+    public string? SourceExcerpt { get; set; }
 }

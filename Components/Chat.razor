@@ -9,48 +9,68 @@
 @inject SettingsService Settings
 @inject CourseService CourseService
 @inject ConceptMapStorageService ConceptMapStorageService
+@inject DynamicConceptExpansionService ConceptExpansionService
 @implements IDisposable
 
-@* Mode indicators at the top *@
-@if (isQuizMode)
-{
-    <div class="mode-indicator quiz">
-        <span class="mode-icon icon-quiz-white"></span>
-        <span class="mode-label">Quiz Mode</span>
-        <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
-        <div class="mode-spacer"></div>
-        <button class="mode-exit-btn" @onclick="ConfirmRestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span> Restart</button>
-        <button class="mode-exit-btn cancel" @onclick="ConfirmCancelQuiz" title="Cancel Quiz"><span class="bi bi-x-lg"></span> Cancel</button>
+@* Top header with course selector and mode info *@
+<div class="learn-header">
+    <div class="learn-header-left">
+        <div class="course-selector">
+            <label for="courseSelect">Course:</label>
+            <select id="courseSelect" @bind="selectedCourseId" @bind:after="OnCourseChanged" disabled="@(isSending || isQuizMode)">
+                @if (availableCourses.Count == 0)
+                {
+                    <option value="">No courses available</option>
+                }
+                else
+                {
+                    @foreach (var course in availableCourses)
+                    {
+                        <option value="@course.Id">@course.Name</option>
+                    }
+                }
+            </select>
+        </div>
     </div>
-}
-else if (isLessonMode)
-{
-    <div class="mode-indicator lesson">
-        <span class="mode-icon icon-teach-white"></span>
-        <span class="mode-label">Lesson Mode</span>
-        @if (lessonTopics.Count > 0)
+    <div class="learn-header-center">
+        @if (isQuizMode)
         {
-            <span class="mode-detail">Topic @(currentLessonIndex + 1) of @lessonTopics.Count</span>
-            @if (currentLessonIndex < lessonTopics.Count)
+            <div class="mode-badge quiz">
+                <span class="icon-quiz-white"></span>
+                <span>Quiz Mode</span>
+                <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
+            </div>
+        }
+        else if (isLessonMode && lessonTopics.Count > 0)
+        {
+            <div class="mode-badge lesson">
+                <span class="icon-teach-white"></span>
+                <span>Learning</span>
+                <span class="mode-progress">@GetLessonProgressText()</span>
+            </div>
+        }
+    </div>
+    <div class="learn-header-right">
+        @if (isQuizMode)
+        {
+            <button class="header-action-btn" @onclick="ConfirmRestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span></button>
+            <button class="header-action-btn danger" @onclick="ConfirmCancelQuiz" title="Cancel Quiz"><span class="bi bi-x-lg"></span></button>
+        }
+        else if (isLessonMode)
+        {
+            @if (lessonTopics.Count > 0)
             {
-                <span class="mode-topic">@lessonTopics[currentLessonIndex]</span>
+                <button class="header-action-btn" @onclick="ShowKnowledgeBase" title="Concepts"><span class="bi bi-journal-text"></span></button>
+                <button class="header-action-btn" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span></button>
             }
-            <span class="mode-progress">@GetLessonProgressText()</span>
+            @if (learnedConcepts.Count > 0 && hasStartedLearning)
+            {
+                <button class="header-action-btn quiz" @onclick="StartQuizAtCurrentPoint" title="Quiz Me"><span class="bi bi-question-circle"></span></button>
+            }
+            <button class="header-action-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span></button>
         }
-        else
-        {
-            <span class="mode-detail">Generating curriculum...</span>
-        }
-        <div class="mode-spacer"></div>
-        @if (lessonTopics.Count > 0)
-        {
-            <button class="mode-exit-btn toc" @onclick="ShowTableOfContents" title="Table of Contents"><span class="bi bi-list-ul"></span> Table of Contents</button>
-            <button class="mode-exit-btn kb" @onclick="ShowKnowledgeBase" title="Concepts"><span class="bi bi-journal-text"></span> Concepts</button>
-            <button class="mode-exit-btn explore" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span> Visualize</button>
-        }
-        <button class="mode-exit-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
     </div>
-}
+</div>
 
 @* Confirmation modal (for restart and cancel) *@
 @if (showConfirmModal)
@@ -66,55 +86,6 @@ else if (isLessonMode)
                 <div class="modal-actions">
                     <button class="settings-btn" @onclick="CloseConfirmModal">Cancel</button>
                     <button class="settings-btn danger" @onclick="ExecuteConfirmedAction">@confirmModalActionText</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@* Table of Contents modal *@
-@if (showTableOfContents && lessonTopics.Count > 0)
-{
-    <div class="modal-overlay" @onclick="CloseTableOfContents">
-        <div class="modal-content toc-modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <span><span class="bi bi-list-ul"></span> Table of Contents</span>
-                <button class="close-btn" @onclick="CloseTableOfContents"><span class="bi bi-x-lg"></span></button>
-            </div>
-            <div class="modal-body toc-body">
-                <p class="toc-instruction">Click any topic to jump directly to it:</p>
-                <div class="toc-list">
-                    @for (int i = 0; i < lessonTopics.Count; i++)
-                    {
-                        var index = i;
-                        var topic = lessonTopics[i];
-                        var isCurrentTopic = i == currentLessonIndex;
-                        var isCompleted = learnedConcepts.Contains(topic);
-                        var isVisited = visitedTopicIndices.Contains(i);
-                        
-                        <button class="toc-item @(isCurrentTopic ? "current" : "") @(isCompleted ? "completed" : "") @(isVisited && !isCompleted ? "visited" : "")"
-                                @onclick="() => JumpToTopic(index)">
-                            <span class="toc-number">@(i + 1)</span>
-                            <span class="toc-topic">@topic</span>
-                            @if (isCompleted)
-                            {
-                                <span class="toc-status"><span class="bi bi-check-lg"></span></span>
-                            }
-                            else if (isCurrentTopic)
-                            {
-                                <span class="toc-status"><span class="bi bi-caret-right-fill"></span></span>
-                            }
-                            else if (isVisited)
-                            {
-                                <span class="toc-status"><span class="bi bi-circle"></span></span>
-                            }
-                        </button>
-                    }
-                </div>
-                <div class="toc-legend">
-                    <span><span class="legend-icon bi bi-check-lg"></span> Completed</span>
-                    <span><span class="legend-icon bi bi-caret-right-fill"></span> Current</span>
-                    <span><span class="legend-icon bi bi-circle"></span> Visited</span>
                 </div>
             </div>
         </div>
@@ -193,83 +164,107 @@ else if (isLessonMode)
     </div>
 }
 
-<div class="chat-shell">
-    <div class="chat-log" @ref="chatLogRef">
-        @{
-            var messageIndex = 0;
-            var hiddenCount = GetHiddenMessageCount();
-            var startIndex = showAllMessages ? 0 : Math.Max(0, messages.Count - RecentMessageCount);
-        }
-
-        @* Show expand button if there are hidden messages *@
-        @if (hiddenCount > 0 && !showAllMessages)
-        {
-            <div class="hidden-messages-notice">
-                <button class="expand-messages-btn" @onclick="() => showAllMessages = true">
-                    <span class="bi bi-chevron-up"></span>
-                    Show @hiddenCount older message@(hiddenCount == 1 ? "" : "s")
-                </button>
+<div class="learn-container">
+    @* Left sidebar with Table of Contents *@
+    @if (isLessonMode && lessonTopics.Count > 0 && !isQuizMode)
+    {
+        <div class="toc-sidebar">
+            <div class="toc-sidebar-header">
+                <span class="bi bi-list-ul"></span> Contents
             </div>
-        }
-        @if (showAllMessages && messages.Count > RecentMessageCount)
-        {
-            <div class="hidden-messages-notice">
-                <button class="expand-messages-btn" @onclick="() => showAllMessages = false">
-                    <span class="bi bi-chevron-down"></span>
-                    Hide older messages
-                </button>
+            <div class="toc-sidebar-list">
+                @for (int i = 0; i < lessonTopics.Count; i++)
+                {
+                    var index = i;
+                    var topic = lessonTopics[i];
+                    var isCurrentTopic = i == currentLessonIndex;
+                    var isCompleted = learnedConcepts.Contains(topic);
+                    var isVisited = visitedTopicIndices.Contains(i);
+                    
+                    <button class="toc-sidebar-item @(isCurrentTopic ? "current" : "") @(isCompleted ? "completed" : "") @(isVisited && !isCompleted ? "visited" : "")"
+                            @onclick="() => JumpToTopic(index)" disabled="@isSending">
+                        <span class="toc-sidebar-number">@(i + 1)</span>
+                        <span class="toc-sidebar-topic" title="@topic">@TruncateText(topic, 40)</span>
+                        @if (isCompleted)
+                        {
+                            <span class="toc-sidebar-status"><span class="bi bi-check-lg"></span></span>
+                        }
+                    </button>
+                }
             </div>
-        }
+        </div>
+    }
 
-        @foreach (var m in messages)
-        {
-            var idx = messageIndex;
-            var isLastAssistantMessage = m.Role == "assistant" && idx == GetLastAssistantMessageIndex();
-            var isVisible = showAllMessages || idx >= startIndex;
+    @* Main chat area *@
+    <div class="chat-shell @(isLessonMode && lessonTopics.Count > 0 && !isQuizMode ? "with-sidebar" : "")">
+        <div class="chat-log" @ref="chatLogRef">
+            @{
+                var messageIndex = 0;
+                var hiddenCount = GetHiddenMessageCount();
+                var startIndex = showAllMessages ? 0 : Math.Max(0, messages.Count - RecentMessageCount);
+            }
 
-            @if (isVisible)
+            @* Show expand button if there are hidden messages *@
+            @if (hiddenCount > 0 && !showAllMessages)
             {
-                <div class="msg-wrapper @(m.Role)">
-                    <div class="msg-avatar @(m.Role)">
-                        @if (m.Role == "user" && !string.IsNullOrEmpty(userCustomAvatar))
-                        {
-                            <img src="@userCustomAvatar" alt="@userDisplayName" />
-                        }
-                        else if (m.Role == "assistant" && !string.IsNullOrEmpty(assistantCustomAvatar))
-                        {
-                            <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
-                        }
-                        else
-                        {
-                            <span class="bi @(m.Role == "user" ? userAvatarIcon : assistantAvatarIcon)"></span>
-                        }
-                    </div>
-                    <div class="msg @(m.Role)">
-                        <div class="msg-header">
-                            <span class="role">@(m.Role == "user" ? userDisplayName : assistantDisplayName)</span>
-                            <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
-                        </div>
-                        <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
+                <div class="hidden-messages-notice">
+                    <button class="expand-messages-btn" @onclick="() => showAllMessages = true">
+                        <span class="bi bi-chevron-up"></span>
+                        Show @hiddenCount older message@(hiddenCount == 1 ? "" : "s")
+                    </button>
+                </div>
+            }
+            @if (showAllMessages && messages.Count > RecentMessageCount)
+            {
+                <div class="hidden-messages-notice">
+                    <button class="expand-messages-btn" @onclick="() => showAllMessages = false">
+                        <span class="bi bi-chevron-down"></span>
+                        Hide older messages
+                    </button>
+                </div>
+            }
 
-                        @* Show navigation buttons in assistant messages during lesson mode *@
+            @foreach (var m in messages)
+            {
+                var idx = messageIndex;
+                var isLastAssistantMessage = m.Role == "assistant" && idx == GetLastAssistantMessageIndex();
+                var isVisible = showAllMessages || idx >= startIndex;
+
+                @if (isVisible)
+                {
+                    <div class="msg-wrapper @(m.Role)">
+                        <div class="msg-avatar @(m.Role)">
+                            @if (m.Role == "user" && !string.IsNullOrEmpty(userCustomAvatar))
+                            {
+                                <img src="@userCustomAvatar" alt="@userDisplayName" />
+                            }
+                            else if (m.Role == "assistant" && !string.IsNullOrEmpty(assistantCustomAvatar))
+                            {
+                                <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                            }
+                            else
+                            {
+                                <span class="bi @(m.Role == "user" ? userAvatarIcon : assistantAvatarIcon)"></span>
+                            }
+                        </div>
+                        <div class="msg @(m.Role)">
+                            <div class="msg-header">
+                                <span class="role">@(m.Role == "user" ? userDisplayName : assistantDisplayName)</span>
+                                <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                            </div>
+                            <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
+
+                            @* Show navigation buttons in assistant messages during lesson mode *@
                         @if (m.Role == "assistant" && isLessonMode && lessonTopics.Count > 0 && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
                         {
-                            <div class="msg-nav-buttons">
-                                @if (learnedConcepts.Count > 0)
-                                {
-                                    <button class="msg-nav-btn quiz-inline" @onclick="StartQuizAtCurrentPoint" title="Quiz me on what I've learned so far">
-                                        <span class="icon-quiz-small"></span>
-                                        Quiz Me
-                                    </button>
-                                    <div class="msg-nav-spacer"></div>
-                                }
-                                <button class="msg-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0)" title="Go to previous topic">
-                                    <span class="icon-previous"></span>
-                                    Previous
+                            <div class="lesson-nav-bar">
+                                <button class="lesson-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0 || !hasStartedLearning)" title="@GetPreviousTopicTitle()">
+                                    <span class="bi bi-chevron-left"></span>
+                                    <span class="lesson-nav-text">@GetPreviousTopicName()</span>
                                 </button>
-                                <button class="msg-nav-btn continue" @onclick="ContinueLesson" title="@(hasStartedLearning ? "Continue to next topic" : "Begin the lesson")">
-                                    <span class="icon-continue"></span>
-                                    @(hasStartedLearning ? "Continue" : "Begin")
+                                <button class="lesson-nav-btn continue" @onclick="ContinueLesson" title="@GetNextTopicTitle()">
+                                    <span class="lesson-nav-text">@GetNextTopicName()</span>
+                                    <span class="bi bi-chevron-right"></span>
                                 </button>
                             </div>
                         }
@@ -277,14 +272,14 @@ else if (isLessonMode)
                         @* Show Back and Continue buttons for term exploration *@
                         @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
                         {
-                            <div class="msg-nav-buttons">
-                                <button class="msg-nav-btn previous" @onclick="BackToLesson" title="Go back to where you were">
-                                    <span class="icon-previous"></span>
-                                    Back
+                            <div class="lesson-nav-bar">
+                                <button class="lesson-nav-btn previous" @onclick="BackToLesson" title="Go back to where you were">
+                                    <span class="bi bi-chevron-left"></span>
+                                    <span class="lesson-nav-text">Back</span>
                                 </button>
-                                <button class="msg-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
-                                    <span class="icon-continue"></span>
-                                    Continue
+                                <button class="lesson-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
+                                    <span class="lesson-nav-text">Continue</span>
+                                    <span class="bi bi-chevron-right"></span>
                                 </button>
                             </div>
                         }
@@ -349,6 +344,7 @@ else if (isLessonMode)
         </div>
     </div>
 </div>
+</div>
 
 @if (showModal)
 {
@@ -366,9 +362,9 @@ else if (isLessonMode)
 }
 
 @code {
-    // Parameters from parent page
-    [Parameter] public string? StartTopic { get; set; }
-    [Parameter] public bool AutoStartLesson { get; set; }
+// Parameters from parent page
+[Parameter] public string? StartTopic { get; set; }
+[Parameter] public bool AutoStartLesson { get; set; }
 
 private readonly List<ChatMessage> messages = new();
 private string prompt = "";
@@ -396,68 +392,144 @@ private string? assistantCustomAvatar;
 private const int RecentMessageCount = 4; // Show last N messages by default
 private bool showAllMessages;
 
-    // Course state
-    private Course? activeCourse;
+// Course state
+private Course? activeCourse;
+private List<Course> availableCourses = new();
+private string selectedCourseId = "";
 
-    // Lesson state
-    private bool isLessonMode;
-    private bool hasStartedLearning; // True after first "Begin" click
-    private int currentLessonIndex;
-    private List<string> lessonTopics = new();
-    private List<string> learnedConcepts = new();
-    private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
-
-
-    // Term exploration state
-    private bool isTermExploration;
-    private int messageIndexBeforeExploration;
-
-    // Confirmation modal state
-    private bool showConfirmModal;
-    private string confirmModalTitle = "";
-    private string confirmModalMessage = "";
-    private string confirmModalActionText = "";
-    private Func<Task>? confirmedAction;
+// Lesson state
+private bool isLessonMode;
+private bool hasStartedLearning; // True after first "Begin" click
+private int currentLessonIndex;
+private List<string> lessonTopics = new();
+private List<string> learnedConcepts = new();
+private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
 
 
-    // Quiz state
-    private bool isQuizMode;
-    private int totalQuestions;
-    private int currentQuestionNumber;
-    private GradingScale gradingScale;
+// Term exploration state
+private bool isTermExploration;
+private int messageIndexBeforeExploration;
 
-    // Table of Contents state
-    private bool showTableOfContents;
+// Confirmation modal state
+private bool showConfirmModal;
+private string confirmModalTitle = "";
+private string confirmModalMessage = "";
+private string confirmModalActionText = "";
+private Func<Task>? confirmedAction;
 
-    // Knowledge Base state
-    private bool showKnowledgeBase;
-    private List<Concept> knowledgeBaseConcepts = [];
 
-    // Knowledge Base Explorer state (Force diagram)
-    private bool showKnowledgeBaseExplorer;
+// Quiz state
+private bool isQuizMode;
+private int totalQuestions;
+private int currentQuestionNumber;
+private GradingScale gradingScale;
 
-    [Inject] private IJSRuntime JS { get; set; } = default!;
+// Table of Contents state (kept for compatibility, but now using sidebar)
+private bool showTableOfContents;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadCourseState();
-        await LoadLessonStateAsync();
+// Knowledge Base state
+private bool showKnowledgeBase;
+private List<Concept> knowledgeBaseConcepts = [];
+
+// Knowledge Base Explorer state (Force diagram)
+private bool showKnowledgeBaseExplorer;
+
+[Inject] private IJSRuntime JS { get; set; } = default!;
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadAvailableCourses();
+    await LoadCourseState();
+    await LoadLessonStateAsync();
         
-        // Handle starting from a specific topic (from TOC navigation)
-        if (!string.IsNullOrEmpty(StartTopic) && activeCourse != null)
-        {
-            await StartLessonFromTopic(StartTopic);
-        }
-        // Auto-start lesson if requested or if course is active and not already in lesson mode
-        else if ((AutoStartLesson || activeCourse != null) && !isLessonMode)
-        {
-            await StartLesson();
-        }
+    // Handle starting from a specific topic (from TOC navigation)
+    if (!string.IsNullOrEmpty(StartTopic) && activeCourse != null)
+    {
+        await StartLessonFromTopic(StartTopic);
+    }
+    // Auto-start lesson if requested or if course is active and not already in lesson mode
+    else if ((AutoStartLesson || activeCourse != null) && !isLessonMode)
+    {
+        await StartLesson();
+    }
+}
+
+    private async Task LoadAvailableCourses()
+    {
+        availableCourses = await CourseService.GetAllCoursesAsync();
     }
 
     private async Task LoadCourseState()
     {
         activeCourse = await CourseService.GetActiveCourseAsync();
+        selectedCourseId = activeCourse?.Id ?? "";
+    }
+
+    private async Task OnCourseChanged()
+    {
+        if (string.IsNullOrEmpty(selectedCourseId))
+            return;
+
+        var newCourse = availableCourses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (newCourse == null || newCourse.Id == activeCourse?.Id)
+            return;
+
+        // Set as active course
+        await CourseService.SetActiveCourseAsync(newCourse.Id);
+        activeCourse = newCourse;
+
+        // Reset lesson state for the new course
+        isLessonMode = false;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        lessonTopics.Clear();
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+        await Settings.ClearLessonStateAsync();
+
+        // Start the new lesson
+        await StartLesson();
+    }
+
+    // Helper methods for navigation button text
+    private string GetPreviousTopicName()
+    {
+        if (!hasStartedLearning || currentLessonIndex <= 0 || lessonTopics.Count == 0)
+            return "";
+        return lessonTopics[currentLessonIndex - 1];
+    }
+
+    private string GetPreviousTopicTitle()
+    {
+        if (!hasStartedLearning || currentLessonIndex <= 0 || lessonTopics.Count == 0)
+            return "No previous topic";
+        return lessonTopics[currentLessonIndex - 1];
+    }
+
+    private string GetNextTopicName()
+    {
+        if (!hasStartedLearning)
+            return "Begin";
+        if (currentLessonIndex >= lessonTopics.Count - 1)
+            return "Complete";
+        return lessonTopics[currentLessonIndex + 1];
+    }
+
+    private string GetNextTopicTitle()
+    {
+        if (!hasStartedLearning)
+            return "Begin the lesson";
+        if (currentLessonIndex >= lessonTopics.Count - 1)
+            return "Complete the lesson";
+        return lessonTopics[currentLessonIndex + 1];
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength - 1) + "…";
     }
 
     private async Task LoadLessonStateAsync()
@@ -1246,6 +1318,13 @@ Keep track of the running score.";
                     isQuizMode = false;
                 }
             }
+
+            // Dynamic concept expansion: Check if the user's question might benefit from expanding the knowledge graph
+            // This happens in the background and doesn't block the response
+            if (activeCourse != null && !captureTopics && !isQuizMode)
+            {
+                _ = TryExpandConceptsAsync(userText, cts?.Token ?? CancellationToken.None);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -1334,6 +1413,96 @@ Keep track of the running score.";
 
         // Only return if we have at least 2 word matches
         return bestScore >= 2 ? bestIndex : -1;
+    }
+
+    /// <summary>
+    /// Attempts to dynamically expand the concept graph based on the user's query.
+    /// This runs in the background and doesn't block the chat response.
+    /// If the query mentions concepts related to but not in the graph, new concepts
+    /// will be extracted from the course resources and added to the knowledge graph.
+    /// </summary>
+    private async Task TryExpandConceptsAsync(string userQuery, CancellationToken ct)
+    {
+        if (activeCourse == null || string.IsNullOrWhiteSpace(userQuery))
+            return;
+
+        try
+        {
+            // First check if expansion might be beneficial (quick heuristic check)
+            var shouldExpand = await ConceptExpansionService.ShouldExpandForQueryAsync(
+                userQuery,
+                activeCourse.Id,
+                ct);
+
+            if (!shouldExpand)
+            {
+                Log.Trace($"Chat: Concept expansion not needed for query");
+                return;
+            }
+
+            Log.Info($"Chat: Attempting concept expansion for query: '{userQuery}'");
+
+            // Get context concepts (currently learned concepts in lesson mode)
+            var contextConceptIds = new List<string>();
+            if (isLessonMode && learnedConcepts.Count > 0)
+            {
+                // Try to find concept IDs that match learned topic names
+                var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
+                foreach (var resource in resources.Where(r => r.HasConceptMap))
+                {
+                    var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId!, ct);
+                    if (conceptMap?.Concepts != null)
+                    {
+                        foreach (var concept in conceptMap.Concepts)
+                        {
+                            if (learnedConcepts.Any(lc => 
+                                concept.Title.Contains(lc, StringComparison.OrdinalIgnoreCase) ||
+                                lc.Contains(concept.Title, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                contextConceptIds.Add(concept.Id);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Request expansion
+            var request = new ConceptExpansionRequest
+            {
+                Query = userQuery,
+                CourseId = activeCourse.Id,
+                ContextConceptIds = contextConceptIds,
+                MaxNewConcepts = 5,
+                MinConfidence = 0.7f
+            };
+
+            var result = await ConceptExpansionService.ExpandConceptsAsync(request, ct);
+
+            if (result.Success && result.NewConcepts.Count > 0)
+            {
+                Log.Info($"Chat: Dynamically added {result.NewConcepts.Count} new concepts: {string.Join(", ", result.NewConcepts.Select(c => c.Title))}");
+                
+                // Refresh the knowledge base concepts if the modal is open
+                if (showKnowledgeBase)
+                {
+                    await LoadKnowledgeBaseConcepts();
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            else if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                Log.Warn($"Chat: Concept expansion failed - {result.ErrorMessage}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancelled, ignore
+        }
+        catch (Exception ex)
+        {
+            // Log but don't show to user - this is a background enhancement
+            Log.Warn($"Chat: Background concept expansion failed - {ex.Message}");
+        }
     }
 
     private async Task AutoGrow()

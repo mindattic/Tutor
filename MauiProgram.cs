@@ -124,6 +124,12 @@ namespace Tutor
                 client.Timeout = TimeSpan.FromMinutes(3);
             });
 
+            // Dynamic concept expansion service (expands concepts from user queries)
+            builder.Services.AddHttpClient<DynamicConceptExpansionService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(3);
+            });
+
             // Course structure service (generates learning path from ConceptMap) (with extended timeout)
             builder.Services.AddHttpClient<CourseStructureService>(client =>
             {

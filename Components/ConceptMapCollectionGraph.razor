@@ -522,37 +522,83 @@ else
 
     /// <summary>
     /// Uses AI to find and apply missing connections for orphaned concepts.
+    /// Uses iterative linking to achieve full connectivity.
     /// </summary>
     private async Task LinkOrphansAsync()
     {
-        if (conceptMap == null || isLinkingOrphans)
+        if (isLinkingOrphans)
             return;
 
         isLinkingOrphans = true;
-        linkingMessage = null;
+        linkingMessage = "Starting iterative linking...";
         linkingSuccess = false;
         StateHasChanged();
 
         try
         {
-            var result = await OrphanLinkerService.DetectAndLinkOrphansAsync(conceptMap, minConfidence: 0.5f);
-            
-            if (result.AppliedLinkCount > 0)
+            var totalApplied = 0;
+
+            // If we have a loadedCollection with multiple ConceptMaps, link each one
+            if (loadedCollection != null && loadedCollection.ConceptMaps.Count > 0)
             {
-                // Save the updated concept map
-                await ConceptMapStorageService.SaveAsync(conceptMap);
-                
-                // Refresh the display data
+                foreach (var cm in loadedCollection.ConceptMaps)
+                {
+                    linkingMessage = $"Linking concepts in '{cm.Name}'...";
+                    StateHasChanged();
+
+                    var result = await OrphanLinkerService.LinkAllOrphansIterativelyAsync(
+                        cm, 
+                        maxIterations: 10, 
+                        minConfidence: 0.3f);
+
+                    if (result.AppliedLinkCount > 0)
+                    {
+                        await ConceptMapStorageService.SaveAsync(cm);
+                        totalApplied += result.AppliedLinkCount;
+                    }
+                }
+
+                // Refresh the aggregated view
+                concepts = loadedCollection.GetAllConcepts().ToList();
+                relationships = loadedCollection.GetAllRelations().ToList();
+            }
+            // If we have a single conceptMap
+            else if (conceptMap != null)
+            {
+                linkingMessage = "Running iterative linking...";
+                StateHasChanged();
+
+                var result = await OrphanLinkerService.LinkAllOrphansIterativelyAsync(
+                    conceptMap, 
+                    maxIterations: 10, 
+                    minConfidence: 0.3f);
+
+                if (result.AppliedLinkCount > 0)
+                {
+                    await ConceptMapStorageService.SaveAsync(conceptMap);
+                    totalApplied = result.AppliedLinkCount;
+                }
+
                 concepts = conceptMap.Concepts ?? [];
                 relationships = conceptMap.Relations ?? [];
-                connectivityInfo = conceptMap.GetConnectivityInfo();
-                
+            }
+            else
+            {
+                linkingMessage = "No Concept Map loaded to link.";
+                return;
+            }
+
+            // Recalculate connectivity
+            CalculateConnectivity();
+
+            if (totalApplied > 0)
+            {
                 linkingSuccess = true;
-                linkingMessage = $"Added {result.AppliedLinkCount} connection(s). " +
-                    (result.IsFullyConnected 
-                        ? "All concepts are now connected!" 
-                        : $"{result.RemainingOrphanCount} concept(s) still need manual review.");
-                
+                linkingMessage = $"Added {totalApplied} connection(s). " +
+                    (connectivityInfo?.IsFullyConnected == true
+                        ? "🎉 All concepts are now connected!"
+                        : $"{connectivityInfo?.OrphanedConceptCount ?? 0} concept(s) still need manual review.");
+
                 // Reinitialize the graph to show new connections
                 isInitialized = false;
                 StateHasChanged();
