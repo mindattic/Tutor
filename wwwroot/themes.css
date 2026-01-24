@@ -3,6 +3,7 @@
 /* Default border radius - can be overridden via settings */
 :root {
     --border-radius: 6px;
+    --paragraph-spacing: 1.0em;
 }
 
 /* Light Theme (Default) */

@@ -567,14 +567,14 @@ public sealed class CourseService
             }
         }
         
-        Log.Info($"CourseService: Rebuilt ConceptMap collection for '{course.Name}' with {collection.KnowledgeBaseIds.Count} ConceptMaps");
+        Log.Info($"CourseService: Rebuilt ConceptMap collection for '{course.Name}' with {collection.ConceptMapIds.Count} ConceptMaps");
     }
 
     /// <summary>
-    /// Gets the LoadedKnowledgeBaseCollection for a course (all ConceptMaps loaded in memory).
+    /// Gets the LoadedConceptMapCollection for a course (all ConceptMaps loaded in memory).
     /// Returns null if no collection exists or if ConceptMapCollectionService is not available.
     /// </summary>
-    public async Task<LoadedKnowledgeBaseCollection?> GetCourseConceptMapCollectionAsync(string courseId, CancellationToken ct = default)
+    public async Task<LoadedConceptMapCollection?> GetCourseConceptMapCollectionAsync(string courseId, CancellationToken ct = default)
     {
         if (conceptMapCollectionService == null)
             return null;
@@ -847,19 +847,19 @@ public sealed class CourseService
             sb.AppendLine();
             
             // Group concepts by their source ConceptMap and list the most important ones
-            foreach (var kb in conceptMapCollection.KnowledgeBases)
+            foreach (var cm in conceptMapCollection.ConceptMaps)
             {
-                var resource = resources.FirstOrDefault(r => r.ConceptMapId == kb.Id);
-                var sourceName = resource?.Title ?? kb.Name;
+                var resource = resources.FirstOrDefault(r => r.ConceptMapId == cm.Id);
+                var sourceName = resource?.Title ?? cm.Name;
                 
-                sb.AppendLine($"--- Concepts from: {sourceName} ({kb.Concepts.Count} concepts) ---");
+                sb.AppendLine($"--- Concepts from: {sourceName} ({cm.Concepts.Count} concepts) ---");
                 
                 // Get concepts ordered by complexity (foundational first)
-                var orderedConcepts = kb.ComplexityOrder
+                var orderedConcepts = cm.ComplexityOrder
                     .OrderBy(c => c.Level)
                     .ThenBy(c => c.PrerequisiteCount)
                     .Take(15)  // Limit to top 15 per resource
-                    .Select(c => kb.GetConcept(c.ConceptId))
+                    .Select(c => cm.GetConcept(c.ConceptId))
                     .Where(c => c != null)
                     .ToList();
                 
@@ -873,7 +873,7 @@ public sealed class CourseService
                 else
                 {
                     // Fallback: just list first 10 concepts
-                    foreach (var concept in kb.Concepts.Take(10))
+                    foreach (var concept in cm.Concepts.Take(10))
                     {
                         sb.AppendLine($"  - {concept.Title}: {concept.Summary}");
                     }
@@ -1003,25 +1003,7 @@ public sealed class CourseService
         course.UpdatedAt = DateTime.UtcNow;
         await SaveCourseAsync(course);
         
+        
         Log.Info($"CourseService: Updated course '{course.Name}' with ConceptMap collection: {collectionId}");
     }
-
-    // Legacy method aliases for backward compatibility
-    
-    [Obsolete("Use GetCourseResourcesWithConceptMapStatusAsync instead.")]
-    public Task<List<(CourseResource Resource, bool HasKnowledgeBase)>> GetCourseResourcesWithKbStatusAsync(string courseId)
-        => GetCourseResourcesWithConceptMapStatusAsync(courseId).ContinueWith(t => 
-            t.Result.Select(r => (r.Resource, r.HasConceptMap)).ToList());
-
-    [Obsolete("Use GetResourceConceptMapCountsAsync instead.")]
-    public Task<(int Total, int WithKb)> GetResourceKbCountsAsync(string courseId)
-        => GetResourceConceptMapCountsAsync(courseId).ContinueWith(t => (t.Result.Total, t.Result.WithConceptMap));
-
-    [Obsolete("Use GetResourceConceptMapIdsAsync instead.")]
-    public Task<List<string>> GetResourceKnowledgeBaseIdsAsync(string courseId)
-        => GetResourceConceptMapIdsAsync(courseId);
-
-    [Obsolete("Use UpdateCourseConceptMapCollectionAsync instead.")]
-    public Task UpdateCourseKnowledgeBaseCollectionAsync(string courseId, string collectionId)
-        => UpdateCourseConceptMapCollectionAsync(courseId, collectionId);
 }

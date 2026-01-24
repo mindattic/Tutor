@@ -44,9 +44,9 @@ else if (isLessonMode)
         <div class="mode-spacer"></div>
         @if (lessonTopics.Count > 0)
         {
-            <button class="mode-exit-btn explore" @onclick="OpenKnowledgeBaseExplorer" title="Explore Knowledge Base"><span class="bi bi-diagram-3"></span> Explore</button>
-            <button class="mode-exit-btn kb" @onclick="ShowKnowledgeBase" title="Terminology"><span class="bi bi-journal-text"></span> Terminology</button>
             <button class="mode-exit-btn toc" @onclick="ShowTableOfContents" title="Table of Contents"><span class="bi bi-list-ul"></span> Table of Contents</button>
+            <button class="mode-exit-btn kb" @onclick="ShowKnowledgeBase" title="Concepts"><span class="bi bi-journal-text"></span> Concepts</button>
+            <button class="mode-exit-btn explore" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span> Visualize</button>
         }
         <button class="mode-exit-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span> Restart</button>
     </div>
@@ -176,17 +176,18 @@ else if (isLessonMode)
     </div>
 }
 
+
 @* Knowledge Base Explorer modal (Force diagram) *@
 @if (showKnowledgeBaseExplorer && activeCourse != null)
 {
     <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
         <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span><span class="bi bi-diagram-3"></span> Knowledge Base Explorer</span>
+                <span><span class="bi bi-diagram-3"></span> Concept Map Explorer</span>
                 <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
             </div>
             <div class="modal-body kb-explorer-body">
-                <KnowledgeBaseGraph CourseId="@activeCourse.Id" />
+                <ConceptMapCollectionGraph CourseId="@activeCourse.Id" OnTeachConcept="TeachConceptFromExplorer" />
             </div>
         </div>
     </div>
@@ -859,6 +860,19 @@ The questions should be specific to what you just taught, not generic.";
         showKnowledgeBaseExplorer = false;
     }
 
+    /// <summary>
+    /// Called when user clicks "Teach Me" in the Concept Map Explorer
+    /// </summary>
+    private async Task TeachConceptFromExplorer(string conceptTitle)
+    {
+        // Close the explorer
+        showKnowledgeBaseExplorer = false;
+        StateHasChanged();
+
+        // Ask about the concept (same as clicking a term link)
+        await AskAboutTerm(conceptTitle);
+    }
+
     private async Task LoadKnowledgeBaseConcepts()
     {
         if (activeCourse == null)
@@ -879,7 +893,7 @@ The questions should be specific to what you just taught, not generic.";
         foreach (var cmId in conceptMapIds)
         {
             var conceptMap = await ConceptMapStorageService.LoadAsync(cmId);
-            if (conceptMap != null && conceptMap.Status == KnowledgeBaseStatus.Ready)
+            if (conceptMap != null && conceptMap.Status == ConceptMapStatus.Ready)
             {
                 allConcepts.AddRange(conceptMap.Concepts);
             }
@@ -1449,18 +1463,28 @@ Keep track of the running score.";
                 continue;
             }
 
-            // Empty line
+            // Empty line - skip (paragraph spacing is handled by CSS)
             if (string.IsNullOrWhiteSpace(line))
             {
                 CloseList(ref inList, ref listType, result);
-                result.AppendLine("<br />");
+                continue;
+            }
+
+            // Check if line is a suggested question (starts with __ or [question?])
+            var trimmedLineContent = line.Trim();
+            if ((trimmedLineContent.StartsWith("__") && trimmedLineContent.EndsWith("__")) ||
+                (trimmedLineContent.StartsWith("[") && trimmedLineContent.EndsWith("?]")))
+            {
+                CloseList(ref inList, ref listType, result);
+                var processed = ProcessInlineMarkdown(line);
+                result.AppendLine($"<div class=\"suggested-question-wrapper\">{processed}</div>");
                 continue;
             }
 
             // Regular paragraph
             CloseList(ref inList, ref listType, result);
-            var processed = ProcessInlineMarkdown(line);
-            result.AppendLine($"<p>{processed}</p>");
+            var processedParagraph = ProcessInlineMarkdown(line);
+            result.AppendLine($"<p>{processedParagraph}</p>");
         }
 
         CloseList(ref inList, ref listType, result);

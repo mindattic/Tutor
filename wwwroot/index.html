@@ -81,6 +81,13 @@
             var value = getComputedStyle(document.documentElement).getPropertyValue('--border-radius');
             return parseInt(value) || 6;
         }
+        function setParagraphSpacing(em) {
+            document.documentElement.style.setProperty('--paragraph-spacing', em + 'em');
+        }
+        function getParagraphSpacing() {
+            var value = getComputedStyle(document.documentElement).getPropertyValue('--paragraph-spacing');
+            return parseFloat(value) || 0.8;
+        }
         
         // Term click handler for clickable bold terms
         var termClickDotNetRef = null;

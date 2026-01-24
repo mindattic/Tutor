@@ -93,22 +93,6 @@ public class ConceptMapCollection
     {
         return ConceptMapIds.Contains(conceptMapId);
     }
-
-    /// <summary>
-    /// Converts from legacy KnowledgeBaseCollection.
-    /// </summary>
-    public static ConceptMapCollection FromKnowledgeBaseCollection(KnowledgeBaseCollection kbc)
-    {
-        return new ConceptMapCollection
-        {
-            Id = kbc.Id,
-            Name = kbc.Name,
-            Description = kbc.Description,
-            ConceptMapIds = [.. kbc.KnowledgeBaseIds],
-            CreatedAt = kbc.CreatedAt,
-            UpdatedAt = kbc.UpdatedAt
-        };
-    }
 }
 
 /// <summary>

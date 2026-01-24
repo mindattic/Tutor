@@ -4,7 +4,7 @@
 @using Tutor.Services.Logging
 @inject CourseService CourseService
 @inject ResourceProcessingService ProcessingService
-@inject KnowledgeBaseService KnowledgeBaseService
+@inject ConceptMapService ConceptMapService
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject IJSRuntime JS
 @implements IDisposable
@@ -122,9 +122,9 @@
                         <div class="kb-actions">
                             @if (resourcesWithKb > 0)
                             {
-                                <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Explore Concept Maps">
+                                <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Maps">
                                     <span class="bi bi-diagram-3"></span>
-                                    Explore
+                                    Visualize
                                 </button>
                             }
                         </div>
@@ -651,8 +651,8 @@ private string resourceContent = "";
         ProcessingService.OnProcessingComplete += OnProcessingComplete;
         ProcessingService.OnProcessingError += OnProcessingError;
         
-        // Subscribe to KB build progress
-        KnowledgeBaseService.OnProgressChanged += OnKnowledgeBaseProgressChanged;
+        // Subscribe to CM build progress
+        ConceptMapService.OnProgressChanged += OnConceptMapProgressChanged;
 
         await LoadData();
         RefreshProcessingTasks();
@@ -671,7 +671,7 @@ private string resourceContent = "";
         ProcessingService.OnStatusChanged -= OnProcessingStatusChanged;
         ProcessingService.OnProcessingComplete -= OnProcessingComplete;
         ProcessingService.OnProcessingError -= OnProcessingError;
-        KnowledgeBaseService.OnProgressChanged -= OnKnowledgeBaseProgressChanged;
+        ConceptMapService.OnProgressChanged -= OnConceptMapProgressChanged;
     }
 
     private void OnProcessingStatusChanged(ResourceProcessingStatus status)
@@ -737,7 +737,7 @@ private string resourceContent = "";
                     if (!string.IsNullOrEmpty(resource.ConceptMapId))
                     {
                         var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
-                        if (conceptMap != null && conceptMap.Status == KnowledgeBaseStatus.Ready)
+                        if (conceptMap != null && conceptMap.Status == ConceptMapStatus.Ready)
                         {
                             knowledgeBaseConceptCount += conceptMap.Concepts.Count;
                             resourcesWithKb++;
@@ -958,7 +958,7 @@ private string resourceContent = "";
         {
             // Load the ConceptMap and trigger export by re-saving it
             var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
-            if (conceptMap != null && conceptMap.Status == KnowledgeBaseStatus.Ready)
+            if (conceptMap != null && conceptMap.Status == ConceptMapStatus.Ready)
             {
                 await ConceptMapStorageService.SaveAsync(conceptMap);
                 
@@ -1208,8 +1208,8 @@ private string resourceContent = "";
         CloseModals();
     }
 
-    // Knowledge Base generation progress handler
-    private void OnKnowledgeBaseProgressChanged(KnowledgeBaseBuildProgress progress)
+    // Concept Map generation progress handler
+    private void OnConceptMapProgressChanged(ConceptMapBuildProgress progress)
     {
         // Progress is now tracked via the background queue service
         // This handler keeps the UI responsive during builds
@@ -1257,7 +1257,7 @@ private string resourceContent = "";
                 details.ConceptCount = conceptMap.Concepts.Count;
                 details.RelationCount = conceptMap.Relations.Count;
                 details.ConceptMapName = conceptMap.Name;
-                details.ConceptMapStatus = (ConceptMapStatus)(int)conceptMap.Status;
+                details.ConceptMapStatus = conceptMap.Status;
                 details.KnowledgeBaseCreatedAt = conceptMap.CreatedAt;
                 details.KnowledgeBaseUpdatedAt = conceptMap.UpdatedAt;
             }

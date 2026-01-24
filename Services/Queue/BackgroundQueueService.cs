@@ -252,60 +252,28 @@ public static class BackgroundQueueService
     }
 
     /// <summary>
-    /// Enqueues a knowledge base build task for a single resource.
-    /// This is the preferred method for the new 1:1 Resource-KB architecture.
+    /// Enqueues a concept map build task for a single resource.
     /// </summary>
-    public static string EnqueueKnowledgeBaseBuildForResource(
+    public static string EnqueueConceptMapBuildForResource(
         string resourceId,
         string resourceTitle,
         bool updateResource = true)
     {
-        var payload = new KnowledgeBaseBuildPayload
+        var payload = new ConceptMapBuildPayload
         {
-            Name = $"{resourceTitle} Knowledge Base",
+            Name = $"{resourceTitle} Concept Map",
             ResourceId = resourceId,
             UpdateResource = updateResource
         };
 
         var item = new BackgroundQueueItem
         {
-            TaskType = BackgroundTaskType.KnowledgeBaseBuild,
-            DisplayName = $"Build KB: {resourceTitle}",
+            TaskType = BackgroundTaskType.ConceptMapBuild,
+            DisplayName = $"Build CM: {resourceTitle}",
             ResourceId = resourceId,
             PayloadJson = JsonSerializer.Serialize(payload),
             Priority = 100, // Lower priority than uploads/formats
-            MaxRetries = 10 // KB builds can take a long time, allow more retries
-        };
-
-        return Enqueue(item);
-    }
-
-    /// <summary>
-    /// Enqueues a knowledge base build task.
-    /// </summary>
-    [Obsolete("Use EnqueueKnowledgeBaseBuildForResource for single resource KB builds.")]
-    public static string EnqueueKnowledgeBaseBuild(
-        string knowledgeBaseId,
-        string name,
-        List<string> resourceIds)
-    {
-#pragma warning disable CS0618
-        var payload = new KnowledgeBaseBuildPayload
-        {
-            KnowledgeBaseId = knowledgeBaseId,
-            Name = name,
-            ResourceIds = resourceIds
-        };
-#pragma warning restore CS0618
-
-        var item = new BackgroundQueueItem
-        {
-            TaskType = BackgroundTaskType.KnowledgeBaseBuild,
-            DisplayName = $"Build KB: {name}",
-            KnowledgeBaseId = knowledgeBaseId,
-            PayloadJson = JsonSerializer.Serialize(payload),
-            Priority = 100, // Lower priority than uploads/formats
-            MaxRetries = 10 // KB builds can take a long time, allow more retries
+            MaxRetries = 10 // CM builds can take a long time, allow more retries
         };
 
         return Enqueue(item);
@@ -541,7 +509,7 @@ public static class BackgroundQueueService
         {
             typeof(ResourceUploadTaskHandler),
             typeof(ResourceFormatTaskHandler),
-            typeof(KnowledgeBaseBuildTaskHandler)
+            typeof(ConceptMapBuildTaskHandler)
         };
 
         foreach (var handlerType in handlerTypes)

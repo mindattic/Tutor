@@ -99,7 +99,7 @@ public sealed class ResourceFormatTaskHandler : IBackgroundTaskHandler
                 if (!resource.HasConceptMap)
                 {
                     context.ReportProgress(item, 98, "Queuing concept map build...");
-                    BackgroundQueueService.EnqueueKnowledgeBaseBuildForResource(
+                    BackgroundQueueService.EnqueueConceptMapBuildForResource(
                         payload.ResourceId,
                         payload.Title,
                         updateResource: true);

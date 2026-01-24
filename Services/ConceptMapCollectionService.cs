@@ -15,7 +15,7 @@ public sealed class ConceptMapCollectionService
     private readonly ConceptMapStorageService conceptMapStorageService;
 
     // In-memory cache of collections (keyed by collection ID)
-    private readonly Dictionary<string, KnowledgeBaseCollection> cache = [];
+    private readonly Dictionary<string, ConceptMapCollection> cache = [];
 
     /// <summary>
     /// Event fired when a collection is saved.
@@ -36,10 +36,10 @@ public sealed class ConceptMapCollectionService
     /// <summary>
     /// Creates a new empty ConceptMapCollection.
     /// </summary>
-    public async Task<KnowledgeBaseCollection> CreateAsync(string name, string description = "", CancellationToken ct = default)
+    public async Task<ConceptMapCollection> CreateAsync(string name, string description = "", CancellationToken ct = default)
     {
         Log.Info($"ConceptMapCollection: Creating new collection '{name}'");
-        var collection = new KnowledgeBaseCollection
+        var collection = new ConceptMapCollection
         {
             Name = name,
             Description = description
@@ -52,7 +52,7 @@ public sealed class ConceptMapCollectionService
     /// <summary>
     /// Creates a ConceptMapCollection for a course from its resource ConceptMaps.
     /// </summary>
-    public async Task<KnowledgeBaseCollection> CreateForCourseAsync(
+    public async Task<ConceptMapCollection> CreateForCourseAsync(
         string courseId,
         string courseName,
         List<string> conceptMapIds,
@@ -60,12 +60,12 @@ public sealed class ConceptMapCollectionService
     {
         Log.Info($"ConceptMapCollection: Creating collection for course '{courseName}' with {conceptMapIds.Count} ConceptMaps");
         
-        var collection = new KnowledgeBaseCollection
+        var collection = new ConceptMapCollection
         {
             Id = $"collection_{courseId}", // Use predictable ID based on course
             Name = $"{courseName} Concept Map Collection",
             Description = $"Combined concepts from {conceptMapIds.Count} resource(s)",
-            KnowledgeBaseIds = conceptMapIds.ToList()
+            ConceptMapIds = conceptMapIds.ToList()
         };
 
         await SaveAsync(collection, ct);
@@ -75,7 +75,7 @@ public sealed class ConceptMapCollectionService
     /// <summary>
     /// Saves a collection to disk.
     /// </summary>
-    public async Task SaveAsync(KnowledgeBaseCollection collection, CancellationToken ct = default)
+    public async Task SaveAsync(ConceptMapCollection collection, CancellationToken ct = default)
     {
         collection.UpdatedAt = DateTime.UtcNow;
 
@@ -124,7 +124,7 @@ public sealed class ConceptMapCollectionService
     /// <summary>
     /// Loads a collection by ID.
     /// </summary>
-    public async Task<KnowledgeBaseCollection?> LoadAsync(string collectionId, CancellationToken ct = default)
+    public async Task<ConceptMapCollection?> LoadAsync(string collectionId, CancellationToken ct = default)
     {
         // Check cache first
         if (cache.TryGetValue(collectionId, out var cached))
@@ -143,7 +143,7 @@ public sealed class ConceptMapCollectionService
         try
         {
             var json = await File.ReadAllTextAsync(filePath, ct);
-            var collection = JsonSerializer.Deserialize<KnowledgeBaseCollection>(json);
+            var collection = JsonSerializer.Deserialize<ConceptMapCollection>(json);
 
             if (collection != null)
             {
@@ -163,7 +163,7 @@ public sealed class ConceptMapCollectionService
     /// <summary>
     /// Loads a collection and all its ConceptMaps.
     /// </summary>
-    public async Task<LoadedKnowledgeBaseCollection?> LoadWithConceptMapsAsync(
+    public async Task<LoadedConceptMapCollection?> LoadWithConceptMapsAsync(
         string collectionId,
         CancellationToken ct = default)
     {
@@ -171,8 +171,8 @@ public sealed class ConceptMapCollectionService
         if (collection == null)
             return null;
 
-        var conceptMaps = new List<KnowledgeBase>();
-        foreach (var cmId in collection.KnowledgeBaseIds)
+        var conceptMaps = new List<ConceptMap>();
+        foreach (var cmId in collection.ConceptMapIds)
         {
             var cm = await conceptMapStorageService.LoadAsync(cmId, ct);
             if (cm != null)
@@ -185,18 +185,9 @@ public sealed class ConceptMapCollectionService
             }
         }
 
-        Log.Debug($"ConceptMapCollection: Loaded {conceptMaps.Count}/{collection.KnowledgeBaseIds.Count} ConceptMaps for '{collection.Name}'");
-        return new LoadedKnowledgeBaseCollection(collection, conceptMaps);
+        Log.Debug($"ConceptMapCollection: Loaded {conceptMaps.Count}/{collection.ConceptMapIds.Count} ConceptMaps for '{collection.Name}'");
+        return new LoadedConceptMapCollection(collection, conceptMaps);
     }
-
-    /// <summary>
-    /// Legacy method - use LoadWithConceptMapsAsync instead.
-    /// </summary>
-    [Obsolete("Use LoadWithConceptMapsAsync instead")]
-    public Task<LoadedKnowledgeBaseCollection?> LoadWithKnowledgeBasesAsync(
-        string collectionId,
-        CancellationToken ct = default)
-        => LoadWithConceptMapsAsync(collectionId, ct);
 
     /// <summary>
     /// Adds a ConceptMap to a collection.
@@ -213,7 +204,7 @@ public sealed class ConceptMapCollectionService
             return false;
         }
 
-        if (collection.AddKnowledgeBase(conceptMapId))
+        if (collection.AddConceptMap(conceptMapId))
         {
             await SaveAsync(collection, ct);
             Log.Info($"ConceptMapCollection: Added ConceptMap {conceptMapId} to collection '{collection.Name}'");
@@ -235,7 +226,7 @@ public sealed class ConceptMapCollectionService
         if (collection == null)
             return false;
 
-        if (collection.RemoveKnowledgeBase(conceptMapId))
+        if (collection.RemoveConceptMap(conceptMapId))
         {
             await SaveAsync(collection, ct);
             Log.Info($"ConceptMapCollection: Removed ConceptMap {conceptMapId} from collection '{collection.Name}'");
@@ -250,7 +241,7 @@ public sealed class ConceptMapCollectionService
     /// This loads each resource's ConceptMap ID and creates/updates the collection.
     /// Also verifies ConceptMaps exist on disk to handle stale resource status.
     /// </summary>
-    public async Task<KnowledgeBaseCollection> RebuildForCourseAsync(
+    public async Task<ConceptMapCollection> RebuildForCourseAsync(
         Course course,
         List<CourseResource> resources,
         CancellationToken ct = default)
@@ -266,7 +257,7 @@ public sealed class ConceptMapCollectionService
                 
             // Verify the ConceptMap exists and is ready
             var cm = await conceptMapStorageService.LoadAsync(resource.ConceptMapId, ct);
-            if (cm != null && cm.Status == KnowledgeBaseStatus.Ready)
+            if (cm != null && cm.Status == ConceptMapStatus.Ready)
             {
                 conceptMapIds.Add(resource.ConceptMapId);
                 
@@ -285,7 +276,7 @@ public sealed class ConceptMapCollectionService
 
         if (collection == null)
         {
-            collection = new KnowledgeBaseCollection
+            collection = new ConceptMapCollection
             {
                 Id = collectionId,
                 Name = $"{course.Name} Concept Map Collection",
@@ -294,7 +285,7 @@ public sealed class ConceptMapCollectionService
         }
 
         // Update the collection's ConceptMap IDs
-        collection.KnowledgeBaseIds = conceptMapIds;
+        collection.ConceptMapIds = conceptMapIds;
         collection.Description = $"Combined concepts from {conceptMapIds.Count} resource(s)";
         collection.UpdatedAt = DateTime.UtcNow;
 
@@ -307,9 +298,9 @@ public sealed class ConceptMapCollectionService
     /// <summary>
     /// Gets all collections.
     /// </summary>
-    public async Task<List<KnowledgeBaseCollection>> GetAllAsync(CancellationToken ct = default)
+    public async Task<List<ConceptMapCollection>> GetAllAsync(CancellationToken ct = default)
     {
-        var collections = new List<KnowledgeBaseCollection>();
+        var collections = new List<ConceptMapCollection>();
 
         if (!Directory.Exists(StoragePath))
             return collections;

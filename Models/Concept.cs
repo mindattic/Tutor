@@ -48,9 +48,9 @@ public class Concept
     public List<string> RelatedIds { get; set; } = [];
 
     /// <summary>
-    /// The ID of the knowledge base this concept belongs to.
+    /// The ID of the concept map this concept belongs to.
     /// </summary>
-    public string KnowledgeBaseId { get; set; } = "";
+    public string ConceptMapId { get; set; } = "";
 
     /// <summary>
     /// The ID of the corresponding ConceptNode in the knowledge graph (if any).

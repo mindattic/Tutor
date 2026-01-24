@@ -107,7 +107,7 @@ public sealed class CourseStructureService
             throw new InvalidOperationException($"ConceptMap not found: {conceptMapId}");
         }
 
-        if (conceptMap.Status != KnowledgeBaseStatus.Ready)
+        if (conceptMap.Status != ConceptMapStatus.Ready)
         {
             Log.Error($"CourseStructure: ConceptMap not ready. Status: {conceptMap.Status}");
             throw new InvalidOperationException($"ConceptMap is not ready. Status: {conceptMap.Status}");
@@ -198,7 +198,7 @@ public sealed class CourseStructureService
     /// Generates lesson organization using AI.
     /// </summary>
     private async Task<LessonGenerationResponse?> GenerateLessonsAsync(
-        KnowledgeBase conceptMap,
+        ConceptMap conceptMap,
         CancellationToken ct)
     {
         var apiKey = await opt.GetApiKeyAsync();
@@ -225,7 +225,7 @@ public sealed class CourseStructureService
     /// </summary>
     private List<Lesson> BuildLessonsFromResponse(
         LessonGenerationResponse? response,
-        KnowledgeBase conceptMap,
+        ConceptMap conceptMap,
         string structureId)
     {
         if (response?.Lessons == null || response.Lessons.Count == 0)
@@ -288,7 +288,7 @@ public sealed class CourseStructureService
     /// <summary>
     /// Creates a default lesson containing all concepts (fallback).
     /// </summary>
-    private Lesson CreateDefaultLesson(KnowledgeBase conceptMap, string structureId)
+    private Lesson CreateDefaultLesson(ConceptMap conceptMap, string structureId)
     {
         var lesson = new Lesson
         {
@@ -348,7 +348,7 @@ public sealed class CourseStructureService
     /// Reorders concepts within the structure to respect prerequisites.
     /// Uses the ConceptMap's complexity ordering as a guide.
     /// </summary>
-    public void ReorderByPrerequisites(CourseStructure structure, KnowledgeBase conceptMap)
+    public void ReorderByPrerequisites(CourseStructure structure, ConceptMap conceptMap)
     {
         foreach (var lesson in structure.Lessons)
         {

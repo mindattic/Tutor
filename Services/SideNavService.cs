@@ -83,7 +83,7 @@ public sealed class SideNavService
         var conceptMap = await conceptMapStorageService.LoadAsync(course.ConceptMapCollectionId!, ct);
         var structure = await structureStorageService.LoadAsync(course.CourseStructureId!, ct);
 
-        if (conceptMap == null || conceptMap.Status != KnowledgeBaseStatus.Ready)
+        if (conceptMap == null || conceptMap.Status != ConceptMapStatus.Ready)
         {
             nodes.Add(new NavNode
             {
@@ -134,7 +134,7 @@ public sealed class SideNavService
     /// </summary>
     private List<NavNode> BuildNavFromCourseStructure(
         CourseStructure structure, 
-        KnowledgeBase conceptMap, 
+        ConceptMap conceptMap, 
         UserProgress progress)
     {
         var nodes = new List<NavNode>();
@@ -217,7 +217,7 @@ public sealed class SideNavService
     /// This shows Concepts organized by complexity level, not the course hierarchy.
     /// Allows exploration of related concepts outside the current lesson.
     /// </summary>
-    public List<NavNode> BuildConceptMapNav(KnowledgeBase conceptMap, UserProgress progress)
+    public List<NavNode> BuildConceptMapNav(ConceptMap conceptMap, UserProgress progress)
     {
         var nodes = new List<NavNode>();
         var maxLevel = conceptMap.MaxComplexityLevel;

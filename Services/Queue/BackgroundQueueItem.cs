@@ -18,9 +18,9 @@ public enum BackgroundTaskType
     ResourceFormat,
 
     /// <summary>
-    /// Generate a knowledge base from resources.
+    /// Generate a concept map from a resource.
     /// </summary>
-    KnowledgeBaseBuild,
+    ConceptMapBuild,
 
     /// <summary>
     /// Extract concepts from a resource.
@@ -181,9 +181,9 @@ public class BackgroundQueueItem
     public string? CourseId { get; set; }
 
     /// <summary>
-    /// Associated knowledge base ID (if applicable).
+    /// Associated concept map ID (if applicable).
     /// </summary>
-    public string? KnowledgeBaseId { get; set; }
+    public string? ConceptMapId { get; set; }
 
     /// <summary>
     /// Gets the status display name.
@@ -252,57 +252,35 @@ public class ResourceFormatPayload
 }
 
 /// <summary>
-/// Payload for knowledge base build tasks.
-/// Supports building a KnowledgeBase from a single Resource (new architecture).
+/// Payload for concept map build tasks.
 /// </summary>
-public class KnowledgeBaseBuildPayload
+public class ConceptMapBuildPayload
 {
     /// <summary>
-    /// ID of the KnowledgeBase being built (for resumption).
+    /// ID of the ConceptMap being built (for resumption).
     /// </summary>
-    public string KnowledgeBaseId { get; set; } = "";
+    public string ConceptMapId { get; set; } = "";
 
     /// <summary>
-    /// Name for the KnowledgeBase.
+    /// Name for the ConceptMap.
     /// </summary>
     public string Name { get; set; } = "";
 
     /// <summary>
-    /// ID of the single Resource to build KB from (new architecture).
-    /// When set, ResourceIds is ignored.
+    /// ID of the single Resource to build ConceptMap from.
     /// </summary>
     public string? ResourceId { get; set; }
 
     /// <summary>
-    /// IDs of Resources to build KB from.
-    /// Maintained for backward compatibility. New code should use ResourceId.
-    /// </summary>
-    [Obsolete("Use ResourceId instead for single resource KB builds.")]
-    public List<string> ResourceIds { get; set; } = [];
-
-    /// <summary>
-    /// Whether to update the CourseResource with the KnowledgeBase ID after build.
+    /// Whether to update the CourseResource with the ConceptMap ID after build.
     /// </summary>
     public bool UpdateResource { get; set; } = true;
-
-    /// <summary>
-    /// Gets the effective resource ID (prefers single ResourceId over list).
-    /// </summary>
-    public string? GetEffectiveResourceId()
-    {
-        if (!string.IsNullOrEmpty(ResourceId))
-            return ResourceId;
-
-#pragma warning disable CS0618
-        return ResourceIds.FirstOrDefault();
-#pragma warning restore CS0618
-    }
 }
 
 /// <summary>
-/// Checkpoint data for resumable knowledge base builds.
+/// Checkpoint data for resumable concept map builds.
 /// </summary>
-public class KnowledgeBaseBuildCheckpoint
+public class ConceptMapBuildCheckpoint
 {
     /// <summary>
     /// Current build stage.
@@ -338,6 +316,11 @@ public class KnowledgeBaseBuildCheckpoint
     /// Whether relationships have been built.
     /// </summary>
     public bool RelationshipsBuilt { get; set; }
+
+    /// <summary>
+    /// Whether orphaned concepts have been linked.
+    /// </summary>
+    public bool OrphansLinked { get; set; }
 
     /// <summary>
     /// Whether complexity has been calculated.

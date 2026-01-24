@@ -160,6 +160,15 @@
             </div>
 
             <div class="settings-section">
+                <h4>Paragraph Spacing</h4>
+                <div class="slider-row">
+                    <input type="range" min="0.5" max="2.0" step="0.1" @bind="paragraphSpacing" @bind:after="SaveParagraphSpacingAsync" class="settings-slider" />
+                    <span class="slider-value">@(paragraphSpacing.ToString("F1"))em</span>
+                </div>
+                <p>Adjust the spacing between paragraphs in chat messages (0.5em = tight, 2.0em = loose).</p>
+            </div>
+
+            <div class="settings-section">
                 <h4>Date & Time Format</h4>
                 <select class="theme-select" @bind="dateFormat" @bind:after="SaveDateFormatAsync">
                     <option value="yyyy-MM-dd hh:mm:ss tt">2024-01-15 06:30:45 PM (Default)</option>
@@ -250,23 +259,23 @@
             </div>
 
             <div class="settings-section">
-                <h4>Knowledge Bases Directory</h4>
+                <h4>Concept Maps Directory</h4>
                 <div class="path-input-row">
-                    <input type="text" class="settings-input path-input" value="@knowledgeBasesPath" readonly />
-                    <button class="settings-btn" @onclick="OpenKnowledgeBasesFolder" title="Open folder">
+                    <input type="text" class="settings-input path-input" value="@conceptMapsPath" readonly />
+                    <button class="settings-btn" @onclick="OpenConceptMapsFolder" title="Open folder">
                         <span class="bi bi-folder2-open"></span>
                     </button>
                 </div>
-                <p>Knowledge bases contain extracted concepts and relationships for courses.</p>
+                <p>Concept maps contain extracted concepts and relationships for courses.</p>
                 
                 <div class="folder-stats">
                     <div class="stat-item">
-                        <span class="stat-label">Knowledge bases:</span>
-                        <span class="stat-value">@knowledgeBaseCount</span>
+                        <span class="stat-label">Concept maps:</span>
+                        <span class="stat-value">@conceptMapCount</span>
                     </div>
                 </div>
 
-                @if (knowledgeBases.Count > 0)
+                @if (conceptMaps.Count > 0)
                 {
                     <div class="kb-list" style="margin-top: 15px;">
                         <table class="kb-table">
@@ -280,17 +289,17 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var kb in knowledgeBases)
+                                @foreach (var cm in conceptMaps)
                                 {
                                     <tr>
-                                        <td>@kb.Name</td>
-                                        <td>@kb.ConceptCount</td>
-                                        <td>@kb.RelationCount</td>
+                                        <td>@cm.Name</td>
+                                        <td>@cm.ConceptCount</td>
+                                        <td>@cm.RelationCount</td>
                                         <td>
-                                            <span class="kb-status @kb.Status.ToString().ToLower()">@kb.Status</span>
+                                            <span class="kb-status @cm.Status.ToString().ToLower()">@cm.Status</span>
                                         </td>
                                         <td>
-                                            <button class="btn-icon-small danger" @onclick="() => DeleteKnowledgeBaseAsync(kb.Id)" title="Delete">
+                                            <button class="btn-icon-small danger" @onclick="() => DeleteConceptMapAsync(cm.Id)" title="Delete">
                                                 <span class="bi bi-trash"></span>
                                             </button>
                                         </td>
@@ -309,7 +318,7 @@
                     <div class="folder-item indent">📁 Original/ - Original uploaded files</div>
                     <div class="folder-item indent">📁 Formatted/ - AI-formatted markdown files</div>
                     <div class="folder-item indent">📁 Courses/ - Course definitions</div>
-                    <div class="folder-item">📁 KnowledgeBases/ - AI-generated concept graphs</div>
+                    <div class="folder-item">📁 ConceptMaps/ - AI-generated concept graphs</div>
                 </div>
             </div>
         }
@@ -615,9 +624,9 @@
     private int formattedFileCount = 0;
 
     // Concept Map storage settings
-    private string knowledgeBasesPath = "";
-    private int knowledgeBaseCount = 0;
-    private List<ConceptMapSummary> knowledgeBases = [];
+    private string conceptMapsPath = "";
+    private int conceptMapCount = 0;
+    private List<ConceptMapSummary> conceptMaps = [];
 
 
     // Avatar settings
@@ -631,6 +640,7 @@
 
     // Appearance settings
     private int borderRadius = 6;
+    private double paragraphSpacing = 1.0;
     private string dateFormat = "yyyy-MM-dd hh:mm:ss tt";
 
     // Available avatar icons
@@ -685,7 +695,7 @@
         await LoadAppearanceSettingsAsync();
         await LoadLogLevelSettingsAsync();
         LoadStorageSettings();
-        await LoadKnowledgeBaseSettingsAsync();
+        await LoadConceptMapSettingsAsync();
         LoadLogs();
 
         // Subscribe to log updates
@@ -789,6 +799,7 @@
     private async Task LoadAppearanceSettingsAsync()
     {
         borderRadius = await SettingsService.GetBorderRadiusAsync();
+        paragraphSpacing = await SettingsService.GetParagraphSpacingAsync();
         dateFormat = await SettingsService.GetDateFormatAsync();
     }
 
@@ -797,6 +808,13 @@
         await SettingsService.SetBorderRadiusAsync(borderRadius);
         await JS.InvokeVoidAsync("setBorderRadius", borderRadius);
         status = "Border radius saved.";
+    }
+
+    private async Task SaveParagraphSpacingAsync()
+    {
+        await SettingsService.SetParagraphSpacingAsync(paragraphSpacing);
+        await JS.InvokeVoidAsync("setParagraphSpacing", paragraphSpacing);
+        status = "Paragraph spacing saved.";
     }
 
     private async Task SaveDateFormatAsync()
@@ -924,23 +942,23 @@
         formattedFileCount = FileResourceService.GetFormattedFiles().Count;
     }
 
-    private async Task LoadKnowledgeBaseSettingsAsync()
+    private async Task LoadConceptMapSettingsAsync()
     {
-        knowledgeBasesPath = Path.Combine(FileSystem.AppDataDirectory, "KnowledgeBases");
-        knowledgeBases = await ConceptMapStorageService.GetSummariesAsync();
-        knowledgeBaseCount = knowledgeBases.Count;
+        conceptMapsPath = DataStorageSettings.GetKnowledgeBasesDirectory();
+        conceptMaps = await ConceptMapStorageService.GetSummariesAsync();
+        conceptMapCount = conceptMaps.Count;
     }
 
-    private void OpenKnowledgeBasesFolder()
+    private void OpenConceptMapsFolder()
     {
         try
         {
-            if (Directory.Exists(knowledgeBasesPath))
+            if (Directory.Exists(conceptMapsPath))
             {
 #if WINDOWS
-                System.Diagnostics.Process.Start("explorer.exe", knowledgeBasesPath);
+                System.Diagnostics.Process.Start("explorer.exe", conceptMapsPath);
 #elif MACCATALYST
-                System.Diagnostics.Process.Start("open", knowledgeBasesPath);
+                System.Diagnostics.Process.Start("open", conceptMapsPath);
 #endif
             }
         }
@@ -950,10 +968,10 @@
         }
     }
 
-    private async Task DeleteKnowledgeBaseAsync(string id)
+    private async Task DeleteConceptMapAsync(string id)
     {
         await ConceptMapStorageService.DeleteAsync(id);
-        await LoadKnowledgeBaseSettingsAsync();
+        await LoadConceptMapSettingsAsync();
         status = "Concept map deleted.";
     }
 

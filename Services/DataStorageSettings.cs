@@ -12,7 +12,7 @@ public static class DataStorageSettings
     private const string SettingsFileName = "data-storage.settings.json";
     
     // Default directory names (relative to AppDataDirectory)
-    private const string DefaultKnowledgeBasesDir = "KnowledgeBases";
+    private const string DefaultKnowledgeBasesDir = "ConceptMaps";
     private const string DefaultKnowledgeGraphsDir = "KnowledgeGraphs";
     private const string DefaultVectorStoreDir = "VectorStore";
     private const string DefaultLSHDir = "LSH";

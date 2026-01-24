@@ -377,7 +377,7 @@ border: 2px solid var(--border-light);
 }
 
 .markdown-content p {
-    margin: 0 0 0.25em 0;
+    margin: 0 0 var(--paragraph-spacing, 1.0em) 0;
 }
 
 .markdown-content p:last-child {
@@ -496,6 +496,12 @@ border: 2px solid var(--border-light);
 .markdown-content .suggested-question .bi {
     font-size: 14px;
     opacity: 0.8;
+}
+
+/* Suggested question wrapper - prevents paragraph styling */
+.markdown-content .suggested-question-wrapper {
+    padding: 0 0 5px 0;
+    margin: 0;
 }
 
 /* Dark theme suggested question */
@@ -2491,6 +2497,14 @@ border: 1px solid var(--border-color);
     gap: 4px;
 }
 
+/* Graph Content Layout - Side by side */
+.kb-graph-content {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
 .kb-graph-wrapper {
     flex: 1;
     min-height: 300px;
@@ -2533,28 +2547,37 @@ border: 1px solid var(--border-color);
     stroke: #10b981;
 }
 
-/* Concept Detail Panel */
+/* Concept Detail Panel - Right Sidebar */
 .concept-detail-panel {
-    border-top: 1px solid var(--border-color);
+    width: 320px;
+    min-width: 280px;
+    border-left: 1px solid var(--border-color);
     padding: 16px;
     background: var(--bg-secondary);
-    max-height: 250px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .concept-detail-panel.empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 80px;
 }
 
 .empty-hint {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     color: var(--text-muted);
     font-size: 14px;
+    text-align: center;
+}
+
+.empty-hint .bi {
+    font-size: 32px;
+    opacity: 0.5;
 }
 
 .concept-detail-header {
@@ -2669,6 +2692,221 @@ border: 1px solid var(--border-color);
 .relationship-btn .bi {
     color: var(--text-muted);
     font-size: 12px;
+}
+
+/* Concept Actions (Teach Me button) */
+.concept-actions {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.teach-me-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.teach-me-btn:hover {
+    background: var(--accent-primary-hover);
+    transform: translateY(-1px);
+}
+
+.teach-me-btn .bi {
+    font-size: 16px;
+}
+
+/* Orphan Concept Warning Styles */
+.kb-graph-stats .stat.warning {
+    color: #f59e0b;
+    cursor: help;
+}
+
+.kb-graph-stats .stat.warning .bi {
+    margin-right: 4px;
+}
+
+.orphan-warning-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+    border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+    gap: 16px;
+}
+
+.orphan-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.orphan-info .bi {
+    color: #f59e0b;
+    font-size: 16px;
+}
+
+.orphan-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-link-orphans {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-link-orphans:hover {
+    background: #d97706;
+}
+
+.btn-link-orphans .bi {
+    font-size: 14px;
+}
+
+.btn-show-orphans {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-show-orphans:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.linking-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.spinner-small {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.orphan-details-panel {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.orphan-component {
+    margin-bottom: 12px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.orphan-component:last-child {
+    margin-bottom: 0;
+}
+
+.component-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.component-header .bi {
+    color: #f59e0b;
+}
+
+.component-concepts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.orphan-concept-btn {
+    padding: 4px 10px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.orphan-concept-btn:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+}
+
+.more-concepts {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 4px 8px;
+}
+
+.linking-message {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.linking-message.info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+}
+
+.linking-message.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
 }
 
 /* Curriculum Selector */

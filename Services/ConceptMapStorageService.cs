@@ -16,7 +16,7 @@ namespace Tutor.Services;
 public sealed class ConceptMapStorageService
 {
     // In-memory cache of loaded concept maps (keyed by ConceptMap ID)
-    private readonly Dictionary<string, KnowledgeBase> cache = [];
+    private readonly Dictionary<string, ConceptMap> cache = [];
 
     /// <summary>
     /// Event fired when a concept map is saved.
@@ -36,14 +36,14 @@ public sealed class ConceptMapStorageService
     /// <summary>
     /// Creates a new ConceptMap.
     /// </summary>
-    public async Task<KnowledgeBase> CreateAsync(string name, string description = "", CancellationToken ct = default)
+    public async Task<ConceptMap> CreateAsync(string name, string description = "", CancellationToken ct = default)
     {
         Log.Info($"ConceptMapStorage: Creating new ConceptMap '{name}'");
-        var conceptMap = new KnowledgeBase
+        var conceptMap = new ConceptMap
         {
             Name = name,
             Description = description,
-            Status = KnowledgeBaseStatus.NotStarted
+            Status = ConceptMapStatus.NotStarted
         };
 
         await SaveAsync(conceptMap, ct);
@@ -53,7 +53,7 @@ public sealed class ConceptMapStorageService
     /// <summary>
     /// Saves a concept map to disk.
     /// </summary>
-    public async Task SaveAsync(KnowledgeBase conceptMap, CancellationToken ct = default)
+    public async Task SaveAsync(ConceptMap conceptMap, CancellationToken ct = default)
     {
         conceptMap.UpdatedAt = DateTime.UtcNow;
 
@@ -98,7 +98,7 @@ public sealed class ConceptMapStorageService
     /// <summary>
     /// Loads a concept map by ID.
     /// </summary>
-    public async Task<KnowledgeBase?> LoadAsync(string conceptMapId, CancellationToken ct = default)
+    public async Task<ConceptMap?> LoadAsync(string conceptMapId, CancellationToken ct = default)
     {
         // Check cache first
         if (cache.TryGetValue(conceptMapId, out var cached))
@@ -119,7 +119,7 @@ public sealed class ConceptMapStorageService
         {
             Log.Debug($"ConceptMapStorage: Loading ConceptMap {conceptMapId} from disk");
             var json = await File.ReadAllTextAsync(filePath, ct);
-            var conceptMap = JsonSerializer.Deserialize<KnowledgeBase>(json);
+            var conceptMap = JsonSerializer.Deserialize<ConceptMap>(json);
             
             if (conceptMap != null)
             {
@@ -139,9 +139,9 @@ public sealed class ConceptMapStorageService
     /// <summary>
     /// Gets all concept maps.
     /// </summary>
-    public async Task<List<KnowledgeBase>> GetAllAsync(CancellationToken ct = default)
+    public async Task<List<ConceptMap>> GetAllAsync(CancellationToken ct = default)
     {
-        var result = new List<KnowledgeBase>();
+        var result = new List<ConceptMap>();
 
         if (!Directory.Exists(StoragePath))
             return result;
@@ -151,7 +151,7 @@ public sealed class ConceptMapStorageService
             try
             {
                 var json = await File.ReadAllTextAsync(file, ct);
-                var conceptMap = JsonSerializer.Deserialize<KnowledgeBase>(json);
+                var conceptMap = JsonSerializer.Deserialize<ConceptMap>(json);
                 
                 if (conceptMap != null)
                 {
@@ -169,26 +169,10 @@ public sealed class ConceptMapStorageService
     }
 
     /// <summary>
-    /// Finds concept maps that were built from specific resources.
-    /// </summary>
-    [Obsolete("Use FindByResourceIdAsync instead for single resource lookups.")]
-    public async Task<List<KnowledgeBase>> FindByResourceIdsAsync(
-        List<string> resourceIds, 
-        CancellationToken ct = default)
-    {
-        var all = await GetAllAsync(ct);
-#pragma warning disable CS0618
-        return all.Where(cm => 
-            cm.ResourceIds.Any(r => resourceIds.Contains(r)) ||
-            resourceIds.Contains(cm.ResourceId)).ToList();
-#pragma warning restore CS0618
-    }
-
-    /// <summary>
     /// Finds the ConceptMap built from a specific resource.
     /// Returns null if no ConceptMap exists for that resource.
     /// </summary>
-    public async Task<KnowledgeBase?> FindByResourceIdAsync(
+    public async Task<ConceptMap?> FindByResourceIdAsync(
         string resourceId,
         CancellationToken ct = default)
     {
@@ -197,47 +181,28 @@ public sealed class ConceptMapStorageService
 
         var all = await GetAllAsync(ct);
         
-        // First try to find by new ResourceId property
-        var conceptMap = all.FirstOrDefault(cm => cm.ResourceId == resourceId);
-        if (conceptMap != null)
-            return conceptMap;
-
-#pragma warning disable CS0618
-        // Fall back to legacy ResourceIds for backward compatibility
-        return all.FirstOrDefault(cm => cm.ResourceIds.Contains(resourceId));
-#pragma warning restore CS0618
+        // Find by ResourceId property
+        return all.FirstOrDefault(cm => cm.ResourceId == resourceId);
     }
 
     /// <summary>
     /// Gets ConceptMaps for multiple resources.
     /// Returns a dictionary mapping ResourceId to ConceptMap.
     /// </summary>
-    public async Task<Dictionary<string, KnowledgeBase>> GetForResourcesAsync(
+    public async Task<Dictionary<string, ConceptMap>> GetForResourcesAsync(
         List<string> resourceIds,
         CancellationToken ct = default)
     {
-        var result = new Dictionary<string, KnowledgeBase>();
+        var result = new Dictionary<string, ConceptMap>();
         var all = await GetAllAsync(ct);
 
         foreach (var conceptMap in all)
         {
-            // Check new ResourceId property
+            // Check ResourceId property
             if (!string.IsNullOrEmpty(conceptMap.ResourceId) && resourceIds.Contains(conceptMap.ResourceId))
             {
                 result[conceptMap.ResourceId] = conceptMap;
-                continue;
             }
-
-#pragma warning disable CS0618
-            // Check legacy ResourceIds for backward compatibility
-            foreach (var resId in conceptMap.ResourceIds)
-            {
-                if (resourceIds.Contains(resId) && !result.ContainsKey(resId))
-                {
-                    result[resId] = conceptMap;
-                }
-            }
-#pragma warning restore CS0618
         }
 
         return result;
@@ -283,7 +248,7 @@ public sealed class ConceptMapStorageService
     /// <summary>
     /// Gets the status of a concept map.
     /// </summary>
-    public async Task<KnowledgeBaseStatus?> GetStatusAsync(string conceptMapId, CancellationToken ct = default)
+    public async Task<ConceptMapStatus?> GetStatusAsync(string conceptMapId, CancellationToken ct = default)
     {
         var conceptMap = await LoadAsync(conceptMapId, ct);
         return conceptMap?.Status;
@@ -321,10 +286,10 @@ public sealed class ConceptMapStorageService
     /// Saves a human-readable markdown export of the ConceptMap to the Resources folder.
     /// This allows verification and analysis of the extracted concepts.
     /// </summary>
-    private async Task SaveHumanReadableExportAsync(KnowledgeBase conceptMap, CancellationToken ct = default)
+    private async Task SaveHumanReadableExportAsync(ConceptMap conceptMap, CancellationToken ct = default)
     {
         // Only export if ConceptMap is ready and has concepts
-        if (conceptMap.Status != KnowledgeBaseStatus.Ready || conceptMap.Concepts.Count == 0)
+        if (conceptMap.Status != ConceptMapStatus.Ready || conceptMap.Concepts.Count == 0)
             return;
 
         try
@@ -529,7 +494,7 @@ public class ConceptMapSummary
 {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
-    public KnowledgeBaseStatus Status { get; set; }
+    public ConceptMapStatus Status { get; set; }
     public int ConceptCount { get; set; }
     public int RelationCount { get; set; }
     

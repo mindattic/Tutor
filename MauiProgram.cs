@@ -112,13 +112,19 @@ namespace Tutor
             // Course structure storage service (persistence for CourseStructures)
             builder.Services.AddSingleton<CourseStructureStorageService>();
 
-            // Knowledge base service (builds ConceptMap from Resources) (with extended timeout)
-            builder.Services.AddHttpClient<KnowledgeBaseService>(client =>
+            // Concept map service (builds ConceptMap from Resources) (with extended timeout)
+            builder.Services.AddHttpClient<ConceptMapService>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
             });
 
-            // Course structure service (generates learning path from KnowledgeBase) (with extended timeout)
+            // Orphan concept linker service (detects and links disconnected concepts)
+            builder.Services.AddHttpClient<OrphanConceptLinkerService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(3);
+            });
+
+            // Course structure service (generates learning path from ConceptMap) (with extended timeout)
             builder.Services.AddHttpClient<CourseStructureService>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(3);
@@ -137,7 +143,7 @@ namespace Tutor
             builder.Services.AddSingleton<BackgroundQueueStorageService>();
             builder.Services.AddSingleton<ResourceUploadTaskHandler>();
             builder.Services.AddSingleton<ResourceFormatTaskHandler>();
-            builder.Services.AddSingleton<KnowledgeBaseBuildTaskHandler>();
+            builder.Services.AddSingleton<ConceptMapBuildTaskHandler>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

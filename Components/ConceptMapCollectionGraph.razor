@@ -4,6 +4,7 @@
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject ConceptMapCollectionService ConceptMapCollectionService
 @inject CourseService CourseService
+@inject OrphanConceptLinkerService OrphanLinkerService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -52,90 +53,171 @@ else
         {
             <span class="stat">@conceptMapCount sources</span>
         }
+        @if (connectivityInfo != null && !connectivityInfo.IsFullyConnected)
+        {
+            <span class="stat warning" title="Click to view orphan details">
+                <span class="bi bi-exclamation-triangle"></span>
+                @connectivityInfo.OrphanedConceptCount orphaned
+            </span>
+        }
     </div>
 </div>
-    
-    <div class="kb-graph-wrapper">
-        <div id="kb-force-graph" class="force-graph-canvas" @ref="graphContainer"></div>
-    </div>
 
-    @if (selectedConcept != null)
-    {
-        <div class="concept-detail-panel">
-            <div class="concept-detail-header">
-                <h5>@selectedConcept.Title</h5>
-                <button class="close-btn small" @onclick="ClearSelection">
-                    <span class="bi bi-x-lg"></span>
+@if (connectivityInfo != null && !connectivityInfo.IsFullyConnected)
+{
+    <div class="orphan-warning-banner">
+        <div class="orphan-info">
+            <span class="bi bi-diagram-2"></span>
+            <span>
+                <strong>@connectivityInfo.OrphanedConceptCount concept(s)</strong> in 
+                <strong>@connectivityInfo.OrphanedComponentCount cluster(s)</strong> are disconnected from the main graph.
+            </span>
+        </div>
+        <div class="orphan-actions">
+            @if (isLinkingOrphans)
+            {
+                <span class="linking-status">
+                    <span class="spinner-small"></span>
+                    Analyzing connections...
+                </span>
+            }
+            else
+            {
+                <button class="btn-link-orphans" @onclick="LinkOrphansAsync" title="Use AI to find missing connections">
+                    <span class="bi bi-link-45deg"></span>
+                    Auto-Link Orphans
                 </button>
-            </div>
-            
-            @if (!string.IsNullOrEmpty(selectedConcept.Summary))
-            {
-                <div class="concept-summary">@selectedConcept.Summary</div>
             }
-
-            @if (selectedConcept.Aliases.Count > 0)
-            {
-                <div class="concept-aliases">
-                    <span class="label">Also known as:</span>
-                    <span class="value">@string.Join(", ", selectedConcept.Aliases)</span>
-                </div>
-            }
-
-            @if (selectedConcept.Tags.Count > 0)
-            {
-                <div class="concept-tags">
-                    @foreach (var tag in selectedConcept.Tags)
-                    {
-                        <span class="kb-tag">@tag</span>
-                    }
-                </div>
-            }
-
-            @if (relatedConcepts.Count > 0)
-            {
-                <div class="concept-relationships">
-                    <h6>Related Concepts</h6>
-                    <div class="relationship-list">
-                        @foreach (var rel in relatedConcepts)
-                        {
-                            <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.TargetConceptId))">
-                                <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
-                                <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
-                                <span class="bi bi-arrow-right"></span>
-                            </button>
-                        }
-                    </div>
-                </div>
-            }
-
-            @if (incomingRelationships.Count > 0)
-            {
-                <div class="concept-relationships incoming">
-                    <h6>Referenced By</h6>
-                    <div class="relationship-list">
-                        @foreach (var rel in incomingRelationships)
-                        {
-                            <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.SourceConceptId))">
-                                <span class="rel-source">@GetConceptTitle(rel.SourceConceptId)</span>
-                                <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
-                                <span class="bi bi-arrow-left"></span>
-                            </button>
-                        }
-                    </div>
-                </div>
-            }
+            <button class="btn-show-orphans" @onclick="ToggleOrphanList">
+                <span class="bi @(showOrphanList ? "bi-chevron-up" : "bi-chevron-down")"></span>
+                @(showOrphanList ? "Hide" : "Show") Details
+            </button>
         </div>
-    }
-    else
+    </div>
+    
+    @if (showOrphanList && connectivityInfo.OrphanedComponents.Count > 0)
     {
-        <div class="concept-detail-panel empty">
-            <div class="empty-hint">
-                <span class="bi bi-hand-index"></span>
-                <span>Click on a concept node to view details</span>
-            </div>
+        <div class="orphan-details-panel">
+            @foreach (var component in connectivityInfo.OrphanedComponents)
+            {
+                <div class="orphan-component">
+                    <div class="component-header">
+                        <span class="bi bi-diagram-3"></span>
+                        <span>Disconnected cluster (@component.Size concept@(component.Size > 1 ? "s" : ""))</span>
+                    </div>
+                    <div class="component-concepts">
+                        @foreach (var concept in component.Concepts.Take(10))
+                        {
+                            <button class="orphan-concept-btn" @onclick="@(() => SelectConceptById(concept.Id))">
+                                @concept.Title
+                            </button>
+                        }
+                        @if (component.Concepts.Count > 10)
+                        {
+                            <span class="more-concepts">+@(component.Concepts.Count - 10) more</span>
+                        }
+                    </div>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(linkingMessage))
+            {
+                <div class="linking-message @(linkingSuccess ? "success" : "info")">
+                    <span class="bi @(linkingSuccess ? "bi-check-circle" : "bi-info-circle")"></span>
+                    @linkingMessage
+                </div>
+            }
         </div>
     }
+}
+    
+    <div class="kb-graph-content">
+        <div class="kb-graph-wrapper">
+            <div id="kb-force-graph" class="force-graph-canvas" @ref="graphContainer"></div>
+        </div>
+
+        <div class="concept-detail-panel @(selectedConcept == null ? "empty" : "")">
+            @if (selectedConcept != null)
+            {
+                <div class="concept-detail-header">
+                    <h5>@selectedConcept.Title</h5>
+                    <button class="close-btn small" @onclick="ClearSelection">
+                        <span class="bi bi-x-lg"></span>
+                    </button>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(selectedConcept.Summary))
+                {
+                    <div class="concept-summary">@selectedConcept.Summary</div>
+                }
+
+                @if (selectedConcept.Aliases.Count > 0)
+                {
+                    <div class="concept-aliases">
+                        <span class="label">Also known as:</span>
+                        <span class="value">@string.Join(", ", selectedConcept.Aliases)</span>
+                    </div>
+                }
+
+                @if (selectedConcept.Tags.Count > 0)
+                {
+                    <div class="concept-tags">
+                        @foreach (var tag in selectedConcept.Tags)
+                        {
+                            <span class="kb-tag">@tag</span>
+                        }
+                    </div>
+                }
+
+                @if (relatedConcepts.Count > 0)
+                {
+                    <div class="concept-relationships">
+                        <h6>Related Concepts</h6>
+                        <div class="relationship-list">
+                            @foreach (var rel in relatedConcepts)
+                            {
+                                <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.TargetConceptId))">
+                                    <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
+                                    <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
+                                    <span class="bi bi-arrow-right"></span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (incomingRelationships.Count > 0)
+                {
+                    <div class="concept-relationships incoming">
+                        <h6>Referenced By</h6>
+                        <div class="relationship-list">
+                            @foreach (var rel in incomingRelationships)
+                            {
+                                <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.SourceConceptId))">
+                                    <span class="rel-source">@GetConceptTitle(rel.SourceConceptId)</span>
+                                    <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
+                                    <span class="bi bi-arrow-left"></span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="concept-actions">
+                    <button class="teach-me-btn" @onclick="TeachSelectedConcept">
+                        <span class="bi bi-mortarboard"></span>
+                        Teach Me
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="empty-hint">
+                    <span class="bi bi-hand-index"></span>
+                    <span>Click on a concept node to view details</span>
+                </div>
+            }
+        </div>
+    </div>
 </div>
 }
 
@@ -166,9 +248,14 @@ else
     [Parameter] public string? KnowledgeBaseCollectionId { get; set; }
     
     [Parameter] public EventCallback OnClose { get; set; }
+    
+    /// <summary>
+    /// Callback when user clicks "Teach Me" to learn about a concept
+    /// </summary>
+    [Parameter] public EventCallback<string> OnTeachConcept { get; set; }
 
-    private KnowledgeBase? conceptMap;
-    private LoadedKnowledgeBaseCollection? loadedCollection;
+    private ConceptMap? conceptMap;
+    private LoadedConceptMapCollection? loadedCollection;
     private List<Concept> concepts = [];
     private List<ConceptRelationship> relationships = [];
     private Concept? selectedConcept;
@@ -181,6 +268,13 @@ else
     private string? errorMessage;
     private string graphTitle = "Concept Map Collection";
     private int conceptMapCount = 1;
+    
+    // Orphan detection state
+    private GraphConnectivityInfo? connectivityInfo;
+    private bool showOrphanList;
+    private bool isLinkingOrphans;
+    private string? linkingMessage;
+    private bool linkingSuccess;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -298,7 +392,7 @@ else
             }
 
             graphTitle = loadedCollection.Collection.Name;
-            conceptMapCount = loadedCollection.KnowledgeBases.Count;
+            conceptMapCount = loadedCollection.ConceptMaps.Count;
             
             // Aggregate concepts and relationships from the loaded collection
             concepts = loadedCollection.GetAllConcepts().ToList();
@@ -325,12 +419,12 @@ else
     {
         var allConcepts = new List<Concept>();
         var allRelationships = new List<ConceptRelationship>();
-        var loadedMaps = new List<KnowledgeBase>();
+        var loadedMaps = new List<ConceptMap>();
 
         foreach (var cmId in cmIds)
         {
             var cm = await ConceptMapStorageService.LoadAsync(cmId);
-            if (cm != null && cm.Status == KnowledgeBaseStatus.Ready)
+            if (cm != null && cm.Status == ConceptMapStatus.Ready)
             {
                 loadedMaps.Add(cm);
                 allConcepts.AddRange(cm.Concepts);
@@ -343,6 +437,9 @@ else
         relationships = allRelationships;
 
         System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Aggregated {concepts.Count} concepts, {relationships.Count} relationships from {conceptMapCount} ConceptMaps");
+        
+        // Calculate connectivity for orphan detection
+        CalculateConnectivity();
     }
 
     /// <summary>
@@ -366,6 +463,9 @@ else
                 concepts = conceptMap.Concepts ?? [];
                 relationships = conceptMap.Relations ?? [];
                 System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loaded {concepts.Count} concepts, {relationships.Count} relationships");
+                
+                // Get connectivity info directly from the ConceptMap
+                connectivityInfo = conceptMap.GetConnectivityInfo();
             }
             else
             {
@@ -381,6 +481,98 @@ else
         finally
         {
             isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Calculates graph connectivity to detect orphaned concepts.
+    /// Creates a temporary ConceptMap structure for analysis when multiple maps are aggregated.
+    /// </summary>
+    private void CalculateConnectivity()
+    {
+        if (concepts.Count == 0)
+        {
+            connectivityInfo = null;
+            return;
+        }
+
+        // Create a temporary ConceptMap for connectivity analysis
+        var tempMap = new ConceptMap
+        {
+            Concepts = concepts,
+            Relations = relationships
+        };
+        
+        connectivityInfo = tempMap.GetConnectivityInfo();
+        
+        if (!connectivityInfo.IsFullyConnected)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Detected {connectivityInfo.OrphanedConceptCount} orphaned concepts in {connectivityInfo.OrphanedComponentCount} components");
+        }
+    }
+
+    /// <summary>
+    /// Toggles the orphan details list visibility.
+    /// </summary>
+    private void ToggleOrphanList()
+    {
+        showOrphanList = !showOrphanList;
+    }
+
+    /// <summary>
+    /// Uses AI to find and apply missing connections for orphaned concepts.
+    /// </summary>
+    private async Task LinkOrphansAsync()
+    {
+        if (conceptMap == null || isLinkingOrphans)
+            return;
+
+        isLinkingOrphans = true;
+        linkingMessage = null;
+        linkingSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            var result = await OrphanLinkerService.DetectAndLinkOrphansAsync(conceptMap, minConfidence: 0.5f);
+            
+            if (result.AppliedLinkCount > 0)
+            {
+                // Save the updated concept map
+                await ConceptMapStorageService.SaveAsync(conceptMap);
+                
+                // Refresh the display data
+                concepts = conceptMap.Concepts ?? [];
+                relationships = conceptMap.Relations ?? [];
+                connectivityInfo = conceptMap.GetConnectivityInfo();
+                
+                linkingSuccess = true;
+                linkingMessage = $"Added {result.AppliedLinkCount} connection(s). " +
+                    (result.IsFullyConnected 
+                        ? "All concepts are now connected!" 
+                        : $"{result.RemainingOrphanCount} concept(s) still need manual review.");
+                
+                // Reinitialize the graph to show new connections
+                isInitialized = false;
+                StateHasChanged();
+                await Task.Delay(100);
+                await InitializeGraph();
+                isInitialized = true;
+            }
+            else
+            {
+                linkingMessage = "No suitable connections could be found. Manual review may be needed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            linkingMessage = $"Error: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Orphan linking error: {ex.Message}");
+        }
+        finally
+        {
+            isLinkingOrphans = false;
             StateHasChanged();
         }
     }
@@ -453,6 +645,17 @@ else
         selectedConcept = null;
         relatedConcepts = [];
         incomingRelationships = [];
+    }
+
+    /// <summary>
+    /// Triggers the OnTeachConcept callback to teach about the selected concept
+    /// </summary>
+    private async Task TeachSelectedConcept()
+    {
+        if (selectedConcept == null) return;
+        
+        // Close the explorer and trigger the teach callback
+        await OnTeachConcept.InvokeAsync(selectedConcept.Title);
     }
 
     private string GetConceptTitle(string conceptId)

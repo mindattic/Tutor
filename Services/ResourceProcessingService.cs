@@ -20,7 +20,7 @@ public sealed class ResourceProcessingService : IDisposable
     private readonly ContentFormatterService formatterService;
     private readonly KnowledgeGraphService graphService;
     private readonly ConceptExtractionService extractionService;
-    private readonly KnowledgeBaseService knowledgeBaseService;
+    private readonly ConceptMapService conceptMapService;
     private readonly ConceptMapStorageService conceptMapStorageService;
 
     // Throttling - process ONE resource at a time sequentially to avoid API spam
@@ -43,14 +43,14 @@ public sealed class ResourceProcessingService : IDisposable
         ContentFormatterService formatterService,
         KnowledgeGraphService graphService,
         ConceptExtractionService extractionService,
-        KnowledgeBaseService knowledgeBaseService,
+        ConceptMapService conceptMapService,
         ConceptMapStorageService conceptMapStorageService)
     {
         this.courseService = courseService;
         this.formatterService = formatterService;
         this.graphService = graphService;
         this.extractionService = extractionService;
-        this.knowledgeBaseService = knowledgeBaseService;
+        this.conceptMapService = conceptMapService;
         this.conceptMapStorageService = conceptMapStorageService;
 
         // Unbounded channel for queuing
@@ -334,15 +334,15 @@ public sealed class ResourceProcessingService : IDisposable
             // Small delay between AI calls to avoid rate limiting
             await Task.Delay(500, cts.Token);
 
-            // Stage 3: Build Knowledge Base (always enabled now)
-            Log.Debug($"ResourceProcessing: Stage 3 - Building Knowledge Base for '{task.Resource.Title}'");
-            UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 50, "Building Knowledge Base...");
+            // Stage 3: Build Concept Map (always enabled now)
+            Log.Debug($"ResourceProcessing: Stage 3 - Building Concept Map for '{task.Resource.Title}'");
+            UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 50, "Building Concept Map...");
 
             await aiThrottle.WaitAsync(cts.Token);
             try
             {
                 await BuildKnowledgeBaseAsync(task, status);
-                Log.Info($"ResourceProcessing: Knowledge Base complete for '{task.Resource.Title}'");
+                Log.Info($"ResourceProcessing: Concept Map complete for '{task.Resource.Title}'");
             }
             finally
             {
@@ -409,33 +409,33 @@ public sealed class ResourceProcessingService : IDisposable
     {
         try
         {
-            UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 55, "Building Knowledge Base...");
+            UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 55, "Building Concept Map...");
 
-            // Subscribe to progress updates from the KB service
-            void OnProgress(KnowledgeBaseBuildProgress progress)
+            // Subscribe to progress updates from the CM service
+            void OnProgress(ConceptMapBuildProgress progress)
             {
                 var adjustedProgress = 50 + (int)(progress.Progress * 0.45);
                 UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, adjustedProgress, progress.Message);
             }
 
 
-            knowledgeBaseService.OnProgressChanged += OnProgress;
+            conceptMapService.OnProgressChanged += OnProgress;
             try
             {
                 // Build the ConceptMap for this resource
-                var kb = await knowledgeBaseService.BuildFromResourceAsync(task.Resource, cts.Token);
+                var cm = await conceptMapService.BuildFromResourceAsync(task.Resource, cts.Token);
 
                 // Link the ConceptMap to the resource
-                task.Resource.ConceptMapId = kb.Id;
-                task.Resource.ConceptMapStatus = (ConceptMapStatus)(int)kb.Status;
-                status.ConceptsExtracted = kb.Concepts.Count;
+                task.Resource.ConceptMapId = cm.Id;
+                task.Resource.ConceptMapStatus = cm.Status;
+                status.ConceptsExtracted = cm.Concepts.Count;
 
                 UpdateStatus(task.TaskId, ProcessingStage.BuildingGraph, 95, 
-                    $"Concept Map ready: {kb.Concepts.Count} concepts, {kb.Relations.Count} relationships");
+                    $"Concept Map ready: {cm.Concepts.Count} concepts, {cm.Relations.Count} relationships");
             }
             finally
             {
-                knowledgeBaseService.OnProgressChanged -= OnProgress;
+                conceptMapService.OnProgressChanged -= OnProgress;
             }
         }
         catch (Exception ex)
@@ -570,7 +570,7 @@ public class ResourceProcessingStatus
         ProcessingStage.Queued => "Queued",
         ProcessingStage.Saving => "Saving",
         ProcessingStage.Formatting => "AI Formatting",
-        ProcessingStage.BuildingGraph => "Building Knowledge Base",
+        ProcessingStage.BuildingGraph => "Building Concept Map",
         ProcessingStage.Complete => "Complete",
         ProcessingStage.Failed => "Failed",
         _ => "Unknown"

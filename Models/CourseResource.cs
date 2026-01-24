@@ -49,34 +49,6 @@ public class CourseResource
     public bool HasConceptMap => !string.IsNullOrEmpty(ConceptMapId) 
         && ConceptMapStatus == ConceptMapStatus.Ready;
 
-    // Legacy properties for backward compatibility
-    
-    /// <summary>
-    /// ID of the KnowledgeBase generated from this resource.
-    /// </summary>
-    [Obsolete("Use ConceptMapId instead. This property is maintained for backward compatibility.")]
-    public string? KnowledgeBaseId 
-    { 
-        get => ConceptMapId; 
-        set => ConceptMapId = value; 
-    }
-
-    /// <summary>
-    /// Current status of the KnowledgeBase generation for this resource.
-    /// </summary>
-    [Obsolete("Use ConceptMapStatus instead. This property is maintained for backward compatibility.")]
-    public KnowledgeBaseStatus KnowledgeBaseStatus 
-    { 
-        get => (KnowledgeBaseStatus)(int)ConceptMapStatus;
-        set => ConceptMapStatus = (ConceptMapStatus)(int)value;
-    }
-
-    /// <summary>
-    /// Whether this resource has a KnowledgeBase built.
-    /// </summary>
-    [Obsolete("Use HasConceptMap instead. This property is maintained for backward compatibility.")]
-    public bool HasKnowledgeBase => HasConceptMap;
-
     /// <summary>
     /// Gets the best available content (formatted if available, otherwise original).
     /// </summary>

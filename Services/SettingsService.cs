@@ -10,6 +10,7 @@ public sealed class SettingsService
     private const string LessonStateKey = "LESSON_STATE";
     private const string BorderRadiusKey = "BORDER_RADIUS";
     private const string DateFormatKey = "DATE_FORMAT";
+    private const string ParagraphSpacingKey = "PARAGRAPH_SPACING";
     
     // Log level settings keys
     private const string LogTraceKey = "LOG_TRACE";
@@ -218,6 +219,32 @@ public sealed class SettingsService
         try
         {
             await SecureStorage.SetAsync(BorderRadiusKey, Math.Clamp(radius, 0, 10).ToString());
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    // Paragraph spacing setting (0.5-2.0em, default 1.0em)
+    public async Task<double> GetParagraphSpacingAsync()
+    {
+        try
+        {
+            var value = await SecureStorage.GetAsync(ParagraphSpacingKey);
+            return double.TryParse(value, out var spacing) ? Math.Clamp(spacing, 0.5, 2.0) : 1.0;
+        }
+        catch
+        {
+            return 1.0;
+        }
+    }
+
+    public async Task SetParagraphSpacingAsync(double spacing)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(ParagraphSpacingKey, Math.Clamp(spacing, 0.5, 2.0).ToString("F1"));
         }
         catch
         {
