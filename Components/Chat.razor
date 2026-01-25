@@ -60,8 +60,16 @@
         {
             @if (lessonTopics.Count > 0)
             {
-                <button class="header-action-btn" @onclick="ShowKnowledgeBase" title="Concepts"><span class="bi bi-journal-text"></span></button>
-                <button class="header-action-btn" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span></button>
+                @if (EmbeddedMode)
+                {
+                    <button class="header-action-btn" @onclick="NavigateToConceptsTab" title="View Concepts"><span class="bi bi-journal-text"></span></button>
+                    <button class="header-action-btn" @onclick="NavigateToVisualizeTab" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span></button>
+                }
+                else
+                {
+                    <button class="header-action-btn" @onclick="ShowKnowledgeBase" title="Concepts"><span class="bi bi-journal-text"></span></button>
+                    <button class="header-action-btn" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span></button>
+                }
             }
             @if (learnedConcepts.Count > 0 && hasStartedLearning)
             {
@@ -365,6 +373,9 @@
 // Parameters from parent page
 [Parameter] public string? StartTopic { get; set; }
 [Parameter] public bool AutoStartLesson { get; set; }
+[Parameter] public bool EmbeddedMode { get; set; }
+[Parameter] public EventCallback<string> OnNavigateToConcept { get; set; }
+[Parameter] public EventCallback<string> OnNavigateToVisualize { get; set; }
 
 private readonly List<ChatMessage> messages = new();
 private string prompt = "";
@@ -930,6 +941,52 @@ The questions should be specific to what you just taught, not generic.";
     private void CloseKnowledgeBaseExplorer()
     {
         showKnowledgeBaseExplorer = false;
+    }
+
+    /// <summary>
+    /// Navigate to Concepts tab (embedded mode)
+    /// </summary>
+    private async Task NavigateToConceptsTab()
+    {
+        if (OnNavigateToConcept.HasDelegate)
+        {
+            // Pass empty string to just switch tabs without selecting a specific concept
+            await OnNavigateToConcept.InvokeAsync("");
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Visualize tab (embedded mode)
+    /// </summary>
+    private async Task NavigateToVisualizeTab()
+    {
+        if (OnNavigateToVisualize.HasDelegate)
+        {
+            // Pass empty string to just switch tabs without selecting a specific concept
+            await OnNavigateToVisualize.InvokeAsync("");
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Concepts tab with a specific concept selected (embedded mode)
+    /// </summary>
+    private async Task NavigateToConceptById(string conceptId)
+    {
+        if (OnNavigateToConcept.HasDelegate)
+        {
+            await OnNavigateToConcept.InvokeAsync(conceptId);
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Visualize tab with a specific concept centered (embedded mode)
+    /// </summary>
+    private async Task NavigateToVisualizeById(string conceptId)
+    {
+        if (OnNavigateToVisualize.HasDelegate)
+        {
+            await OnNavigateToVisualize.InvokeAsync(conceptId);
+        }
     }
 
     /// <summary>
@@ -1672,16 +1729,8 @@ Keep track of the running score.";
 
     private string ProcessInlineMarkdown(string text)
     {
-        // Bold with clickable term link: **text**
-        // Bold text is NOT styled as a link, just the icon next to it
-        text = Regex.Replace(text, @"\*\*(.+?)\*\*", match =>
-        {
-            var term = match.Groups[1].Value;
-            var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
-            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"icon-link\"></span></a>";
-        });
-        
         // Suggested question link: __text__ - renders as a blue clickable question
+        // MUST be processed BEFORE italic to avoid _text_ matching
         text = Regex.Replace(text, @"__(.+?)__", match =>
         {
             var question = match.Groups[1].Value;
@@ -1689,9 +1738,20 @@ Keep track of the running score.";
             return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{EscapeJsString(question)}')\" title=\"Click to ask this question\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
         });
 
-        // Italic: *text* or _text_
-        text = Regex.Replace(text, @"\*(.+?)\*", "<em>$1</em>");
-        text = Regex.Replace(text, @"_(.+?)_", "<em>$1</em>");
+        // Bold with clickable term link: **text**
+        // Bold text is NOT styled as a link, just the icon next to it
+        text = Regex.Replace(text, @"\*\*(.+?)\*\*", match =>
+        {
+            var term = match.Groups[1].Value;
+            var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
+            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"bi bi-question-circle\"></span></a>";
+        });
+
+        // Italic: *text* (but NOT ** which is bold)
+        text = Regex.Replace(text, @"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", "<em>$1</em>");
+        
+        // Italic: _text_ (but NOT __ which is suggested question - only match single underscores)
+        text = Regex.Replace(text, @"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", "<em>$1</em>");
 
         // Inline code: `code`
         text = Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");

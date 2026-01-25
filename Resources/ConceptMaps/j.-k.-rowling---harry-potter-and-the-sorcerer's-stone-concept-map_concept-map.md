@@ -3,19 +3,19 @@ title: "J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map"
 id: 9684a851-bca8-4e3d-b81a-ec23c0acc055
 resource_id: 89eaab8d-cc29-4781-b1de-aa3d0ac61db8
 status: Ready
-concepts: 521
-relations: 779
+concepts: 554
+relations: 841
 created: 2026-01-24T21:37:29.3022297Z
-updated: 2026-01-24T22:00:01.1784550Z
-version: 2
+updated: 2026-01-25T06:22:41.5248660Z
+version: 11
 ---
 
 # J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map - Concept Map
 
 Concept map generated from: J. K. Rowling - Harry Potter and the Sorcerer's Stone
 
-**Total Concepts (Nodes):** 521
-**Total Relations (Edges):** 779
+**Total Concepts (Nodes):** 554
+**Total Relations (Edges):** 841
 
 ---
 
@@ -29,7 +29,7 @@ A magical pub in London that serves as a gateway between the non-magical world a
 
 **Tags:** Harry Potter, locations, magical establishments, entry points
 
-**Related:** London (Wizarding context), Pub, Magical world, Bartender, Sherry
+**Related:** London (Wizarding context), Pub, Magical world, Bartender, Sherry, Muggle world
 
 ---
 
@@ -51,7 +51,9 @@ A magical boarding school where young witches and wizards receive their educatio
 
 **Tags:** Harry Potter, locations, education, Harry Potter universe, Magic, fantasy, fiction, Harry Potter lore, fictional institution, setting, fictional school, wizarding culture
 
-**Related:** Hermione Granger, Quidditch Match, Hogwarts
+**Prerequisites:** Auror, Auror
+
+**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge
 
 ---
 
@@ -73,7 +75,7 @@ A highly intelligent and diligent Hogwarts student known for her extensive knowl
 
 **Tags:** Harry Potter, characters, Hogwarts, Harry Potter Characters, Student, Fictional Characters, character, Harry Potter series, literature, fiction, Students, Wizarding world, Hogwarts Student, Wizardry, Friendship
 
-**Related:** Hogwarts School of Witchcraft and Wizardry, Hogwarts
+**Related:** Hogwarts School of Witchcraft and Wizardry, Hogwarts, Muggle family, Bowtruckle, Four Point Spell, Integration with Magical Elements, Bowtruckle
 
 ---
 
@@ -83,7 +85,7 @@ A competitive broomstick sport played at Hogwarts where a significant confrontat
 
 **Tags:** Harry Potter, events, sports
 
-**Related:** Seeker (Quidditch role), Hogwarts School of Witchcraft and Wizardry, Quidditch team
+**Related:** Seeker (Quidditch role), Hogwarts School of Witchcraft and Wizardry, Quidditch team, Oliver Wood
 
 ---
 
@@ -107,7 +109,7 @@ The protagonist of the series, a young wizard who became famous for surviving an
 
 **Tags:** Harry Potter, characters, protagonist, character, literature, fiction, Wizardry, Hogwarts Student, fictional wizard, Harry Potter Series, fantasy, wizards
 
-**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results
+**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path
 
 ---
 
@@ -177,6 +179,8 @@ A Hogwarts Defense Against the Dark Arts professor, characterized by nervousness
 
 **Tags:** Harry Potter, characters, dark wizards, Harry Potter universe, antagonist, professors, Harry Potter lore, character, Harry Potter series, wizardry
 
+**Prerequisites:** Professor Quirrell, Professor Quirrell
+
 **Related:** Lord Voldemort, Troll Incident in Hogwarts, Hogwarts
 
 ---
@@ -189,7 +193,7 @@ Severus Snape is a Hogwarts professor whose complex motivations include a strong
 
 **Tags:** Harry Potter, characters, Hogwarts, protection, professors, Harry Potter lore, character, wizarding world, Harry Potter universe, teacher, Potions, Harry Potter series, wizardry, Hogwarts Faculty
 
-**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone
+**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution
 
 ---
 
@@ -233,7 +237,7 @@ A player position in the magical sport Quidditch, responsible for catching the G
 
 **Tags:** sports, magic, roles
 
-**Related:** Quidditch Match, Quidditch team
+**Related:** Quidditch Match, Quidditch team, Oliver Wood, Oliver Wood
 
 ---
 
@@ -257,7 +261,7 @@ The study of magical plants and fungi at Hogwarts, focusing on their care and pr
 
 **Tags:** magic, education, plants, Botany, Hogwarts, Class
 
-**Related:** Hogwarts Herbology Class
+**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle
 
 ---
 
@@ -267,7 +271,7 @@ The Hogwarts professor specializing in Herbology, responsible for teaching stude
 
 **Tags:** characters, education, herbology, professors, Harry Potter lore, Hogwarts faculty, Magic
 
-**Related:** Devil’s Snare, Hogwarts Herbology Class
+**Related:** Devil’s Snare, Hogwarts Herbology Class, Herbology
 
 ---
 
@@ -303,7 +307,9 @@ A character who serves as Keeper of Keys and Grounds at Hogwarts, known for his 
 
 **Tags:** characters, literature, Harry Potter universe, magical creatures, Harry Potter Lore, character, Hogwarts staff, Harry Potter, fiction, wizarding world, staff, magic creatures, Harry Potter series, wizarding staff, person, fantasy, supporting character, mentor
 
-**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid
+**Prerequisites:** Professor Grubbly-Plank, Maze Creatures
+
+**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures
 
 ---
 
@@ -627,7 +633,7 @@ Professor Severus Snape, a Hogwarts teacher known for his complex relationship w
 
 **Tags:** Harry Potter universe, characters, magic teaching, suspicion, character, Hogwarts staff, Harry Potter Characters, Faculty, Fictional Characters
 
-**Related:** Professor Snape
+**Related:** Professor Snape, Professor Umbridge
 
 ---
 
@@ -901,7 +907,7 @@ A chaotic and mischievous poltergeist at Hogwarts who causes trouble but is cont
 
 **Tags:** magical creature, Harry Potter universe, character, Harry Potter, magical entity, magical creatures, pranks, characters, magical beings, Hogwarts, Ghosts, supernatural, fantasy
 
-**Related:** Mr. Filch, Hogwarts
+**Related:** Mr. Filch, Hogwarts, Professor Argus Filch
 
 ---
 
@@ -5275,7 +5281,7 @@ A magical spell intended to negate or block another spell, such as Snape's attem
 
 **Prerequisites:** Quirinus Quirrell
 
-**Related:** Severus Snape
+**Related:** Severus Snape, Use of magic in the Muggle world, Unforgivable Curses, Shield Charm, Integration with Magical Elements
 
 ---
 
@@ -5819,12 +5825,336 @@ Individuals capable of performing magic, often born into magical families or pos
 
 ---
 
+#### Muggle world
+
+The non-magical world where ordinary people live, unaware of magic and wizardry.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Leaky Cauldron, Hagrid, Muggle family, Use of magic in the Muggle world
+
+---
+
+#### Muggle family
+
+A family with no magical ability or knowledge of the wizarding world.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hermione Granger, Muggle world
+
+---
+
+#### Use of magic in the Muggle world
+
+Magic is generally forbidden in the Muggle world except for very special circumstances and requires advanced skill.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Countercurse, Muggle world
+
+---
+
+#### Oliver Wood
+
+A burly fifth year student who is the captain of the Gryffindor Quidditch team and is excited to have Harry Potter as a Seeker.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Seeker (Quidditch role), Harry Potter
+
+---
+
+#### Professor Argus Filch
+
+The caretaker of Hogwarts, known for being strict and unfriendly, with a cat named Mrs. Norris that patrols the school corridors.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Peeves
+
+---
+
+#### Professor Quirrell
+
+The Defense Against the Dark Arts teacher whose lessons are considered a joke; notably wears a turban said to ward off vampires and has a garlic smell.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Oliver Wood
+
+Oliver Wood is a fifth year student who becomes the Seeker trainer and is impressed by Harry’s natural talent on a broomstick.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Seeker (Quidditch role), Quidditch Match
+
+---
+
+#### Professor Flitwick
+
+Professor Flitwick is the Charms teacher at Hogwarts, described as a tiny wizard who is excited by Harry's presence.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Professor Binns
+
+Professor Binns is the History of Magic teacher at Hogwarts, a ghost who drones on with lectures dull enough to confuse students.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Peeves
+
+Peeves is a poltergeist at Hogwarts known for causing mayhem, throwing chalk, and harassing students and staff.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Auror
+
+A difficult and prestigious career in magical law enforcement requiring top academic grades, specific subjects, and stringent character and aptitude tests.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Defence Against the Dark Arts Ministry-approved Curriculum
+
+A structured, theory-centred course of defensive magic approved by the Ministry of Magic aimed at improving student skills and knowledge in defensive magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Professor Umbridge
+
+---
+
+#### Unforgivable Curses
+
+Three extremely dark curses—Avada Kedavra, Imperius, and Cruciatus—that are illegal to use on humans and result in a life sentence in Azkaban if performed.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Countercurse
+
+---
+
+#### Professor Umbridge
+
+A Ministry-appointed Hogwarts professor introducing a restrictive and standardized Defence Against the Dark Arts curriculum, known for her interfering and authoritarian style.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Severus Snape, Defence Against the Dark Arts Ministry-approved Curriculum
+
+---
+
+#### Professor Grubbly-Plank
+
+A temporary Hogwarts Care of Magical Creatures instructor covering magical creatures important for O.W.L.s in absence of Professor Hagrid.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Herbology, Hagrid
+
+---
+
+#### Strengthening Solution
+
+A potion taught at Hogwarts which, according to Umbridge, might be considered inadvisable for students to learn due to Ministry concerns.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry, Severus Snape
+
+---
+
+#### Temporary Caretaking of Magical Creatures
+
+Professor Grubbly-Plank temporarily took over Hagrid’s teaching duties during his leave of absence, covering magical creatures frequently found on the O.W.L. exam.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid
+
+---
+
+#### Bowtruckle
+
+A small tree-guardian creature living in wand-quality trees that feeds on woodlice and fairy eggs and can defend itself by gouging eyes with sharp fingers.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Herbology, Hermione Granger
+
+---
+
+#### Defensive Magical Theory by Wilbert Slinkhard
+
+A Ministry-approved Defense Against the Dark Arts textbook used in Hogwarts to teach principles and context for defensive magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Course Aims for Defence Against the Dark Arts by Umbridge
+
+---
+
+#### Course Aims for Defence Against the Dark Arts by Umbridge
+
+The course aims include understanding defensive magic principles, recognizing legal use cases, and applying defense practically, with a structured Ministry-approved approach.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Defensive Magical Theory by Wilbert Slinkhard
+
+---
+
+#### Auror Career Path
+
+A challenging career in magical law enforcement requiring top grades, five N.E.W.T.s with no marks under 'Exceeds Expectations', and passing stringent aptitude and character tests at the Auror office.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter
+
+---
+
+#### Hogwarts Curriculum Disruptions
+
+Refers to the frequent changing of Defense Against the Dark Arts teachers leading to inconsistent teaching and the Ministry's intervention to enforce a structured, theory-centered curriculum.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Professor Umbridge
+
+A Ministry-appointed Hogwarts instructor for Defence Against the Dark Arts who enforces a rigid, theory-based curriculum and is known for her strict, controlling teaching style.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Snape, Hogwarts School of Witchcraft and Wizardry, Defensive Magical Theory by Wilbert Slinkhard
+
+---
+
+#### Defensive Magical Theory by Wilbert Slinkhard
+
+A Ministry-approved theoretical textbook prescribed in Professor Umbridge's Defence Against the Dark Arts curriculum.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Professor Umbridge
+
+---
+
+#### Unforgivable Curses
+
+A trio of highly dangerous curses — Avada Kedavra, Imperius, and Cruciatus — whose use on humans is punishable by a life sentence in Azkaban, taught to prepare students for their threat.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Impediment Curse
+
+A spell to slow down and obstruct attackers, useful for defensive magical training.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Reductor Curse
+
+---
+
+#### Reductor Curse
+
+A spell that enables the caster to blast solid objects out of the way, useful for overcoming physical barriers.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Impediment Curse
+
+---
+
+#### Four Point Spell
+
+A spell that causes the wand to point due north, helping with orientation inside the maze.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hermione Granger
+
+---
+
+#### Shield Charm
+
+A temporary, invisible wall around the caster that deflects minor curses but can be broken by other hexes.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Countercurse
+
+---
+
+#### Integration with Magical Elements
+
+A concept referring to how various magical components and spells work together or are combined in practice, enhancing magical capabilities and problem-solving in challenging situations.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hermione Granger, Countercurse
+
+---
+
+#### Blast-Ended Skrewt
+
+A magical creature known for being unpleasant and dangerous; Hagrid planned to feature them in a zoological column.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid, Maze Creatures
+
+---
+
+#### Bowtruckle
+
+A small, tree-guardian magical creature that lives in wand-quality trees and eats woodlice and fairy eggs; known to gouge at eyes if angered.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Herbology, Hagrid, Hermione Granger
+
+---
+
+#### Maze Creatures
+
+Various magical creatures provided by Hagrid to serve as obstacles inside the maze for the Triwizard Tournament’s third task.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid, Blast-Ended Skrewt
+
+---
+
 ## Relationships
 
 | Source | Relationship | Target |
 |--------|--------------|--------|
 | Alohomora Charm | → requires | Winged Keys |
 | Anti-Cheating spell | → requires | Exams at Hogwarts |
+| Auror | → requires | Hogwarts School of Witchcraft and Wizardry |
+| Auror | → requires | Hogwarts School of Witchcraft and Wizardry |
 | Beater | → requires | Quidditch trials |
 | Broomstick | → requires | Flying Lessons |
 | Broomstick Malfunction | → requires | Jinxing |
@@ -5855,10 +6185,14 @@ Individuals capable of performing magic, often born into magical families or pos
 | Magical Barrier between Platforms Nine and Ten | → requires | Wrought Iron Archway at Platform Nine and Three-Quarters |
 | Magical creature care | → requires | Hagrid's Flute |
 | Magical creature care | → requires | Dragon bite infection |
+| Maze Creatures | → requires | Hagrid |
 | Mirror of Erised | → requires | Sorcerer's Stone |
 | Password (to Gryffindor Common Room) | → requires | Gryffindor Common Room |
 | Platform Nine and Three-Quarters | → requires | Hogwarts Express |
 | Potions Class | → requires | Wolfsbane |
+| Professor Grubbly-Plank | → requires | Hagrid |
+| Professor Quirrell | → requires | Quirinus Quirrell |
+| Professor Quirrell | → requires | Quirinus Quirrell |
 | Quidditch Match | → requires | Broomsticks |
 | Quidditch Penalty (Free Shot) | → requires | Foul (in Quidditch) |
 | Quirinus Quirrell | → requires | Countercurse |
@@ -5884,6 +6218,7 @@ Individuals capable of performing magic, often born into magical families or pos
 | Argus Filch | ↔ related to | Secret Passageways |
 | Astrology (in Centaur Context) | ↔ related to | Centaur |
 | Aunt Petunia | ↔ related to | The Dursleys |
+| Auror Career Path | ↔ related to | Harry Potter |
 | Baggy Clothes and Taped Glasses | ↔ related to | The Dursleys |
 | Bane (Centaur) | ↔ related to | Magic Creatures |
 | Bangs | ↔ related to | Harry's Scar |
@@ -5896,6 +6231,8 @@ Individuals capable of performing magic, often born into magical families or pos
 | Birthday presents | ↔ related to | Dudley’s Second Bedroom |
 | Black and Purple Flames | ↔ related to | Potions Riddle |
 | Black and Purple Flames | ↔ related to | Hogwarts Teachers' Protection of the Sorcerer's Stone |
+| Blast-Ended Skrewt | ↔ related to | Hagrid |
+| Blast-Ended Skrewt | ↔ related to | Maze Creatures |
 | Bloody Baron | ↔ related to | Ghosts at Hogwarts |
 | Bludger | ↔ related to | House Championship |
 | Bludger | ↔ related to | Quidditch |
@@ -5907,6 +6244,13 @@ Individuals capable of performing magic, often born into magical families or pos
 | Bodyguards | ↔ related to | Draco Malfoy |
 | Boiled Down Magic Concept: Curse | ↔ related to | Dark Magic |
 | Boils | ↔ related to | Potions Class |
+| Bowtruckle | ↔ related to | Herbology |
+| Bowtruckle | ↔ related to | Hermione Granger |
+| Bowtruckle | ↔ related to | Herbology |
+| Bowtruckle | ↔ related to | Herbology |
+| Bowtruckle | ↔ related to | Hagrid |
+| Bowtruckle | ↔ related to | Hermione Granger |
+| Bowtruckle | ↔ related to | Herbology |
 | Brass Scales | ↔ related to | Glass or Crystal Phials |
 | Brass Scales | ↔ related to | Potions Class |
 | Bravery | ↔ related to | Hogwarts Houses |
@@ -5971,7 +6315,9 @@ Individuals capable of performing magic, often born into magical families or pos
 | Dark Magic | ↔ related to | Restricted Section |
 | Dark wizard | ↔ related to | Dark Magic |
 | Dark Wizards | ↔ related to | Dark Magic |
+| Defence Against the Dark Arts Ministry-approved Curriculum | ↔ related to | Professor Umbridge |
 | Defense Against the Dark Arts | ↔ related to | Dark Magic |
+| Defensive Magical Theory by Wilbert Slinkhard | ↔ related to | Course Aims for Defence Against the Dark Arts by Umbridge |
 | Desserts at Hogwarts feast | ↔ related to | Banquet at Hogwarts |
 | Devil's Snare | ↔ related to | Hagrid |
 | Devil's Snare | ↔ related to | Devil’s Snare |
@@ -6049,6 +6395,8 @@ Individuals capable of performing magic, often born into magical families or pos
 | Fortune telling | ↔ related to | History of Magic |
 | Fortune telling | ↔ related to | Hogwarts |
 | Foul (in Quidditch) | ↔ related to | Quidditch fouls |
+| Four Point Spell | ↔ related to | Hermione Granger |
+| Four Point Spell | ↔ related to | Hermione Granger |
 | Four-legged stool | ↔ related to | Sorting Ceremony |
 | Four-poster Bed | ↔ related to | Gryffindor Common Room |
 | Four-poster Bed | ↔ related to | Hogwarts |
@@ -6143,6 +6491,11 @@ Individuals capable of performing magic, often born into magical families or pos
 | Houses of Hogwarts | ↔ related to | Hogwarts |
 | Hufflepuff | ↔ related to | Hogwarts Houses |
 | Ignoring a Letter | ↔ related to | Rubeus Hagrid |
+| Impediment Curse | ↔ related to | Reductor Curse |
+| Integration with Magical Elements | ↔ related to | Hermione Granger |
+| Integration with Magical Elements | ↔ related to | Countercurse |
+| Integration with Magical Elements | ↔ related to | Hermione Granger |
+| Integration with Magical Elements | ↔ related to | Countercurse |
 | J. K. Rowling | ↔ related to | Harry Potter |
 | Jellybeans (Every Flavor Beans) | ↔ related to | Hogwarts |
 | Jim McGuffin | ↔ related to | Shooting Stars |
@@ -6203,6 +6556,7 @@ Individuals capable of performing magic, often born into magical families or pos
 | Mars (Celestial Observation) | ↔ related to | Jupiter's Moons |
 | Mars (Celestial Observation) | ↔ related to | Astronomy Tower |
 | Mars Bars | ↔ related to | Hogwarts |
+| Maze Creatures | ↔ related to | Hagrid |
 | Mimblewimble | ↔ related to | Dark Magic |
 | Minerva McGonagall | ↔ related to | Professor McGonagall |
 | Ministry of Magic | ↔ related to | Magical world |
@@ -6219,7 +6573,12 @@ Individuals capable of performing magic, often born into magical families or pos
 | Mrs. Figg | ↔ related to | The Dursleys |
 | Mrs. Figg | ↔ related to | Muggle Families |
 | Muggle Families | ↔ related to | Muggles |
+| Muggle family | ↔ related to | Hermione Granger |
+| Muggle family | ↔ related to | Muggle world |
+| Muggle family | ↔ related to | Hermione Granger |
 | Muggle world | ↔ related to | Muggles |
+| Muggle world | ↔ related to | Leaky Cauldron |
+| Muggle world | ↔ related to | Hagrid |
 | Muggles | ↔ related to | Hogwarts |
 | Music at Hogwarts | ↔ related to | Hogwarts |
 | Nailing Up the Mail Slot | ↔ related to | The Dursleys |
@@ -6240,6 +6599,12 @@ Individuals capable of performing magic, often born into magical families or pos
 | Norwegian Ridgeback | ↔ related to | Hogwarts Herbology Class |
 | Oak Wand | ↔ related to | Rubeus Hagrid |
 | Oliver Wood | ↔ related to | Gryffindor |
+| Oliver Wood | ↔ related to | Seeker (Quidditch role) |
+| Oliver Wood | ↔ related to | Harry Potter |
+| Oliver Wood | ↔ related to | Seeker (Quidditch role) |
+| Oliver Wood | ↔ related to | Seeker (Quidditch role) |
+| Oliver Wood | ↔ related to | Quidditch Match |
+| Oliver Wood | ↔ related to | Seeker (Quidditch role) |
 | Ollivander’s Wand Shop | ↔ related to | Magical Substance (Wand Core) |
 | Ollivanders | ↔ related to | Magical Substance (Wand Core) |
 | Ollivanders | ↔ related to | Willow Wand |
@@ -6254,6 +6619,7 @@ Individuals capable of performing magic, often born into magical families or pos
 | Owls in Harry Potter | ↔ related to | Owl Post |
 | Password | ↔ related to | Fat Lady Portrait |
 | Peeves | ↔ related to | Hogwarts |
+| Peeves | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Peeves the Poltergeist | ↔ related to | Weasley Twins |
 | Peeves the Poltergeist | ↔ related to | Ghosts at Hogwarts |
 | Philosophy on Death by Dumbledore | ↔ related to | Dumbledore |
@@ -6282,16 +6648,28 @@ Individuals capable of performing magic, often born into magical families or pos
 | Privet Drive | ↔ related to | Muggle Families |
 | Privet Drive Cat | ↔ related to | Muggle Families |
 | Privilege Drive | ↔ related to | Muggle Families |
+| Professor Argus Filch | ↔ related to | Peeves |
+| Professor Argus Filch | ↔ related to | Peeves |
 | Professor Binns | ↔ related to | Magic Class Subjects at Hogwarts |
 | Professor Binns | ↔ related to | Hogwarts |
+| Professor Binns | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Professor Dumbledore | ↔ related to | High Table |
 | Professor Dumbledore | ↔ related to | Dumbledore |
+| Professor Flitwick | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Professor Grubbly-Plank | ↔ related to | Herbology |
+| Professor Grubbly-Plank | ↔ related to | Hagrid |
+| Professor Grubbly-Plank | ↔ related to | Herbology |
 | Professor Quirrell | ↔ related to | Body Bind Curse |
 | Professor Quirrell | ↔ related to | Hogwarts |
 | Professor Quirrell's Turban | ↔ related to | Defense Against the Dark Arts |
 | Professor Quirrell's Turban | ↔ related to | Hogwarts Teachers' Protection of the Sorcerer's Stone |
 | Professor Snape | ↔ related to | Hogwarts |
 | Professor Sprout | ↔ related to | Hogwarts Herbology Class |
+| Professor Sprout | ↔ related to | Herbology |
+| Professor Umbridge | ↔ related to | Severus Snape |
+| Professor Umbridge | ↔ related to | Snape |
+| Professor Umbridge | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Professor Umbridge | ↔ related to | Defensive Magical Theory by Wilbert Slinkhard |
 | Protective Gloves (Dragon Hide) | ↔ related to | Rubeus Hagrid |
 | Pub | ↔ related to | Leaky Cauldron |
 | Pumpkin Pasties | ↔ related to | Hogwarts |
@@ -6336,6 +6714,8 @@ Individuals capable of performing magic, often born into magical families or pos
 | Severus Snape | ↔ related to | Hogwarts Teachers' Protection of the Sorcerer's Stone |
 | Sherry | ↔ related to | Pub |
 | Sherry | ↔ related to | Leaky Cauldron |
+| Shield Charm | ↔ related to | Countercurse |
+| Shield Charm | ↔ related to | Countercurse |
 | Shooting Stars | ↔ related to | Owls Flying by Daylight |
 | Shooting Stars | ↔ related to | Jim McGuffin |
 | Sickles | ↔ related to | Wizarding Currency |
@@ -6373,8 +6753,12 @@ Individuals capable of performing magic, often born into magical families or pos
 | Stealth and Secrecy in Magical Operations | ↔ related to | Harry Potter |
 | Stonewall High | ↔ related to | The Dursleys |
 | Stranger | ↔ related to | Rubeus Hagrid |
+| Strengthening Solution | ↔ related to | Severus Snape |
+| Strengthening Solution | ↔ related to | Severus Snape |
 | Switching Spells | ↔ related to | Hogwarts |
 | Telescope | ↔ related to | Magical world |
+| Temporary Caretaking of Magical Creatures | ↔ related to | Hagrid |
+| Temporary Caretaking of Magical Creatures | ↔ related to | Hagrid |
 | The Boy Who Lived | ↔ related to | Harry Potter |
 | The Dark Forces: A Guide to Self Protection | ↔ related to | Dark Magic |
 | The Dursleys | ↔ related to | Muggle Families |
@@ -6396,15 +6780,20 @@ Individuals capable of performing magic, often born into magical families or pos
 | Tracking via Magical Indicators | ↔ related to | Green and Red Sparks Signal |
 | Tracking via Magical Indicators | ↔ related to | Rubeus Hagrid |
 | Transfiguration | ↔ related to | Professor McGonagall |
+| Transfiguration | ↔ related to | Professor McGonagall |
 | Trapdoor | ↔ related to | Hogwarts Teachers' Protection of the Sorcerer's Stone |
 | Troll Incident in Hogwarts | ↔ related to | Quirinus Quirrell |
 | Troll Incident in Hogwarts | ↔ related to | Hogwarts |
 | Trophy Room | ↔ related to | House Cup |
 | Underground | ↔ related to | London (Wizarding context) |
+| Unforgivable Curses | ↔ related to | Countercurse |
+| Unforgivable Curses | ↔ related to | Countercurse |
 | Unicorn | ↔ related to | Hogwarts Herbology Class |
 | Unicorn Blood | ↔ related to | Curse of Drinking Unicorn Blood |
 | Unicorn Blood | ↔ related to | Dark Magic |
 | Unicorn Hair | ↔ related to | Magical Substance (Wand Core) |
+| Use of magic in the Muggle world | ↔ related to | Countercurse |
+| Use of magic in the Muggle world | ↔ related to | Muggle world |
 | Vampires | ↔ related to | Professor Quirrell |
 | Vault seven hundred and thirteen | ↔ related to | Gringotts Break-in |
 | Velvety Black Ceiling | ↔ related to | Hogwarts |
@@ -6512,6 +6901,7 @@ Individuals capable of performing magic, often born into magical families or pos
 | Smeltings Uniform | ⊃ contains | Smeltings |
 | Sorting Ceremony | ⊃ contains | Four-legged stool |
 | Spell | ⊃ contains | Jinx |
+| Strengthening Solution | ⊃ contains | Hogwarts School of Witchcraft and Wizardry |
 | The Sorcerer’s Stone | ⊃ contains | Elixir of Life |
 | Trapdoor | ⊃ contains | Third floor corridor |
 | Wizarding Course Books | ⊃ contains | The Standard Book of Spells (Grade 1) |

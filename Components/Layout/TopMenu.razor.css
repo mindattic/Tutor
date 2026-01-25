@@ -46,10 +46,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0;
-    color: #000000 !important;
+    padding: 8px 12px;
+    color: #666666 !important;
     text-decoration: none !important;
     font-size: 0.9rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
 .top-nav-link .bi {
@@ -57,12 +59,19 @@
 }
 
 .top-nav-link:hover {
-    color: #000000 !important;
+    color: #333333 !important;
+    background: #f5f5f5;
     text-decoration: none !important;
 }
 
 .top-nav-link.active {
-    color: #000000 !important;
+    color: var(--accent-primary, #1b6ec2) !important;
+    background: rgba(27, 110, 194, 0.1);
+    font-weight: 500;
+}
+
+.top-nav-link.active .bi {
+    color: var(--accent-primary, #1b6ec2);
 }
 
 /* Profile Menu */
@@ -164,4 +173,58 @@
     .top-nav-link span:not(.bi) {
         display: none;
     }
+}
+
+/* Dark theme support */
+:global([data-theme="Dark"]) .top-menu {
+    background: var(--bg-secondary, #1a1a2e);
+    border-bottom-color: var(--border-color, #2a2a3e);
+}
+
+:global([data-theme="Dark"]) .brand-link {
+    color: var(--text-primary, #e0e0e0) !important;
+}
+
+:global([data-theme="Dark"]) .top-nav-link {
+    color: var(--text-secondary, #a0a0a0) !important;
+}
+
+:global([data-theme="Dark"]) .top-nav-link:hover {
+    color: var(--text-primary, #e0e0e0) !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="Dark"]) .top-nav-link.active {
+    color: var(--accent-primary, #4dabf7) !important;
+    background: rgba(77, 171, 247, 0.15);
+}
+
+:global([data-theme="Dark"]) .profile-avatar {
+    background: var(--bg-tertiary, #252540);
+}
+
+:global([data-theme="Dark"]) .profile-avatar:hover {
+    background: var(--bg-primary, #16162a);
+}
+
+:global([data-theme="Dark"]) .profile-avatar .bi {
+    color: var(--text-primary, #e0e0e0);
+}
+
+:global([data-theme="Dark"]) .profile-dropdown {
+    background: var(--bg-primary, #16162a);
+    border-color: var(--border-color, #2a2a3e);
+}
+
+:global([data-theme="Dark"]) .dropdown-item {
+    color: var(--text-primary, #e0e0e0) !important;
+}
+
+:global([data-theme="Dark"]) .dropdown-item:hover {
+    background: var(--bg-secondary, #1a1a2e);
+    color: var(--text-primary, #e0e0e0) !important;
+}
+
+:global([data-theme="Dark"]) .dropdown-divider {
+    background: var(--border-color, #2a2a3e);
 }

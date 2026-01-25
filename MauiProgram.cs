@@ -130,6 +130,15 @@ namespace Tutor
                 client.Timeout = TimeSpan.FromMinutes(3);
             });
 
+            // Concept merge service (detects and merges duplicate/similar concepts)
+            builder.Services.AddHttpClient<ConceptMergeService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(3);
+            });
+
+            // Course ConceptMap service (manages course-specific merged maps)
+            builder.Services.AddSingleton<CourseConceptMapService>();
+
             // Course structure service (generates learning path from ConceptMap) (with extended timeout)
             builder.Services.AddHttpClient<CourseStructureService>(client =>
             {

@@ -216,3 +216,205 @@ public class LoadedConceptMapCollection
         return (nodes, links);
     }
 }
+
+/// <summary>
+/// Represents a course-specific merged view of ConceptMaps.
+/// 
+/// This is stored SEPARATELY from the original resource ConceptMaps.
+/// When you add resources to a course, their ConceptMaps are COPIED into this merged map.
+/// Deduplication and merging only affects this course-specific copy, NOT the originals.
+/// 
+/// This allows:
+/// - Each course to have its own deduplicated concept graph
+/// - Original resource ConceptMaps to remain unchanged
+/// - Resources to be shared across courses with different merge decisions
+/// </summary>
+public class MergedCourseConceptMap
+{
+    /// <summary>
+    /// Unique identifier (usually same as Course.Id for easy lookup).
+    /// </summary>
+    public string Id { get; set; } = "";
+
+    /// <summary>
+    /// The Course ID this merged map belongs to.
+    /// </summary>
+    public string CourseId { get; set; } = "";
+
+    /// <summary>
+    /// The merged/deduplicated concepts from all resources in the course.
+    /// </summary>
+    public List<Concept> Concepts { get; set; } = [];
+
+    /// <summary>
+    /// The merged/deduplicated relationships.
+    /// </summary>
+    public List<ConceptRelationship> Relations { get; set; } = [];
+
+    /// <summary>
+    /// IDs of the source ConceptMaps that were merged into this.
+    /// Used to detect when we need to rebuild (if a source changes).
+    /// </summary>
+    public List<string> SourceConceptMapIds { get; set; } = [];
+
+    /// <summary>
+    /// Tracking which concept pairs have been merged (for audit/undo).
+    /// Maps removed concept ID to the canonical concept ID it was merged into.
+    /// </summary>
+    public Dictionary<string, string> MergedConceptMapping { get; set; } = [];
+
+    /// <summary>
+    /// When this merged map was created.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// When this merged map was last updated.
+    /// </summary>
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Status of the merged map.
+    /// </summary>
+    public MergedMapStatus Status { get; set; } = MergedMapStatus.NotBuilt;
+
+    /// <summary>
+    /// Total concept count in the merged map.
+    /// </summary>
+    public int TotalConcepts => Concepts.Count;
+
+    /// <summary>
+    /// Total relationship count in the merged map.
+    /// </summary>
+    public int TotalRelations => Relations.Count;
+
+    /// <summary>
+    /// Gets a concept by ID.
+    /// </summary>
+    public Concept? GetConcept(string conceptId)
+    {
+        return Concepts.FirstOrDefault(c => c.Id == conceptId);
+    }
+
+    /// <summary>
+    /// Gets a concept by title (case-insensitive).
+    /// </summary>
+    public Concept? GetConceptByTitle(string title)
+    {
+        return Concepts.FirstOrDefault(c =>
+            c.Title.Equals(title, StringComparison.OrdinalIgnoreCase) ||
+            c.Aliases.Any(a => a.Equals(title, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// Creates a deep copy of concepts and relations from source ConceptMaps.
+    /// </summary>
+    public void InitializeFromConceptMaps(IEnumerable<ConceptMap> sourceMaps)
+    {
+        Concepts.Clear();
+        Relations.Clear();
+        SourceConceptMapIds.Clear();
+        MergedConceptMapping.Clear();
+
+        foreach (var sourceMap in sourceMaps)
+        {
+            SourceConceptMapIds.Add(sourceMap.Id);
+
+            // Deep copy concepts
+            foreach (var concept in sourceMap.Concepts)
+            {
+                Concepts.Add(new Concept
+                {
+                    Id = concept.Id,
+                    Title = concept.Title,
+                    Summary = concept.Summary,
+                    Content = concept.Content,
+                    Aliases = [..concept.Aliases],
+                    Tags = [..concept.Tags],
+                    PrerequisiteIds = [..concept.PrerequisiteIds],
+                    RelatedIds = [..concept.RelatedIds],
+                    ConceptMapId = concept.ConceptMapId,
+                    SourceResourceIds = [..concept.SourceResourceIds],
+                    ConfidenceScore = concept.ConfidenceScore,
+                    CreatedAt = concept.CreatedAt,
+                    UpdatedAt = concept.UpdatedAt
+                });
+            }
+
+            // Deep copy relations
+            foreach (var rel in sourceMap.Relations)
+            {
+                Relations.Add(new ConceptRelationship
+                {
+                    Id = rel.Id,
+                    SourceConceptId = rel.SourceConceptId,
+                    TargetConceptId = rel.TargetConceptId,
+                    RelationType = rel.RelationType,
+                    ConfidenceScore = rel.ConfidenceScore,
+                    SemanticSimilarity = rel.SemanticSimilarity,
+                    SemanticDistance = rel.SemanticDistance,
+                    LexicalDistance = rel.LexicalDistance,
+                    CoOccurrenceCount = rel.CoOccurrenceCount,
+                    EvidenceResourceIds = [..rel.EvidenceResourceIds],
+                    EvidenceChunkIds = [..rel.EvidenceChunkIds]
+                });
+            }
+        }
+
+        Status = MergedMapStatus.Ready;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Prepares data for D3.js force layout visualization.
+    /// </summary>
+    public (object[] nodes, object[] links) GetForceLayoutData()
+    {
+        var nodes = Concepts.Select(c => new
+        {
+            id = c.Id,
+            title = c.Title,
+            group = c.Tags.FirstOrDefault() ?? "default"
+        }).ToArray();
+
+        var links = Relations.Select(r => new
+        {
+            source = r.SourceConceptId,
+            target = r.TargetConceptId,
+            type = r.RelationType.ToString()
+        }).ToArray();
+
+        return (nodes, links);
+    }
+}
+
+/// <summary>
+/// Status of a merged course concept map.
+/// </summary>
+public enum MergedMapStatus
+{
+    /// <summary>
+    /// Not yet built.
+    /// </summary>
+    NotBuilt,
+
+    /// <summary>
+    /// Currently being built.
+    /// </summary>
+    Building,
+
+    /// <summary>
+    /// Ready for use.
+    /// </summary>
+    Ready,
+
+    /// <summary>
+    /// Needs rebuild (source maps changed).
+    /// </summary>
+    NeedsRebuild,
+
+    /// <summary>
+    /// Build failed.
+    /// </summary>
+    Failed
+}

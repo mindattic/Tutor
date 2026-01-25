@@ -1,0 +1,207 @@
+@using Tutor.Models
+@using Tutor.Services
+@inject CourseService CourseService
+@inject ConceptMapStorageService ConceptMapStorageService
+@implements IDisposable
+
+<div class="learn-tabs-container">
+    @* Tab Header *@
+    <div class="learn-tabs-header">
+        <div class="learn-tabs-bar">
+            <button class="learn-tab @(activeTab == LearnTab.Chat ? "active" : "")" 
+                    @onclick="() => SwitchTab(LearnTab.Chat)">
+                <span class="bi bi-chat-dots"></span>
+                <span class="tab-label">Chat</span>
+            </button>
+            <button class="learn-tab @(activeTab == LearnTab.Concepts ? "active" : "")" 
+                    @onclick="() => SwitchTab(LearnTab.Concepts)">
+                <span class="bi bi-journal-text"></span>
+                <span class="tab-label">Concepts</span>
+                @if (conceptCount > 0)
+                {
+                    <span class="tab-badge">@conceptCount</span>
+                }
+            </button>
+            <button class="learn-tab @(activeTab == LearnTab.Visualize ? "active" : "")" 
+                    @onclick="() => SwitchTab(LearnTab.Visualize)">
+                <span class="bi bi-diagram-3"></span>
+                <span class="tab-label">Visualize</span>
+            </button>
+        </div>
+        @if (activeCourse != null)
+        {
+            <div class="learn-tabs-course">
+                <span class="bi bi-book"></span>
+                <span>@activeCourse.Name</span>
+            </div>
+        }
+    </div>
+
+    @* Tab Content *@
+    <div class="learn-tabs-content">
+        @switch (activeTab)
+        {
+            case LearnTab.Chat:
+                <div class="tab-panel chat-panel">
+                    <Chat @ref="chatComponent" 
+                          StartTopic="@pendingChatTopic" 
+                          AutoStartLesson="@autoStartLesson"
+                          EmbeddedMode="true"
+                          OnNavigateToConcept="HandleNavigateToConcept"
+                          OnNavigateToVisualize="HandleNavigateToVisualize" />
+                </div>
+                break;
+                
+            case LearnTab.Concepts:
+                <div class="tab-panel concepts-panel">
+                    <ConceptsTab CourseId="@activeCourse?.Id"
+                                 LearnedConcepts="@learnedConcepts"
+                                 SelectedConceptId="@selectedConceptId"
+                                 OnAskAboutConcept="HandleAskAboutConcept"
+                                 OnVisualizeConcept="HandleVisualizeConcept" />
+                </div>
+                break;
+                
+            case LearnTab.Visualize:
+                <div class="tab-panel visualize-panel">
+                    <ConceptMapCollectionGraph CourseId="@activeCourse?.Id"
+                                               SelectedConceptId="@selectedConceptId"
+                                               EmbeddedMode="true"
+                                               OnAskAboutConcept="HandleAskAboutConceptFromGraph"
+                                               OnViewConceptDetails="HandleViewConceptDetails" />
+                </div>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? StartTopic { get; set; }
+    [Parameter] public bool AutoStartLesson { get; set; }
+
+    private LearnTab activeTab = LearnTab.Chat;
+    private Course? activeCourse;
+    private Chat? chatComponent;
+    private int conceptCount;
+    private HashSet<string> learnedConcepts = [];
+    private string? selectedConceptId;
+    private string? pendingChatTopic;
+    private bool autoStartLesson;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeCourse = await CourseService.GetActiveCourseAsync();
+        pendingChatTopic = StartTopic;
+        autoStartLesson = AutoStartLesson;
+        
+        await LoadConceptCount();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (StartTopic != pendingChatTopic)
+        {
+            pendingChatTopic = StartTopic;
+        }
+        autoStartLesson = AutoStartLesson;
+    }
+
+    private async Task LoadConceptCount()
+    {
+        if (activeCourse == null) return;
+
+        conceptCount = 0;
+        var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(activeCourse.Id);
+        foreach (var cmId in conceptMapIds)
+        {
+            var cm = await ConceptMapStorageService.LoadAsync(cmId);
+            if (cm != null && cm.Status == ConceptMapStatus.Ready)
+            {
+                conceptCount += cm.Concepts.Count;
+            }
+        }
+    }
+
+    private void SwitchTab(LearnTab tab)
+    {
+        activeTab = tab;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Navigate from Chat to Concepts tab, selecting the specified concept
+    /// </summary>
+    private void HandleNavigateToConcept(string conceptId)
+    {
+        selectedConceptId = conceptId;
+        SwitchTab(LearnTab.Concepts);
+    }
+
+    /// <summary>
+    /// Navigate from Chat to Visualize tab, centering on the specified concept
+    /// </summary>
+    private void HandleNavigateToVisualize(string conceptId)
+    {
+        selectedConceptId = conceptId;
+        SwitchTab(LearnTab.Visualize);
+    }
+
+    /// <summary>
+    /// Navigate from Concepts to Chat tab, starting a conversation about the concept
+    /// </summary>
+    private void HandleAskAboutConcept(string conceptTitle)
+    {
+        pendingChatTopic = conceptTitle;
+        autoStartLesson = true;
+        SwitchTab(LearnTab.Chat);
+    }
+
+    /// <summary>
+    /// Navigate from Concepts to Visualize tab, centering on the specified concept
+    /// </summary>
+    private void HandleVisualizeConcept(string conceptId)
+    {
+        selectedConceptId = conceptId;
+        SwitchTab(LearnTab.Visualize);
+    }
+
+    /// <summary>
+    /// Navigate from Visualize to Chat tab, starting a conversation about the concept
+    /// </summary>
+    private void HandleAskAboutConceptFromGraph(string conceptTitle)
+    {
+        pendingChatTopic = conceptTitle;
+        autoStartLesson = true;
+        SwitchTab(LearnTab.Chat);
+    }
+
+    /// <summary>
+    /// Navigate from Visualize to Concepts tab, selecting the specified concept
+    /// </summary>
+    private void HandleViewConceptDetails(string conceptId)
+    {
+        selectedConceptId = conceptId;
+        SwitchTab(LearnTab.Concepts);
+    }
+
+    /// <summary>
+    /// Called by Chat component when concepts are learned
+    /// </summary>
+    public void UpdateLearnedConcepts(HashSet<string> concepts)
+    {
+        learnedConcepts = concepts;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+
+    public enum LearnTab
+    {
+        Chat,
+        Concepts,
+        Visualize
+    }
+}

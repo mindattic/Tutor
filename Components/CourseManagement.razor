@@ -6,6 +6,9 @@
 @inject ResourceProcessingService ProcessingService
 @inject ConceptMapService ConceptMapService
 @inject ConceptMapStorageService ConceptMapStorageService
+@inject ConceptMergeService ConceptMergeService
+@inject CourseConceptMapService CourseConceptMapService
+@inject ConceptMapCollectionService ConceptMapCollectionService
 @inject SettingsService Settings
 @inject IJSRuntime JS
 @implements IDisposable
@@ -123,18 +126,100 @@
                         <div class="kb-actions">
                             @if (resourcesWithKb > 0)
                             {
-                                <button class="settings-btn small" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Maps">
-                                    <span class="bi bi-diagram-3"></span>
-                                    Visualize
+                                <button class="settings-btn small @(isMergingDuplicates ? "processing" : "")" 
+                                        @onclick="MergeDuplicatesAsync" 
+                                        disabled="@isMergingDuplicates"
+                                        title="Find and merge duplicate concepts across resources">
+                                    @if (isMergingDuplicates)
+                                    {
+                                        <span class="spinner-small"></span>
+                                        <span>Merging...</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bi bi-layers"></span>
+                                        <span>Merge Duplicates</span>
+                                    }
                                 </button>
                             }
                         </div>
                     </div>
+                    @* Merge Progress Bar *@
+                    @if (isMergingDuplicates && !string.IsNullOrEmpty(mergeProgressMessage))
+                    {
+                        <div class="merge-progress-container">
+                            <div class="merge-progress-bar">
+                                <div class="merge-progress-fill" style="width: @mergeProgressPercent%"></div>
+                            </div>
+                            <div class="merge-progress-status">
+                                <span class="bi bi-hourglass-split"></span>
+                                <span>@mergeProgressMessage</span>
+                            </div>
+                        </div>
+                    }
                     @if (!string.IsNullOrEmpty(kbErrorMessage))
                     {
                         <div class="kb-error">
                             <span class="bi bi-exclamation-triangle"></span>
                             <span>@kbErrorMessage</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(mergeResultMessage))
+                    {
+                        <div class="merge-result @(mergeResultSuccess ? "success" : "info")">
+                            <span class="bi @(mergeResultSuccess ? "bi-check-circle" : "bi-info-circle")"></span>
+                            <span>@mergeResultMessage</span>
+                            <button class="dismiss-btn" @onclick="DismissMergeMessage">
+                                <span class="bi bi-x"></span>
+                            </button>
+                        </div>
+                    }
+                    @if (showSimilarConceptsModal && pendingSimilarPairs.Count > 0)
+                    {
+                        <div class="similar-concepts-panel">
+                            <div class="similar-panel-header">
+                                <span class="bi bi-question-circle"></span>
+                                <span>Similar Concepts Found - Please Review</span>
+                            </div>
+                            <p class="similar-panel-hint">These concepts appear similar. Confirm which ones to merge:</p>
+                            <div class="similar-pairs-list">
+                                @for (int i = 0; i < Math.Min(pendingSimilarPairs.Count, 10); i++)
+                                {
+                                    var index = i;
+                                    var pair = pendingSimilarPairs[index];
+                                    <div class="similar-pair">
+                                        <div class="pair-concepts">
+                                            <span class="concept-name">@pair.ConceptA.Title</span>
+                                            <span class="bi bi-arrows-angle-expand"></span>
+                                            <span class="concept-name">@pair.ConceptB.Title</span>
+                                        </div>
+                                        <div class="pair-score">
+                                            @($"{pair.SimilarityScore:P0}") similar
+                                        </div>
+                                        <div class="pair-actions">
+                                            <button class="btn-merge" @onclick="@(() => ApproveSimilarMergeAt(index))" title="Merge these concepts">
+                                                <span class="bi bi-check-lg"></span>
+                                            </button>
+                                            <button class="btn-skip" @onclick="@(() => SkipSimilarMergeAt(index))" title="Keep separate">
+                                                <span class="bi bi-x-lg"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            @if (pendingSimilarPairs.Count > 10)
+                            {
+                                <p class="more-pairs">+@(pendingSimilarPairs.Count - 10) more pairs to review</p>
+                            }
+                            <div class="similar-panel-actions">
+                                <button class="settings-btn small" @onclick="ApplyApprovedMerges">
+                                    <span class="bi bi-check-all"></span>
+                                    Apply @(approvedMerges.Count) Merge(s)
+                                </button>
+                                <button class="settings-btn small secondary" @onclick="CloseSimilarConceptsModal">
+                                    Done
+                                </button>
+                            </div>
                         </div>
                     }
                 </div>
@@ -618,22 +703,6 @@
     </div>
 }
 
-@* Concept Map Collection Explorer Modal *@
-@if (showKnowledgeBaseExplorer && !string.IsNullOrEmpty(explorerCourseId))
-{
-    <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
-        <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <span><span class="bi bi-diagram-3"></span> Concept Map Explorer</span>
-                <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
-            </div>
-            <div class="modal-body kb-explorer-body">
-                <ConceptMapCollectionGraph CourseId="@explorerCourseId" />
-            </div>
-        </div>
-    </div>
-}
-
 @code {
 private string activeTab = "Library";
 private List<CourseResource> resources = new();
@@ -668,10 +737,6 @@ private string resourceContent = "";
     private bool showRenameCourseModal;
     private string renameCourseName = "";
 
-    // Knowledge Base Explorer modal
-    private bool showKnowledgeBaseExplorer;
-    private string? explorerCourseId;
-
     // Expandable resource details
     private HashSet<string> expandedResources = new();
     private Dictionary<string, ResourceKbDetails> resourceKbDetailsCache = new();
@@ -686,6 +751,19 @@ private string resourceContent = "";
     private HashSet<string> expandedAdvancedSettings = new();
     private int globalMaxIterations = SettingsService.DefaultOrphanLinkingMaxIterations;
     private float globalMinConfidence = SettingsService.DefaultOrphanLinkingMinConfidence;
+
+    // Merge duplicates state
+    private bool isMergingDuplicates;
+    private string? mergeResultMessage;
+    private bool mergeResultSuccess;
+    private bool showSimilarConceptsModal;
+    private List<Tutor.Services.SimilarConceptPair> pendingSimilarPairs = [];
+    private List<Tutor.Services.ApprovedMerge> approvedMerges = [];
+    
+    // Merge progress tracking
+    private string? mergeProgressMessage;
+    private int mergeProgressPercent;
+
 
     private string statusMessage = "";
     
@@ -745,6 +823,7 @@ private string resourceContent = "";
         InvokeAsync(StateHasChanged);
     }
 
+
     private void RefreshProcessingTasks()
     {
         processingTasks = ProcessingService.GetAllStatuses()
@@ -761,8 +840,49 @@ private string resourceContent = "";
         globalMaxIterations = await Settings.GetOrphanLinkingMaxIterationsAsync();
         globalMinConfidence = await Settings.GetOrphanLinkingMinConfidenceAsync();
         
+        // Pre-load KB details for all processed resources so concept count shows immediately
+        await PreloadResourceKbCounts();
+        
         // Load concept count for active course
         await LoadKnowledgeBaseInfo();
+    }
+
+    /// <summary>
+    /// Pre-loads the concept count for all resources so it displays immediately in the library list.
+    /// </summary>
+    private async Task PreloadResourceKbCounts()
+    {
+        foreach (var resource in resources.Where(r => r.IsProcessed && !string.IsNullOrEmpty(r.ConceptMapId)))
+        {
+            // Skip if already cached
+            if (resourceKbDetailsCache.ContainsKey(resource.Id))
+                continue;
+                
+            try
+            {
+                var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId!);
+                if (conceptMap != null)
+                {
+                    resourceKbDetailsCache[resource.Id] = new ResourceKbDetails
+                    {
+                        ContentLength = resource.Content?.Length ?? 0,
+                        FormattedContentLength = resource.FormattedContent?.Length ?? 0,
+                        HasFormattedContent = !string.IsNullOrEmpty(resource.FormattedContent),
+                        ConceptMapId = conceptMap.Id,
+                        ConceptCount = conceptMap.Concepts.Count,
+                        RelationCount = conceptMap.Relations.Count,
+                        ConceptMapName = conceptMap.Name,
+                        ConceptMapStatus = conceptMap.Status,
+                        KnowledgeBaseCreatedAt = conceptMap.CreatedAt,
+                        KnowledgeBaseUpdatedAt = conceptMap.UpdatedAt
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CourseManagement] Error preloading KB details for {resource.Title}: {ex.Message}");
+            }
+        }
     }
 
     private async Task LoadKnowledgeBaseInfo()
@@ -839,12 +959,81 @@ private string resourceContent = "";
             wasAdded = true;
         }
 
+        // Invalidate the course's merged map since resources changed
+        await CourseConceptMapService.InvalidateMergedMapAsync(selectedCourseId);
+
         await LoadData();
 
-        // If a resource was added and course has a ConceptMapCollection, show regeneration hint
-        if (wasAdded && course.HasConceptMapCollection)
+        // If a resource was added, rebuild the merged map with auto-deduplication
+        if (wasAdded)
         {
-            statusMessage = "Resource added. Consider regenerating the Concept Map to include the new content.";
+            var resource = resources.FirstOrDefault(r => r.Id == resourceId);
+            if (resource?.HasConceptMap == true)
+            {
+                // Rebuild merged map (this auto-merges exact duplicates)
+                await RebuildMergedMapAndCheckSimilarAsync();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the course's merged map and checks for similar concepts.
+    /// This works on COPIES - original resource ConceptMaps are never modified.
+    /// </summary>
+    private async Task RebuildMergedMapAndCheckSimilarAsync()
+    {
+        try
+        {
+            // Rebuild the merged map (this auto-merges exact duplicates)
+            var mergedMap = await CourseConceptMapService.RebuildMergedMapAsync(selectedCourseId!);
+            if (mergedMap == null)
+            {
+                statusMessage = "Resource added to course.";
+                return;
+            }
+
+            // Check for similar concepts that need user review
+            var duplicates = ConceptMergeService.FindDuplicatesInMergedMap(mergedMap);
+
+            var exactMerged = mergedMap.MergedConceptMapping.Count;
+
+            if (duplicates.SimilarConcepts.Count > 0)
+            {
+                pendingSimilarPairs = duplicates.SimilarConcepts
+                    .OrderByDescending(p => p.SimilarityScore)
+                    .ToList();
+                showSimilarConceptsModal = true;
+
+                if (exactMerged > 0)
+                {
+                    mergeResultMessage = $"✓ Auto-merged {exactMerged} duplicate(s). Review {pendingSimilarPairs.Count} similar concept(s) below.";
+                    mergeResultSuccess = true;
+                }
+                else
+                {
+                    mergeResultMessage = $"Found {pendingSimilarPairs.Count} similar concept(s) to review.";
+                    mergeResultSuccess = false;
+                }
+            }
+            else if (exactMerged > 0)
+            {
+                mergeResultMessage = $"✓ Resource added. Auto-merged {exactMerged} duplicate concept(s).";
+                mergeResultSuccess = true;
+                
+                // Refresh KB stats
+                await LoadKnowledgeBaseInfo();
+            }
+            else
+            {
+                statusMessage = "Resource added to course.";
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CourseManagement] Auto-merge error: {ex.Message}");
+            statusMessage = "Resource added. Error during auto-merge: " + ex.Message;
         }
     }
 
@@ -1198,35 +1387,6 @@ private string resourceContent = "";
         pendingDeleteAction = null;
     }
 
-    private void OpenKnowledgeBaseExplorer()
-    {
-        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
-        if (course != null && HasAnyConceptMaps(course))
-        {
-            explorerCourseId = course.Id;
-            showKnowledgeBaseExplorer = true;
-        }
-    }
-
-    private void CloseKnowledgeBaseExplorer()
-    {
-        showKnowledgeBaseExplorer = false;
-        explorerCourseId = null;
-    }
-
-    /// <summary>
-    /// Checks if any resources in the course have built ConceptMaps.
-    /// </summary>
-    private bool HasAnyConceptMaps(Course course)
-    {
-        if (course == null) return false;
-        
-        // Check if any resource in the course has a ConceptMap
-        return resources
-            .Where(r => course.ResourceIds.Contains(r.Id))
-            .Any(r => r.HasConceptMap);
-    }
-
     private void ConfirmDeleteCourse()
     {
         var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
@@ -1413,6 +1573,266 @@ private string resourceContent = "";
         
         await CourseService.SaveResourceAsync(resource);
         statusMessage = $"Linking confidence updated for '{resource.Title}'";
+    }
+
+    /// <summary>
+    /// Updates the merge progress UI.
+    /// </summary>
+    private void UpdateMergeProgress(string message, int percent)
+    {
+        mergeProgressMessage = message;
+        mergeProgressPercent = Math.Clamp(percent, 0, 100);
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Finds and merges duplicate concepts in the course's merged map.
+    /// This ONLY modifies the course-specific merged map, NOT the original resource ConceptMaps.
+    /// </summary>
+    private async Task MergeDuplicatesAsync()
+    {
+        if (string.IsNullOrEmpty(selectedCourseId) || isMergingDuplicates)
+            return;
+
+        isMergingDuplicates = true;
+        mergeResultMessage = null;
+        mergeResultSuccess = false;
+        mergeProgressMessage = "Initializing...";
+        mergeProgressPercent = 0;
+        StateHasChanged();
+
+        try
+        {
+            // Step 1: Load ConceptMap IDs
+            UpdateMergeProgress("Loading course resources...", 5);
+            await Task.Delay(50); // Allow UI to update
+            
+            var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(selectedCourseId);
+            if (conceptMapIds.Count == 0)
+            {
+                mergeResultMessage = "No Concept Maps found to merge.";
+                return;
+            }
+
+            // Step 2: Load all source ConceptMaps
+            UpdateMergeProgress($"Loading {conceptMapIds.Count} Concept Map(s)...", 15);
+            await Task.Delay(50);
+            
+            var sourceMaps = new List<ConceptMap>();
+            var loadIndex = 0;
+            foreach (var cmId in conceptMapIds)
+            {
+                loadIndex++;
+                var progressPercent = 15 + (int)(25.0 * loadIndex / conceptMapIds.Count);
+                UpdateMergeProgress($"Loading Concept Map {loadIndex}/{conceptMapIds.Count}...", progressPercent);
+                
+                var cm = await ConceptMapStorageService.LoadAsync(cmId);
+                if (cm != null && cm.Status == ConceptMapStatus.Ready)
+                {
+                    sourceMaps.Add(cm);
+                }
+            }
+
+            if (sourceMaps.Count == 0)
+            {
+                mergeResultMessage = "No ready Concept Maps found.";
+                return;
+            }
+
+            // Step 3: Create merged map with deep copies
+            UpdateMergeProgress($"Creating merged map from {sourceMaps.Count} source(s)...", 45);
+            await Task.Delay(50);
+            
+            var mergedMap = new MergedCourseConceptMap
+            {
+                Id = $"merged-{selectedCourseId}",
+                CourseId = selectedCourseId,
+                Status = MergedMapStatus.Building
+            };
+            mergedMap.InitializeFromConceptMaps(sourceMaps);
+
+            // Step 4: Find exact duplicates
+            UpdateMergeProgress($"Scanning {mergedMap.TotalConcepts} concepts for duplicates...", 55);
+            await Task.Delay(50);
+            
+            var duplicateResult = ConceptMergeService.FindDuplicatesInMergedMap(mergedMap);
+            var exactDupeCount = duplicateResult.ExactDuplicates.Sum(g => g.Concepts.Count - 1);
+
+            // Step 5: Auto-merge exact duplicates
+            if (exactDupeCount > 0)
+            {
+                UpdateMergeProgress($"Auto-merging {exactDupeCount} exact duplicate(s)...", 70);
+                await Task.Delay(50);
+                
+                var mergeResult = ConceptMergeService.AutoMergeExactDuplicatesInMergedMap(mergedMap);
+            }
+
+            // Step 6: Find similar concepts
+            UpdateMergeProgress("Analyzing similar concepts...", 85);
+            await Task.Delay(50);
+            
+            // Re-scan for similar concepts after exact merges
+            duplicateResult = ConceptMergeService.FindDuplicatesInMergedMap(mergedMap);
+
+            // Step 7: Save merged map
+            UpdateMergeProgress("Saving merged map...", 95);
+            await Task.Delay(50);
+            
+            mergedMap.Status = MergedMapStatus.Ready;
+            await CourseConceptMapService.SaveMergedMapAsync(mergedMap);
+
+            var totalMerged = mergedMap.MergedConceptMapping.Count;
+
+            // Step 8: Complete
+            UpdateMergeProgress("Complete!", 100);
+
+            if (duplicateResult.SimilarConcepts.Count > 0)
+            {
+                pendingSimilarPairs = duplicateResult.SimilarConcepts
+                    .OrderByDescending(p => p.SimilarityScore)
+                    .ToList();
+                showSimilarConceptsModal = true;
+                
+                mergeResultMessage = totalMerged > 0
+                    ? $"✓ Auto-merged {totalMerged} exact duplicate(s). Found {pendingSimilarPairs.Count} similar concept pair(s) for review."
+                    : $"Found {pendingSimilarPairs.Count} similar concept pair(s) for review.";
+                mergeResultSuccess = totalMerged > 0;
+            }
+            else if (totalMerged > 0)
+            {
+                mergeResultMessage = $"✓ Successfully merged {totalMerged} duplicate concept(s). Original resource maps unchanged.";
+                mergeResultSuccess = true;
+                
+                // Refresh stats
+                await LoadKnowledgeBaseInfo();
+            }
+            else
+            {
+                mergeResultMessage = "No duplicate concepts found.";
+                mergeResultSuccess = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            mergeResultMessage = $"Error during merge: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[CourseManagement] Merge error: {ex.Message}");
+        }
+        finally
+        {
+            isMergingDuplicates = false;
+            mergeProgressMessage = null;
+            mergeProgressPercent = 0;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Approves a similar concept pair for merging.
+    /// </summary>
+    private void ApproveSimilarMerge(Tutor.Services.SimilarConceptPair pair)
+    {
+        // Select the one with the longer/more complete title as canonical
+        var keepA = pair.ConceptA.Title.Length >= pair.ConceptB.Title.Length;
+        
+        approvedMerges.Add(new ApprovedMerge
+        {
+            ConceptAId = pair.ConceptA.Id,
+            ConceptBId = pair.ConceptB.Id,
+            KeepConceptAId = keepA ? pair.ConceptA.Id : pair.ConceptB.Id,
+            CanonicalTitle = keepA ? pair.ConceptA.Title : pair.ConceptB.Title
+        });
+
+        pendingSimilarPairs.Remove(pair);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Skips a similar concept pair (keeps them separate).
+    /// </summary>
+    private void SkipSimilarMerge(Tutor.Services.SimilarConceptPair pair)
+    {
+        pendingSimilarPairs.Remove(pair);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Approves a similar concept pair at the given index.
+    /// </summary>
+    private void ApproveSimilarMergeAt(int index)
+    {
+        if (index >= 0 && index < pendingSimilarPairs.Count)
+        {
+            ApproveSimilarMerge(pendingSimilarPairs[index]);
+        }
+    }
+
+    /// <summary>
+    /// Skips a similar concept pair at the given index.
+    /// </summary>
+    private void SkipSimilarMergeAt(int index)
+    {
+        if (index >= 0 && index < pendingSimilarPairs.Count)
+        {
+            SkipSimilarMerge(pendingSimilarPairs[index]);
+        }
+    }
+
+    /// <summary>
+    /// Dismisses the merge result message.
+    /// </summary>
+    private void DismissMergeMessage()
+    {
+        mergeResultMessage = null;
+    }
+
+    /// <summary>
+    /// Applies all approved merges for similar concepts to the course's merged map.
+    /// This ONLY modifies the course-specific merged map, NOT the original resource ConceptMaps.
+    /// </summary>
+    private async Task ApplyApprovedMerges()
+    {
+        if (approvedMerges.Count == 0)
+        {
+            CloseSimilarConceptsModal();
+            return;
+        }
+
+        isMergingDuplicates = true;
+        StateHasChanged();
+
+        try
+        {
+            // Apply merges to the course's merged map (NOT the original ConceptMaps)
+            var result = await CourseConceptMapService.MergeApprovedPairsAsync(selectedCourseId!, approvedMerges);
+
+            mergeResultMessage = $"✓ Merged {result.MergedCount} similar concept(s). Original resource maps unchanged.";
+            mergeResultSuccess = true;
+
+            approvedMerges.Clear();
+            CloseSimilarConceptsModal();
+            
+            // Refresh stats
+            await LoadKnowledgeBaseInfo();
+        }
+        catch (Exception ex)
+        {
+            mergeResultMessage = $"Error applying merges: {ex.Message}";
+        }
+        finally
+        {
+            isMergingDuplicates = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Closes the similar concepts confirmation modal.
+    /// </summary>
+    private void CloseSimilarConceptsModal()
+    {
+        showSimilarConceptsModal = false;
+        pendingSimilarPairs.Clear();
+        approvedMerges.Clear();
     }
 }
 

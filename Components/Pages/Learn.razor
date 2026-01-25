@@ -8,22 +8,15 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-@if (activeCourse != null)
-{
-    <div class="page-title">Learn: @activeCourse.Name</div>
-}
-else
-{
-    <div class="page-title">Learn</div>
-}
-
-<Tutor.Components.Chat @ref="learnComponent" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
+<div class="learn-page">
+    <LearnTabs @ref="learnTabs" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
+</div>
 
 @code {
     private Course? activeCourse;
     private string? startTopic;
     private bool autoStartLesson;
-    private Tutor.Components.Chat? learnComponent;
+    private LearnTabs? learnTabs;
 
     protected override async Task OnInitializedAsync()
     {

@@ -16,10 +16,10 @@
 @implements IDisposable
 
 
-<div class="page-title">Settings</div>
 
-<div style="max-width: 720px;">
-    <div class="tabs">
+
+<div class="settings-page">
+<div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
         <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
         <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>

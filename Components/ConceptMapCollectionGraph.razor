@@ -3,6 +3,7 @@
 @using Tutor.Services
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject ConceptMapCollectionService ConceptMapCollectionService
+@inject CourseConceptMapService CourseConceptMapService
 @inject CourseService CourseService
 @inject OrphanConceptLinkerService OrphanLinkerService
 @inject IJSRuntime JS
@@ -47,7 +48,7 @@ else
 <div class="kb-graph-header">
     <h4>@graphTitle</h4>
     <div class="kb-graph-stats">
-        <span class="stat">@concepts.Count concepts</span>
+        <span class="stat">@(isFiltered ? $"{filteredNodeCount}/" : "")@concepts.Count concepts</span>
         <span class="stat">@relationships.Count relationships</span>
         @if (conceptMapCount > 1)
         {
@@ -62,6 +63,62 @@ else
         }
     </div>
 </div>
+
+@* Search and Depth Filter *@
+<div class="graph-filter-bar">
+    <div class="search-group">
+        <span class="bi bi-search"></span>
+        <input type="text" 
+               class="search-input" 
+               placeholder="Search concepts (e.g., Horcrux)..." 
+               @bind="searchQuery"
+               @bind:event="oninput"
+               @onkeydown="HandleSearchKeyDown" />
+        @if (!string.IsNullOrEmpty(searchQuery))
+        {
+            <button class="clear-search-btn" @onclick="ClearSearch" title="Clear search">
+                <span class="bi bi-x-lg"></span>
+            </button>
+        }
+    </div>
+    <div class="depth-group">
+        <label>Depth:</label>
+        <select class="depth-select" @bind="filterDepth">
+            <option value="1">1 level</option>
+            <option value="2">2 levels</option>
+            <option value="3">3 levels</option>
+            <option value="4">4 levels</option>
+            <option value="5">5 levels</option>
+            <option value="0">All connected</option>
+        </select>
+    </div>
+    <button class="btn-filter @(isSearching ? "searching" : "")" @onclick="ApplyFilter" disabled="@isSearching">
+        @if (isSearching)
+        {
+            <span class="spinner-small"></span>
+        }
+        else
+        {
+            <span class="bi bi-funnel"></span>
+        }
+        Go
+    </button>
+    @if (isFiltered)
+    {
+        <button class="btn-reset-filter" @onclick="ResetFilter" title="Show all nodes">
+            <span class="bi bi-arrow-counterclockwise"></span>
+            Reset
+        </button>
+    }
+</div>
+
+@if (isFiltered && !string.IsNullOrEmpty(filterResultMessage))
+{
+    <div class="filter-result-message @(filteredNodeCount == 0 ? "no-results" : "")">
+        <span class="bi @(filteredNodeCount == 0 ? "bi-info-circle" : "bi-check-circle")"></span>
+        @filterResultMessage
+    </div>
+}
 
 @if (connectivityInfo != null && !connectivityInfo.IsFullyConnected)
 {
@@ -108,7 +165,7 @@ else
                     <div class="component-concepts">
                         @foreach (var concept in component.Concepts.Take(10))
                         {
-                            <button class="orphan-concept-btn" @onclick="@(() => SelectConceptById(concept.Id))">
+                            <button class="orphan-concept-btn" @onclick="@(async () => await SelectConceptByIdAsync(concept.Id))">
                                 @concept.Title
                             </button>
                         }
@@ -133,9 +190,82 @@ else
     <div class="kb-graph-content">
         <div class="kb-graph-wrapper">
             <div id="kb-force-graph" class="force-graph-canvas" @ref="graphContainer"></div>
+            
+            @* Context Menu (right-click) *@
+            <div id="graph-context-menu" class="graph-context-menu" style="display: none;">
+                <div class="context-menu-header">
+                    <span class="context-menu-title">Node Options</span>
+                </div>
+                <div class="context-menu-items">
+                    <button class="context-menu-item primary" data-action="expand">
+                        <span class="bi bi-share"></span>
+                        <span>Show Neighbors</span>
+                    </button>
+                    <button class="context-menu-item" data-action="focus">
+                        <span class="bi bi-bullseye"></span>
+                        <span>Center View</span>
+                    </button>
+                    <button class="context-menu-item" data-action="isolate">
+                        <span class="bi bi-diagram-3"></span>
+                        <span>Isolate Subgraph</span>
+                    </button>
+                    <div class="context-menu-divider"></div>
+                    <button class="context-menu-item" data-action="pin">
+                        <span class="bi bi-pin-angle"></span>
+                        <span>Pin/Unpin Position</span>
+                        <span class="shortcut">P</span>
+                    </button>
+                    <button class="context-menu-item" data-action="hide">
+                        <span class="bi bi-eye-slash"></span>
+                        <span>Hide Node</span>
+                    </button>
+                    <div class="context-menu-divider"></div>
+                    <button class="context-menu-item" data-action="copy">
+                        <span class="bi bi-clipboard"></span>
+                        <span>Copy Name</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <div class="concept-detail-panel @(selectedConcept == null ? "empty" : "")">
+        <div class="concept-detail-panel @(selectedConcept == null ? "empty" : "") @panelDockPosition"
+             style="@GetPanelStyle()"
+             @ref="detailPanelRef">
+            @* Dock buttons *@
+            @if (selectedConcept != null)
+            {
+                <div class="panel-dock-buttons">
+                    <button class="dock-btn @(panelDockPosition == "dock-top-right" ? "active" : "")" 
+                            @onclick="@(() => DockPanel("dock-top-right"))" title="Dock top-right">
+                        <span class="bi bi-arrow-up-right"></span>
+                    </button>
+                    <button class="dock-btn @(panelDockPosition == "dock-bottom-right" ? "active" : "")" 
+                            @onclick="@(() => DockPanel("dock-bottom-right"))" title="Dock bottom-right">
+                        <span class="bi bi-arrow-down-right"></span>
+                    </button>
+                    <button class="dock-btn @(panelDockPosition == "dock-bottom-left" ? "active" : "")" 
+                            @onclick="@(() => DockPanel("dock-bottom-left"))" title="Dock bottom-left">
+                        <span class="bi bi-arrow-down-left"></span>
+                    </button>
+                    <button class="dock-btn @(panelDockPosition == "dock-top-left" ? "active" : "")" 
+                            @onclick="@(() => DockPanel("dock-top-left"))" title="Dock top-left">
+                        <span class="bi bi-arrow-up-left"></span>
+                    </button>
+                    <button class="dock-btn @(panelDockPosition == "" ? "active" : "")" 
+                            @onclick="@(() => DockPanel(""))" title="Float (draggable)">
+                        <span class="bi bi-arrows-move"></span>
+                    </button>
+                </div>
+            }
+            
+            @* Drag handle (only visible when floating) *@
+            @if (selectedConcept != null && string.IsNullOrEmpty(panelDockPosition))
+            {
+                <div class="panel-drag-handle" @onmousedown="StartPanelDrag">
+                    <span class="bi bi-grip-horizontal"></span>
+                </div>
+            }
+            
             @if (selectedConcept != null)
             {
                 <div class="concept-detail-header">
@@ -145,68 +275,89 @@ else
                     </button>
                 </div>
                 
-                @if (!string.IsNullOrEmpty(selectedConcept.Summary))
-                {
-                    <div class="concept-summary">@selectedConcept.Summary</div>
-                }
+                <div class="concept-detail-body">
+                    @if (!string.IsNullOrEmpty(selectedConcept.Summary))
+                    {
+                        <div class="concept-summary">@selectedConcept.Summary</div>
+                    }
 
-                @if (selectedConcept.Aliases.Count > 0)
-                {
-                    <div class="concept-aliases">
-                        <span class="label">Also known as:</span>
-                        <span class="value">@string.Join(", ", selectedConcept.Aliases)</span>
-                    </div>
-                }
+                    @if (selectedConcept.Aliases.Count > 0)
+                    {
+                        <div class="concept-aliases">
+                            <span class="label">Also known as:</span>
+                            <span class="value">@string.Join(", ", selectedConcept.Aliases)</span>
+                        </div>
+                    }
 
-                @if (selectedConcept.Tags.Count > 0)
-                {
-                    <div class="concept-tags">
-                        @foreach (var tag in selectedConcept.Tags)
+                    @if (selectedConcept.Tags.Count > 0)
+                    {
+                        <div class="concept-tags">
+                            @foreach (var tag in selectedConcept.Tags)
+                            {
+                                <span class="kb-tag">@tag</span>
+                            }
+                        </div>
+                    }
+
+                    @if (relatedConcepts.Count > 0)
+                    {
+                        <div class="concept-relationships">
+                            <h6>Related Concepts</h6>
+                            <div class="relationship-list">
+                                @foreach (var rel in relatedConcepts)
+                                {
+                                    <button class="relationship-btn" @onclick="@(async () => await SelectConceptByIdAsync(rel.TargetConceptId))">
+                                        <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
+                                        <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
+                                        <span class="bi bi-arrow-right"></span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (incomingRelationships.Count > 0)
+                    {
+                        <div class="concept-relationships incoming">
+                            <h6>Referenced By</h6>
+                            <div class="relationship-list">
+                                @foreach (var rel in incomingRelationships)
+                                {
+                                    <button class="relationship-btn" @onclick="@(async () => await SelectConceptByIdAsync(rel.SourceConceptId))">
+                                        <span class="rel-source">@GetConceptTitle(rel.SourceConceptId)</span>
+                                        <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
+                                        <span class="bi bi-arrow-left"></span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="concept-actions">
+                        @if (EmbeddedMode)
                         {
-                            <span class="kb-tag">@tag</span>
+                            <button class="action-btn chat" @onclick="AskAboutSelectedConcept">
+                                <span class="bi bi-chat-dots"></span>
+                                Ask
+                            </button>
+                            <button class="action-btn details" @onclick="ViewSelectedConceptDetails">
+                                <span class="bi bi-journal-text"></span>
+                                Details
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="teach-me-btn" @onclick="TeachSelectedConcept">
+                                <span class="bi bi-mortarboard"></span>
+                                Teach Me
+                            </button>
                         }
                     </div>
-                }
-
-                @if (relatedConcepts.Count > 0)
-                {
-                    <div class="concept-relationships">
-                        <h6>Related Concepts</h6>
-                        <div class="relationship-list">
-                            @foreach (var rel in relatedConcepts)
-                            {
-                                <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.TargetConceptId))">
-                                    <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
-                                    <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
-                                    <span class="bi bi-arrow-right"></span>
-                                </button>
-                            }
-                        </div>
-                    </div>
-                }
-
-                @if (incomingRelationships.Count > 0)
-                {
-                    <div class="concept-relationships incoming">
-                        <h6>Referenced By</h6>
-                        <div class="relationship-list">
-                            @foreach (var rel in incomingRelationships)
-                            {
-                                <button class="relationship-btn" @onclick="@(() => SelectConceptById(rel.SourceConceptId))">
-                                    <span class="rel-source">@GetConceptTitle(rel.SourceConceptId)</span>
-                                    <span class="rel-type @rel.RelationType.ToString().ToLower()">@FormatRelationType(rel.RelationType)</span>
-                                    <span class="bi bi-arrow-left"></span>
-                                </button>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <div class="concept-actions">
-                    <button class="teach-me-btn" @onclick="TeachSelectedConcept">
-                        <span class="bi bi-mortarboard"></span>
-                        Teach Me
-                    </button>
+                </div>
+                
+                @* Resize handle *@
+                <div class="panel-resize-handle" @onmousedown="StartPanelResize">
+                    <span class="bi bi-arrows-angle-expand"></span>
                 </div>
             }
             else
@@ -222,59 +373,102 @@ else
 }
 
 @code {
-    /// <summary>
-    /// Single ConceptMap ID (legacy/single mode)
-    /// </summary>
-    [Parameter] public string? ConceptMapId { get; set; }
+/// <summary>
+/// Single ConceptMap ID (legacy/single mode)
+/// </summary>
+[Parameter] public string? ConceptMapId { get; set; }
 
-    /// <summary>
-    /// Legacy parameter - use ConceptMapId instead
-    /// </summary>
-    [Parameter] public string? KnowledgeBaseId { get; set; }
+/// <summary>
+/// Legacy parameter - use ConceptMapId instead
+/// </summary>
+[Parameter] public string? KnowledgeBaseId { get; set; }
     
-    /// <summary>
-    /// Course ID to load the ConceptMapCollection from
-    /// </summary>
-    [Parameter] public string? CourseId { get; set; }
+/// <summary>
+/// Course ID to load the ConceptMapCollection from
+/// </summary>
+[Parameter] public string? CourseId { get; set; }
     
-    /// <summary>
-    /// Direct ConceptMapCollection ID to load
-    /// </summary>
-    [Parameter] public string? ConceptMapCollectionId { get; set; }
+/// <summary>
+/// Direct ConceptMapCollection ID to load
+/// </summary>
+[Parameter] public string? ConceptMapCollectionId { get; set; }
 
-    /// <summary>
-    /// Legacy parameter - use ConceptMapCollectionId instead
-    /// </summary>
-    [Parameter] public string? KnowledgeBaseCollectionId { get; set; }
+/// <summary>
+/// Legacy parameter - use ConceptMapCollectionId instead
+/// </summary>
+[Parameter] public string? KnowledgeBaseCollectionId { get; set; }
     
-    [Parameter] public EventCallback OnClose { get; set; }
+/// <summary>
+/// When true, the component is embedded in a tab and shows navigation buttons
+/// </summary>
+[Parameter] public bool EmbeddedMode { get; set; }
     
-    /// <summary>
-    /// Callback when user clicks "Teach Me" to learn about a concept
-    /// </summary>
-    [Parameter] public EventCallback<string> OnTeachConcept { get; set; }
+/// <summary>
+/// Concept ID to select and center on when the component loads
+/// </summary>
+[Parameter] public string? SelectedConceptId { get; set; }
+    
+[Parameter] public EventCallback OnClose { get; set; }
+    
+/// <summary>
+/// Callback when user clicks "Teach Me" to learn about a concept
+/// </summary>
+[Parameter] public EventCallback<string> OnTeachConcept { get; set; }
+    
+/// <summary>
+/// Callback when user wants to ask about a concept (embedded mode)
+/// </summary>
+[Parameter] public EventCallback<string> OnAskAboutConcept { get; set; }
+    
+/// <summary>
+/// Callback when user wants to view concept details (embedded mode)
+/// </summary>
+[Parameter] public EventCallback<string> OnViewConceptDetails { get; set; }
 
-    private ConceptMap? conceptMap;
-    private LoadedConceptMapCollection? loadedCollection;
-    private List<Concept> concepts = [];
-    private List<ConceptRelationship> relationships = [];
-    private Concept? selectedConcept;
-    private List<ConceptRelationship> relatedConcepts = [];
-    private List<ConceptRelationship> incomingRelationships = [];
-    private ElementReference graphContainer;
-    private DotNetObjectReference<ConceptMapCollectionGraph>? dotNetRef;
-    private bool isInitialized;
-    private bool isLoading = true;
-    private string? errorMessage;
-    private string graphTitle = "Concept Map Collection";
-    private int conceptMapCount = 1;
+private ConceptMap? conceptMap;
+private LoadedConceptMapCollection? loadedCollection;
+private List<Concept> concepts = [];
+private List<ConceptRelationship> relationships = [];
+private Concept? selectedConcept;
+private List<ConceptRelationship> relatedConcepts = [];
+private List<ConceptRelationship> incomingRelationships = [];
+private ElementReference graphContainer;
+private ElementReference detailPanelRef;
+private DotNetObjectReference<ConceptMapCollectionGraph>? dotNetRef;
+private bool isInitialized;
+private bool isLoading = true;
+private string? errorMessage;
+private string graphTitle = "Concept Map Collection";
+private int conceptMapCount = 1;
+
+// Detail panel state (draggable/resizable/dockable)
+private string panelDockPosition = "dock-top-right"; // Default docked position
+private double panelX = 16;
+private double panelY = 16;
+private double panelWidth = 320;
+private double panelHeight = 400;
+private bool isDragging;
+private bool isResizing;
+private double dragStartX;
+private double dragStartY;
+private double dragOffsetX;
+private double dragOffsetY;
     
-    // Orphan detection state
-    private GraphConnectivityInfo? connectivityInfo;
-    private bool showOrphanList;
+// Orphan detection state
+private GraphConnectivityInfo? connectivityInfo;
+private bool showOrphanList;
     private bool isLinkingOrphans;
     private string? linkingMessage;
     private bool linkingSuccess;
+    
+    // Search and filter state
+    private string searchQuery = "";
+    private int filterDepth = 2;
+    private bool isFiltered;
+    private bool isSearching;
+    private int filteredNodeCount;
+    private string? filterResultMessage;
+    private HashSet<string> visibleNodeIds = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -310,6 +504,20 @@ else
             dotNetRef = DotNetObjectReference.Create(this);
             await InitializeGraph();
             isInitialized = true;
+            
+            // Setup panel drag handler
+            await JS.InvokeVoidAsync("setupPanelDragHandler", dotNetRef);
+            
+            // If a concept was selected externally, pan to it
+            if (!string.IsNullOrEmpty(SelectedConceptId))
+            {
+                await SelectConceptByIdAsync(SelectedConceptId, smoothPan: true);
+            }
+        }
+        // Handle external concept selection after initialization
+        else if (isInitialized && !string.IsNullOrEmpty(SelectedConceptId) && selectedConcept?.Id != SelectedConceptId)
+        {
+            await SelectConceptByIdAsync(SelectedConceptId, smoothPan: true);
         }
     }
 
@@ -337,7 +545,24 @@ else
             graphTitle = $"{course.Name} - Concept Map";
             System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Course found: {course.Name}, ResourceIds: {course.ResourceIds.Count}");
 
-            // Get ConceptMap IDs from resources that have them built
+            // Try to load the MERGED map first (this has deduplicated concepts)
+            var mergedMap = await CourseConceptMapService.GetOrCreateMergedMapAsync(CourseId!);
+            
+            if (mergedMap != null && mergedMap.Status == MergedMapStatus.Ready && mergedMap.Concepts.Count > 0)
+            {
+                // Use the merged/deduplicated map
+                concepts = mergedMap.Concepts;
+                relationships = mergedMap.Relations;
+                conceptMapCount = mergedMap.SourceConceptMapIds.Count;
+                
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Using merged map with {concepts.Count} concepts (deduplicated), {relationships.Count} relationships from {conceptMapCount} sources");
+                
+                // Calculate connectivity
+                CalculateConnectivity();
+                return;
+            }
+
+            // Fallback: load original ConceptMaps if merged map not available
             var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(CourseId!);
             System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] ConceptMap IDs found: {conceptMapIds.Count}");
             
@@ -657,26 +882,14 @@ else
     [JSInvokable]
     public void OnNodeClick(string conceptId)
     {
-        SelectConceptById(conceptId, smoothPan: false);
-        StateHasChanged();
-    }
-
-    private async void SelectConceptById(string conceptId, bool smoothPan = true)
-    {
         selectedConcept = concepts.FirstOrDefault(c => c.Id == conceptId);
         if (selectedConcept != null)
         {
             relatedConcepts = relationships.Where(r => r.SourceConceptId == conceptId).ToList();
             incomingRelationships = relationships.Where(r => r.TargetConceptId == conceptId).ToList();
             
-            if (smoothPan)
-            {
-                await JS.InvokeVoidAsync("panToNode", conceptId);
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("highlightNode", conceptId);
-            }
+            // Highlight the node (fire-and-forget, don't await)
+            _ = JS.InvokeVoidAsync("highlightNode", conceptId);
         }
         else
         {
@@ -686,11 +899,176 @@ else
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Handles context menu actions from JavaScript.
+    /// Placeholder for future implementation of context menu features.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnContextMenuAction(string action, string conceptId)
+    {
+        System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Context menu action: {action} on concept: {conceptId}");
+        
+        switch (action)
+        {
+            case "expand":
+                // Expand to show this node's connections
+                await SelectConceptByIdAsync(conceptId);
+                break;
+                
+            case "hide":
+                // TODO: Implement hide node functionality
+                // This would remove the node from visibleNodeIds and update the filter
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Hide node - not yet implemented");
+                break;
+                
+            case "isolate":
+                // TODO: Implement isolate subgraph functionality  
+                // This would show only this node and its connected nodes
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Isolate subgraph - not yet implemented");
+                break;
+                
+            default:
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Unknown context menu action: {action}");
+                break;
+        }
+    }
+
+    private async Task SelectConceptByIdAsync(string conceptId, bool smoothPan = true)
+    {
+        selectedConcept = concepts.FirstOrDefault(c => c.Id == conceptId);
+        if (selectedConcept == null)
+        {
+            relatedConcepts = [];
+            incomingRelationships = [];
+            StateHasChanged();
+            return;
+        }
+        
+        relatedConcepts = relationships.Where(r => r.SourceConceptId == conceptId).ToList();
+        incomingRelationships = relationships.Where(r => r.TargetConceptId == conceptId).ToList();
+        
+        // Check if this node is currently visible (either not filtered, or in the visible set)
+        var nodeIsVisible = !isFiltered || visibleNodeIds.Contains(conceptId);
+        
+        if (!nodeIsVisible)
+        {
+            // Node is hidden - EXPAND the visible set to include this node and its connections
+            // This allows following chains of relationships without losing previous context
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Expanding to include hidden node: {selectedConcept.Title}");
+            
+            // Collect this node plus its connections at the current depth
+            var newNodes = CollectNodesWithinDepth([selectedConcept], filterDepth);
+            
+            // UNION with existing visible nodes (expand, don't replace)
+            var previousCount = visibleNodeIds.Count;
+            visibleNodeIds.UnionWith(newNodes);
+            var addedCount = visibleNodeIds.Count - previousCount;
+            filteredNodeCount = visibleNodeIds.Count;
+            
+            // Update the filter message to show expansion
+            var depthLabel = filterDepth == 0 ? "all connected" : $"{filterDepth} level(s)";
+            if (addedCount > 0)
+            {
+                filterResultMessage = $"Expanded to include \"{selectedConcept.Title}\" (+{addedCount} concepts) - showing {filteredNodeCount} total ({depthLabel})";
+            }
+            else
+            {
+                filterResultMessage = $"Showing {filteredNodeCount} concepts ({depthLabel})";
+            }
+            
+            // Apply the expanded filter to D3.js, pan to the new concept
+            await JS.InvokeVoidAsync("filterGraphByNodes", visibleNodeIds.ToArray(), conceptId);
+        }
+        else if (smoothPan)
+        {
+            // Node is already visible - just pan to it
+            await JS.InvokeVoidAsync("panToNode", conceptId);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("highlightNode", conceptId);
+        }
+        
+        StateHasChanged();
+    }
+
     private void ClearSelection()
     {
         selectedConcept = null;
         relatedConcepts = [];
         incomingRelationships = [];
+    }
+
+    // Panel dragging/resizing/docking methods
+    private string GetPanelStyle()
+    {
+        if (!string.IsNullOrEmpty(panelDockPosition))
+        {
+            // When docked, use CSS positioning only
+            return $"width: {panelWidth}px; height: {panelHeight}px;";
+        }
+        // When floating, use absolute positioning
+        return $"left: {panelX}px; top: {panelY}px; width: {panelWidth}px; height: {panelHeight}px;";
+    }
+
+    private void DockPanel(string position)
+    {
+        panelDockPosition = position;
+        StateHasChanged();
+    }
+
+    private void StartPanelDrag(MouseEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(panelDockPosition)) return;
+        
+        isDragging = true;
+        dragStartX = e.ClientX;
+        dragStartY = e.ClientY;
+        dragOffsetX = panelX;
+        dragOffsetY = panelY;
+    }
+
+    private void StartPanelResize(MouseEventArgs e)
+    {
+        isResizing = true;
+        dragStartX = e.ClientX;
+        dragStartY = e.ClientY;
+    }
+
+    [JSInvokable]
+    public void OnPanelMouseMove(double clientX, double clientY)
+    {
+        if (isDragging)
+        {
+            panelX = dragOffsetX + (clientX - dragStartX);
+            panelY = dragOffsetY + (clientY - dragStartY);
+            
+            // Clamp to viewport
+            panelX = Math.Max(0, panelX);
+            panelY = Math.Max(0, panelY);
+            
+            StateHasChanged();
+        }
+        else if (isResizing)
+        {
+            var deltaX = clientX - dragStartX;
+            var deltaY = clientY - dragStartY;
+            
+            panelWidth = Math.Max(250, panelWidth + deltaX);
+            panelHeight = Math.Max(200, panelHeight + deltaY);
+            
+            dragStartX = clientX;
+            dragStartY = clientY;
+            
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void OnPanelMouseUp()
+    {
+        isDragging = false;
+        isResizing = false;
     }
 
     /// <summary>
@@ -702,6 +1080,32 @@ else
         
         // Close the explorer and trigger the teach callback
         await OnTeachConcept.InvokeAsync(selectedConcept.Title);
+    }
+
+    /// <summary>
+    /// Navigate to Chat tab to ask about the selected concept (embedded mode)
+    /// </summary>
+    private async Task AskAboutSelectedConcept()
+    {
+        if (selectedConcept == null) return;
+        
+        if (OnAskAboutConcept.HasDelegate)
+        {
+            await OnAskAboutConcept.InvokeAsync(selectedConcept.Title);
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Concepts tab to view details (embedded mode)
+    /// </summary>
+    private async Task ViewSelectedConceptDetails()
+    {
+        if (selectedConcept == null) return;
+        
+        if (OnViewConceptDetails.HasDelegate)
+        {
+            await OnViewConceptDetails.InvokeAsync(selectedConcept.Id);
+        }
     }
 
     private string GetConceptTitle(string conceptId)
@@ -722,6 +1126,236 @@ else
             _ => type.ToString().ToLower()
         };
     }
+
+    #region Search and Filter Methods
+
+    /// <summary>
+    /// Handles Enter key in search box to apply filter.
+    /// </summary>
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFilter();
+        }
+    }
+
+    /// <summary>
+    /// Applies the search filter to the graph.
+    /// Finds matching nodes and shows them plus their connected nodes up to the specified depth.
+    /// </summary>
+    private async Task ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            await ResetFilter();
+            return;
+        }
+
+        isSearching = true;
+        StateHasChanged();
+
+        try
+        {
+            // Find all concepts matching the search query (by title or alias)
+            var query = searchQuery.Trim().ToLowerInvariant();
+            
+            // Score matches: exact title match > starts with > contains in title > alias match
+            var scoredMatches = concepts
+                .Select(c => new
+                {
+                    Concept = c,
+                    Score = GetMatchScore(c, query)
+                })
+                .Where(x => x.Score > 0)
+                .OrderByDescending(x => x.Score)
+                .ToList();
+
+            var matchingConcepts = scoredMatches.Select(x => x.Concept).ToList();
+
+            if (matchingConcepts.Count == 0)
+            {
+                isFiltered = true;
+                filteredNodeCount = 0;
+                filterResultMessage = $"No concepts found matching \"{searchQuery}\"";
+                visibleNodeIds = [];
+                
+                // Hide all nodes
+                await JS.InvokeVoidAsync("filterGraphByNodes", Array.Empty<string>(), null);
+                StateHasChanged();
+                return;
+            }
+
+            // The best match becomes the center "axle" node
+            var primaryMatch = matchingConcepts.First();
+            
+            // Collect all nodes within the specified depth using BFS
+            visibleNodeIds = CollectNodesWithinDepth(matchingConcepts, filterDepth);
+            filteredNodeCount = visibleNodeIds.Count;
+            isFiltered = true;
+
+            var matchCount = matchingConcepts.Count;
+            var depthLabel = filterDepth == 0 ? "all connected" : $"{filterDepth} level(s)";
+            filterResultMessage = $"Found {matchCount} match(es) for \"{searchQuery}\" - showing {filteredNodeCount} concepts ({depthLabel})";
+
+            // Apply filter to D3.js graph, passing the primary match as the center node
+            await JS.InvokeVoidAsync("filterGraphByNodes", visibleNodeIds.ToArray(), primaryMatch.Id);
+            
+            // Also select the primary match to show its details
+            selectedConcept = primaryMatch;
+            relatedConcepts = relationships.Where(r => r.SourceConceptId == primaryMatch.Id).ToList();
+            incomingRelationships = relationships.Where(r => r.TargetConceptId == primaryMatch.Id).ToList();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Filter error: {ex.Message}");
+            filterResultMessage = $"Error applying filter: {ex.Message}";
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Scores how well a concept matches the search query.
+    /// Higher scores indicate better matches.
+    /// </summary>
+    private static int GetMatchScore(Concept concept, string query)
+    {
+        var titleLower = concept.Title.ToLowerInvariant();
+        
+        // Exact title match (highest priority)
+        if (titleLower == query)
+            return 100;
+        
+        // Title starts with query
+        if (titleLower.StartsWith(query))
+            return 80;
+        
+        // Title contains query as a word
+        if (titleLower.Contains($" {query}") || titleLower.Contains($"{query} "))
+            return 60;
+        
+        // Title contains query anywhere
+        if (titleLower.Contains(query))
+            return 40;
+        
+        // Alias exact match
+        if (concept.Aliases.Any(a => a.Equals(query, StringComparison.OrdinalIgnoreCase)))
+            return 30;
+        
+        // Alias contains query
+        if (concept.Aliases.Any(a => a.Contains(query, StringComparison.OrdinalIgnoreCase)))
+            return 20;
+        
+        return 0; // No match
+    }
+
+    /// <summary>
+    /// Collects all node IDs within the specified depth from the starting concepts.
+    /// Uses BFS to traverse the graph bidirectionally.
+    /// </summary>
+    private HashSet<string> CollectNodesWithinDepth(List<Concept> startConcepts, int maxDepth)
+    {
+        var result = new HashSet<string>();
+        var visited = new HashSet<string>();
+        var queue = new Queue<(string Id, int Depth)>();
+
+        // Build adjacency list for bidirectional traversal
+        var adjacency = BuildBidirectionalAdjacency();
+
+        // Add all starting concepts
+        foreach (var concept in startConcepts)
+        {
+            queue.Enqueue((concept.Id, 0));
+            visited.Add(concept.Id);
+        }
+
+        while (queue.Count > 0)
+        {
+            var (currentId, currentDepth) = queue.Dequeue();
+            result.Add(currentId);
+
+            // If depth is unlimited (0) or we haven't reached max depth, continue traversal
+            if (maxDepth == 0 || currentDepth < maxDepth)
+            {
+                if (adjacency.TryGetValue(currentId, out var neighbors))
+                {
+                    foreach (var neighborId in neighbors)
+                    {
+                        if (!visited.Contains(neighborId))
+                        {
+                            visited.Add(neighborId);
+                            queue.Enqueue((neighborId, currentDepth + 1));
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Builds an adjacency list treating all relationships as bidirectional.
+    /// </summary>
+    private Dictionary<string, HashSet<string>> BuildBidirectionalAdjacency()
+    {
+        var adjacency = new Dictionary<string, HashSet<string>>();
+
+        // Initialize with all concepts
+        foreach (var concept in concepts)
+        {
+            adjacency[concept.Id] = [];
+        }
+
+        // Add edges for all relationships (bidirectional)
+        foreach (var rel in relationships)
+        {
+            if (adjacency.ContainsKey(rel.SourceConceptId) && adjacency.ContainsKey(rel.TargetConceptId))
+            {
+                adjacency[rel.SourceConceptId].Add(rel.TargetConceptId);
+                adjacency[rel.TargetConceptId].Add(rel.SourceConceptId);
+            }
+        }
+
+        return adjacency;
+    }
+
+    /// <summary>
+    /// Resets the filter and shows all nodes.
+    /// </summary>
+    private async Task ResetFilter()
+    {
+        searchQuery = "";
+        isFiltered = false;
+        filteredNodeCount = 0;
+        filterResultMessage = null;
+        visibleNodeIds = [];
+
+        try
+        {
+            await JS.InvokeVoidAsync("resetGraphFilter");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Reset filter error: {ex.Message}");
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Clears the search query without applying filter.
+    /// </summary>
+    private async Task ClearSearch()
+    {
+        await ResetFilter();
+    }
+
+    #endregion
 
     public void Dispose()
     {

@@ -4,8 +4,6 @@
 @inject AppUiState UiState
 @inject SideNavService SideNavService
 
-<div class="page-title">Welcome</div>
-
 @if (_checking)
 {
     <p>Checking configuration...</p>
@@ -17,7 +15,6 @@ else if (!_hasApiKey)
             border-radius: 8px;
             background: rgba(255, 200, 0, 0.15);
             border: 1px solid rgba(255, 200, 0, 0.4);
-            max-width: 720px;
         ">
         <strong>OpenAI API key not found.</strong>
         <p>
