@@ -6,11 +6,14 @@
 @inject AppUiState UiState
 @inject UserProgressService ProgressService
 @inject NavigationManager Nav
+@inject AuthenticationService AuthService
 @implements IDisposable
 
-<div class="learn-page">
-    <LearnTabs @ref="learnTabs" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
-</div>
+<AuthGuard>
+    <div class="learn-page">
+        <LearnTabs @ref="learnTabs" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
+    </div>
+</AuthGuard>
 
 @code {
     private Course? activeCourse;
@@ -20,6 +23,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Wait for auth to initialize
+        await AuthService.InitializeAsync();
+        
+        if (!AuthService.IsAuthenticated)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
         activeCourse = await CourseService.GetActiveCourseAsync();
         
         // Set up side nav for Learn tab

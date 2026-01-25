@@ -1,6 +1,7 @@
 @using Tutor.Services
+@using Tutor.Models
 
-<div class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "")" 
+<div class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "") @GetStatusClass()" 
      style="--indent-level: @Level">
     
     <div class="side-nav-item-content" @onclick="() => OnNodeClick.InvokeAsync(Node)">
@@ -15,12 +16,28 @@
             <span class="expand-spacer"></span>
         }
         
-        @if (!string.IsNullOrEmpty(Node.Icon))
+        @* Status indicator *@
+        <span class="status-indicator @GetStatusClass()" title="@GetStatusTitle()">
+            <span class="bi @GetStatusIcon()"></span>
+        </span>
+        
+        @* Section number if available *@
+        @if (!string.IsNullOrEmpty(Node.Number))
+        {
+            <span class="side-nav-number">@Node.Number</span>
+        }
+        else if (!string.IsNullOrEmpty(Node.Icon))
         {
             <span class="side-nav-icon bi @Node.Icon"></span>
         }
         
         <span class="side-nav-title">@Node.Title</span>
+        
+        @* Progress percentage for parent nodes *@
+        @if (Node.Children.Count > 0 && Node.CompletionPercentage > 0)
+        {
+            <span class="side-nav-progress">@Node.CompletionPercentage%</span>
+        }
     </div>
     
     @if (Node.IsExpanded && Node.Children.Count > 0)
@@ -50,5 +67,38 @@
     private async Task HandleToggleClick()
     {
         await OnToggle.InvokeAsync(Node);
+    }
+
+    private string GetStatusClass()
+    {
+        return Node.Status switch
+        {
+            SectionStatus.Complete => "status-complete",
+            SectionStatus.Read => "status-read",
+            SectionStatus.Visited => "status-visited",
+            _ => "status-not-started"
+        };
+    }
+
+    private string GetStatusIcon()
+    {
+        return Node.Status switch
+        {
+            SectionStatus.Complete => "bi-check-circle-fill",
+            SectionStatus.Read => "bi-book-fill",
+            SectionStatus.Visited => "bi-eye-fill",
+            _ => "bi-circle"
+        };
+    }
+
+    private string GetStatusTitle()
+    {
+        return Node.Status switch
+        {
+            SectionStatus.Complete => "Completed",
+            SectionStatus.Read => "Read",
+            SectionStatus.Visited => "Visited",
+            _ => "Not Started"
+        };
     }
 }

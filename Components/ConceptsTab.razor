@@ -2,6 +2,7 @@
 @using Tutor.Services
 @inject CourseService CourseService
 @inject ConceptMapStorageService ConceptMapStorageService
+@inject ConceptAutoCompleteService AutoCompleteService
 
 <div class="concepts-tab-container">
     @if (string.IsNullOrEmpty(CourseId))
@@ -31,19 +32,15 @@
     {
         @* Search and filter bar *@
         <div class="concepts-toolbar">
-            <div class="concepts-search">
-                <span class="bi bi-search"></span>
-                <input type="text" 
-                       placeholder="Search concepts..." 
-                       @bind="searchQuery" 
-                       @bind:event="oninput" />
-                @if (!string.IsNullOrEmpty(searchQuery))
-                {
-                    <button class="clear-search" @onclick="ClearSearch">
-                        <span class="bi bi-x-lg"></span>
-                    </button>
-                }
-            </div>
+            <AutoCompleteInput TItem="Concept"
+                               @bind-Value="searchQuery"
+                               Placeholder="Search concepts..."
+                               Items="concepts"
+                               ItemTextSelector="@(c => c.Title)"
+                               SearchFunction="@((items, query) => AutoCompleteService.GetSuggestions(items, query).Select(s => items.First(c => c.Id == s.Id)))"
+                               OnItemSelected="OnAutoCompleteItemSelected"
+                               OnCleared="ClearSearch"
+                               Class="concepts-search" />
             <div class="concepts-filter">
                 <select @bind="filterMode">
                     <option value="all">All Concepts</option>
@@ -210,41 +207,41 @@
 }
 
 @code {
-    [Parameter] public string? CourseId { get; set; }
-    [Parameter] public HashSet<string> LearnedConcepts { get; set; } = [];
-    [Parameter] public string? SelectedConceptId { get; set; }
-    [Parameter] public EventCallback<string> OnAskAboutConcept { get; set; }
-    [Parameter] public EventCallback<string> OnVisualizeConcept { get; set; }
+[Parameter] public string? CourseId { get; set; }
+[Parameter] public HashSet<string> LearnedConcepts { get; set; } = [];
+[Parameter] public string? SelectedConceptId { get; set; }
+[Parameter] public EventCallback<string> OnAskAboutConcept { get; set; }
+[Parameter] public EventCallback<string> OnVisualizeConcept { get; set; }
 
-    private bool isLoading = true;
-    private List<Concept> concepts = [];
-    private List<ConceptRelationship> relationships = [];
-    private string searchQuery = "";
-    private string filterMode = "all";
-    private Concept? selectedConcept;
-    private List<ConceptRelationship> relatedConcepts = [];
+private bool isLoading = true;
+private List<Concept> concepts = [];
+private List<ConceptRelationship> relationships = [];
+private string searchQuery = "";
+private string filterMode = "all";
+private Concept? selectedConcept;
+private List<ConceptRelationship> relatedConcepts = [];
 
-    private IEnumerable<Concept> filteredConcepts => concepts
-        .Where(c => MatchesSearch(c) && MatchesFilter(c))
-        .OrderBy(c => c.Title);
+private IEnumerable<Concept> filteredConcepts => concepts
+    .Where(c => MatchesSearch(c) && MatchesFilter(c))
+    .OrderBy(c => c.Title);
 
-    protected override async Task OnInitializedAsync()
+protected override async Task OnInitializedAsync()
+{
+    await LoadConcepts();
+}
+
+protected override async Task OnParametersSetAsync()
+{
+    // Handle external concept selection
+    if (!string.IsNullOrEmpty(SelectedConceptId) && selectedConcept?.Id != SelectedConceptId)
     {
-        await LoadConcepts();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        // Handle external concept selection
-        if (!string.IsNullOrEmpty(SelectedConceptId) && selectedConcept?.Id != SelectedConceptId)
+        var concept = concepts.FirstOrDefault(c => c.Id == SelectedConceptId);
+        if (concept != null)
         {
-            var concept = concepts.FirstOrDefault(c => c.Id == SelectedConceptId);
-            if (concept != null)
-            {
-                SelectConcept(concept);
-            }
+            SelectConcept(concept);
         }
     }
+}
 
     private async Task LoadConcepts()
     {
@@ -312,6 +309,15 @@
     private void ClearSearch()
     {
         searchQuery = "";
+    }
+
+    /// <summary>
+    /// Called when user selects an item from autocomplete dropdown.
+    /// </summary>
+    private void OnAutoCompleteItemSelected(Concept concept)
+    {
+        searchQuery = concept.Title;
+        SelectConcept(concept);
     }
 
     private void SelectConcept(Concept concept)

@@ -720,6 +720,236 @@ public sealed class ConceptMergeService
     }
 
     /// <summary>
+    /// Asynchronously finds duplicates within a MergedCourseConceptMap with parallelism and progress reporting.
+    /// Uses chunking and throttling to avoid UI freezing.
+    /// </summary>
+    /// <param name="mergedMap">The merged map to scan for duplicates.</param>
+    /// <param name="onProgress">Optional callback for progress updates.</param>
+    /// <param name="maxDegreeOfParallelism">Maximum concurrent workers (default: 4).</param>
+    /// <param name="chunkSize">Number of concepts to process per chunk (default: 50).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<DuplicateDetectionResult> FindDuplicatesInMergedMapAsync(
+        MergedCourseConceptMap mergedMap,
+        Action<DuplicateDetectionProgress>? onProgress = null,
+        int maxDegreeOfParallelism = 4,
+        int chunkSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var result = new DuplicateDetectionResult();
+        var concepts = mergedMap.Concepts;
+
+        if (concepts.Count < 2)
+            return result;
+
+        // Phase 1: Group by normalized title for exact duplicates (fast, no parallelism needed)
+        ReportProgress(onProgress, "Finding exact duplicates...", 5, 0, concepts.Count, 0, 0);
+        await Task.Yield(); // Allow UI to update
+
+        var titleGroups = concepts
+            .GroupBy(c => NormalizeTitle(c.Title))
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        foreach (var group in titleGroups)
+        {
+            var conceptList = group.ToList();
+            result.ExactDuplicates.Add(new DuplicateGroup
+            {
+                MatchType = DuplicateMatchType.Exact,
+                Concepts = conceptList,
+                Confidence = 1.0f,
+                SuggestedCanonical = SelectCanonicalConcept(conceptList)
+            });
+        }
+
+        result.TotalDuplicateGroups = result.ExactDuplicates.Count;
+        ReportProgress(onProgress, "Exact duplicates found", 10, concepts.Count, concepts.Count, result.ExactDuplicates.Count, 0);
+
+        // Phase 2: Pre-compute all SimHash signatures in parallel with chunking
+        ReportProgress(onProgress, "Computing similarity signatures...", 15, 0, concepts.Count, result.ExactDuplicates.Count, 0);
+        await Task.Yield();
+
+        var signatureCache = new Dictionary<string, ulong>();
+        var signatureLock = new object();
+        var semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+        var processedSigCount = 0;
+
+        // Split concepts into chunks for parallel processing
+        var conceptChunks = concepts.Chunk(chunkSize).ToList();
+        var sigTasks = new List<Task>();
+
+        foreach (var chunk in conceptChunks)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            sigTasks.Add(Task.Run(async () =>
+            {
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    foreach (var concept in chunk)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var sig = simHashService.GetSignature64($"{concept.Title} {concept.Summary}");
+                        lock (signatureLock)
+                        {
+                            signatureCache[concept.Id] = sig;
+                            processedSigCount++;
+                        }
+                    }
+
+                    // Report progress periodically
+                    var progress = 15 + (int)(35.0 * processedSigCount / concepts.Count);
+                    ReportProgress(onProgress, $"Computing signatures ({processedSigCount}/{concepts.Count})...",
+                        progress, processedSigCount, concepts.Count, result.ExactDuplicates.Count, 0);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }, cancellationToken));
+        }
+
+        await Task.WhenAll(sigTasks);
+        ReportProgress(onProgress, "Signatures computed", 50, concepts.Count, concepts.Count, result.ExactDuplicates.Count, 0);
+
+        // Phase 3: Find similar pairs using pre-computed signatures with chunked parallelism
+        // Build a set of normalized titles in exact duplicate groups for quick lookup
+        var exactDuplicateTitles = new HashSet<string>(
+            result.ExactDuplicates.SelectMany(g => g.Concepts.Select(c => NormalizeTitle(c.Title))));
+
+        // Generate all unique pairs to check
+        var pairs = new List<(Concept A, Concept B)>();
+        for (int i = 0; i < concepts.Count; i++)
+        {
+            for (int j = i + 1; j < concepts.Count; j++)
+            {
+                var conceptA = concepts[i];
+                var conceptB = concepts[j];
+
+                // Skip if already in an exact duplicate group
+                if (NormalizeTitle(conceptA.Title) == NormalizeTitle(conceptB.Title))
+                    continue;
+
+                pairs.Add((conceptA, conceptB));
+            }
+        }
+
+        var totalPairs = pairs.Count;
+        if (totalPairs == 0)
+        {
+            result.TotalSimilarPairs = 0;
+            ReportProgress(onProgress, "Complete", 100, 0, 0, result.ExactDuplicates.Count, 0);
+            return result;
+        }
+
+        ReportProgress(onProgress, $"Comparing {totalPairs:N0} pairs...", 55, 0, totalPairs, result.ExactDuplicates.Count, 0);
+        await Task.Yield();
+
+        var similarPairs = new List<SimilarConceptPair>();
+        var similarLock = new object();
+        var processedPairCount = 0;
+
+        // Chunk the pairs for parallel processing
+        var pairChunks = pairs.Chunk(chunkSize * 10).ToList(); // Larger chunks since comparisons are fast
+        var pairTasks = new List<Task>();
+
+        foreach (var pairChunk in pairChunks)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            pairTasks.Add(Task.Run(async () =>
+            {
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var localSimilar = new List<SimilarConceptPair>();
+
+                    foreach (var (conceptA, conceptB) in pairChunk)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        var sigA = signatureCache[conceptA.Id];
+                        var sigB = signatureCache[conceptB.Id];
+                        var distance = SimHashService.HammingDistance(sigA, sigB);
+
+                        if (distance <= MaxHammingDistanceForSimilar)
+                        {
+                            var similarity = 1.0f - (distance / 64.0f);
+
+                            localSimilar.Add(new SimilarConceptPair
+                            {
+                                ConceptA = conceptA,
+                                ConceptB = conceptB,
+                                SimilarityScore = similarity,
+                                HammingDistance = distance,
+                                NeedsUserConfirmation = true
+                            });
+                        }
+
+                        Interlocked.Increment(ref processedPairCount);
+                    }
+
+                    // Batch add to main list
+                    if (localSimilar.Count > 0)
+                    {
+                        lock (similarLock)
+                        {
+                            similarPairs.AddRange(localSimilar);
+                        }
+                    }
+
+                    // Report progress periodically
+                    var progress = 55 + (int)(40.0 * processedPairCount / totalPairs);
+                    int currentSimilarCount;
+                    lock (similarLock)
+                    {
+                        currentSimilarCount = similarPairs.Count;
+                    }
+                    ReportProgress(onProgress, $"Comparing pairs ({processedPairCount:N0}/{totalPairs:N0})...",
+                        progress, processedPairCount, totalPairs, result.ExactDuplicates.Count, currentSimilarCount);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }, cancellationToken));
+        }
+
+        await Task.WhenAll(pairTasks);
+
+        result.SimilarConcepts = similarPairs;
+        result.TotalSimilarPairs = similarPairs.Count;
+
+        ReportProgress(onProgress, "Complete", 100, totalPairs, totalPairs, result.ExactDuplicates.Count, result.TotalSimilarPairs);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Helper to report progress with null-safety.
+    /// </summary>
+    private static void ReportProgress(
+        Action<DuplicateDetectionProgress>? onProgress,
+        string phase,
+        int progressPercent,
+        int processedCount,
+        int totalCount,
+        int exactDuplicatesFound,
+        int similarPairsFound)
+    {
+        onProgress?.Invoke(new DuplicateDetectionProgress
+        {
+            Phase = phase,
+            ProgressPercent = Math.Clamp(progressPercent, 0, 100),
+            ProcessedCount = processedCount,
+            TotalCount = totalCount,
+            ExactDuplicatesFound = exactDuplicatesFound,
+            SimilarPairsFound = similarPairsFound
+        });
+    }
+
+    /// <summary>
     /// Merges approved concept pairs within a MergedCourseConceptMap.
     /// This only modifies the course-specific merged map, NOT the original ConceptMaps.
     /// </summary>
@@ -955,4 +1185,40 @@ public class MergeResult
     public List<string> MergedConceptIds { get; set; } = [];
     public int RemainingConceptCount { get; set; }
     public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// Progress report for duplicate detection operations.
+/// </summary>
+public class DuplicateDetectionProgress
+{
+    /// <summary>
+    /// Current phase of detection (e.g., "Grouping exact duplicates", "Computing similarity signatures").
+    /// </summary>
+    public string Phase { get; init; } = "";
+    
+    /// <summary>
+    /// Progress percentage (0-100).
+    /// </summary>
+    public int ProgressPercent { get; init; }
+    
+    /// <summary>
+    /// Number of items processed in current phase.
+    /// </summary>
+    public int ProcessedCount { get; init; }
+    
+    /// <summary>
+    /// Total items to process in current phase.
+    /// </summary>
+    public int TotalCount { get; init; }
+    
+    /// <summary>
+    /// Number of exact duplicates found so far.
+    /// </summary>
+    public int ExactDuplicatesFound { get; init; }
+    
+    /// <summary>
+    /// Number of similar pairs found so far.
+    /// </summary>
+    public int SimilarPairsFound { get; init; }
 }

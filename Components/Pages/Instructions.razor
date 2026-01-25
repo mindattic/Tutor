@@ -2,6 +2,7 @@
 @using Microsoft.Maui.Storage
 @inject NavigationManager Nav
 
+<AuthGuard>
 <h3 class="page-title">Instructions</h3>
 <p>Add instructions that will be sent with every prompt to control ChatGPT's behavior.</p>
 
@@ -29,6 +30,7 @@
 
     <p class="status-message">@status</p>
 </div>
+</AuthGuard>
 
 @code {
     private const string StorageKeyPrefix = "INSTRUCTION_";

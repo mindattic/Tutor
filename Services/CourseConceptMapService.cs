@@ -217,8 +217,9 @@ public sealed class CourseConceptMapService
         }
     }
 
+
     /// <summary>
-    /// Finds duplicates in the course's merged map.
+    /// Finds duplicates in the course's merged map (synchronous version for backward compatibility).
     /// </summary>
     public async Task<DuplicateDetectionResult?> FindDuplicatesAsync(string courseId)
     {
@@ -227,6 +228,30 @@ public sealed class CourseConceptMapService
             return null;
 
         return mergeService.FindDuplicatesInMergedMap(mergedMap);
+    }
+
+    /// <summary>
+    /// Finds duplicates in the course's merged map with progress reporting.
+    /// Uses parallel processing with throttling to avoid UI freezing.
+    /// </summary>
+    /// <param name="courseId">The course ID to scan.</param>
+    /// <param name="onProgress">Optional callback for progress updates.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<DuplicateDetectionResult?> FindDuplicatesWithProgressAsync(
+        string courseId,
+        Action<DuplicateDetectionProgress>? onProgress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var mergedMap = await GetOrCreateMergedMapAsync(courseId);
+        if (mergedMap == null)
+            return null;
+
+        return await mergeService.FindDuplicatesInMergedMapAsync(
+            mergedMap,
+            onProgress,
+            maxDegreeOfParallelism: 4,
+            chunkSize: 50,
+            cancellationToken);
     }
 
     /// <summary>

@@ -26,6 +26,16 @@ public enum CourseStructureStatus
     OrderingConcepts,
 
     /// <summary>
+    /// Currently generating hierarchical sections within lessons.
+    /// </summary>
+    GeneratingSections,
+
+    /// <summary>
+    /// Currently generating content for sections.
+    /// </summary>
+    GeneratingContent,
+
+    /// <summary>
     /// Structure is ready for use.
     /// </summary>
     Ready,
@@ -223,5 +233,40 @@ public class CourseStructure
         var allIds = GetAllConceptIdsInOrder().ToList();
         var index = allIds.IndexOf(conceptId);
         return index >= 0 ? index + 1 : 0;
+    }
+
+    /// <summary>
+    /// Gets the total number of sections across all lessons.
+    /// </summary>
+    public int TotalSections => Lessons.Sum(l => l.GetTotalSectionCount());
+
+    /// <summary>
+    /// Finds a section by ID across all lessons.
+    /// </summary>
+    public Section? FindSection(string sectionId)
+    {
+        foreach (var lesson in Lessons)
+        {
+            var section = lesson.FindSection(sectionId);
+            if (section != null)
+                return section;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets all sections flattened in learning order.
+    /// </summary>
+    public IEnumerable<Section> GetAllSectionsFlattened()
+    {
+        return GetLessonsInOrder().SelectMany(l => l.GetAllSectionsFlattened());
+    }
+
+    /// <summary>
+    /// Finds the lesson containing a specific section.
+    /// </summary>
+    public Lesson? FindLessonForSection(string sectionId)
+    {
+        return Lessons.FirstOrDefault(l => l.FindSection(sectionId) != null);
     }
 }

@@ -1,63 +1,110 @@
-﻿@page "/"
-@using Microsoft.Maui.Storage
+@page "/"
+@using Tutor.Services
 @inject NavigationManager Nav
-@inject AppUiState UiState
-@inject SideNavService SideNavService
+@inject AuthenticationService AuthService
 
-@if (_checking)
-{
-    <p>Checking configuration...</p>
-}
-else if (!_hasApiKey)
-{
-    <div style="
-            padding: 12px;
-            border-radius: 8px;
-            background: rgba(255, 200, 0, 0.15);
-            border: 1px solid rgba(255, 200, 0, 0.4);
-        ">
-        <strong>OpenAI API key not found.</strong>
-        <p>
-            To use the Learn feature, please enter your OpenAI API key in Settings.
-        </p>
-        <button @onclick="GoToSettings">Go to Settings</button>
+<div class="home-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <span class="bi bi-mortarboard-fill auth-icon"></span>
+                <h1>Welcome to Tutor</h1>
+                <p class="auth-subtitle">Your AI-Powered Learning Companion</p>
+            </div>
+
+            <div class="auth-form">
+                <h2>Login</h2>
+                
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="auth-error">
+                        <span class="bi bi-exclamation-triangle"></span>
+                        @_errorMessage
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" @bind="_username" @bind:event="oninput" 
+                           placeholder="Enter your username" disabled="@_processing" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" @bind="_password" @bind:event="oninput" 
+                           placeholder="Enter your password" disabled="@_processing" 
+                           @onkeydown="HandleKeyDown" />
+                </div>
+
+                <button class="auth-btn primary" @onclick="LoginAsync" disabled="@_processing">
+                    @if (_processing)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span class="bi bi-box-arrow-in-right"></span>
+                    }
+                    <span>Login</span>
+                </button>
+            </div>
+        </div>
     </div>
-}
-else
-{
-    <p>Your OpenAI API key is configured. Go to <a href="learn">Learn</a> to start.</p>
-}
+</div>
 
-@code
-{
-    private const string StorageKeyName = "OPENAI_API_KEY";
+@code {
+    private bool _processing;
+    private string _username = "";
+    private string _password = "";
+    private string? _errorMessage;
 
-    private bool _checking = true;
-    private bool _hasApiKey;
-
-    protected override async Task OnInitializedAsync()
+    private async Task LoginAsync()
     {
-        // Clear side nav on home page
-        UiState.SetActiveTab(TopTab.Learn);
-        SideNavService.ClearSideNav();
+        _errorMessage = null;
+        
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _errorMessage = "Please enter your username.";
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(_password))
+        {
+            _errorMessage = "Please enter your password.";
+            return;
+        }
+
+        _processing = true;
+        StateHasChanged();
 
         try
         {
-            var key = await SecureStorage.GetAsync(StorageKeyName);
-            _hasApiKey = !string.IsNullOrWhiteSpace(key);
+            var result = await AuthService.LoginAsync(_username.Trim(), _password);
+            
+            if (result.Success)
+            {
+                Nav.NavigateTo("/learn");
+            }
+            else
+            {
+                _errorMessage = result.ErrorMessage ?? "Login failed.";
+            }
         }
-        catch
+        catch (Exception ex)
         {
-            _hasApiKey = false;
+            _errorMessage = $"An error occurred: {ex.Message}";
         }
-        finally
-        {
-            _checking = false;
-        }
+        
+        _processing = false;
+        _password = "";
+        StateHasChanged();
     }
 
-    private void GoToSettings()
+    private void HandleKeyDown(KeyboardEventArgs e)
     {
-        Nav.NavigateTo("/settings");
+        if (e.Key == "Enter")
+        {
+            _ = LoginAsync();
+        }
     }
 }

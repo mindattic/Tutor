@@ -2,7 +2,9 @@
 @using Tutor.Services
 @inject AppUiState UiState
 
-<CourseManagement />
+<AuthGuard>
+    <CourseManagement />
+</AuthGuard>
 
 @code {
     protected override void OnInitialized()

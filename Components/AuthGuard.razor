@@ -1,0 +1,97 @@
+@using Tutor.Services
+@inject AuthenticationService AuthService
+@inject NavigationManager Nav
+@implements IDisposable
+
+@* 
+    AuthGuard component that wraps protected content.
+    If user is not authenticated, redirects to home page.
+    Can also check for specific roles.
+*@
+
+@if (_initialized && AuthService.IsAuthenticated)
+{
+    @if (RequiredRole.HasValue && !AuthService.HasRole(RequiredRole.Value))
+    {
+        <div class="auth-guard-denied">
+            <span class="bi bi-shield-lock"></span>
+            <h2>Access Denied</h2>
+            <p>You don't have permission to access this page.</p>
+            <button class="back-btn" @onclick="GoHome">Go to Home</button>
+        </div>
+    }
+    else
+    {
+        @ChildContent
+    }
+}
+else if (_initialized)
+{
+    <div class="auth-guard-redirect">
+        <span class="spinner"></span>
+        <p>Redirecting to login...</p>
+    </div>
+}
+else
+{
+    <div class="auth-guard-loading">
+        <span class="spinner"></span>
+        <p>Loading...</p>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Optional role required to access the content.
+    /// </summary>
+    [Parameter]
+    public UserRole? RequiredRole { get; set; }
+
+    /// <summary>
+    /// If true, silently shows nothing instead of redirecting.
+    /// </summary>
+    [Parameter]
+    public bool Silent { get; set; }
+
+    private bool _initialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.OnAuthStateChanged += HandleAuthStateChanged;
+        
+        // Initialize the auth service
+        await AuthService.InitializeAsync();
+        _initialized = true;
+
+        // Redirect if not authenticated
+        if (!AuthService.IsAuthenticated && !Silent)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(() =>
+        {
+            if (!AuthService.IsAuthenticated && !Silent)
+            {
+                Nav.NavigateTo("/");
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void GoHome()
+    {
+        Nav.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= HandleAuthStateChanged;
+    }
+}

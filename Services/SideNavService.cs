@@ -130,7 +130,8 @@ public sealed class SideNavService
     /// <summary>
     /// Builds navigation nodes from CourseStructure.
     /// The structure references Concepts in the ConceptMap by ID.
-    /// Hierarchy: Lessons -> Topics -> Concepts
+    /// Hierarchy: Lessons (Chapters) -> Sections -> Subsections -> Concepts
+    /// Falls back to: Lessons -> Topics -> Concepts if no sections exist
     /// </summary>
     private List<NavNode> BuildNavFromCourseStructure(
         CourseStructure structure, 
@@ -151,65 +152,214 @@ public sealed class SideNavService
                 Data = lesson
             };
 
-            // Add topics as children
-            foreach (var topic in lesson.Topics.OrderBy(t => t.Order))
+            // Check if lesson has hierarchical sections
+            if (lesson.Sections.Count > 0)
             {
-                var topicNode = new NavNode
+                // Use sections hierarchy (new encyclopedia-style navigation)
+                foreach (var section in lesson.Sections.OrderBy(s => s.Order))
                 {
-                    Id = $"topic-{topic.Id}",
-                    Title = topic.Title,
-                    Icon = topic.Icon ?? "bi-bookmark",
-                    Description = topic.Summary,
-                    IsExpanded = false,
-                    Data = topic
-                };
+                    var sectionNode = BuildSectionNavNode(section, conceptMap, progress);
+                    lessonNode.Children.Add(sectionNode);
+                }
 
-
-                // Add concepts as children (look up from ConceptMap)
-                foreach (var conceptId in topic.ConceptIds)
+                // Calculate lesson progress from sections
+                var totalSections = lesson.GetTotalSectionCount();
+                var completedSections = lesson.GetAllSectionsFlattened()
+                    .Count(s => progress.GetSectionStatus(s.Id) == SectionStatus.Complete);
+                if (totalSections > 0)
                 {
-                    var concept = conceptMap.GetConcept(conceptId);
-                    if (concept == null) continue;
-
-                    var isLearned = progress.IsConceptLearned(conceptId);
-                    var isVisited = progress.IsConceptVisited(conceptId);
-
-                    var conceptNode = new NavNode
+                    var pct = (int)((double)completedSections / totalSections * 100);
+                    lessonNode.Description = $"{completedSections}/{totalSections} sections ({pct}%)";
+                }
+            }
+            else
+            {
+                // Fallback: use topics hierarchy (original navigation)
+                foreach (var topic in lesson.Topics.OrderBy(t => t.Order))
+                {
+                    var topicNode = new NavNode
                     {
-                        Id = $"concept-{conceptId}",
-                        Title = concept.Title,
-                        Icon = isLearned ? "bi-check-circle-fill" : (isVisited ? "bi-circle-half" : "bi-circle"),
-                        Data = concept
+                        Id = $"topic-{topic.Id}",
+                        Title = topic.Title,
+                        Icon = topic.Icon ?? "bi-bookmark",
+                        Description = topic.Summary,
+                        IsExpanded = false,
+                        Data = topic
                     };
 
-                    topicNode.Children.Add(conceptNode);
+                    // Add concepts as children (look up from ConceptMap)
+                    foreach (var conceptId in topic.ConceptIds)
+                    {
+                        var concept = conceptMap.GetConcept(conceptId);
+                        if (concept == null) continue;
+
+                        var isLearned = progress.IsConceptLearned(conceptId);
+                        var isVisited = progress.IsConceptVisited(conceptId);
+
+                        var conceptNode = new NavNode
+                        {
+                            Id = $"concept-{conceptId}",
+                            Title = concept.Title,
+                            Icon = isLearned ? "bi-check-circle-fill" : (isVisited ? "bi-circle-half" : "bi-circle"),
+                            Data = concept
+                        };
+
+                        topicNode.Children.Add(conceptNode);
+                    }
+
+                    // Calculate topic progress
+                    var totalInTopic = topic.ConceptIds.Count;
+                    var learnedInTopic = topic.ConceptIds.Count(id => progress.IsConceptLearned(id));
+                    if (totalInTopic > 0)
+                    {
+                        var pct = (int)((double)learnedInTopic / totalInTopic * 100);
+                        topicNode.Description = $"{learnedInTopic}/{totalInTopic} ({pct}%)";
+                    }
+
+                    lessonNode.Children.Add(topicNode);
                 }
 
-                // Calculate topic progress
-                var totalInTopic = topic.ConceptIds.Count;
-                var learnedInTopic = topic.ConceptIds.Count(id => progress.IsConceptLearned(id));
-                if (totalInTopic > 0)
+                // Calculate lesson progress from concepts
+                var totalInLesson = lesson.TotalConceptCount;
+                var learnedInLesson = lesson.GetAllConceptIds().Count(id => progress.IsConceptLearned(id));
+                if (totalInLesson > 0)
                 {
-                    var pct = (int)((double)learnedInTopic / totalInTopic * 100);
-                    topicNode.Description = $"{learnedInTopic}/{totalInTopic} ({pct}%)";
+                    var pct = (int)((double)learnedInLesson / totalInLesson * 100);
+                    lessonNode.Description = $"{learnedInLesson}/{totalInLesson} concepts ({pct}%)";
                 }
-
-                lessonNode.Children.Add(topicNode);
-            }
-
-            // Calculate lesson progress
-            var totalInLesson = lesson.TotalConceptCount;
-            var learnedInLesson = lesson.GetAllConceptIds().Count(id => progress.IsConceptLearned(id));
-            if (totalInLesson > 0)
-            {
-                var pct = (int)((double)learnedInLesson / totalInLesson * 100);
-                lessonNode.Description = $"{learnedInLesson}/{totalInLesson} concepts ({pct}%)";
             }
 
             nodes.Add(lessonNode);
         }
 
         return nodes;
+    }
+
+    /// <summary>
+    /// Builds a navigation node for a section and its children recursively.
+    /// </summary>
+    private NavNode BuildSectionNavNode(Section section, ConceptMap conceptMap, UserProgress progress)
+    {
+        var status = progress.GetSectionStatus(section.Id);
+        var icon = GetSectionIcon(section, status);
+        
+        var sectionNode = new NavNode
+        {
+            Id = $"section-{section.Id}",
+            Title = $"{section.Number}. {section.Title}",
+            Icon = icon,
+            Description = section.Summary,
+            IsExpanded = false,
+            Data = section
+        };
+
+        // Add child sections recursively
+        foreach (var child in section.Children.OrderBy(c => c.Order))
+        {
+            var childNode = BuildSectionNavNode(child, conceptMap, progress);
+            sectionNode.Children.Add(childNode);
+        }
+
+        // If this is a leaf section (no children), add concepts
+        if (section.Children.Count == 0 && section.ConceptIds.Count > 0)
+        {
+            foreach (var conceptId in section.ConceptIds)
+            {
+                var concept = conceptMap.GetConcept(conceptId);
+                if (concept == null) continue;
+
+                var isLearned = progress.IsConceptLearned(conceptId);
+                var isVisited = progress.IsConceptVisited(conceptId);
+
+                var conceptNode = new NavNode
+                {
+                    Id = $"concept-{conceptId}",
+                    Title = concept.Title,
+                    Icon = isLearned ? "bi-check-circle-fill" : (isVisited ? "bi-circle-half" : "bi-circle"),
+                    Data = concept
+                };
+
+                sectionNode.Children.Add(conceptNode);
+            }
+        }
+
+        // Update description with progress and quiz indicator
+        var progressText = GetSectionProgressText(section, progress);
+        var quizIndicator = section.HasQuiz ? " 📝" : "";
+        sectionNode.Description = $"{progressText}{quizIndicator}";
+
+        return sectionNode;
+    }
+
+    /// <summary>
+    /// Gets the appropriate icon for a section based on its status.
+    /// </summary>
+    private static string GetSectionIcon(Section section, SectionStatus status)
+    {
+        // Use section's custom icon if provided
+        if (!string.IsNullOrEmpty(section.Icon))
+            return section.Icon;
+
+        // Otherwise use status-based icons
+        return status switch
+        {
+            SectionStatus.Complete => "bi-check-circle-fill",
+            SectionStatus.Read => "bi-book-fill",
+            SectionStatus.Visited => "bi-circle-half",
+            _ => section.Depth switch
+            {
+                0 => "bi-folder",
+                1 => "bi-file-text",
+                2 => "bi-file-earmark-text",
+                _ => "bi-dot"
+            }
+        };
+    }
+
+    /// <summary>
+    /// Gets progress text for a section.
+    /// </summary>
+    private static string GetSectionProgressText(Section section, UserProgress progress)
+    {
+        if (section.Children.Count == 0)
+        {
+            // Leaf section - show concept progress
+            var total = section.ConceptIds.Count;
+            var learned = section.ConceptIds.Count(id => progress.IsConceptLearned(id));
+            if (total > 0)
+            {
+                var pct = (int)((double)learned / total * 100);
+                return $"{learned}/{total} ({pct}%)";
+            }
+            return section.Summary ?? "";
+        }
+        else
+        {
+            // Parent section - show child section progress
+            var allChildren = GetAllDescendantSections(section);
+            var total = allChildren.Count;
+            var completed = allChildren.Count(s => progress.GetSectionStatus(s.Id) == SectionStatus.Complete);
+            if (total > 0)
+            {
+                var pct = (int)((double)completed / total * 100);
+                return $"{completed}/{total} subsections ({pct}%)";
+            }
+            return section.Summary ?? "";
+        }
+    }
+
+    /// <summary>
+    /// Gets all descendant sections (flattened) of a section.
+    /// </summary>
+    private static List<Section> GetAllDescendantSections(Section section)
+    {
+        var result = new List<Section>();
+        foreach (var child in section.Children)
+        {
+            result.Add(child);
+            result.AddRange(GetAllDescendantSections(child));
+        }
+        return result;
     }
 
     /// <summary>

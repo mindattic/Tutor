@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="lib/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="themes.css" />
     <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/quiz.css" />
+    <link rel="stylesheet" href="css/reading-timer.css" />
     <link rel="stylesheet" href="Tutor.styles.css" />
     <link rel="icon" href="data:,">
 </head>
@@ -145,6 +148,31 @@
                     : nodeData.title;
             }
             
+            // Update pin/unpin menu item based on current state
+            var pinButton = menu.querySelector('[data-action="pin"]');
+            if (pinButton && nodeData) {
+                var isPinned = pinnedNodes && pinnedNodes[nodeData.id] != null;
+                var iconEl = pinButton.querySelector('.bi');
+                var textEl = pinButton.querySelectorAll('span')[1];
+                
+                if (isPinned) {
+                    if (iconEl) {
+                        iconEl.className = 'bi bi-pin-angle-fill';
+                    }
+                    if (textEl) {
+                        textEl.textContent = 'Unpin Position';
+                    }
+                } else {
+                    if (iconEl) {
+                        iconEl.className = 'bi bi-pin-angle';
+                    }
+                    if (textEl) {
+                        textEl.textContent = 'Pin Position';
+                    }
+                }
+            }
+            
+            
             // Position the menu relative to its parent container
             var wrapper = menu.parentElement;
             var wrapperRect = wrapper ? wrapper.getBoundingClientRect() : { left: 0, top: 0 };
@@ -199,18 +227,9 @@
             
             switch (action) {
                 case 'pin':
-                    // Toggle pin state
-                    var isPinned = contextMenuNode.fx != null || contextMenuNode.fy != null;
-                    if (isPinned) {
-                        contextMenuNode.fx = null;
-                        contextMenuNode.fy = null;
-                    } else {
-                        contextMenuNode.fx = contextMenuNode.x;
-                        contextMenuNode.fy = contextMenuNode.y;
-                    }
-                    if (forceSimulation) {
-                        forceSimulation.alphaTarget(0.3).restart();
-                        setTimeout(function() { forceSimulation.alphaTarget(0); }, 300);
+                    // Toggle pin state using the shared function
+                    if (window.toggleNodePin && contextMenuNode) {
+                        window.toggleNodePin(contextMenuNode.id);
                     }
                     break;
                     
@@ -412,6 +431,11 @@
 
             // Add click handler and track selected node for keyboard interactions
             var selectedNode = null;
+            var selectedNodeId = null; // Track by ID to handle re-selection
+            
+            // Track pinned state for nodes (separate from D3's fx/fy which is also used for dragging)
+            var pinnedNodes = {}; // nodeId -> { x, y } position or null if not pinned
+            
             forceGraphNodes.on('click', function(event, d) {
                 event.stopPropagation();
                 
@@ -419,18 +443,23 @@
                 hideContextMenu();
                 
                 // Print node info to console for debugging/floating panel
+                var isPinned = pinnedNodes[d.id] != null;
                 console.log('[D3 Force Graph] Node selected:');
                 console.log('  ID:', d.id);
                 console.log('  Title:', d.title);
                 console.log('  Group:', d.group);
                 console.log('  Position: x=' + Math.round(d.x) + ', y=' + Math.round(d.y));
-                console.log('  Pinned:', d.fx != null || d.fy != null);
+                console.log('  Pinned:', isPinned);
                 
+                // Store selection before async call
+                selectedNode = d;
+                selectedNodeId = d.id;
+                highlightNodeElement(d3.select(this));
+                
+                // Notify Blazor after local state is set
                 if (forceGraphDotNetRef) {
                     forceGraphDotNetRef.invokeMethodAsync('OnNodeClick', d.id);
                 }
-                selectedNode = d;
-                highlightNodeElement(d3.select(this));
             });
 
             // Right-click context menu handler
@@ -439,6 +468,7 @@
                 event.stopPropagation();
                 
                 selectedNode = d;
+                selectedNodeId = d.id;
                 highlightNodeElement(d3.select(this));
                 
                 // Notify Blazor of selection
@@ -451,28 +481,14 @@
 
             // Keyboard handler for pin/unpin with "P" key
             d3.select(window).on('keydown.forceGraphPin', function(event) {
-                if (!selectedNode) return;
+                // Prefer the currently dragged node, fall back to selected node
+                var targetNode = currentlyDraggedNode || selectedNode;
+                if (!targetNode) return;
 
                 // Only react to "p" or "P" key
                 var key = event.key || event.keyCode;
                 if (key === 'p' || key === 'P' || key === 80) {
-                    // Toggle pin state
-                    var isPinned = selectedNode.fx != null || selectedNode.fy != null;
-                    if (isPinned) {
-                        // Unpin: release fixed positions
-                        selectedNode.fx = null;
-                        selectedNode.fy = null;
-                    } else {
-                        // Pin: fix at current location
-                        selectedNode.fx = selectedNode.x;
-                        selectedNode.fy = selectedNode.y;
-                    }
-
-                    // Nudge simulation so layout updates
-                    if (forceSimulation) {
-                        forceSimulation.alphaTarget(0.3).restart();
-                        setTimeout(function() { forceSimulation.alphaTarget(0); }, 300);
-                    }
+                    toggleNodePin(targetNode);
                 }
             });
 
@@ -489,8 +505,17 @@
                 });
             });
 
+            // Track if node was pinned before drag started
+            var wasPinnedBeforeDrag = false;
+            // Track currently dragged node for hotkey support
+            var currentlyDraggedNode = null;
+            
             function dragstarted(event, d) {
                 if (!event.active) forceSimulation.alphaTarget(0.3).restart();
+                // Check if this node was pinned before dragging
+                wasPinnedBeforeDrag = pinnedNodes[d.id] != null;
+                // Track the dragged node for hotkey pinning
+                currentlyDraggedNode = d;
                 d.fx = d.x;
                 d.fy = d.y;
             }
@@ -502,9 +527,101 @@
 
             function dragended(event, d) {
                 if (!event.active) forceSimulation.alphaTarget(0);
-                d.fx = null;
-                d.fy = null;
+                
+                // Clear the dragged node reference
+                currentlyDraggedNode = null;
+                
+                // If the node was pinned before dragging, keep it pinned at the new position
+                if (wasPinnedBeforeDrag || pinnedNodes[d.id] != null) {
+                    // Update the pinned position to the new location
+                    pinnedNodes[d.id] = { x: d.x, y: d.y };
+                    d.fx = d.x;
+                    d.fy = d.y;
+                    
+                    // Save pinned state
+                    savePinnedNodes();
+                    
+                    console.log('[D3 Force Graph] Pinned node moved to new position:', d.title, Math.round(d.x), Math.round(d.y));
+                } else {
+                    // Node was not pinned, release it
+                    d.fx = null;
+                    d.fy = null;
+                }
             }
+            
+            // Toggle pin state for a node
+            function toggleNodePin(node) {
+                var isPinned = pinnedNodes[node.id] != null;
+                if (isPinned) {
+                    // Unpin: remove from pinned list and release fixed positions
+                    delete pinnedNodes[node.id];
+                    node.fx = null;
+                    node.fy = null;
+                    console.log('[D3 Force Graph] Node unpinned:', node.title);
+                } else {
+                    // Pin: add to pinned list and fix at current location
+                    pinnedNodes[node.id] = { x: node.x, y: node.y };
+                    node.fx = node.x;
+                    node.fy = node.y;
+                    console.log('[D3 Force Graph] Node pinned:', node.title, 'at', Math.round(node.x), Math.round(node.y));
+                }
+
+                // Nudge simulation so layout updates
+                if (forceSimulation) {
+                    forceSimulation.alphaTarget(0.3).restart();
+                    setTimeout(function() { forceSimulation.alphaTarget(0); }, 300);
+                }
+                
+                // Save pinned state
+                savePinnedNodes();
+                
+                // Notify Blazor of pin state change
+                if (forceGraphDotNetRef) {
+                    forceGraphDotNetRef.invokeMethodAsync('OnNodePinStateChanged', node.id, !isPinned, node.x, node.y);
+                }
+            }
+            
+            // Make toggleNodePin accessible globally for context menu
+            window.toggleNodePin = function(nodeId) {
+                var node = nodes.find(function(n) { return n.id === nodeId; });
+                if (node) {
+                    toggleNodePin(node);
+                }
+            };
+            
+            // Save pinned nodes to localStorage
+            function savePinnedNodes() {
+                try {
+                    localStorage.setItem('pinnedNodes', JSON.stringify(pinnedNodes));
+                } catch (e) {
+                    console.warn('[D3 Force Graph] Could not save pinned nodes:', e);
+                }
+            }
+            
+            // Load pinned nodes from localStorage
+            function loadPinnedNodes() {
+                try {
+                    var saved = localStorage.getItem('pinnedNodes');
+                    if (saved) {
+                        pinnedNodes = JSON.parse(saved);
+                        // Apply pinned positions to nodes
+                        nodes.forEach(function(node) {
+                            if (pinnedNodes[node.id]) {
+                                node.fx = pinnedNodes[node.id].x;
+                                node.fy = pinnedNodes[node.id].y;
+                                node.x = pinnedNodes[node.id].x;
+                                node.y = pinnedNodes[node.id].y;
+                            }
+                        });
+                        console.log('[D3 Force Graph] Loaded', Object.keys(pinnedNodes).length, 'pinned nodes');
+                    }
+                } catch (e) {
+                    console.warn('[D3 Force Graph] Could not load pinned nodes:', e);
+                }
+            }
+            
+            // Load saved pinned state
+            loadPinnedNodes();
             
             // Setup resize handler for this graph
             setupForceGraphResize(container);
@@ -611,7 +728,19 @@
         }
 
 
+        // Track pending highlight timer to prevent selection reversion
+        var pendingHighlightTimer = null;
+
+        function cancelPendingHighlight() {
+            if (pendingHighlightTimer) {
+                clearTimeout(pendingHighlightTimer);
+                pendingHighlightTimer = null;
+            }
+        }
+
         function highlightNodeElement(nodeElement) {
+            // Cancel any pending highlight from previous selection
+            cancelPendingHighlight();
             // Reset all nodes
             d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
             // Highlight the selected node
@@ -620,6 +749,8 @@
 
         function highlightNode(nodeId) {
             if (!forceSimulation) return;
+            // Cancel any pending highlight from previous selection
+            cancelPendingHighlight();
             d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
             d3.selectAll('.node').filter(function(d) { return d.id === nodeId; })
                 .select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
@@ -657,8 +788,9 @@
                     d3.zoomIdentity.translate(x, y).scale(scale)
                 );
             
-            // Highlight the node after a small delay
-            setTimeout(function() {
+            // Highlight the node after a small delay (store timer so it can be cancelled)
+            pendingHighlightTimer = setTimeout(function() {
+                pendingHighlightTimer = null;
                 highlightNode(nodeId);
             }, 400);
         }
@@ -835,9 +967,10 @@
                         d3.zoomIdentity.translate(translateX, translateY).scale(scale));
             }
 
-            // Highlight the primary node
+            // Highlight the primary node (store timer so it can be cancelled)
             if (primaryNodeId) {
-                setTimeout(function() {
+                pendingHighlightTimer = setTimeout(function() {
+                    pendingHighlightTimer = null;
                     highlightNode(primaryNodeId);
                 }, 400);
             }

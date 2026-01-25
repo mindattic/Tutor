@@ -2,6 +2,7 @@
 @using Tutor.Services
 @inject CourseService CourseService
 @inject ConceptMapStorageService ConceptMapStorageService
+@inject QuizService QuizService
 @implements IDisposable
 
 <div class="learn-tabs-container">
@@ -12,6 +13,15 @@
                     @onclick="() => SwitchTab(LearnTab.Chat)">
                 <span class="bi bi-chat-dots"></span>
                 <span class="tab-label">Chat</span>
+            </button>
+            <button class="learn-tab @(activeTab == LearnTab.Quiz ? "active" : "")" 
+                    @onclick="() => SwitchTab(LearnTab.Quiz)">
+                <span class="bi bi-question-circle"></span>
+                <span class="tab-label">Quiz</span>
+                @if (QuizService.HasActiveSession)
+                {
+                    <span class="tab-badge active">!</span>
+                }
             </button>
             <button class="learn-tab @(activeTab == LearnTab.Concepts ? "active" : "")" 
                     @onclick="() => SwitchTab(LearnTab.Concepts)">
@@ -51,6 +61,18 @@
                           OnNavigateToVisualize="HandleNavigateToVisualize" />
                 </div>
                 break;
+
+            case LearnTab.Quiz:
+                <div class="tab-panel quiz-panel">
+                    <QuizTab CourseId="@activeCourse?.Id"
+                             LearnedConcepts="@learnedConcepts"
+                             SectionId="@currentSection?.Id"
+                             SectionTitle="@currentSection?.Title"
+                             SectionConceptIds="@currentSectionConceptIds"
+                             OnBackToLesson="HandleBackToLesson"
+                             OnSectionQuizCompleted="HandleSectionQuizCompleted" />
+                </div>
+                break;
                 
             case LearnTab.Concepts:
                 <div class="tab-panel concepts-panel">
@@ -75,6 +97,7 @@
     </div>
 </div>
 
+
 @code {
     [Parameter] public string? StartTopic { get; set; }
     [Parameter] public bool AutoStartLesson { get; set; }
@@ -87,6 +110,10 @@
     private string? selectedConceptId;
     private string? pendingChatTopic;
     private bool autoStartLesson;
+    
+    // Section tracking for section-specific quizzes
+    private Section? currentSection;
+    private List<string> currentSectionConceptIds = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -185,6 +212,17 @@
     }
 
     /// <summary>
+    /// Navigate from Quiz tab back to Chat tab
+    /// </summary>
+    private void HandleBackToLesson()
+    {
+        // Clear section quiz context when going back
+        currentSection = null;
+        currentSectionConceptIds.Clear();
+        SwitchTab(LearnTab.Chat);
+    }
+
+    /// <summary>
     /// Called by Chat component when concepts are learned
     /// </summary>
     public void UpdateLearnedConcepts(HashSet<string> concepts)
@@ -192,6 +230,47 @@
         learnedConcepts = concepts;
         StateHasChanged();
     }
+
+    /// <summary>
+    /// Called when user navigates to a section that has a quiz.
+    /// Sets up the section quiz context and switches to the Quiz tab.
+    /// </summary>
+    public void StartSectionQuiz(Section section, List<string> conceptIds)
+    {
+        currentSection = section;
+        currentSectionConceptIds = conceptIds;
+        SwitchTab(LearnTab.Quiz);
+    }
+
+    /// <summary>
+    /// Called when section quiz is completed
+    /// </summary>
+    private void HandleSectionQuizCompleted(QuizResult result)
+    {
+        // Add section concepts to learned concepts if quiz passed
+        if (result.Passed && currentSection != null)
+        {
+            foreach (var conceptId in currentSectionConceptIds)
+            {
+                // Find the concept title from the map
+                // The Chat component will handle this when we navigate back
+            }
+        }
+        
+        // Clear section quiz context
+        currentSection = null;
+        currentSectionConceptIds.Clear();
+    }
+
+    /// <summary>
+    /// Gets whether a section quiz is currently active
+    /// </summary>
+    public bool HasActiveSectionQuiz => currentSection != null;
+
+    /// <summary>
+    /// Gets the current section for quiz
+    /// </summary>
+    public Section? CurrentSectionForQuiz => currentSection;
 
     public void Dispose()
     {
@@ -201,6 +280,7 @@
     public enum LearnTab
     {
         Chat,
+        Quiz,
         Concepts,
         Visualize
     }

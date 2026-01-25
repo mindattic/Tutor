@@ -638,11 +638,70 @@ public sealed class SettingsService
         }
     }
 
+
     public async Task SetOrphanLinkingMinConfidenceAsync(float confidence)
     {
         try
         {
             await SecureStorage.SetAsync(OrphanLinkingMinConfidenceKey, confidence.ToString());
+        }
+        catch { }
+    }
+
+    // Reading time settings
+    private const string ReadingTimeSecondsKey = "ReadingTimeSeconds";
+    private const string UseCalculatedReadingTimeKey = "UseCalculatedReadingTime";
+
+    /// <summary>
+    /// Gets the minimum reading time in seconds (default: 5)
+    /// </summary>
+    public async Task<int> GetReadingTimeSecondsAsync()
+    {
+        try
+        {
+            var val = await SecureStorage.GetAsync(ReadingTimeSecondsKey);
+            if (int.TryParse(val, out var seconds))
+                return seconds;
+        }
+        catch { }
+        return 5; // Default 5 seconds
+    }
+
+    /// <summary>
+    /// Sets the minimum reading time in seconds
+    /// </summary>
+    public async Task SetReadingTimeSecondsAsync(int seconds)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(ReadingTimeSecondsKey, seconds.ToString());
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Gets whether to use calculated reading time based on text length (default: false)
+    /// </summary>
+    public async Task<bool> GetUseCalculatedReadingTimeAsync()
+    {
+        try
+        {
+            var val = await SecureStorage.GetAsync(UseCalculatedReadingTimeKey);
+            if (bool.TryParse(val, out var use))
+                return use;
+        }
+        catch { }
+        return false; // Default: use fixed time
+    }
+
+    /// <summary>
+    /// Sets whether to use calculated reading time based on text length
+    /// </summary>
+    public async Task SetUseCalculatedReadingTimeAsync(bool use)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(UseCalculatedReadingTimeKey, use.ToString());
         }
         catch { }
     }

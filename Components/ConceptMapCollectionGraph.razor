@@ -6,6 +6,7 @@
 @inject CourseConceptMapService CourseConceptMapService
 @inject CourseService CourseService
 @inject OrphanConceptLinkerService OrphanLinkerService
+@inject ConceptAutoCompleteService AutoCompleteService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -64,23 +65,19 @@ else
     </div>
 </div>
 
+
 @* Search and Depth Filter *@
 <div class="graph-filter-bar">
-    <div class="search-group">
-        <span class="bi bi-search"></span>
-        <input type="text" 
-               class="search-input" 
-               placeholder="Search concepts (e.g., Horcrux)..." 
-               @bind="searchQuery"
-               @bind:event="oninput"
-               @onkeydown="HandleSearchKeyDown" />
-        @if (!string.IsNullOrEmpty(searchQuery))
-        {
-            <button class="clear-search-btn" @onclick="ClearSearch" title="Clear search">
-                <span class="bi bi-x-lg"></span>
-            </button>
-        }
-    </div>
+    <AutoCompleteInput TItem="Concept"
+                       @bind-Value="searchQuery"
+                       Placeholder="Search concepts (e.g., Horcrux)..."
+                       Items="concepts"
+                       ItemTextSelector="@(c => c.Title)"
+                       SearchFunction="@((items, query) => AutoCompleteService.GetSuggestions(items, query).Select(s => items.First(c => c.Id == s.Id)))"
+                       OnItemSelected="OnAutoCompleteItemSelected"
+                       OnSubmit="OnSearchSubmit"
+                       OnCleared="OnSearchCleared"
+                       Class="search-group" />
     <div class="depth-group">
         <label>Depth:</label>
         <select class="depth-select" @bind="filterDepth">
@@ -212,7 +209,7 @@ else
                     <div class="context-menu-divider"></div>
                     <button class="context-menu-item" data-action="pin">
                         <span class="bi bi-pin-angle"></span>
-                        <span>Pin/Unpin Position</span>
+                        <span>Pin Position</span>
                         <span class="shortcut">P</span>
                     </button>
                     <button class="context-menu-item" data-action="hide">
@@ -460,6 +457,7 @@ private bool showOrphanList;
     private bool isLinkingOrphans;
     private string? linkingMessage;
     private bool linkingSuccess;
+    
     
     // Search and filter state
     private string searchQuery = "";
@@ -933,6 +931,19 @@ private bool showOrphanList;
         }
     }
 
+    /// <summary>
+    /// Handles pin state changes from JavaScript.
+    /// This is called when user pins/unpins a node via context menu or keyboard.
+    /// The state is persisted in localStorage on the JS side.
+    /// </summary>
+    [JSInvokable]
+    public void OnNodePinStateChanged(string conceptId, bool isPinned, double x, double y)
+    {
+        System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Node pin state changed: {conceptId} pinned={isPinned} at ({x}, {y})");
+        // Pin state is managed on JS side with localStorage for now
+        // In the future, could persist to user profile via a service
+    }
+
     private async Task SelectConceptByIdAsync(string conceptId, bool smoothPan = true)
     {
         selectedConcept = concepts.FirstOrDefault(c => c.Id == conceptId);
@@ -1128,17 +1139,6 @@ private bool showOrphanList;
     }
 
     #region Search and Filter Methods
-
-    /// <summary>
-    /// Handles Enter key in search box to apply filter.
-    /// </summary>
-    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ApplyFilter();
-        }
-    }
 
     /// <summary>
     /// Applies the search filter to the graph.
@@ -1347,10 +1347,31 @@ private bool showOrphanList;
         StateHasChanged();
     }
 
+    #endregion
+
+    #region Autocomplete Callbacks
+
     /// <summary>
-    /// Clears the search query without applying filter.
+    /// Called when user selects an item from autocomplete dropdown.
     /// </summary>
-    private async Task ClearSearch()
+    private async Task OnAutoCompleteItemSelected(Concept concept)
+    {
+        searchQuery = concept.Title;
+        await ApplyFilter();
+    }
+
+    /// <summary>
+    /// Called when user presses Enter in the search box.
+    /// </summary>
+    private async Task OnSearchSubmit(string query)
+    {
+        await ApplyFilter();
+    }
+
+    /// <summary>
+    /// Called when user clears the search box.
+    /// </summary>
+    private async Task OnSearchCleared()
     {
         await ResetFilter();
     }

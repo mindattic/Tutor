@@ -10,6 +10,7 @@
 @inject CourseService CourseService
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject DynamicConceptExpansionService ConceptExpansionService
+@inject UserProgressService ProgressService
 @implements IDisposable
 
 @* Top header with course selector and mode info *@
@@ -51,6 +52,18 @@
         }
     </div>
     <div class="learn-header-right">
+        @* Reading timer display *@
+        @if (isLessonMode && hasStartedLearning && !isQuizMode && readingTimer != null && displayTimerSeconds > 0)
+        {
+            <div class="reading-timer @(GetReadingProgress() >= 100 ? "complete" : "")" title="Reading time for this section">
+                <div class="reading-timer-progress" style="width: @GetReadingProgress()%"></div>
+                <span class="reading-timer-text">
+                    <span class="bi @(GetReadingProgress() >= 100 ? "bi-check-circle" : "bi-clock")"></span>
+                    @GetReadingTimerDisplay()
+                </span>
+            </div>
+        }
+        
         @if (isQuizMode)
         {
             <button class="header-action-btn" @onclick="ConfirmRestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span></button>
@@ -58,23 +71,6 @@
         }
         else if (isLessonMode)
         {
-            @if (lessonTopics.Count > 0)
-            {
-                @if (EmbeddedMode)
-                {
-                    <button class="header-action-btn" @onclick="NavigateToConceptsTab" title="View Concepts"><span class="bi bi-journal-text"></span></button>
-                    <button class="header-action-btn" @onclick="NavigateToVisualizeTab" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span></button>
-                }
-                else
-                {
-                    <button class="header-action-btn" @onclick="ShowKnowledgeBase" title="Concepts"><span class="bi bi-journal-text"></span></button>
-                    <button class="header-action-btn" @onclick="OpenKnowledgeBaseExplorer" title="Visualize Concept Map"><span class="bi bi-diagram-3"></span></button>
-                }
-            }
-            @if (learnedConcepts.Count > 0 && hasStartedLearning)
-            {
-                <button class="header-action-btn quiz" @onclick="StartQuizAtCurrentPoint" title="Quiz Me"><span class="bi bi-question-circle"></span></button>
-            }
             <button class="header-action-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span></button>
         }
     </div>
@@ -417,9 +413,19 @@ private List<string> learnedConcepts = new();
 private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
 
 
+
 // Term exploration state
 private bool isTermExploration;
 private int messageIndexBeforeExploration;
+
+// Reading time tracking
+private System.Timers.Timer? readingTimer;
+private DateTime sectionStartTime;
+private int currentSectionReadingSeconds;
+private int minimumReadingTimeSeconds = 5; // Default 5 seconds, loaded from settings
+private bool useCalculatedReadingTime;
+private int calculatedReadingTimeSeconds; // Based on response text length
+private int displayTimerSeconds; // Timer shown in UI
 
 // Confirmation modal state
 private bool showConfirmModal;
@@ -606,6 +612,10 @@ protected override async Task OnInitializedAsync()
             userCustomAvatar = await Settings.GetUserCustomAvatarAsync();
             assistantCustomAvatar = await Settings.GetAssistantCustomAvatarAsync();
             
+            // Load reading time settings
+            minimumReadingTimeSeconds = await Settings.GetReadingTimeSecondsAsync();
+            useCalculatedReadingTime = await Settings.GetUseCalculatedReadingTimeAsync();
+            
             UpdatePlaceholder();
             StateHasChanged();
 
@@ -742,17 +752,29 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
         await SendAsyncInternal(captureTopics: true);
     }
 
+
     private string? pendingStartTopic; // Topic to jump to after curriculum is loaded
 
     private async Task ContinueLesson()
     {
         if (!isLessonMode || activeCourse == null) return;
 
+        // Stop reading timer for current section
+        StopReadingTimer();
+
         // If this is the first time clicking (Begin), teach the first topic
         if (!hasStartedLearning)
         {
             hasStartedLearning = true;
             visitedTopicIndices.Add(currentLessonIndex);
+            
+            // Mark section as visited
+            var sectionId = $"topic-{currentLessonIndex}";
+            var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+            progress.MarkSectionVisited(sectionId);
+            await ProgressService.SaveProgressAsync(progress);
+            
+            // Reading timer will be started after AI response in SendAsyncInternal
             await TeachCurrentTopic();
             return;
         }
@@ -780,12 +802,22 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
         var enrichWithLearned = visitedTopicIndices.Contains(currentLessonIndex);
         visitedTopicIndices.Add(currentLessonIndex);
 
+        // Mark new section as visited
+        var newSectionId = $"topic-{currentLessonIndex}";
+        var newProgress = await ProgressService.GetProgressAsync(activeCourse.Id);
+        newProgress.MarkSectionVisited(newSectionId);
+        await ProgressService.SaveProgressAsync(newProgress);
+        
+        // Reading timer will be started after AI response in SendAsyncInternal
         await TeachCurrentTopic(enrichWithLearned);
     }
 
     private async Task PreviousLesson()
     {
         if (!isLessonMode || currentLessonIndex <= 0) return;
+
+        // Stop reading timer for current section
+        StopReadingTimer();
 
         // Mark current topic as learned before going back
         if (currentLessonIndex < lessonTopics.Count)
@@ -798,6 +830,8 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
         }
 
         currentLessonIndex--;
+
+        // Reading timer will be started after AI response in SendAsyncInternal
 
         // Going back always enriches with learned concepts (spiral learning)
         await TeachCurrentTopic(enrichWithLearned: true);
@@ -1326,6 +1360,12 @@ Keep track of the running score.";
             messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson, null, isExploration));
             Log.Info($"Chat: AI reply received ({reply.Text.Length} chars)");
 
+            // Start reading timer with the response text (for calculated reading time)
+            if (isLessonMode && hasStartedLearning && !isQuizMode)
+            {
+                StartReadingTimer(reply.Text);
+            }
+
             // Capture topics if this is the initial lesson request
             if (captureTopics && isLessonMode)
             {
@@ -1735,7 +1775,9 @@ Keep track of the running score.";
         {
             var question = match.Groups[1].Value;
             var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
-            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{EscapeJsString(question)}')\" title=\"Click to ask this question\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
+            var escapedForJs = EscapeJsString(question);
+            var escapedForAttr = System.Net.WebUtility.HtmlEncode(question);
+            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{escapedForJs}')\" title=\"Click to ask: {escapedForAttr}\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
         });
 
         // Bold with clickable term link: **text**
@@ -1744,7 +1786,8 @@ Keep track of the running score.";
         {
             var term = match.Groups[1].Value;
             var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
-            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{EscapeJsString(term)}')\" title=\"Learn more about {encodedTerm}\"><span class=\"bi bi-question-circle\"></span></a>";
+            var escapedForJs = EscapeJsString(term);
+            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{escapedForJs}')\" title=\"Learn more about {encodedTerm}\"><span class=\"bi bi-question-circle\"></span></a>";
         });
 
         // Italic: *text* (but NOT ** which is bold)
@@ -1765,7 +1808,9 @@ Keep track of the running score.";
         {
             var question = match.Groups[1].Value;
             var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
-            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{EscapeJsString(question)}')\" title=\"Click to ask this question\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
+            var escapedForJs = EscapeJsString(question);
+            var escapedForAttr = System.Net.WebUtility.HtmlEncode(question);
+            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{escapedForJs}')\" title=\"Click to ask: {escapedForAttr}\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
         });
 
         return text;
@@ -1829,9 +1874,102 @@ The questions should be specific and relevant to what you just explained, not ge
 
     public void Dispose()
     {
+        StopReadingTimer();
+        readingTimer?.Dispose();
         cts?.Cancel();
         cts?.Dispose();
         dotNetRef?.Dispose();
+    }
+
+    private void StartReadingTimer(string? responseText = null)
+    {
+        sectionStartTime = DateTime.UtcNow;
+        currentSectionReadingSeconds = 0;
+        displayTimerSeconds = 0;
+        
+        // Calculate reading time based on text if enabled
+        if (useCalculatedReadingTime && !string.IsNullOrEmpty(responseText))
+        {
+            // Average reading speed: ~200-250 words per minute
+            // Use 200 wpm for educational content (more careful reading)
+            var wordCount = responseText.Split([' ', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries).Length;
+            calculatedReadingTimeSeconds = Math.Max(5, (int)(wordCount / 200.0 * 60)); // At least 5 seconds
+        }
+        else
+        {
+            calculatedReadingTimeSeconds = minimumReadingTimeSeconds;
+        }
+        
+        readingTimer?.Dispose();
+        readingTimer = new System.Timers.Timer(1000); // Tick every second
+        readingTimer.Elapsed += OnReadingTimerElapsed;
+        readingTimer.Start();
+    }
+
+    private void StopReadingTimer()
+    {
+        readingTimer?.Stop();
+        
+        // Record time spent and check if section should be marked as read
+        if (activeCourse != null && isLessonMode && hasStartedLearning && currentLessonIndex < lessonTopics.Count)
+        {
+            var elapsedSeconds = (int)(DateTime.UtcNow - sectionStartTime).TotalSeconds;
+            currentSectionReadingSeconds += elapsedSeconds;
+            
+            // Get current topic as section ID (for now using topic index)
+            var sectionId = $"topic-{currentLessonIndex}";
+            
+            // Determine the target reading time
+            var targetReadingTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
+            
+            // Record reading time
+            _ = InvokeAsync(async () =>
+            {
+                var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+                progress.RecordSectionTime(sectionId, currentSectionReadingSeconds);
+                
+                // Mark as read if spent enough time
+                if (currentSectionReadingSeconds >= targetReadingTime)
+                {
+                    progress.MarkSectionRead(sectionId);
+                }
+                
+                await ProgressService.SaveProgressAsync(progress);
+            });
+        }
+        
+        displayTimerSeconds = 0;
+    }
+
+    private void OnReadingTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        currentSectionReadingSeconds++;
+        displayTimerSeconds++;
+        
+        // Update UI on main thread
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private string GetReadingTimerDisplay()
+    {
+        var targetTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
+        var remaining = Math.Max(0, targetTime - displayTimerSeconds);
+        
+        if (displayTimerSeconds >= targetTime)
+        {
+            return "? Read";
+        }
+        
+        var minutes = remaining / 60;
+        var seconds = remaining % 60;
+        return minutes > 0 ? $"{minutes}:{seconds:D2}" : $"{seconds}s";
+    }
+
+    private int GetReadingProgress()
+    {
+        var targetTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
+        if (targetTime <= 0) return 100;
+        return Math.Min(100, (int)((double)displayTimerSeconds / targetTime * 100));
     }
 
     /// <summary>

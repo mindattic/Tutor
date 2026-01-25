@@ -26,6 +26,7 @@ public sealed class CourseStructureService
     private readonly OpenAIOptions opt;
     private readonly CourseStructureStorageService storageService;
     private readonly ConceptMapStorageService conceptMapStorageService;
+    private readonly SectionContentService? sectionContentService;
 
     private const string LessonGenerationPrompt = """
         You are an expert curriculum designer. Given a list of concepts from an educational domain,
@@ -81,12 +82,14 @@ public sealed class CourseStructureService
         HttpClient http,
         OpenAIOptions opt,
         CourseStructureStorageService storageService,
-        ConceptMapStorageService conceptMapStorageService)
+        ConceptMapStorageService conceptMapStorageService,
+        SectionContentService? sectionContentService = null)
     {
         this.http = http;
         this.opt = opt;
         this.storageService = storageService;
         this.conceptMapStorageService = conceptMapStorageService;
+        this.sectionContentService = sectionContentService;
     }
 
     /// <summary>
@@ -163,8 +166,42 @@ public sealed class CourseStructureService
                 AddMissingConceptsLesson(structure, missingConcepts);
             }
 
+            // Step 4: Generate hierarchical sections for each lesson
+            if (sectionContentService != null)
+            {
+                Log.Info("CourseStructure: Step 4 - Generating hierarchical sections...");
+                ReportProgress(structure, CourseStructureStatus.GeneratingSections, 75,
+                    "Generating hierarchical sections...");
+                structure.Status = CourseStructureStatus.GeneratingSections;
+
+                foreach (var lesson in structure.Lessons)
+                {
+                    var sections = await sectionContentService.GenerateSectionsForLessonAsync(lesson, conceptMap, ct);
+                    lesson.Sections = sections;
+                    
+                    ReportProgress(structure, CourseStructureStatus.GeneratingSections, 
+                        75 + (structure.Lessons.IndexOf(lesson) * 10 / structure.Lessons.Count),
+                        $"Generated sections for: {lesson.Title}");
+                }
+
+                // Step 5: Generate content for sections
+                Log.Info("CourseStructure: Step 5 - Generating section content...");
+                ReportProgress(structure, CourseStructureStatus.GeneratingContent, 85,
+                    "Generating section content...");
+                structure.Status = CourseStructureStatus.GeneratingContent;
+
+                foreach (var lesson in structure.Lessons)
+                {
+                    await sectionContentService.GenerateAllSectionContentAsync(lesson, conceptMap, ct);
+                    
+                    ReportProgress(structure, CourseStructureStatus.GeneratingContent,
+                        85 + (structure.Lessons.IndexOf(lesson) * 10 / structure.Lessons.Count),
+                        $"Generated content for: {lesson.Title}");
+                }
+            }
+
             // Calculate estimated duration
-            structure.TotalEstimatedMinutes = structure.TotalConceptReferences * 5; // 5 min per concept
+            structure.TotalEstimatedMinutes = CalculateTotalEstimatedMinutes(structure);
 
             // Mark as ready
             structure.Status = CourseStructureStatus.Ready;
@@ -510,8 +547,33 @@ public sealed class CourseStructureService
             Message = message,
             LessonsGenerated = structure.Lessons.Count,
             TopicsGenerated = structure.TotalTopics,
+            SectionsGenerated = structure.Lessons.Sum(l => l.GetTotalSectionCount()),
             ErrorMessage = errorMessage
         });
+    }
+
+    /// <summary>
+    /// Calculates total estimated minutes based on section reading times.
+    /// </summary>
+    private static int CalculateTotalEstimatedMinutes(CourseStructure structure)
+    {
+        var total = 0;
+        foreach (var lesson in structure.Lessons)
+        {
+            foreach (var section in lesson.GetAllSectionsFlattened())
+            {
+                total += section.EstimatedReadingMinutes;
+                if (section.HasQuiz)
+                    total += 5; // Add 5 minutes for quiz
+            }
+            
+            // Fallback: if no sections, estimate from topics
+            if (lesson.Sections.Count == 0)
+            {
+                total += lesson.TotalConceptCount * 3; // 3 min per concept
+            }
+        }
+        return total > 0 ? total : structure.TotalConceptReferences * 5;
     }
 }
 
@@ -525,6 +587,7 @@ public class CourseStructureProgress
     public string Message { get; set; } = "";
     public int LessonsGenerated { get; set; }
     public int TopicsGenerated { get; set; }
+    public int SectionsGenerated { get; set; }
     public string? ErrorMessage { get; set; }
 }
 

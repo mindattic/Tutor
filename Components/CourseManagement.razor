@@ -132,7 +132,6 @@
                                         title="Find and merge duplicate concepts across resources">
                                     @if (isMergingDuplicates)
                                     {
-                                        <span class="spinner-small"></span>
                                         <span>Merging...</span>
                                     }
                                     else
@@ -1586,8 +1585,19 @@ private string resourceContent = "";
     }
 
     /// <summary>
+    /// Handles progress updates from the async deduplication service.
+    /// </summary>
+    private void OnDuplicateDetectionProgress(DuplicateDetectionProgress progress)
+    {
+        mergeProgressMessage = progress.Phase;
+        mergeProgressPercent = progress.ProgressPercent;
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
     /// Finds and merges duplicate concepts in the course's merged map.
     /// This ONLY modifies the course-specific merged map, NOT the original resource ConceptMaps.
+    /// Uses async parallel processing with progress reporting to avoid UI freezing.
     /// </summary>
     private async Task MergeDuplicatesAsync()
     {
@@ -1615,7 +1625,7 @@ private string resourceContent = "";
             }
 
             // Step 2: Load all source ConceptMaps
-            UpdateMergeProgress($"Loading {conceptMapIds.Count} Concept Map(s)...", 15);
+            UpdateMergeProgress($"Loading {conceptMapIds.Count} Concept Map(s)...", 10);
             await Task.Delay(50);
             
             var sourceMaps = new List<ConceptMap>();
@@ -1623,7 +1633,7 @@ private string resourceContent = "";
             foreach (var cmId in conceptMapIds)
             {
                 loadIndex++;
-                var progressPercent = 15 + (int)(25.0 * loadIndex / conceptMapIds.Count);
+                var progressPercent = 10 + (int)(10.0 * loadIndex / conceptMapIds.Count);
                 UpdateMergeProgress($"Loading Concept Map {loadIndex}/{conceptMapIds.Count}...", progressPercent);
                 
                 var cm = await ConceptMapStorageService.LoadAsync(cmId);
@@ -1640,7 +1650,7 @@ private string resourceContent = "";
             }
 
             // Step 3: Create merged map with deep copies
-            UpdateMergeProgress($"Creating merged map from {sourceMaps.Count} source(s)...", 45);
+            UpdateMergeProgress($"Creating merged map from {sourceMaps.Count} source(s)...", 22);
             await Task.Delay(50);
             
             var mergedMap = new MergedCourseConceptMap
@@ -1651,32 +1661,46 @@ private string resourceContent = "";
             };
             mergedMap.InitializeFromConceptMaps(sourceMaps);
 
-            // Step 4: Find exact duplicates
-            UpdateMergeProgress($"Scanning {mergedMap.TotalConcepts} concepts for duplicates...", 55);
+            // Step 4: Use async parallel duplicate detection with progress reporting
+            UpdateMergeProgress($"Scanning {mergedMap.TotalConcepts} concepts for duplicates...", 25);
             await Task.Delay(50);
             
-            var duplicateResult = ConceptMergeService.FindDuplicatesInMergedMap(mergedMap);
+            // The async method handles parallelism and chunking internally
+            var duplicateResult = await ConceptMergeService.FindDuplicatesInMergedMapAsync(
+                mergedMap,
+                progress =>
+                {
+                    // Scale progress from 25-75% for the detection phase
+                    var scaledPercent = 25 + (int)(progress.ProgressPercent * 0.50);
+                    UpdateMergeProgress(progress.Phase, scaledPercent);
+                });
+            
             var exactDupeCount = duplicateResult.ExactDuplicates.Sum(g => g.Concepts.Count - 1);
 
             // Step 5: Auto-merge exact duplicates
             if (exactDupeCount > 0)
             {
-                UpdateMergeProgress($"Auto-merging {exactDupeCount} exact duplicate(s)...", 70);
-                await Task.Delay(50);
+                UpdateMergeProgress($"Auto-merging {exactDupeCount} exact duplicate(s)...", 78);
+                await Task.Yield(); // Allow UI to update
                 
                 var mergeResult = ConceptMergeService.AutoMergeExactDuplicatesInMergedMap(mergedMap);
             }
 
-            // Step 6: Find similar concepts
-            UpdateMergeProgress("Analyzing similar concepts...", 85);
-            await Task.Delay(50);
+            // Step 6: Re-scan for similar concepts after exact merges (use async version)
+            UpdateMergeProgress("Analyzing similar concepts...", 82);
+            await Task.Yield();
             
-            // Re-scan for similar concepts after exact merges
-            duplicateResult = ConceptMergeService.FindDuplicatesInMergedMap(mergedMap);
+            duplicateResult = await ConceptMergeService.FindDuplicatesInMergedMapAsync(
+                mergedMap,
+                progress =>
+                {
+                    var scaledPercent = 82 + (int)(progress.ProgressPercent * 0.10);
+                    UpdateMergeProgress(progress.Phase, scaledPercent);
+                });
 
             // Step 7: Save merged map
             UpdateMergeProgress("Saving merged map...", 95);
-            await Task.Delay(50);
+            await Task.Yield();
             
             mergedMap.Status = MergedMapStatus.Ready;
             await CourseConceptMapService.SaveMergedMapAsync(mergedMap);

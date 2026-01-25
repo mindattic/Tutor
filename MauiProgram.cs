@@ -84,6 +84,9 @@ namespace Tutor
             // Core Concept service
             builder.Services.AddSingleton<CoreConceptService>();
 
+            // Concept autocomplete service (search suggestions)
+            builder.Services.AddSingleton<ConceptAutoCompleteService>();
+
 
             // Concept extraction service (LLM-based concept discovery) (with extended timeout)
             builder.Services.AddHttpClient<ConceptExtractionService>(client =>
@@ -139,6 +142,12 @@ namespace Tutor
             // Course ConceptMap service (manages course-specific merged maps)
             builder.Services.AddSingleton<CourseConceptMapService>();
 
+            // Section content service (generates hierarchical sections with content)
+            builder.Services.AddHttpClient<SectionContentService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(3);
+            });
+
             // Course structure service (generates learning path from ConceptMap) (with extended timeout)
             builder.Services.AddHttpClient<CourseStructureService>(client =>
             {
@@ -147,6 +156,7 @@ namespace Tutor
 
             // Resource processing service (async pipeline with throttling)
             builder.Services.AddSingleton<ResourceProcessingService>();
+
 
             // Knowledge graph build service (async graph building with queue)
             builder.Services.AddSingleton<KnowledgeGraphBuildService>();
@@ -159,6 +169,23 @@ namespace Tutor
             builder.Services.AddSingleton<ResourceUploadTaskHandler>();
             builder.Services.AddSingleton<ResourceFormatTaskHandler>();
             builder.Services.AddSingleton<ConceptMapBuildTaskHandler>();
+
+            // Authentication services
+            builder.Services.AddSingleton<IAuthController, LocalAuthController>();
+            builder.Services.AddSingleton<AuthenticationService>();
+
+            // User storage service (JSON file-based user data)
+            builder.Services.AddSingleton<UserStorageService>();
+
+            // News services
+            builder.Services.AddHttpClient<OpenNewsApiController>();
+            builder.Services.AddSingleton<INewsController>(sp => 
+                sp.GetRequiredService<OpenNewsApiController>());
+            builder.Services.AddSingleton<NewsService>();
+
+            // Quiz services
+            builder.Services.AddSingleton<IQuizController, LocalQuizController>();
+            builder.Services.AddSingleton<QuizService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

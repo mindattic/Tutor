@@ -1,3 +1,5 @@
+using Tutor.Models;
+
 namespace Tutor.Services;
 
 /// <summary>
@@ -12,6 +14,7 @@ public enum TopTab
     Settings
 }
 
+
 /// <summary>
 /// Represents a node in the side navigation hierarchy.
 /// </summary>
@@ -19,12 +22,28 @@ public class NavNode
 {
     public string Id { get; set; } = "";
     public string Title { get; set; } = "";
+    public string? Number { get; set; } // Section number like "1a", "1a-i"
     public string? Icon { get; set; }
     public string? Description { get; set; }
     public List<NavNode> Children { get; set; } = [];
     public bool IsExpanded { get; set; }
     public bool IsSelected { get; set; }
     public object? Data { get; set; }
+    
+    /// <summary>
+    /// Progress status for this node (NotStarted, Visited, Read, Complete).
+    /// </summary>
+    public SectionStatus Status { get; set; } = SectionStatus.NotStarted;
+    
+    /// <summary>
+    /// Completion percentage (0-100) for nodes with children.
+    /// </summary>
+    public int CompletionPercentage { get; set; }
+    
+    /// <summary>
+    /// Depth level in the hierarchy (0 = top level).
+    /// </summary>
+    public int Depth { get; set; }
 }
 
 /// <summary>

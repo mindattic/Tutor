@@ -15,14 +15,14 @@
 @inject ConceptMapStorageService ConceptMapStorageService
 @implements IDisposable
 
-
-
+<AuthGuard RequiredRole="UserRole.Admin">
 
 <div class="settings-page">
 <div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
         <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
         <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
+        <button class="tab @(activeTab == "Learning" ? "active" : "")" @onclick="@(() => activeTab = "Learning")">Learning</button>
         <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
         <button class="tab @(activeTab == "Credentials" ? "active" : "")" @onclick="@(() => activeTab = "Credentials")">Credentials</button>
         <button class="tab @(activeTab == "Logs" ? "active" : "")" @onclick="@(() => activeTab = "Logs")">Logs</button>
@@ -322,6 +322,62 @@
                 </div>
             </div>
         }
+        else if (activeTab == "Learning")
+        {
+            <div class="settings-section">
+                <h4>Reading Time Tracking</h4>
+                <p>Configure how long a section must be viewed before it's marked as "read".</p>
+                
+                <div class="settings-row" style="margin-top: 16px;">
+                    <label>
+                        <input type="checkbox" @bind="useCalculatedReadingTime" @bind:after="SaveUseCalculatedReadingTimeAsync" />
+                        Calculate reading time based on text length
+                    </label>
+                </div>
+                <p class="hint">When enabled, reading time is calculated at ~200 words per minute (average adult reading speed).</p>
+                
+                @if (!useCalculatedReadingTime)
+                {
+                    <div class="settings-row" style="margin-top: 16px;">
+                        <label>Fixed Reading Time:</label>
+                        <select class="theme-select" @bind="readingTimeSeconds" @bind:after="SaveReadingTimeSecondsAsync">
+                            <option value="5">5 seconds (quick)</option>
+                            <option value="10">10 seconds</option>
+                            <option value="15">15 seconds</option>
+                            <option value="30">30 seconds</option>
+                            <option value="60">1 minute</option>
+                            <option value="120">2 minutes</option>
+                        </select>
+                    </div>
+                    <p class="hint">Minimum time to spend on a section before it's considered "read".</p>
+                }
+                else
+                {
+                    <div class="reading-time-info">
+                        <span class="bi bi-info-circle"></span>
+                        <div>
+                            <strong>Calculated Reading Time Examples:</strong>
+                            <ul>
+                                <li>100 words → ~30 seconds</li>
+                                <li>200 words → ~1 minute</li>
+                                <li>500 words → ~2.5 minutes</li>
+                                <li>1000 words → ~5 minutes</li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="settings-section">
+                <h4>Reading Timer Display</h4>
+                <p>A timer appears in the upper-right corner of the chat while learning, showing:</p>
+                <ul style="margin-left: 20px; color: var(--text-secondary);">
+                    <li>Time remaining until section is marked "read"</li>
+                    <li>Progress bar filling as you read</li>
+                    <li>Checkmark when reading time is complete</li>
+                </ul>
+            </div>
+        }
         else if (activeTab == "Quiz")
         {
             <div class="settings-section">
@@ -606,6 +662,7 @@
     }
 </div>
 
+</AuthGuard>
 
 @code
 {
@@ -633,6 +690,11 @@
     // Quiz settings
     private int quizQuestionCount = 3;
     private GradingScale gradingScale = GradingScale.Standard;
+
+    // Reading time settings
+    private int readingTimeSeconds = 5;
+    private bool useCalculatedReadingTime = false;
+    private readonly int[] readingTimeOptions = [5, 10, 15, 30, 60, 120];
 
     // Orphan linking settings
     private int orphanLinkingMaxIterations = 10;
@@ -727,6 +789,7 @@
         await LoadEnterToSendAsync();
         await LoadChatGptModelAsync();
         await LoadQuizSettingsAsync();
+        await LoadReadingTimeSettingsAsync();
         await LoadAvatarSettingsAsync();
         await LoadAppearanceSettingsAsync();
         await LoadLogLevelSettingsAsync();
@@ -1031,6 +1094,31 @@
         orphanLinkingMaxIterations = await SettingsService.GetOrphanLinkingMaxIterationsAsync();
         var minConfidence = await SettingsService.GetOrphanLinkingMinConfidenceAsync();
         orphanLinkingMinConfidenceStr = minConfidence.ToString("0.0");
+    }
+
+    private async Task LoadReadingTimeSettingsAsync()
+    {
+        readingTimeSeconds = await SettingsService.GetReadingTimeSecondsAsync();
+        useCalculatedReadingTime = await SettingsService.GetUseCalculatedReadingTimeAsync();
+    }
+
+    private async Task SaveReadingTimeSecondsAsync()
+    {
+        await SettingsService.SetReadingTimeSecondsAsync(readingTimeSeconds);
+        status = $"Reading time set to {readingTimeSeconds} seconds.";
+    }
+
+    private async Task SaveUseCalculatedReadingTimeAsync()
+    {
+        await SettingsService.SetUseCalculatedReadingTimeAsync(useCalculatedReadingTime);
+        if (useCalculatedReadingTime)
+        {
+            status = "Reading time will be calculated based on text length (~200 words/min).";
+        }
+        else
+        {
+            status = $"Using fixed reading time of {readingTimeSeconds} seconds.";
+        }
     }
 
     private async Task SaveQuizQuestionCountAsync()

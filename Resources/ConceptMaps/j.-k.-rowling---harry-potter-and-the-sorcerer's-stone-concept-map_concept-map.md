@@ -3,19 +3,19 @@ title: "J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map"
 id: 9684a851-bca8-4e3d-b81a-ec23c0acc055
 resource_id: 89eaab8d-cc29-4781-b1de-aa3d0ac61db8
 status: Ready
-concepts: 554
-relations: 841
+concepts: 582
+relations: 886
 created: 2026-01-24T21:37:29.3022297Z
-updated: 2026-01-25T06:22:41.5248660Z
-version: 11
+updated: 2026-01-25T18:58:01.2908303Z
+version: 18
 ---
 
 # J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map - Concept Map
 
 Concept map generated from: J. K. Rowling - Harry Potter and the Sorcerer's Stone
 
-**Total Concepts (Nodes):** 554
-**Total Relations (Edges):** 841
+**Total Concepts (Nodes):** 582
+**Total Relations (Edges):** 886
 
 ---
 
@@ -53,7 +53,7 @@ A magical boarding school where young witches and wizards receive their educatio
 
 **Prerequisites:** Auror, Auror
 
-**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge
+**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat
 
 ---
 
@@ -75,7 +75,7 @@ A highly intelligent and diligent Hogwarts student known for her extensive knowl
 
 **Tags:** Harry Potter, characters, Hogwarts, Harry Potter Characters, Student, Fictional Characters, character, Harry Potter series, literature, fiction, Students, Wizarding world, Hogwarts Student, Wizardry, Friendship
 
-**Related:** Hogwarts School of Witchcraft and Wizardry, Hogwarts, Muggle family, Bowtruckle, Four Point Spell, Integration with Magical Elements, Bowtruckle
+**Related:** Hogwarts School of Witchcraft and Wizardry, Hogwarts, Muggle family, Bowtruckle, Four Point Spell, Integration with Magical Elements, Bowtruckle, Bowtruckles
 
 ---
 
@@ -109,7 +109,7 @@ The protagonist of the series, a young wizard who became famous for surviving an
 
 **Tags:** Harry Potter, characters, protagonist, character, literature, fiction, Wizardry, Hogwarts Student, fictional wizard, Harry Potter Series, fantasy, wizards
 
-**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path
+**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path, Auror Career Path, Sword of Gryffindor
 
 ---
 
@@ -133,7 +133,7 @@ Albus Dumbledore is the wise and powerful headmaster of Hogwarts who awards hous
 
 **Tags:** Harry Potter, characters, Hogwarts, mentorship, Harry Potter universe, leadership, Harry Potter Characters, Authority Figure, Fictional Characters, wizardry, Harry Potter lore, wizards, Harry Potter series
 
-**Related:** Order of Merlin, Dumbledore's Office, You-Know-Who's fear of Dumbledore, Alchemy, Hogwarts Teachers' Protection of the Sorcerer's Stone, Philosophy on Death by Dumbledore, Grindelwald, Dumbledore's Advice on the Mirror of Erised, Golden Watch with Planets, Lemon Drop, Professor Dumbledore, Chocolate Frog Card, London Underground Map Scar, Dumbledore's Orders, Snape as Quidditch Referee
+**Related:** Order of Merlin, Dumbledore's Office, You-Know-Who's fear of Dumbledore, Alchemy, Hogwarts Teachers' Protection of the Sorcerer's Stone, Philosophy on Death by Dumbledore, Grindelwald, Dumbledore's Advice on the Mirror of Erised, Golden Watch with Planets, Lemon Drop, Professor Dumbledore, Chocolate Frog Card, London Underground Map Scar, Dumbledore's Orders, Snape as Quidditch Referee, Remus Lupin, Sword of Gryffindor, Qualities of Gryffindor
 
 ---
 
@@ -167,7 +167,7 @@ The dark wizard antagonist obsessed with immortality and power, who shares Quirr
 
 **Tags:** Harry Potter, dark wizards, antagonists
 
-**Related:** Sorcerer's Stone, Quirinus Quirrell, Dark Magic
+**Related:** Sorcerer's Stone, Quirinus Quirrell, Dark Magic, Fenrir Greyback, Remus Lupin, Fenrir Greyback, Werewolves
 
 ---
 
@@ -193,7 +193,7 @@ Severus Snape is a Hogwarts professor whose complex motivations include a strong
 
 **Tags:** Harry Potter, characters, Hogwarts, protection, professors, Harry Potter lore, character, wizarding world, Harry Potter universe, teacher, Potions, Harry Potter series, wizardry, Hogwarts Faculty
 
-**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution
+**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge
 
 ---
 
@@ -261,7 +261,7 @@ The study of magical plants and fungi at Hogwarts, focusing on their care and pr
 
 **Tags:** magic, education, plants, Botany, Hogwarts, Class
 
-**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle
+**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle, Magical Creature Regulation at Hogwarts, Bowtruckles
 
 ---
 
@@ -309,7 +309,7 @@ A character who serves as Keeper of Keys and Grounds at Hogwarts, known for his 
 
 **Prerequisites:** Professor Grubbly-Plank, Maze Creatures
 
-**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures
+**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures, Professor Grubbly-Plank, Professor Grubbly-Plank
 
 ---
 
@@ -885,7 +885,7 @@ One of the four Hogwarts houses, known for bravery, courage, and chivalry; many 
 
 **Tags:** Hogwarts house, Harry Potter universe, school houses, organization, Harry Potter, Hogwarts houses, Harry Potter Lore, Fictional Concepts, wizardry, houses, fictional organizations, Hogwarts, traits, magic
 
-**Related:** Hogwarts, Fat Lady, Oliver Wood, House Gryffindor, Gryffindor Common Room, Gryffindor House, Gryffindor Tower, Courage, Bravery
+**Related:** Hogwarts, Fat Lady, Oliver Wood, House Gryffindor, Gryffindor Common Room, Gryffindor House, Gryffindor Tower, Courage, Bravery, Sword of Gryffindor, Sorting Hat, Qualities of Gryffindor
 
 ---
 
@@ -5281,7 +5281,7 @@ A magical spell intended to negate or block another spell, such as Snape's attem
 
 **Prerequisites:** Quirinus Quirrell
 
-**Related:** Severus Snape, Use of magic in the Muggle world, Unforgivable Curses, Shield Charm, Integration with Magical Elements
+**Related:** Severus Snape, Use of magic in the Muggle world, Unforgivable Curses, Shield Charm, Integration with Magical Elements, Unforgivable Curses
 
 ---
 
@@ -6147,6 +6147,286 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 
 ---
 
+#### Anti-werewolf Legislation
+
+Legal measures and regulations pertaining to werewolves, including ways to recognize and kill werewolves, within the magical community.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Werewolves
+
+---
+
+#### Defensive Magical Theory
+
+A Ministry-approved course book and theory that teaches fundamental principles underlying defensive magic and situations when it can legally be used.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Ministry-approved Defensive Magic Curriculum
+
+---
+
+#### Ministry-approved Defensive Magic Curriculum
+
+A structured and theory-centred curriculum for defense against dark magic, rigorously controlled and approved by the Ministry of Magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Defensive Magical Theory
+
+---
+
+#### Werewolves
+
+Magical creatures distinct from true wolves with several identifiable physical differences, studied as part of the Defense Against the Dark Arts.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Anti-werewolf Legislation
+
+---
+
+#### Magical Creature Regulation at Hogwarts
+
+The temporary teaching and study of magical creatures such as unicorns, Nifflers, Porlocks, Kneazles, Crups, and Knarls during Hagrid's leave of absence.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry, Herbology
+
+---
+
+#### Werewolf Registration
+
+A Ministry of Magic policy requiring werewolves to officially register their condition to manage safety and legal concerns.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Ministry of Magic Enforcers
+
+---
+
+#### Identification Signs of a Werewolf
+
+Distinct physical and behavioral characteristics used to recognize a werewolf, important for enforcement of registration and safety.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Prerequisites:** Werewolf Registration
+
+---
+
+#### Ministry of Magic Enforcers
+
+Officials responsible for enforcing magical laws including policies like werewolf registration.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Werewolf Registration
+
+---
+
+#### Remus Lupin
+
+A werewolf who is a former Hogwarts student and friend of James, Sirius, and Peter; lived among werewolves as a spy and has experience managing his condition.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry, Fenrir Greyback, Werewolf Registration Rules
+
+---
+
+#### Fenrir Greyback
+
+The most savage werewolf known for purposely biting people, especially children, to increase the werewolf population aligned with Voldemort.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Lord Voldemort, Remus Lupin
+
+---
+
+#### Werewolf Registration Rules
+
+Implied restrictive regulations for werewolves, likely enforced by the wizarding authorities, requiring management or registration due to dangers posed by werewolves.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Remus Lupin
+
+---
+
+#### Remus Lupin
+
+A werewolf and a Hogwarts professor who works as a spy among werewolves for Dumbledore, having been bitten as a child by the savage werewolf Fenrir Greyback.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry, Lord Voldemort, Dumbledore, Fenrir Greyback, Werewolves, Moony
+
+---
+
+#### Fenrir Greyback
+
+A savage werewolf known for attacking and infecting children to create more werewolves, allied to Voldemort.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Lord Voldemort, Remus Lupin
+
+---
+
+#### Werewolves
+
+Magical creatures who transform monthly and live separately from normal society, some of whom support Voldemort.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Lord Voldemort, Hogwarts School of Witchcraft and Wizardry, Remus Lupin
+
+---
+
+#### Moony
+
+The nickname for Remus Lupin used by friends; associated with him among his group.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Remus Lupin
+
+---
+
+#### Defence Against the Dark Arts Curriculum Change
+
+A Ministry-approved, theory-centered course of defensive magic introduced to create a structured learning experience focused on fundamentals and legal usage of defensive spells.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Professor Umbridge
+
+---
+
+#### Unforgivable Curses
+
+Three dark spells—Avada Kedavra, Imperius, and Cruciatus—that are considered so severe they warrant a life sentence in Azkaban if used on another human being.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Countercurse
+
+---
+
+#### Auror Career Path
+
+A highly selective career requiring top Hogwarts grades, particularly in Defence Against the Dark Arts, and passing strict character and aptitude tests at the Auror office.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter
+
+---
+
+#### Professor Umbridge
+
+A Ministry-appointed Hogwarts professor known for enforcing Ministry-approved curriculum, closely monitoring teachers and students, and emphasizing rote learning and strict discipline.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Severus Snape, Defence Against the Dark Arts Curriculum Change
+
+---
+
+#### Professor Grubbly-Plank
+
+A temporary substitute professor at Hogwarts who teaches Care of Magical Creatures during Professor Hagrid’s extended leave of absence.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid
+
+---
+
+#### Three Ds of Apparation
+
+A guiding principle for Apparation consisting of Destination, Determination, and Deliberation to ensure proper teleportation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Defensive Magical Theory by Wilbert Slinkhard
+
+A Ministry-approved theoretical text on defensive magic studied by Hogwarts students under Professor Umbridge's direction.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Course Aims of Defense Against the Dark Arts
+
+---
+
+#### Course Aims of Defense Against the Dark Arts
+
+A set of goals including understanding the principles of defensive magic, recognizing lawful use, and applying defenses practically.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Defensive Magical Theory by Wilbert Slinkhard
+
+---
+
+#### Professor Grubbly-Plank
+
+A Hogwarts temporary staff member covering for Hagrid's absence, teaching Care of Magical Creatures by focusing on common O.W.L. relevant creatures.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid, Bowtruckles
+
+---
+
+#### Bowtruckles
+
+Small tree-guardians living in wand-quality trees, eating woodlice and fairy eggs, and defensive by nature.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Herbology, Hermione Granger, Professor Grubbly-Plank
+
+---
+
+#### Sword of Gryffindor
+
+A magical sword belonging to Gryffindor, characterized by a glittering ruby-studded hilt and the ability to present itself to a true Gryffindor in times of need.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gryffindor, Harry Potter, Dumbledore, Qualities of Gryffindor
+
+---
+
+#### Sorting Hat
+
+An enchanted hat at Hogwarts that sorts new students into one of the four houses based on their qualities and traits.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gryffindor, Hogwarts School of Witchcraft and Wizardry, Qualities of Gryffindor
+
+---
+
+#### Qualities of Gryffindor
+
+The traits of bravery, daring, nerve, and chivalry that define members of Gryffindor house.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gryffindor, Dumbledore, Sword of Gryffindor, Sorting Hat
+
+---
+
 ## Relationships
 
 | Source | Relationship | Target |
@@ -6199,6 +6479,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Secret Passageways | → requires | Caput Draconis |
 | Sorting Hat | → requires | Hogwarts Houses |
 | Wand | → requires | Wingardium Leviosa |
+| Werewolf Registration | → requires | Identification Signs of a Werewolf |
 | Wizard | → requires | Magical world |
 | Wizard Chess | → requires | Chessboard Challenge |
 | Wizard’s Duel | → requires | Defense Against the Dark Arts |
@@ -6214,10 +6495,12 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Animal exhibits at the zoo | ↔ related to | Zoo trip |
 | Anti Dark Force Spell | ↔ related to | Body Bind (Petrificus Totalus) |
 | Anti Dark Force Spell | ↔ related to | Hogwarts |
+| Anti-werewolf Legislation | ↔ related to | Werewolves |
 | Apothecary | ↔ related to | Hogwarts Herbology Class |
 | Argus Filch | ↔ related to | Secret Passageways |
 | Astrology (in Centaur Context) | ↔ related to | Centaur |
 | Aunt Petunia | ↔ related to | The Dursleys |
+| Auror Career Path | ↔ related to | Harry Potter |
 | Auror Career Path | ↔ related to | Harry Potter |
 | Baggy Clothes and Taped Glasses | ↔ related to | The Dursleys |
 | Bane (Centaur) | ↔ related to | Magic Creatures |
@@ -6251,6 +6534,8 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Bowtruckle | ↔ related to | Hagrid |
 | Bowtruckle | ↔ related to | Hermione Granger |
 | Bowtruckle | ↔ related to | Herbology |
+| Bowtruckles | ↔ related to | Herbology |
+| Bowtruckles | ↔ related to | Hermione Granger |
 | Brass Scales | ↔ related to | Glass or Crystal Phials |
 | Brass Scales | ↔ related to | Potions Class |
 | Bravery | ↔ related to | Hogwarts Houses |
@@ -6299,6 +6584,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Countercurse | ↔ related to | Severus Snape |
 | Courage | ↔ related to | Hogwarts Houses |
 | Courage | ↔ related to | Gryffindor |
+| Course Aims of Defense Against the Dark Arts | ↔ related to | Defensive Magical Theory by Wilbert Slinkhard |
 | Crabbe | ↔ related to | Bodyguards |
 | Crabbe and Goyle | ↔ related to | Draco Malfoy |
 | Creepers (magical plant part) | ↔ related to | Devil’s Snare |
@@ -6317,6 +6603,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Dark Wizards | ↔ related to | Dark Magic |
 | Defence Against the Dark Arts Ministry-approved Curriculum | ↔ related to | Professor Umbridge |
 | Defense Against the Dark Arts | ↔ related to | Dark Magic |
+| Defensive Magical Theory | ↔ related to | Ministry-approved Defensive Magic Curriculum |
 | Defensive Magical Theory by Wilbert Slinkhard | ↔ related to | Course Aims for Defence Against the Dark Arts by Umbridge |
 | Desserts at Hogwarts feast | ↔ related to | Banquet at Hogwarts |
 | Devil's Snare | ↔ related to | Hagrid |
@@ -6377,6 +6664,10 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Fantastic Beasts and Where to Find Them | ↔ related to | Magic Creatures |
 | Fat Lady | ↔ related to | Gryffindor |
 | Fat Lady Portrait | ↔ related to | The Fat Lady |
+| Fenrir Greyback | ↔ related to | Lord Voldemort |
+| Fenrir Greyback | ↔ related to | Lord Voldemort |
+| Fenrir Greyback | ↔ related to | Lord Voldemort |
+| Fenrir Greyback | ↔ related to | Lord Voldemort |
 | Filch | ↔ related to | Mrs. Norris |
 | Filch | ↔ related to | Astronomy Tower |
 | Fitch | ↔ related to | Mrs. Norris |
@@ -6540,6 +6831,8 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Magical Boogers | ↔ related to | Hagrid |
 | Magical Boogers | ↔ related to | Magical Substance (Wand Core) |
 | Magical creature care | ↔ related to | Rubeus Hagrid |
+| Magical Creature Regulation at Hogwarts | ↔ related to | Herbology |
+| Magical Creature Regulation at Hogwarts | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Magical Discoveries | ↔ related to | Hogwarts |
 | Magical Doors at Hogwarts | ↔ related to | Secret Passageways |
 | Magical Doors at Hogwarts | ↔ related to | Hogwarts |
@@ -6560,9 +6853,11 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Mimblewimble | ↔ related to | Dark Magic |
 | Minerva McGonagall | ↔ related to | Professor McGonagall |
 | Ministry of Magic | ↔ related to | Magical world |
+| Ministry of Magic Enforcers | ↔ related to | Werewolf Registration |
 | Mirror of Erised | ↔ related to | Harry Potter |
 | Monkshood | ↔ related to | Hogwarts Herbology Class |
 | Moonlight | ↔ related to | Astronomy Tower |
+| Moony | ↔ related to | Remus Lupin |
 | Morgana | ↔ related to | Chocolate Frog Cards |
 | Mountain troll | ↔ related to | Hogwarts |
 | Mr. and Mrs. Dursley | ↔ related to | The Dursleys |
@@ -6659,6 +6954,10 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Professor Grubbly-Plank | ↔ related to | Herbology |
 | Professor Grubbly-Plank | ↔ related to | Hagrid |
 | Professor Grubbly-Plank | ↔ related to | Herbology |
+| Professor Grubbly-Plank | ↔ related to | Hagrid |
+| Professor Grubbly-Plank | ↔ related to | Hagrid |
+| Professor Grubbly-Plank | ↔ related to | Hagrid |
+| Professor Grubbly-Plank | ↔ related to | Bowtruckles |
 | Professor Quirrell | ↔ related to | Body Bind Curse |
 | Professor Quirrell | ↔ related to | Hogwarts |
 | Professor Quirrell's Turban | ↔ related to | Defense Against the Dark Arts |
@@ -6670,11 +6969,14 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Professor Umbridge | ↔ related to | Snape |
 | Professor Umbridge | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Professor Umbridge | ↔ related to | Defensive Magical Theory by Wilbert Slinkhard |
+| Professor Umbridge | ↔ related to | Severus Snape |
+| Professor Umbridge | ↔ related to | Defence Against the Dark Arts Curriculum Change |
 | Protective Gloves (Dragon Hide) | ↔ related to | Rubeus Hagrid |
 | Pub | ↔ related to | Leaky Cauldron |
 | Pumpkin Pasties | ↔ related to | Hogwarts |
 | Put-Outer | ↔ related to | Hogwarts |
 | Quaffle | ↔ related to | Quidditch |
+| Qualities of Gryffindor | ↔ related to | Dumbledore |
 | Quidditch | ↔ related to | Hogwarts |
 | Quidditch Match | ↔ related to | Quidditch team |
 | Quidditch Penalty (Free Shot) | ↔ related to | Quidditch fouls |
@@ -6684,6 +6986,14 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Quirinus Quirrell | ↔ related to | Hogwarts |
 | Ravenclaw | ↔ related to | Magic Class Subjects at Hogwarts |
 | Remembrall | ↔ related to | Hogwarts |
+| Remus Lupin | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Remus Lupin | ↔ related to | Fenrir Greyback |
+| Remus Lupin | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Remus Lupin | ↔ related to | Lord Voldemort |
+| Remus Lupin | ↔ related to | Dumbledore |
+| Remus Lupin | ↔ related to | Fenrir Greyback |
+| Remus Lupin | ↔ related to | Werewolves |
+| Remus Lupin | ↔ related to | Dumbledore |
 | Restricted Section | ↔ related to | Hogwarts |
 | Riffraff | ↔ related to | Draco Malfoy |
 | Roaring Fire Created by Magic | ↔ related to | Keeper of Keys and Grounds at Hogwarts |
@@ -6742,6 +7052,9 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Sorting Ceremony | ↔ related to | Ravenclaw |
 | Sorting Ceremony | ↔ related to | Hogwarts |
 | Sorting Hat | ↔ related to | Hogwarts |
+| Sorting Hat | ↔ related to | Gryffindor |
+| Sorting Hat | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Sorting Hat | ↔ related to | Qualities of Gryffindor |
 | Spell | ↔ related to | Dark Magic |
 | Spell book | ↔ related to | Letter from Hogwarts |
 | Spell book | ↔ related to | Magic Class Subjects at Hogwarts |
@@ -6756,6 +7069,9 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Strengthening Solution | ↔ related to | Severus Snape |
 | Strengthening Solution | ↔ related to | Severus Snape |
 | Switching Spells | ↔ related to | Hogwarts |
+| Sword of Gryffindor | ↔ related to | Harry Potter |
+| Sword of Gryffindor | ↔ related to | Dumbledore |
+| Sword of Gryffindor | ↔ related to | Qualities of Gryffindor |
 | Telescope | ↔ related to | Magical world |
 | Temporary Caretaking of Magical Creatures | ↔ related to | Hagrid |
 | Temporary Caretaking of Magical Creatures | ↔ related to | Hagrid |
@@ -6772,6 +7088,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | The Standard Book of Spells (Grade 1) | ↔ related to | Harry Potter |
 | Third floor corridor | ↔ related to | Hogwarts |
 | Third floor corridor (out of bounds) | ↔ related to | Argus Filch |
+| Three Ds of Apparation | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Three-headed dog | ↔ related to | Vault seven hundred and thirteen |
 | Three-headed dog | ↔ related to | Hogwarts Teachers' Protection of the Sorcerer's Stone |
 | Three-headed dog (Fluffy) | ↔ related to | Rubeus Hagrid |
@@ -6786,6 +7103,8 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Troll Incident in Hogwarts | ↔ related to | Hogwarts |
 | Trophy Room | ↔ related to | House Cup |
 | Underground | ↔ related to | London (Wizarding context) |
+| Unforgivable Curses | ↔ related to | Countercurse |
+| Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unicorn | ↔ related to | Hogwarts Herbology Class |
@@ -6805,6 +7124,9 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Weasley Twins | ↔ related to | Weasley Family |
 | Weasleys | ↔ related to | Ron Weasley |
 | Werewolf | ↔ related to | Magic Creatures |
+| Werewolf Registration Rules | ↔ related to | Remus Lupin |
+| Werewolves | ↔ related to | Lord Voldemort |
+| Werewolves | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Willow Wand | ↔ related to | Magical Substance (Wand Core) |
 | Willow Wand | ↔ related to | Harry Potter |
 | Wingardium Leviosa | ↔ related to | Professor Flitwick |
@@ -6871,6 +7193,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Logic Puzzle | ⊃ contains | Potions Riddle |
 | Magic Class Subjects at Hogwarts | ⊃ contains | Charms |
 | Magic Class Subjects at Hogwarts | ⊃ contains | Defense Against the Dark Arts |
+| Magical Creature Regulation at Hogwarts | ⊃ contains | Hogwarts School of Witchcraft and Wizardry |
 | Magical Substance (Wand Core) | ⊃ contains | Unicorn Hair |
 | Magical Substance (Wand Core) | ⊃ contains | Phoenix Tail Feather |
 | Magical Substance (Wand Core) | ⊃ contains | Dragon Heartstring |
@@ -6887,6 +7210,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Potions Class | ⊃ contains | Horned Slug Stew |
 | Professor Flitwick | ⊃ contains | Hogwarts |
 | Professor McGonagall | ⊃ contains | Hogwarts |
+| Qualities of Gryffindor | ⊃ contains | Gryffindor |
 | Quidditch | ⊃ contains | Seeker |
 | Quidditch | ⊃ contains | Snitch |
 | Quidditch | ⊃ contains | Quaffle |
@@ -6902,6 +7226,7 @@ Various magical creatures provided by Hagrid to serve as obstacles inside the ma
 | Sorting Ceremony | ⊃ contains | Four-legged stool |
 | Spell | ⊃ contains | Jinx |
 | Strengthening Solution | ⊃ contains | Hogwarts School of Witchcraft and Wizardry |
+| Sword of Gryffindor | ⊃ contains | Gryffindor |
 | The Sorcerer’s Stone | ⊃ contains | Elixir of Life |
 | Trapdoor | ⊃ contains | Third floor corridor |
 | Wizarding Course Books | ⊃ contains | The Standard Book of Spells (Grade 1) |

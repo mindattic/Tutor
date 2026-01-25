@@ -85,6 +85,102 @@ public class Lesson
             .OrderBy(t => t.Order)
             .SelectMany(t => t.ConceptIds);
     }
+
+    /// <summary>
+    /// Hierarchical sections within this lesson/chapter.
+    /// Sections provide a multi-level TOC structure.
+    /// </summary>
+    public List<Section> Sections { get; set; } = [];
+
+    /// <summary>
+    /// Gets total count of all sections (including nested).
+    /// </summary>
+    public int GetTotalSectionCount()
+    {
+        return Sections.Sum(s => 1 + CountNestedSections(s));
+    }
+
+    private static int CountNestedSections(Section section)
+    {
+        return section.Children.Sum(c => 1 + CountNestedSections(c));
+    }
+
+    /// <summary>
+    /// Finds a section by ID within this lesson.
+    /// </summary>
+    public Section? FindSection(string sectionId)
+    {
+        foreach (var section in Sections)
+        {
+            var found = section.FindSection(sectionId);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets all sections flattened in order.
+    /// </summary>
+    public IEnumerable<Section> GetAllSectionsFlattened()
+    {
+        foreach (var section in Sections.OrderBy(s => s.Order))
+        {
+            yield return section;
+            foreach (var nested in GetNestedSectionsFlattened(section))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    private static IEnumerable<Section> GetNestedSectionsFlattened(Section section)
+    {
+        foreach (var child in section.Children.OrderBy(c => c.Order))
+        {
+            yield return child;
+            foreach (var nested in GetNestedSectionsFlattened(child))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Generates section numbers for the TOC (1a, 1b, 1a-i, etc.)
+    /// </summary>
+    public void GenerateSectionNumbers(int lessonNumber)
+    {
+        var letters = "abcdefghijklmnopqrstuvwxyz";
+        var romanNumerals = new[] { "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x" };
+        
+        for (int i = 0; i < Sections.Count; i++)
+        {
+            var section = Sections[i];
+            section.Number = $"{lessonNumber}{letters[i % 26]}";
+            section.Depth = 0;
+            GenerateChildNumbers(section, romanNumerals);
+        }
+    }
+
+    private static void GenerateChildNumbers(Section parent, string[] romanNumerals)
+    {
+        var greekLetters = "αβγδεζηθικλμνξοπρστυφχψω";
+        
+        for (int i = 0; i < parent.Children.Count; i++)
+        {
+            var child = parent.Children[i];
+            child.Depth = parent.Depth + 1;
+            
+            child.Number = child.Depth switch
+            {
+                1 => $"{parent.Number}-{romanNumerals[i % romanNumerals.Length]}",
+                2 => $"{parent.Number}-{greekLetters[i % greekLetters.Length]}",
+                _ => $"{parent.Number}.{i + 1}"
+            };
+            
+            GenerateChildNumbers(child, romanNumerals);
+        }
+    }
 }
 
 /// <summary>

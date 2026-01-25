@@ -5,6 +5,7 @@
 @inject KnowledgeGraphService GraphService
 @inject CourseService CourseService
 
+<AuthGuard>
 <div class="page-title">Knowledge Bases</div>
 
 <div class="knowledge-graph-page">
@@ -269,6 +270,7 @@
         }
     }
 </div>
+</AuthGuard>
 
 @code {
     private string? activeCourseId;
