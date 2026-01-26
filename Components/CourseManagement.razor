@@ -14,37 +14,7 @@
 @implements IDisposable
 
 <div class="resources-container">
-    @* Processing Queue Status *@
-    @if (processingTasks.Count > 0)
-    {
-        <div class="processing-queue">
-            <div class="queue-header">
-                <span class="bi bi-hourglass-split"></span>
-                <span>Processing @processingTasks.Count resource(s)...</span>
-                <span class="processing-note">(Resources will appear in library when complete)</span>
-            </div>
-            @foreach (var task in processingTasks.Values.OrderBy(t => t.QueuedAt))
-            {
-                <div class="queue-item @task.Stage.ToString().ToLower()">
-                    <div class="queue-item-header">
-                        <span class="queue-item-title">@task.ResourceTitle</span>
-                        <span class="queue-item-stage">@task.StageDisplayName</span>
-                        <span class="queue-item-time">@task.ElapsedTimeFormatted</span>
-                    </div>
-                    <div class="progress-bar-container small">
-                        <div class="progress-bar" style="width: @(task.Progress)%"></div>
-                    </div>
-                    <div class="queue-item-status">@task.CurrentOperation</div>
-                </div>
-            }
-            <div class="queue-footer">
-                <span class="bi bi-clock"></span>
-                <span>Total Processing Time: @GetCumulativeProcessingTime()</span>
-            </div>
-        </div>
-    }
-
-    @* Course Selector *@
+@* Course Selector *@
     <div class="curriculum-selector">
         <div class="curriculum-dropdown-container">
             <label>Active Course:</label>
@@ -518,6 +488,41 @@
         else if (activeTab == "Add")
         {
             <div class="add-section">
+                @* Processing Queue Status - shown in Add tab *@
+                @if (processingTasks.Count > 0)
+                {
+                    <div class="processing-queue">
+                        <div class="queue-header">
+                            <span class="bi bi-hourglass-split"></span>
+                            <span>Processing @processingTasks.Count resource(s)...</span>
+                            <span class="processing-note">(Resources will appear in library when complete)</span>
+                        </div>
+                        @foreach (var task in processingTasks.Values.OrderBy(t => t.QueuedAt))
+                        {
+                            <div class="queue-item @task.Stage.ToString().ToLower()">
+                                <div class="queue-item-header">
+                                    <span class="queue-item-title">@task.ResourceTitle</span>
+                                    <span class="queue-item-stage">@task.StageDisplayName</span>
+                                    <span class="queue-item-time">@task.ElapsedTimeFormatted</span>
+                                    <button class="queue-cancel-btn" 
+                                            title="Cancel upload" 
+                                            @onclick="@(() => ConfirmCancelTask(task.TaskId, task.ResourceTitle))">
+                                        <span class="bi bi-x-lg"></span>
+                                    </button>
+                                </div>
+                                <div class="progress-bar-container small">
+                                    <div class="progress-bar" style="width: @(task.Progress)%"></div>
+                                </div>
+                                <div class="queue-item-status">@task.CurrentOperation</div>
+                            </div>
+                        }
+                        <div class="queue-footer">
+                            <span class="bi bi-clock"></span>
+                            <span>Total Processing Time: @GetCumulativeProcessingTime()</span>
+                        </div>
+                    </div>
+                }
+
                 <h4>@(editingResource != null ? "Edit Resource" : "Add New Resource")</h4>
 
                 <div class="form-group">
@@ -702,6 +707,27 @@
     </div>
 }
 
+@* Cancel Processing Confirmation Modal *@
+@if (showCancelConfirmModal)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Cancel Upload?</span>
+                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel processing "<strong>@cancelTaskTitle</strong>"?</p>
+                <p class="modal-hint">This will stop the upload and any progress will be lost.</p>
+                <div class="form-actions">
+                    <button class="settings-btn" @onclick="CloseModals">Continue Processing</button>
+                    <button class="settings-btn danger" @onclick="ExecuteCancelTask">Cancel Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
 private string activeTab = "Library";
 private List<CourseResource> resources = new();
@@ -763,6 +789,10 @@ private string resourceContent = "";
     private string? mergeProgressMessage;
     private int mergeProgressPercent;
 
+    // Cancel task confirmation
+    private bool showCancelConfirmModal;
+    private string? cancelTaskId;
+    private string? cancelTaskTitle;
 
     private string statusMessage = "";
     
@@ -1383,7 +1413,10 @@ private string resourceContent = "";
         showNewCourseModal = false;
         showRenameCourseModal = false;
         showDeleteConfirmModal = false;
+        showCancelConfirmModal = false;
         pendingDeleteAction = null;
+        cancelTaskId = null;
+        cancelTaskTitle = null;
     }
 
     private void ConfirmDeleteCourse()
@@ -1420,6 +1453,36 @@ private string resourceContent = "";
         {
             await pendingDeleteAction();
         }
+        CloseModals();
+    }
+
+    private void ConfirmCancelTask(string taskId, string taskTitle)
+    {
+        cancelTaskId = taskId;
+        cancelTaskTitle = taskTitle;
+        showCancelConfirmModal = true;
+    }
+
+    private void ExecuteCancelTask()
+    {
+        if (!string.IsNullOrEmpty(cancelTaskId))
+        {
+            // Cancel via the BackgroundQueueService
+            var cancelled = Tutor.Services.Queue.BackgroundQueueService.CancelTask(cancelTaskId);
+            
+            if (cancelled)
+            {
+                // Remove from local tracking
+                processingTasks.Remove(cancelTaskId);
+                statusMessage = $"Cancelled upload: {cancelTaskTitle}";
+                Log.Info($"User cancelled resource upload: {cancelTaskTitle}");
+            }
+            else
+            {
+                statusMessage = $"Could not cancel upload (may have already completed)";
+            }
+        }
+        
         CloseModals();
     }
 

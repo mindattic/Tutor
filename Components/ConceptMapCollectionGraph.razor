@@ -89,6 +89,23 @@ else
             <option value="0">All connected</option>
         </select>
     </div>
+    <div class="similarity-group" title="Filter by semantic similarity. 30% = minimum meaningful, 85% = strong match, 95% = near identical">
+        <label class="show-all-checkbox">
+            <input type="checkbox" 
+                   @bind="showAllConnections"
+                   @bind:after="OnShowAllConnectionsChanged" />
+            <span>All</span>
+        </label>
+        <input type="range" 
+               class="similarity-slider" 
+               min="30" 
+               max="100" 
+               step="5"
+               disabled="@showAllConnections"
+               @bind="similarityThreshold"
+               @bind:after="OnSimilarityChanged" />
+        <span class="similarity-value @GetSimilarityClass()">@FormatSimilarityLabel()</span>
+    </div>
     <button class="btn-filter @(isSearching ? "searching" : "")" @onclick="ApplyFilter" disabled="@isSearching">
         @if (isSearching)
         {
@@ -100,9 +117,9 @@ else
         }
         Go
     </button>
-    @if (isFiltered)
+    @if (isFiltered || (!showAllConnections && similarityThreshold > 30))
     {
-        <button class="btn-reset-filter" @onclick="ResetFilter" title="Show all nodes">
+        <button class="btn-reset-filter" @onclick="ResetFilter" title="Reset all filters and unpin all nodes">
             <span class="bi bi-arrow-counterclockwise"></span>
             Reset
         </button>
@@ -459,6 +476,9 @@ private bool showOrphanList;
     private bool linkingSuccess;
     
     
+    
+    
+    
     // Search and filter state
     private string searchQuery = "";
     private int filterDepth = 2;
@@ -467,6 +487,14 @@ private bool showOrphanList;
     private int filteredNodeCount;
     private string? filterResultMessage;
     private HashSet<string> visibleNodeIds = [];
+    
+    // Similarity filter state
+    private double similarityThreshold = 30; // Minimum meaningful threshold
+    private bool showAllConnections = true;  // Show all by default
+    private bool isSimilarityFiltering;
+    
+    // Track external selection to prevent overriding manual selections
+    private string? lastAppliedExternalSelection;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -507,15 +535,17 @@ private bool showOrphanList;
             await JS.InvokeVoidAsync("setupPanelDragHandler", dotNetRef);
             
             // If a concept was selected externally, pan to it
-            if (!string.IsNullOrEmpty(SelectedConceptId))
+            if (!string.IsNullOrEmpty(SelectedConceptId) && SelectedConceptId != lastAppliedExternalSelection)
             {
                 await SelectConceptByIdAsync(SelectedConceptId, smoothPan: true);
+                lastAppliedExternalSelection = SelectedConceptId;
             }
         }
-        // Handle external concept selection after initialization
-        else if (isInitialized && !string.IsNullOrEmpty(SelectedConceptId) && selectedConcept?.Id != SelectedConceptId)
+        // Handle external concept selection after initialization - only apply if it's a NEW external selection
+        else if (isInitialized && !string.IsNullOrEmpty(SelectedConceptId) && SelectedConceptId != lastAppliedExternalSelection)
         {
             await SelectConceptByIdAsync(SelectedConceptId, smoothPan: true);
+            lastAppliedExternalSelection = SelectedConceptId;
         }
     }
 
@@ -846,6 +876,7 @@ private bool showOrphanList;
         }
     }
 
+
     private async Task InitializeGraph()
     {
         if (concepts.Count == 0) return;
@@ -858,11 +889,14 @@ private bool showOrphanList;
             group = c.Tags.FirstOrDefault() ?? "default"
         }).ToArray();
 
+        // Include similarity scores with links for filtering
         var links = relationships.Select(r => new
         {
             source = r.SourceConceptId,
             target = r.TargetConceptId,
-            type = r.RelationType.ToString()
+            type = r.RelationType.ToString(),
+            similarity = r.SemanticSimilarity,
+            confidence = r.ConfidenceScore
         }).ToArray();
 
         try
@@ -1008,6 +1042,7 @@ private bool showOrphanList;
         selectedConcept = null;
         relatedConcepts = [];
         incomingRelationships = [];
+        lastAppliedExternalSelection = null;
     }
 
     // Panel dragging/resizing/docking methods
@@ -1326,6 +1361,7 @@ private bool showOrphanList;
 
     /// <summary>
     /// Resets the filter and shows all nodes.
+    /// Also clears all pinned nodes.
     /// </summary>
     private async Task ResetFilter()
     {
@@ -1334,9 +1370,12 @@ private bool showOrphanList;
         filteredNodeCount = 0;
         filterResultMessage = null;
         visibleNodeIds = [];
+        similarityThreshold = 30;
+        showAllConnections = true;
 
         try
         {
+            await JS.InvokeVoidAsync("clearAllPins");
             await JS.InvokeVoidAsync("resetGraphFilter");
         }
         catch (Exception ex)
@@ -1376,6 +1415,95 @@ private bool showOrphanList;
         await ResetFilter();
     }
 
+    #endregion
+    
+    #region Similarity Filter Methods
+    
+    /// <summary>
+    /// Called when the similarity threshold slider changes.
+    /// Filters the graph to show only connections with similarity >= threshold.
+    /// </summary>
+    private async Task OnSimilarityChanged()
+    {
+        // Don't apply filter if "Show all" is checked
+        if (showAllConnections || isSimilarityFiltering) return;
+        
+        isSimilarityFiltering = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Convert percentage to 0-1 scale
+            var threshold = similarityThreshold / 100.0;
+            
+            // Apply similarity filter via JavaScript
+            await JS.InvokeVoidAsync("filterBySimilarity", threshold);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Similarity filter error: {ex.Message}");
+        }
+        finally
+        {
+            isSimilarityFiltering = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// Formats the similarity threshold as a descriptive label.
+    /// </summary>
+    private string FormatSimilarityLabel()
+    {
+        if (showAllConnections)
+            return "All";
+            
+        return $"{similarityThreshold}%";
+    }
+    
+    /// <summary>
+    /// Returns a CSS class based on the similarity threshold level.
+    /// </summary>
+    private string GetSimilarityClass()
+    {
+        if (showAllConnections)
+            return "";
+        
+        if (similarityThreshold < 50)
+            return "low";       // Low similarity (30-49%)
+        if (similarityThreshold < 70)
+            return "moderate";  // Moderate similarity (50-69%)
+        if (similarityThreshold < 85)
+            return "good";      // Good similarity (70-84%)
+        if (similarityThreshold < 95)
+            return "strong";    // Strong similarity (85-94%)
+        return "identical";     // Near identical (95%+)
+    }
+    
+    /// <summary>
+    /// Called when the "Show all Connections" checkbox changes.
+    /// </summary>
+    private async Task OnShowAllConnectionsChanged()
+    {
+        if (showAllConnections)
+        {
+            // Show all connections - bypass similarity filter
+            try
+            {
+                await JS.InvokeVoidAsync("filterBySimilarity", 0);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Show all connections error: {ex.Message}");
+            }
+        }
+        else
+        {
+            // Apply the current similarity threshold
+            await OnSimilarityChanged();
+        }
+    }
+    
     #endregion
 
     public void Dispose()

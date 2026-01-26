@@ -128,7 +128,9 @@ public sealed partial class ChunkingService
             return text;
 
         // Try to find a sentence boundary near the end for cleaner overlap
-        var endPortion = text[^(OverlapSize + 100)..];
+        // Ensure we don't try to access beyond the start of the string
+        var lookbackSize = Math.Min(text.Length, OverlapSize + 100);
+        var endPortion = text[^lookbackSize..];
         var sentenceMatch = LastSentenceEnd().Match(endPortion);
         
         if (sentenceMatch.Success)
@@ -137,8 +139,9 @@ public sealed partial class ChunkingService
         }
 
         // Fall back to word boundary
-        var words = text[^OverlapSize..].Split(' ');
-        return words.Length > 1 ? string.Join(' ', words[1..]) : text[^OverlapSize..];
+        var overlapStart = Math.Min(text.Length, OverlapSize);
+        var words = text[^overlapStart..].Split(' ');
+        return words.Length > 1 ? string.Join(' ', words[1..]) : text[^overlapStart..];
     }
 
     [GeneratedRegex(@"\n{2,}")]

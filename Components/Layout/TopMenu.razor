@@ -41,6 +41,7 @@
     <div class="profile-menu">
         @if (AuthService.IsAuthenticated)
         {
+            <span class="profile-username">@userDisplayName</span>
             <button class="profile-avatar" @onclick="ToggleProfileMenu" @onclick:stopPropagation="true">
                 @if (!string.IsNullOrEmpty(userCustomAvatar))
                 {
@@ -136,7 +137,15 @@
     {
         if (firstRender)
         {
-            userDisplayName = await Settings.GetUserDisplayNameAsync();
+            // Use the actual logged-in username, fallback to settings display name
+            if (AuthService.IsAuthenticated && !string.IsNullOrEmpty(AuthService.CurrentUsername))
+            {
+                userDisplayName = AuthService.CurrentUsername;
+            }
+            else
+            {
+                userDisplayName = await Settings.GetUserDisplayNameAsync();
+            }
             userAvatarIcon = await Settings.GetUserAvatarIconAsync();
             userCustomAvatar = await Settings.GetUserCustomAvatarAsync();
             StateHasChanged();

@@ -247,7 +247,8 @@ public class UserProgress
         if (SectionProgress.ContainsKey(sectionId))
             SectionProgress[sectionId].TimeSpentSeconds = SectionTimeSpent[sectionId];
         
-        TotalMinutesSpent = SectionTimeSpent.Values.Sum() / 60;
+        // Use long to prevent overflow when summing large values
+        TotalMinutesSpent = (int)(SectionTimeSpent.Values.Sum(v => (long)v) / 60);
         UpdatedAt = DateTime.UtcNow;
         LastActiveAt = DateTime.UtcNow;
     }

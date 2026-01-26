@@ -396,3 +396,112 @@
     border-color: #f44336;
     color: #f44336;
 }
+
+/* Welcome Container (for logged-in users on home page) */
+.welcome-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+    padding: 20px;
+}
+
+.welcome-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    min-width: 400px;
+    width: auto;
+    max-width: 90vw;
+    padding: 48px 48px;
+    text-align: center;
+}
+
+.welcome-icon {
+    font-size: 64px;
+    color: var(--accent-primary);
+    margin-bottom: 16px;
+    display: block;
+}
+
+.welcome-card h1 {
+    margin: 0 0 12px;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.welcome-subtitle {
+    margin: 0 0 24px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Home Stats */
+.stats-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.home-stats {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    min-width: 130px;
+}
+
+.stat-icon {
+    font-size: 24px;
+    color: var(--accent-primary);
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 640px) {
+    .home-stats {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .stat-item {
+        justify-content: center;
+    }
+}

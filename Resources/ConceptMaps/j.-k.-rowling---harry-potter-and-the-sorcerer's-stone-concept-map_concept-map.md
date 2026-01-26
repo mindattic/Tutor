@@ -3,19 +3,19 @@ title: "J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map"
 id: 9684a851-bca8-4e3d-b81a-ec23c0acc055
 resource_id: 89eaab8d-cc29-4781-b1de-aa3d0ac61db8
 status: Ready
-concepts: 582
-relations: 886
+concepts: 587
+relations: 895
 created: 2026-01-24T21:37:29.3022297Z
-updated: 2026-01-25T18:58:01.2908303Z
-version: 18
+updated: 2026-01-25T19:48:53.9394308Z
+version: 19
 ---
 
 # J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map - Concept Map
 
 Concept map generated from: J. K. Rowling - Harry Potter and the Sorcerer's Stone
 
-**Total Concepts (Nodes):** 582
-**Total Relations (Edges):** 886
+**Total Concepts (Nodes):** 587
+**Total Relations (Edges):** 895
 
 ---
 
@@ -53,7 +53,7 @@ A magical boarding school where young witches and wizards receive their educatio
 
 **Prerequisites:** Auror, Auror
 
-**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat
+**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat, Professor Umbridge
 
 ---
 
@@ -193,7 +193,7 @@ Severus Snape is a Hogwarts professor whose complex motivations include a strong
 
 **Tags:** Harry Potter, characters, Hogwarts, protection, professors, Harry Potter lore, character, wizarding world, Harry Potter universe, teacher, Potions, Harry Potter series, wizardry, Hogwarts Faculty
 
-**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge
+**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge, Professor Umbridge
 
 ---
 
@@ -261,7 +261,7 @@ The study of magical plants and fungi at Hogwarts, focusing on their care and pr
 
 **Tags:** magic, education, plants, Botany, Hogwarts, Class
 
-**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle, Magical Creature Regulation at Hogwarts, Bowtruckles
+**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle, Magical Creature Regulation at Hogwarts, Bowtruckles, Bowtruckle
 
 ---
 
@@ -271,7 +271,7 @@ The Hogwarts professor specializing in Herbology, responsible for teaching stude
 
 **Tags:** characters, education, herbology, professors, Harry Potter lore, Hogwarts faculty, Magic
 
-**Related:** Devil’s Snare, Hogwarts Herbology Class, Herbology
+**Related:** Devil’s Snare, Hogwarts Herbology Class, Herbology, Bowtruckle
 
 ---
 
@@ -309,7 +309,7 @@ A character who serves as Keeper of Keys and Grounds at Hogwarts, known for his 
 
 **Prerequisites:** Professor Grubbly-Plank, Maze Creatures
 
-**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures, Professor Grubbly-Plank, Professor Grubbly-Plank
+**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures, Professor Grubbly-Plank, Professor Grubbly-Plank, Temporary Caretaker Professor Grubbly-Plank
 
 ---
 
@@ -6427,6 +6427,56 @@ The traits of bravery, daring, nerve, and chivalry that define members of Gryffi
 
 ---
 
+#### Defense Against the Dark Arts Ministry-Approved Curriculum
+
+A carefully structured, theory-centred, Ministry-approved course of defensive magic introduced by Professor Umbridge to rectify previous disruptions and bring students up to the expected standard for their O.W.L. year.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Professor Umbridge
+
+---
+
+#### Professor Umbridge
+
+A Ministry-appointed teacher who implements a strict, theory-heavy Defense Against the Dark Arts curriculum and closely monitors Hogwarts staff and students with a clipboard and quill.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Severus Snape, Hogwarts School of Witchcraft and Wizardry, Defense Against the Dark Arts Ministry-Approved Curriculum, Classroom Discipline Rituals
+
+---
+
+#### Temporary Caretaker Professor Grubbly-Plank
+
+A temporary staff member filling in for Hagrid teaching Care of Magical Creatures, focusing on creatures frequently appearing in O.W.L. examinations.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid
+
+---
+
+#### Bowtruckle
+
+A magical tree-guardian creature usually living in wand-quality trees, feeding on woodlice and fairy eggs, capable of defending its tree by gouging at eyes with sharp fingers.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Herbology, Professor Sprout
+
+---
+
+#### Classroom Discipline Rituals
+
+Procedural responses enforced by Professor Umbridge, including mandatory formal replies to her questions and the command to put away wands during theory lessons.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Professor Umbridge
+
+---
+
 ## Relationships
 
 | Source | Relationship | Target |
@@ -6534,6 +6584,9 @@ The traits of bravery, daring, nerve, and chivalry that define members of Gryffi
 | Bowtruckle | ↔ related to | Hagrid |
 | Bowtruckle | ↔ related to | Hermione Granger |
 | Bowtruckle | ↔ related to | Herbology |
+| Bowtruckle | ↔ related to | Herbology |
+| Bowtruckle | ↔ related to | Professor Sprout |
+| Bowtruckle | ↔ related to | Herbology |
 | Bowtruckles | ↔ related to | Herbology |
 | Bowtruckles | ↔ related to | Hermione Granger |
 | Brass Scales | ↔ related to | Glass or Crystal Phials |
@@ -6574,6 +6627,7 @@ The traits of bravery, daring, nerve, and chivalry that define members of Gryffi
 | Chocolate Frogs | ↔ related to | Hogwarts |
 | Christmas crackers | ↔ related to | Banquet at Hogwarts |
 | Christmas Dinner at Hogwarts | ↔ related to | Hogwarts Christmas Traditions |
+| Classroom Discipline Rituals | ↔ related to | Professor Umbridge |
 | Cleansweep Seven | ↔ related to | Quidditch trials |
 | Climbing school roof incident | ↔ related to | Dursleys' treatment of Harry |
 | Climbing school roof incident | ↔ related to | Hogwarts |
@@ -6971,6 +7025,9 @@ The traits of bravery, daring, nerve, and chivalry that define members of Gryffi
 | Professor Umbridge | ↔ related to | Defensive Magical Theory by Wilbert Slinkhard |
 | Professor Umbridge | ↔ related to | Severus Snape |
 | Professor Umbridge | ↔ related to | Defence Against the Dark Arts Curriculum Change |
+| Professor Umbridge | ↔ related to | Severus Snape |
+| Professor Umbridge | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Professor Umbridge | ↔ related to | Defense Against the Dark Arts Ministry-Approved Curriculum |
 | Protective Gloves (Dragon Hide) | ↔ related to | Rubeus Hagrid |
 | Pub | ↔ related to | Leaky Cauldron |
 | Pumpkin Pasties | ↔ related to | Hogwarts |
@@ -7073,6 +7130,8 @@ The traits of bravery, daring, nerve, and chivalry that define members of Gryffi
 | Sword of Gryffindor | ↔ related to | Dumbledore |
 | Sword of Gryffindor | ↔ related to | Qualities of Gryffindor |
 | Telescope | ↔ related to | Magical world |
+| Temporary Caretaker Professor Grubbly-Plank | ↔ related to | Hagrid |
+| Temporary Caretaker Professor Grubbly-Plank | ↔ related to | Hagrid |
 | Temporary Caretaking of Magical Creatures | ↔ related to | Hagrid |
 | Temporary Caretaking of Magical Creatures | ↔ related to | Hagrid |
 | The Boy Who Lived | ↔ related to | Harry Potter |

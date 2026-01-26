@@ -220,6 +220,7 @@ private string searchQuery = "";
 private string filterMode = "all";
 private Concept? selectedConcept;
 private List<ConceptRelationship> relatedConcepts = [];
+private string? lastAppliedExternalSelection;
 
 private IEnumerable<Concept> filteredConcepts => concepts
     .Where(c => MatchesSearch(c) && MatchesFilter(c))
@@ -232,13 +233,14 @@ protected override async Task OnInitializedAsync()
 
 protected override async Task OnParametersSetAsync()
 {
-    // Handle external concept selection
-    if (!string.IsNullOrEmpty(SelectedConceptId) && selectedConcept?.Id != SelectedConceptId)
+    // Handle external concept selection - only apply if it's a new external selection
+    if (!string.IsNullOrEmpty(SelectedConceptId) && SelectedConceptId != lastAppliedExternalSelection)
     {
         var concept = concepts.FirstOrDefault(c => c.Id == SelectedConceptId);
         if (concept != null)
         {
             SelectConcept(concept);
+            lastAppliedExternalSelection = SelectedConceptId;
         }
     }
 }
@@ -341,6 +343,7 @@ protected override async Task OnParametersSetAsync()
     {
         selectedConcept = null;
         relatedConcepts = [];
+        lastAppliedExternalSelection = null;
     }
 
     private async Task AskAboutConcept(Concept concept)

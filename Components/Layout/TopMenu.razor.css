@@ -78,6 +78,15 @@
 .profile-menu {
     position: relative;
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-username {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333333;
 }
 
 .profile-avatar {
@@ -173,6 +182,10 @@
     .top-nav-link span:not(.bi) {
         display: none;
     }
+
+    .profile-username {
+        display: none;
+    }
 }
 
 /* Dark theme support */
@@ -183,6 +196,10 @@
 
 :global([data-theme="Dark"]) .brand-link {
     color: var(--text-primary, #e0e0e0) !important;
+}
+
+:global([data-theme="Dark"]) .profile-username {
+    color: var(--text-primary, #e0e0e0);
 }
 
 :global([data-theme="Dark"]) .top-nav-link {
