@@ -85,6 +85,80 @@ TEXT TO FORMAT:
     }
 
     /// <summary>
+    /// Splits content into chunks suitable for individual AI formatting calls.
+    /// Used by the background queue for checkpoint/resume support.
+    /// </summary>
+    public List<string> SplitIntoChunks(string content, int maxChunkSize = 12000)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return [];
+
+        // Small content doesn't need splitting
+        if (content.Length <= maxChunkSize)
+            return [content];
+
+        var paragraphs = content.Split(["\n\n", "\r\n\r\n"], StringSplitOptions.RemoveEmptyEntries);
+        var chunks = new List<string>();
+        var currentChunk = new StringBuilder();
+
+        foreach (var para in paragraphs)
+        {
+            // If a single paragraph exceeds maxChunkSize, split it further
+            if (para.Length > maxChunkSize)
+            {
+                // Flush current chunk first
+                if (currentChunk.Length > 0)
+                {
+                    chunks.Add(currentChunk.ToString());
+                    currentChunk.Clear();
+                }
+
+                // Split large paragraph by sentences
+                var subChunks = SplitLargeParagraph(para, maxChunkSize);
+                chunks.AddRange(subChunks);
+                continue;
+            }
+
+            if (currentChunk.Length + para.Length > maxChunkSize && currentChunk.Length > 0)
+            {
+                chunks.Add(currentChunk.ToString());
+                currentChunk.Clear();
+            }
+            currentChunk.AppendLine(para);
+            currentChunk.AppendLine();
+        }
+
+        if (currentChunk.Length > 0)
+        {
+            chunks.Add(currentChunk.ToString());
+        }
+
+        // Filter out empty/tiny chunks
+        chunks = chunks.Where(c => c.Trim().Length > 50).ToList();
+
+        Log.Debug($"ContentFormatter: Split content into {chunks.Count} chunks");
+        return chunks;
+    }
+
+    /// <summary>
+    /// Formats a single chunk of content using AI.
+    /// Used by the background queue for checkpoint/resume support.
+    /// </summary>
+    public async Task<string> FormatSingleChunkAsync(string chunk, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(chunk))
+            return chunk;
+
+        var apiKey = await opt.GetApiKeyAsync();
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException("OpenAI API key is missing.");
+        }
+
+        return await FormatChunkAsync(chunk, apiKey, ct);
+    }
+
+    /// <summary>
     /// Format large content by splitting into sections and processing each.
     /// </summary>
     private async Task<string> FormatLargeContentAsync(string content, string apiKey, Action<int, int>? onProgress, CancellationToken ct)

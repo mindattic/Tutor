@@ -489,36 +489,87 @@
         {
             <div class="add-section">
                 @* Processing Queue Status - shown in Add tab *@
-                @if (processingTasks.Count > 0)
+                @{
+                    var activeTasks = processingTasks.Values.Where(t => t.Stage != ProcessingStage.Failed && t.Stage != ProcessingStage.Complete).OrderBy(t => t.QueuedAt).ToList();
+                    var failedTasks = processingTasks.Values.Where(t => t.Stage == ProcessingStage.Failed).OrderBy(t => t.QueuedAt).ToList();
+                }
+                
+                @if (activeTasks.Count > 0 || failedTasks.Count > 0)
                 {
                     <div class="processing-queue">
-                        <div class="queue-header">
-                            <span class="bi bi-hourglass-split"></span>
-                            <span>Processing @processingTasks.Count resource(s)...</span>
-                            <span class="processing-note">(Resources will appear in library when complete)</span>
-                        </div>
-                        @foreach (var task in processingTasks.Values.OrderBy(t => t.QueuedAt))
+                        @* Active Processing Tasks *@
+                        @if (activeTasks.Count > 0)
                         {
-                            <div class="queue-item @task.Stage.ToString().ToLower()">
-                                <div class="queue-item-header">
-                                    <span class="queue-item-title">@task.ResourceTitle</span>
-                                    <span class="queue-item-stage">@task.StageDisplayName</span>
-                                    <span class="queue-item-time">@task.ElapsedTimeFormatted</span>
-                                    <button class="queue-cancel-btn" 
-                                            title="Cancel upload" 
-                                            @onclick="@(() => ConfirmCancelTask(task.TaskId, task.ResourceTitle))">
-                                        <span class="bi bi-x-lg"></span>
-                                    </button>
-                                </div>
-                                <div class="progress-bar-container small">
-                                    <div class="progress-bar" style="width: @(task.Progress)%"></div>
-                                </div>
-                                <div class="queue-item-status">@task.CurrentOperation</div>
+                            <div class="queue-header">
+                                <span class="bi bi-hourglass-split"></span>
+                                <span>Processing @activeTasks.Count resource(s)...</span>
+                                <span class="processing-note">(Resources will appear in library when complete)</span>
                             </div>
+                            @foreach (var task in activeTasks)
+                            {
+                                <div class="queue-item @task.Stage.ToString().ToLower()">
+                                    <div class="queue-item-header">
+                                        <span class="queue-item-title">@task.ResourceTitle</span>
+                                        <span class="queue-item-stage">@task.StageDisplayName</span>
+                                        <span class="queue-item-time">@task.ElapsedTimeFormatted</span>
+                                        <button class="queue-cancel-btn" 
+                                                title="Cancel upload" 
+                                                @onclick="@(() => ConfirmCancelTask(task.TaskId, task.ResourceTitle))">
+                                            <span class="bi bi-x-lg"></span>
+                                        </button>
+                                    </div>
+                                    <div class="progress-bar-container small">
+                                        <div class="progress-bar" style="width: @(task.Progress)%"></div>
+                                    </div>
+                                    <div class="queue-item-status">@task.CurrentOperation</div>
+                                </div>
+                            }
                         }
+                        
+                        @* Failed Tasks with Resume Option *@
+                        @if (failedTasks.Count > 0)
+                        {
+                            <div class="queue-header failed">
+                                <span class="bi bi-exclamation-triangle"></span>
+                                <span>@failedTasks.Count task(s) need attention</span>
+                                <span class="processing-note">(Can be resumed from last checkpoint)</span>
+                            </div>
+                            @foreach (var task in failedTasks)
+                            {
+                                <div class="queue-item failed">
+                                    <div class="queue-item-header">
+                                        <span class="queue-item-title">@task.ResourceTitle</span>
+                                        <span class="queue-item-stage failed">Failed</span>
+                                        <button class="queue-resume-btn" 
+                                                title="Resume from last checkpoint" 
+                                                @onclick="@(() => ResumeFailedTask(task.TaskId))">
+                                            <span class="bi bi-play-fill"></span>
+                                            <span>Resume</span>
+                                        </button>
+                                        <button class="queue-cancel-btn" 
+                                                title="Discard task" 
+                                                @onclick="@(() => ConfirmCancelTask(task.TaskId, task.ResourceTitle))">
+                                            <span class="bi bi-x-lg"></span>
+                                        </button>
+                                    </div>
+                                    <div class="queue-item-error">
+                                        <span class="bi bi-info-circle"></span>
+                                        <span>@(task.CurrentOperation ?? "Processing interrupted - progress saved")</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        
                         <div class="queue-footer">
                             <span class="bi bi-clock"></span>
                             <span>Total Processing Time: @GetCumulativeProcessingTime()</span>
+                            @if (failedTasks.Count > 1)
+                            {
+                                <button class="queue-resume-all-btn" @onclick="ResumeAllFailedTasks">
+                                    <span class="bi bi-play-fill"></span>
+                                    Resume All
+                                </button>
+                            }
                         </div>
                     </div>
                 }
@@ -1484,6 +1535,53 @@ private string resourceContent = "";
         }
         
         CloseModals();
+    }
+
+    private void ResumeFailedTask(string taskId)
+    {
+        var resumed = Tutor.Services.Queue.BackgroundQueueService.RetryTask(taskId);
+        
+        if (resumed)
+        {
+            // Update local status to show it's processing again
+            if (processingTasks.TryGetValue(taskId, out var task))
+            {
+                task.Stage = ProcessingStage.Queued;
+                task.CurrentOperation = "Resuming from checkpoint...";
+            }
+            statusMessage = "Task resumed - will continue from last checkpoint";
+            Log.Info($"User resumed failed task: {taskId}");
+        }
+        else
+        {
+            statusMessage = "Could not resume task";
+        }
+        
+        RefreshProcessingTasks();
+        StateHasChanged();
+    }
+
+    private void ResumeAllFailedTasks()
+    {
+        var failedTaskIds = processingTasks.Values
+            .Where(t => t.Stage == ProcessingStage.Failed)
+            .Select(t => t.TaskId)
+            .ToList();
+        
+        var resumedCount = 0;
+        foreach (var taskId in failedTaskIds)
+        {
+            if (Tutor.Services.Queue.BackgroundQueueService.RetryTask(taskId))
+            {
+                resumedCount++;
+            }
+        }
+        
+        statusMessage = $"Resumed {resumedCount} task(s) - will continue from checkpoints";
+        Log.Info($"User resumed {resumedCount} failed tasks");
+        
+        RefreshProcessingTasks();
+        StateHasChanged();
     }
 
     private async Task CreateCourse()

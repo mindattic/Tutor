@@ -6946,6 +6946,74 @@ border: 1px solid var(--border-color);
     color: var(--danger, #f44336);
 }
 
+.queue-resume-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--accent-success, #4caf50);
+    background: var(--accent-success, #4caf50);
+    color: white;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.queue-resume-btn:hover {
+    background: #43a047;
+    border-color: #43a047;
+}
+
+.queue-resume-all-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    margin-left: auto;
+    border-radius: 4px;
+    border: 1px solid var(--accent-success, #4caf50);
+    background: transparent;
+    color: var(--accent-success, #4caf50);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.queue-resume-all-btn:hover {
+    background: var(--accent-success, #4caf50);
+    color: white;
+}
+
+.queue-header.failed {
+    color: var(--danger, #f44336);
+}
+
+.queue-header.failed .bi {
+    animation: none;
+}
+
+.queue-item-stage.failed {
+    background: var(--danger-bg, #fee);
+    color: var(--danger, #f44336);
+}
+
+.queue-item-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 6px 0;
+}
+
+.queue-item-error .bi {
+    color: var(--warning, #ff9800);
+    flex-shrink: 0;
+}
+
 .processing-note {
     font-size: 11px;
     font-weight: 400;
