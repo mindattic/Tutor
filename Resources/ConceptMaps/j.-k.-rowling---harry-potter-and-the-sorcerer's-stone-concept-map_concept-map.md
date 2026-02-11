@@ -3,19 +3,19 @@ title: "J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map"
 id: 9684a851-bca8-4e3d-b81a-ec23c0acc055
 resource_id: 89eaab8d-cc29-4781-b1de-aa3d0ac61db8
 status: Ready
-concepts: 587
-relations: 895
+concepts: 595
+relations: 910
 created: 2026-01-24T21:37:29.3022297Z
-updated: 2026-01-25T19:48:53.9394308Z
-version: 19
+updated: 2026-02-11T02:39:57.4347390Z
+version: 21
 ---
 
 # J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map - Concept Map
 
 Concept map generated from: J. K. Rowling - Harry Potter and the Sorcerer's Stone
 
-**Total Concepts (Nodes):** 587
-**Total Relations (Edges):** 895
+**Total Concepts (Nodes):** 595
+**Total Relations (Edges):** 910
 
 ---
 
@@ -51,9 +51,9 @@ A magical boarding school where young witches and wizards receive their educatio
 
 **Tags:** Harry Potter, locations, education, Harry Potter universe, Magic, fantasy, fiction, Harry Potter lore, fictional institution, setting, fictional school, wizarding culture
 
-**Prerequisites:** Auror, Auror
+**Prerequisites:** Auror, Auror, First Year Hogwarts Preparation, Introduction to Hogwarts Peer Group, Auror
 
-**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat, Professor Umbridge
+**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat, Professor Umbridge, Professor Dolores Umbridge
 
 ---
 
@@ -85,7 +85,7 @@ A competitive broomstick sport played at Hogwarts where a significant confrontat
 
 **Tags:** Harry Potter, events, sports
 
-**Related:** Seeker (Quidditch role), Hogwarts School of Witchcraft and Wizardry, Quidditch team, Oliver Wood
+**Related:** Seeker (Quidditch role), Hogwarts School of Witchcraft and Wizardry, Quidditch team, Oliver Wood, Harry Potter’s Early Life, Introduction to Hogwarts Peer Group
 
 ---
 
@@ -109,7 +109,7 @@ The protagonist of the series, a young wizard who became famous for surviving an
 
 **Tags:** Harry Potter, characters, protagonist, character, literature, fiction, Wizardry, Hogwarts Student, fictional wizard, Harry Potter Series, fantasy, wizards
 
-**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path, Auror Career Path, Sword of Gryffindor
+**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path, Auror Career Path, Sword of Gryffindor, Harry Potter’s Early Life
 
 ---
 
@@ -193,7 +193,7 @@ Severus Snape is a Hogwarts professor whose complex motivations include a strong
 
 **Tags:** Harry Potter, characters, Hogwarts, protection, professors, Harry Potter lore, character, wizarding world, Harry Potter universe, teacher, Potions, Harry Potter series, wizardry, Hogwarts Faculty
 
-**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge, Professor Umbridge
+**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge, Professor Umbridge, Professor Dolores Umbridge
 
 ---
 
@@ -5281,7 +5281,7 @@ A magical spell intended to negate or block another spell, such as Snape's attem
 
 **Prerequisites:** Quirinus Quirrell
 
-**Related:** Severus Snape, Use of magic in the Muggle world, Unforgivable Curses, Shield Charm, Integration with Magical Elements, Unforgivable Curses
+**Related:** Severus Snape, Use of magic in the Muggle world, Unforgivable Curses, Shield Charm, Integration with Magical Elements, Unforgivable Curses, Unforgivable Curses
 
 ---
 
@@ -5347,7 +5347,7 @@ Magical flying devices commonly used by witches and wizards to fly; used here to
 
 **Prerequisites:** Quidditch Match
 
-**Related:** Winged Keys, Quidditch team
+**Related:** Winged Keys, Quidditch team, First Year Hogwarts Preparation
 
 ---
 
@@ -6477,12 +6477,91 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 
 ---
 
+#### Harry Potter’s Early Life
+
+The early life of Harry Potter includes his experiences before and just as he starts at Hogwarts, including his introduction to the magical world and interactions with other children before school.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter, Quidditch Match, First Year Hogwarts Preparation
+
+---
+
+#### First Year Hogwarts Preparation
+
+The activities and preparations Harry undergoes before starting Hogwarts, including buying robes and books, and meeting other first-year students.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Broomsticks, Harry Potter’s Early Life, Introduction to Hogwarts Peer Group
+
+---
+
+#### Introduction to Hogwarts Peer Group
+
+Harry encounters other children before starting Hogwarts, including a boy who expects to be sorted into Slytherin and talks about school life and Quidditch.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Quidditch Match, First Year Hogwarts Preparation
+
+---
+
+#### Auror
+
+A highly skilled magical law enforcement officer specializing in fighting dark magic, requiring top grades and passing stringent character and aptitude tests.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Defensive Magical Theory by Wilbert Slinkhard
+
+A textbook used in Ministry-approved Defence Against the Dark Arts classes, focused on theory-centered defensive magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Ministry-approved Defence Against the Dark Arts curriculum
+
+---
+
+#### Ministry-approved Defence Against the Dark Arts curriculum
+
+A structured, theory-centered course of defensive magical instruction mandated by the Ministry of Magic to standardize teaching.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Professor Dolores Umbridge, Defensive Magical Theory by Wilbert Slinkhard
+
+---
+
+#### Unforgivable Curses
+
+Three powerful dark spells—Avada Kedavra, Imperius, and Cruciatus—that carry a life sentence penalty for use on others, taught as the worst magical threats.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Countercurse
+
+---
+
+#### Professor Dolores Umbridge
+
+A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved curriculum and closely monitoring staff and students.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Severus Snape, Hogwarts School of Witchcraft and Wizardry, Ministry-approved Defence Against the Dark Arts curriculum
+
+---
+
 ## Relationships
 
 | Source | Relationship | Target |
 |--------|--------------|--------|
 | Alohomora Charm | → requires | Winged Keys |
 | Anti-Cheating spell | → requires | Exams at Hogwarts |
+| Auror | → requires | Hogwarts School of Witchcraft and Wizardry |
 | Auror | → requires | Hogwarts School of Witchcraft and Wizardry |
 | Auror | → requires | Hogwarts School of Witchcraft and Wizardry |
 | Beater | → requires | Quidditch trials |
@@ -6498,6 +6577,7 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Dudley's tantrum | → requires | Birthday presents |
 | Dumbledore | → requires | Fear of a Name |
 | Fat Lady Portrait | → requires | Password |
+| First Year Hogwarts Preparation | → requires | Hogwarts School of Witchcraft and Wizardry |
 | Green Light | → requires | Curse Mark on Harry's Forehead |
 | Harry's Interaction with the Snake | → requires | Boa Constrictor |
 | Harry's Scar | → requires | Harry's scar origin |
@@ -6505,6 +6585,7 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Herbology | → requires | Creepers (magical plant part) |
 | Holly Wand | → requires | Wand Arm |
 | House Points | → requires | House Cup |
+| Introduction to Hogwarts Peer Group | → requires | Hogwarts School of Witchcraft and Wizardry |
 | Javelin Maneuver | → requires | Flying Lessons |
 | Leaky Cauldron | → requires | Diagon Alley |
 | Lily and James Potter | → requires | The Boy Who Lived |
@@ -6659,6 +6740,7 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Defense Against the Dark Arts | ↔ related to | Dark Magic |
 | Defensive Magical Theory | ↔ related to | Ministry-approved Defensive Magic Curriculum |
 | Defensive Magical Theory by Wilbert Slinkhard | ↔ related to | Course Aims for Defence Against the Dark Arts by Umbridge |
+| Defensive Magical Theory by Wilbert Slinkhard | ↔ related to | Ministry-approved Defence Against the Dark Arts curriculum |
 | Desserts at Hogwarts feast | ↔ related to | Banquet at Hogwarts |
 | Devil's Snare | ↔ related to | Hagrid |
 | Devil's Snare | ↔ related to | Devil’s Snare |
@@ -6724,6 +6806,8 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Fenrir Greyback | ↔ related to | Lord Voldemort |
 | Filch | ↔ related to | Mrs. Norris |
 | Filch | ↔ related to | Astronomy Tower |
+| First Year Hogwarts Preparation | ↔ related to | Broomsticks |
+| First Year Hogwarts Preparation | ↔ related to | Introduction to Hogwarts Peer Group |
 | Fitch | ↔ related to | Mrs. Norris |
 | Floating Candles | ↔ related to | Hogwarts |
 | Flourish and Blotts | ↔ related to | Hogwarts |
@@ -6790,6 +6874,7 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Harry Potter | ↔ related to | Fear of a Name |
 | Harry Potter Day | ↔ related to | Potters |
 | Harry Potter Day | ↔ related to | Harry Potter |
+| Harry Potter’s Early Life | ↔ related to | Quidditch Match |
 | Harry Potter’s Fame | ↔ related to | Harry Potter |
 | Harry Potter's Family (The Potters) | ↔ related to | Dumbledore's Advice on the Mirror of Erised |
 | Harry Potter's Family (The Potters) | ↔ related to | Harry Potter |
@@ -6841,6 +6926,8 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Integration with Magical Elements | ↔ related to | Countercurse |
 | Integration with Magical Elements | ↔ related to | Hermione Granger |
 | Integration with Magical Elements | ↔ related to | Countercurse |
+| Introduction to Hogwarts Peer Group | ↔ related to | Quidditch Match |
+| Introduction to Hogwarts Peer Group | ↔ related to | Quidditch Match |
 | J. K. Rowling | ↔ related to | Harry Potter |
 | Jellybeans (Every Flavor Beans) | ↔ related to | Hogwarts |
 | Jim McGuffin | ↔ related to | Shooting Stars |
@@ -7002,6 +7089,9 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Professor Binns | ↔ related to | Magic Class Subjects at Hogwarts |
 | Professor Binns | ↔ related to | Hogwarts |
 | Professor Binns | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Professor Dolores Umbridge | ↔ related to | Severus Snape |
+| Professor Dolores Umbridge | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Professor Dolores Umbridge | ↔ related to | Ministry-approved Defence Against the Dark Arts curriculum |
 | Professor Dumbledore | ↔ related to | High Table |
 | Professor Dumbledore | ↔ related to | Dumbledore |
 | Professor Flitwick | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
@@ -7166,6 +7256,7 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
+| Unforgivable Curses | ↔ related to | Countercurse |
 | Unicorn | ↔ related to | Hogwarts Herbology Class |
 | Unicorn Blood | ↔ related to | Curse of Drinking Unicorn Blood |
 | Unicorn Blood | ↔ related to | Dark Magic |
@@ -7233,6 +7324,8 @@ Procedural responses enforced by Professor Umbridge, including mandatory formal 
 | Gryffindor Tower | ⊃ contains | Gryffindor House |
 | Hagrid's hut | ⊃ contains | Rubeus Hagrid |
 | Harry Potter | ⊃ contains | Invisibility Cloak |
+| Harry Potter’s Early Life | ⊃ contains | Harry Potter |
+| Harry Potter’s Early Life | ⊃ contains | First Year Hogwarts Preparation |
 | Harry's Cupboard | ⊃ contains | The Dursleys |
 | Hogwarts | ⊃ contains | House Cup |
 | Hogwarts | ⊃ contains | Astronomy Tower |
