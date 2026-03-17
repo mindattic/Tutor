@@ -3,19 +3,19 @@ title: "correlithm-object-technology Concept Map"
 id: 26d2be54-9462-471d-8841-246d71a3c0e5
 resource_id: 6fed5470-a19d-4f17-a666-ef0d79414920
 status: Ready
-concepts: 601
-relations: 990
+concepts: 678
+relations: 1193
 created: 2026-02-08T17:56:03.8181398Z
-updated: 2026-02-08T18:23:31.6288848Z
-version: 8
+updated: 2026-03-17T02:36:54.4733838Z
+version: 33
 ---
 
 # correlithm-object-technology Concept Map - Concept Map
 
 Concept map generated from: correlithm-object-technology
 
-**Total Concepts (Nodes):** 601
-**Total Relations (Edges):** 990
+**Total Concepts (Nodes):** 678
+**Total Relations (Edges):** 1193
 
 ---
 
@@ -31,7 +31,7 @@ The region of space near a correlithm object (CO), indicating its area of effect
 
 **Tags:** computing, geometry, CO system
 
-**Related:** soft token, Soft Tokens, Random Distribution of CO Points
+**Related:** soft token, Soft Tokens, Random Distribution of CO Points, influence zone, information field, capture zones of string COs, Influence Tunnel, string CO, influence zone overlap
 
 ---
 
@@ -41,7 +41,7 @@ Data considered to be outside or in the environment of a CO system, serving as i
 
 **Tags:** computing, data, environment
 
-**Related:** Synthorg®, world, Converters
+**Related:** Synthorg®, world, Converters, Soft Tokens
 
 ---
 
@@ -61,7 +61,7 @@ A normalization of an N-cube where the standard radius has unit length, correspo
 
 **Tags:** mathematics, geometry, N-cube
 
-**Related:** unit edge, standard radius, Mean and Standard Deviation of Distances in N-cube
+**Related:** unit edge, standard radius, Mean and Standard Deviation of Distances in N-cube, N-sphere (N-hedron), Fundamental Geometric-Statistical Scaling Law
 
 ---
 
@@ -71,7 +71,7 @@ Normalization of an N-cube with edges of unit length, also related to the concep
 
 **Tags:** mathematics, geometry, N-cube
 
-**Related:** unit radius, Mean and Standard Deviation of Distances in N-cube
+**Related:** unit radius, Mean and Standard Deviation of Distances in N-cube, Distribution of Point-to-Point Distances
 
 ---
 
@@ -81,7 +81,7 @@ Element of source or target of a rule specifying a particular point involved in 
 
 **Tags:** computing, CO system, rule components
 
-**Related:** target, source, Rule (in CO system), Soft Tokens
+**Related:** target, source, Rule (in CO system), Soft Tokens, soft token
 
 ---
 
@@ -103,7 +103,7 @@ A complete CO system that exclusively interfaces with world data, hiding all int
 
 **Tags:** computing, CO system, trademark, product, artificial intelligence, robotics, behavior modeling, computing entity
 
-**Related:** world data, Correlithm Object Technology (CO Technology)
+**Related:** world data, Correlithm Object Technology (CO Technology), Mind
 
 ---
 
@@ -113,7 +113,7 @@ A bounded N-space with its origin located at its midpoint, exhibiting symmetry a
 
 **Tags:** mathematics, geometry, N-space
 
-**Related:** space, High-Dimensional Bounded Spaces
+**Related:** space, High-Dimensional Bounded Spaces, origin placement in bounded N-space, Orthogonality of Random Points
 
 ---
 
@@ -123,7 +123,7 @@ A collective control system formed by multiple vehicles communicating low-bandwi
 
 **Tags:** computing, CO system, distributed systems, systems theory, distributed control, robotics
 
-**Related:** swarm, straddler, Distributed Systems
+**Related:** swarm, straddler, Distributed Systems, Mind
 
 ---
 
@@ -147,9 +147,9 @@ A property of CO systems where multiple pieces of information can be combined or
 
 **Tags:** computing, concurrency, CO system, data representation, high-dimensional space, CO systems, quantum analogy, state representation, data fusion, information theory, signal processing, computing properties, high-dimensional geometry
 
-**Prerequisites:** Soft Parse Tree, Soft Parse Tree
+**Prerequisites:** Soft Parse Tree, Soft Parse Tree, soft parse tree, soft parse tree, Information Density in CO Systems, Information Density in CO Systems
 
-**Related:** CO system, Soft Tokens, superposition, Pattern Point, CO
+**Related:** CO system, Soft Tokens, superposition, Pattern Point, CO, Flexibility of CO Systems, concurrent and superposed rules, correlithm object, Nearly Orthogonal Basis Vectors in High-Dimensional N-Space, Geometric Pattern Superposition in CO Space, superposition mechanism
 
 ---
 
@@ -159,7 +159,7 @@ A lower-dimensional subset of a higher-dimensional space, used in CO systems to 
 
 **Tags:** mathematics, geometry, CO system, CO Systems, computing, state space, CO machine, CO computing
 
-**Related:** space, Space (in CO systems)
+**Related:** space, Space (in CO systems), Sampling, sampled rule
 
 ---
 
@@ -181,7 +181,9 @@ A sequence of correlated objects (COs) arranged in a space, where points adjacen
 
 **Tags:** computing, CO system, data structure, CO systems, data structures, sequence representation, pattern recognition, correlithm, geometry, high-dimensional data representation, continuous data, analog computing, functional mapping, analog processes, data representation, ordinality, CO computing paradigm, mathematics, functional approximation, system modeling
 
-**Related:** space, String Correlithm Object (String CO) Coding, string CO, String Correlithm Objects (String COs), Ring Correlithm Objects (Ring COs), Geometrical Mappings in CO Space, CO
+**Prerequisites:** Line Segment Topology in CO Space
+
+**Related:** space, String Correlithm Object (String CO) Coding, string CO, String Correlithm Objects (String COs), Ring Correlithm Objects (Ring COs), Geometrical Mappings in CO Space, CO, floor technique, correlithm object, Maximum Bit Content at Zero Distance, statistical object, embedding geometry in CO space, approximate relative location coding, capture zones of string COs, Line Segment Topology in CO Space, Geometric Pattern Superposition in CO Space, Ring CO, Influence Tunnel, Soft Sequence, zone of influence, soft token pattern, influence zone overlap, linear approximation in CO systems, Pattern Point, Soft String Token
 
 ---
 
@@ -205,7 +207,7 @@ Current coordinate values stored in cells or a point in space varying over time,
 
 **Tags:** computing, CO system, state representation
 
-**Related:** space, CO system, State Point, CO Flip-Flop
+**Related:** space, CO system, State Point, CO Flip-Flop, state point, attractor, ladder mechanism, Rule-Level Feedback, novelty detector, synapse conductivity learning, feedback space, Pattern Point
 
 ---
 
@@ -227,7 +229,7 @@ The typical or baseline distance set between unrelated Correlithm Objects (COs) 
 
 **Tags:** mathematics, geometry, probability, metric, distance metric, correlithm, spatial reasoning, CO computing paradigm, spatial relation, metric spaces, measurement
 
-**Related:** standard radius, High-Dimensional Bounded Spaces, Random Distribution of CO Points
+**Related:** standard radius, High-Dimensional Bounded Spaces, Random Distribution of CO Points, Fundamental Geometric-Statistical Scaling Law, Distribution of Point-to-Point Distances, Bit Content of Proximity, floor mechanism
 
 ---
 
@@ -247,7 +249,7 @@ A computational model where operations are performed using a stack data structur
 
 **Tags:** computing, formalism, state machine, automata, computational models, computer science, computing models, formal systems
 
-**Related:** CO Architecture Machines
+**Related:** CO Architecture Machines, Learning Mechanisms
 
 ---
 
@@ -257,7 +259,9 @@ A space is any set of dimensions selected from the full set of all available dim
 
 **Tags:** mathematics, geometry, CO system, CO computing
 
-**Related:** subspace, string CO, state CO, symmetric bounded N-space, Space (in CO systems)
+**Prerequisites:** points sharing coordinates
+
+**Related:** subspace, string CO, state CO, symmetric bounded N-space, Space (in CO systems), combined spaces, overlapping dimensions, Nearly Orthogonal Basis Vectors in High-Dimensional N-Space, unit square with origin corner, Line Segment Topology in CO Space, Geometric Pattern Superposition in CO Space, randomness in CO space, Foveal Spot
 
 ---
 
@@ -277,7 +281,7 @@ A type of converter that translates external world data into internal soft token
 
 **Tags:** computing, converter, CO system, data input, CO systems, input, CO computing paradigm
 
-**Related:** Converters, Soft Tokens
+**Related:** Converters, Soft Tokens, converter
 
 ---
 
@@ -319,7 +323,7 @@ The probability that the distance between two points p1 and p2 is less than a gi
 
 **Tags:** mathematics, probability, geometry, statistics, high-dimensional geometry, information theory
 
-**Related:** geometric probability, Mean and Standard Deviation of Distances in N-cube
+**Related:** geometric probability, Mean and Standard Deviation of Distances in N-cube, point capacity
 
 ---
 
@@ -329,7 +333,7 @@ Coordinates defining a location in a space or subspace; often used interchangeab
 
 **Tags:** mathematics, geometry, CO system
 
-**Related:** ensemble, pattern CO, Correlithm Object Technology (CO Technology), Pattern Point, State Point
+**Related:** ensemble, pattern CO, Correlithm Object Technology (CO Technology), Pattern Point, State Point, points sharing coordinates
 
 ---
 
@@ -339,7 +343,7 @@ A ply is any set of cells (dimensions) in the CO computing paradigm, analogous t
 
 **Tags:** computing, geometry, CO system, CO computing, multidimensional data structure
 
-**Related:** full ply / full space, subply, Dimension (in CO Systems)
+**Related:** full ply / full space, subply, Dimension (in CO Systems), Set Operations, combined spaces, overlapping dimensions
 
 ---
 
@@ -371,7 +375,7 @@ Orthogonal basis vectors in an N-dimensional space are vectors at right angles (
 
 **Tags:** mathematics, linear algebra, geometry, vector spaces
 
-**Related:** High-Dimensional Bounded Spaces
+**Related:** High-Dimensional Bounded Spaces, origin placement in bounded N-space
 
 ---
 
@@ -451,7 +455,7 @@ CO programs or sets of rules executed on a CO machine that produce behaviors by 
 
 **Tags:** computing, CO system, program, programming, behavior modeling
 
-**Related:** correlithm object machine, fires, ladder
+**Related:** correlithm object machine, fires, ladder, Learning in CO Systems, Continuous Systems in CO, Feedback Control Systems in CO, Soft Tokens
 
 ---
 
@@ -549,7 +553,7 @@ A mapping mechanism that samples how points or regions from a world or object sp
 
 **Tags:** computing, interface, CO system, correlithm, geometry, mapping, data translation, CO systems, data representation, data conversion, CO computing paradigm
 
-**Related:** cardinal converter, continuous converter, actor, correlithm object, Converters
+**Related:** cardinal converter, continuous converter, actor, correlithm object, Converters, learning mechanism, sensor
 
 ---
 
@@ -595,7 +599,9 @@ A computational system based on Correlithm Object technology that uses concurren
 
 **Tags:** computing system, CO, computational models, soft computing, analog computing, system architecture, CO technology, computing system architecture, concurrent computing, CO computing paradigm, Computing Paradigm, Continuous Systems
 
-**Related:** superposition, Behavior, CO computing paradigm, CO machine, concurrency, CO technology, Correlithm Object (CO) System, Geometrical relationships in CO systems, Deterministic selection, Random selection of spaces and points, Emergent Behavior, Digital Computer, state CO, Swarm of CO Systems, Analog CO Systems, Sampling in CO Systems, Holograph, State Machine, Finite Automata, Storage Location (in CO systems)
+**Prerequisites:** Mind (in CO context)
+
+**Related:** superposition, Behavior, CO computing paradigm, CO machine, concurrency, CO technology, Correlithm Object (CO) System, Geometrical relationships in CO systems, Deterministic selection, Random selection of spaces and points, Emergent Behavior, Digital Computer, state CO, Swarm of CO Systems, Analog CO Systems, Sampling in CO Systems, Holograph, State Machine, Finite Automata, Storage Location (in CO systems), continuous system, general-purpose analog computer, CO system rule, Turing Completeness of CO Systems, Mind (in CO context)
 
 ---
 
@@ -643,7 +649,7 @@ Short for correlithm object; a point in high-dimensional bounded space used in C
 
 **Tags:** computing, geometry, data representation
 
-**Related:** correlithm object, Correlithm Object Technology (CO Technology), Random Distribution of CO Points, superposition, string CO
+**Related:** correlithm object, Correlithm Object Technology (CO Technology), Random Distribution of CO Points, superposition, string CO, bit content of proximity, randomness in CO space, soft token, Equal Stature (of Soft Tokens), Huge Number of Soft Tokens, Soft Tokens
 
 ---
 
@@ -675,7 +681,7 @@ An N-dimensional space where all line segments have finite length, typically rep
 
 **Tags:** mathematics, geometry, N-space, topology
 
-**Related:** N-sphere (N-hedron), unit N-cube, High-Dimensional Bounded Spaces
+**Related:** N-sphere (N-hedron), unit N-cube, High-Dimensional Bounded Spaces, real unit N-cube
 
 ---
 
@@ -697,7 +703,7 @@ A special rule functioning as a converter that reads from CO sources and outputs
 
 **Tags:** computing, converter, CO system, data output, CO systems, output, CO computing paradigm
 
-**Related:** converter, Converters, Internal Control
+**Related:** converter, Converters, Internal Control, Mode Change
 
 ---
 
@@ -833,7 +839,7 @@ An N-sphere is a generalization of a sphere to N dimensions, defined as the set 
 
 **Tags:** geometry, mathematics
 
-**Related:** bounded N-space, High-Dimensional Bounded Spaces
+**Related:** bounded N-space, High-Dimensional Bounded Spaces, unit radius
 
 ---
 
@@ -4169,7 +4175,7 @@ A space in a CO ladder structure that provides feedback to itself, supporting hi
 
 **Tags:** CO Systems, Ladder, Memory, Feedback
 
-**Related:** Ladder (in CO Systems)
+**Related:** Ladder (in CO Systems), Learning in CO Systems, Continuous Systems in CO, Feedback Control Systems in CO
 
 ---
 
@@ -4967,9 +4973,9 @@ A continuous data representation used in CO systems where tokens represent data 
 
 **Tags:** computing, CO system, data representation, machine learning, fuzzy logic, CO systems, computational representation, data encoding, high-dimensional data, computation, machine state, CO computing, Token, State Point
 
-**Prerequisites:** sensor, Adaptation, Adaptation
+**Prerequisites:** sensor, Adaptation, Adaptation, Soft Tokens, Soft Tokens, influence zone
 
-**Related:** zone of influence, Soft Tokens, Soft Token Equal Stature, Robustness in CO systems
+**Related:** zone of influence, Soft Tokens, Soft Token Equal Stature, Robustness in CO systems, state point, term, equal stature of soft tokens, robustness of soft tokens, influence zone, information field, probabilistic data representation, Soft Sequence, CO, soft token pattern, superposition mechanism, Equal Stature (of Soft Tokens), Huge Number of Soft Tokens, Robustness of Soft Tokens, Soft String Token
 
 ---
 
@@ -4981,7 +4987,7 @@ A CO system rule whose domain or target space is a subspace (sample) of a larger
 
 **Prerequisites:** subspace
 
-**Related:** rule, Rule (in CO system)
+**Related:** rule, Rule (in CO system), subspace
 
 ---
 
@@ -4995,7 +5001,7 @@ The process by which a rule is evaluated or 'fires' within a CO system.
 
 **Prerequisites:** stack machine
 
-**Related:** Rule (in CO system)
+**Related:** Rule (in CO system), Turing Completeness of CO Systems, synapse, learning, mapping correlithm objects, floor mechanism
 
 ---
 
@@ -5007,7 +5013,7 @@ Unit N-cube where coordinates are taken from the real numbers, allowing continuo
 
 **Prerequisites:** N-space
 
-**Related:** High-Dimensional Bounded Spaces
+**Related:** High-Dimensional Bounded Spaces, bounded N-space
 
 ---
 
@@ -5021,7 +5027,7 @@ The capacity or maximum amount of information that points in a high-dimensional 
 
 **Prerequisites:** information content
 
-**Related:** ensemble, Token Capacity, Point capacity of N-cube
+**Related:** ensemble, Token Capacity, Point capacity of N-cube, probability of proximity, Distribution of Point-to-Point Distances
 
 ---
 
@@ -5085,9 +5091,9 @@ A theoretical geometric object perspective from which the statistical properties
 
 **Tags:** computing, geometry, data representation, CO technology, high-dimensional data, statistics, data structures, neural modeling, geometry theory, high-dimensional geometry, computer science, artificial intelligence
 
-**Prerequisites:** bounded N-space
+**Prerequisites:** bounded N-space, Sampling, Fundamental Geometric-Statistical Scaling Law
 
-**Related:** CO, correlithm object statistics, CO field, cell, converter, correlithm, Correlithm Object Technology (CO Technology), Turing Completeness, Robustness in CO systems
+**Related:** CO, correlithm object statistics, CO field, cell, converter, correlithm, Correlithm Object Technology (CO Technology), Turing Completeness, Robustness in CO systems, Robustness, string CO, superposition, Bit Content of Proximity
 
 ---
 
@@ -6235,9 +6241,9 @@ A fundamental operational unit in a CO system that maps one or more CO source te
 
 **Tags:** computing, CO system, data transformation, computing operation
 
-**Prerequisites:** rule execution, Internal Control
+**Prerequisites:** rule execution, Internal Control, Turing Completeness of CO Systems, Turing Completeness of CO Systems, rule pathways, Mode Change, learning mechanism
 
-**Related:** target, source, sampled rule, rule operator, rule notation, Rule (in CO system), Novelty Instantiation, Soft Parse Tree, Adaptation, learning in CO systems
+**Related:** target, source, sampled rule, rule operator, rule notation, Rule (in CO system), Novelty Instantiation, Soft Parse Tree, Adaptation, learning in CO systems, concurrent and superposed rules, generation tree, ladder mechanism, Feedback Control Systems, Learning Mechanisms, Rule-Level Feedback, novelty detector, mapping correlithm objects, CO system rule
 
 ---
 
@@ -6935,6 +6941,774 @@ The ability of CO systems to handle similarity and approximate data effectively 
 
 ---
 
+#### Mind
+
+A CO technology system that behaves like living systems; CO systems can be engineered to create complex, useful behaviors found in living systems.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Synthorg®, swarm mind
+
+---
+
+#### Soft Tokens
+
+Tokens within a CO system that represent data with varying degrees of strength, allowing partial membership and similarity gradients in data representation.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Turing Completeness of CO Systems
+
+CO systems are Turing complete, making the CO computing paradigm a general-purpose paradigm capable of any computation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule execution
+
+---
+
+#### Flexibility of CO Systems
+
+CO systems excel at handling ambiguity and adaptability, making them effective in tasks involving similarity and approximate data rather than strict precision.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** superposition
+
+---
+
+#### floor technique
+
+A method that uses selection of local bounding points in a string CO to perform piecewise linear approximations and enable function implementations.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO
+
+---
+
+#### concurrent and superposed rules
+
+Rule sets in a CO system are concurrent and superposed, meaning multiple rules run simultaneously and can overlap within the same space.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, superposition
+
+---
+
+#### state point
+
+The current coordinate values stored in cells or a point in space varying over time, summarizing the entire state of the system in superposition.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** state CO, soft token
+
+---
+
+#### origin placement in bounded N-space
+
+The choice of placing the origin at a corner or at the midpoint of the bounded N-cube, which affects symmetry and use of orthogonal basis vectors.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** symmetric bounded N-space, orthogonal basis vectors
+
+---
+
+#### Set Operations
+
+Set operations refer to operations on plies such as union, intersection, and complement, managing the dimensions of these plies by combining or excluding them.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** ply
+
+---
+
+#### Robustness
+
+The property of CO systems where the system continues to function correctly despite cell failures and exhibits controlled degradation under noise.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** correlithm object
+
+---
+
+#### Sampling
+
+The property that any subset or sample of dimensions from a correlithm object still represents the datum to the same degree, with only diminished robustness.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** subspace
+
+---
+
+#### combined spaces
+
+Spaces created by the union or intersection of sets of dimensions from two or more other spaces. They can have overlapping dimensions that belong to multiple spaces.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Prerequisites:** points sharing coordinates
+
+**Related:** space, ply, overlapping dimensions
+
+---
+
+#### points sharing coordinates
+
+Points in combined spaces may share the same coordinate values in overlapping dimensions, but are distinct based on their overall space and dimensional context.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** point, overlapping dimensions
+
+---
+
+#### overlapping dimensions
+
+Dimensions that exist in more than one space or ply, forming the common parts in combined spaces where coordinate sharing can occur.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** space, ply, combined spaces, points sharing coordinates
+
+---
+
+#### soft parse tree
+
+A CO system implementation of a parse tree where nodes instantiate to degrees based on similarity rather than exact matches, enabled by superposition and concurrency.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### equal stature of soft tokens
+
+In CO systems, all soft tokens are independent objects with no intrinsic ordering, meaning they have equal status within the space.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token
+
+---
+
+#### influence zone
+
+The region surrounding a CO that determines its strength of representation based on proximity; the closer a state point to a CO, the stronger its influence.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** zone of influence, soft token
+
+---
+
+#### robustness of soft tokens
+
+Soft tokens are inherently error correcting and robust against noise, allowing CO systems to function well with approximate data and imperfect inputs.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token
+
+---
+
+#### information field
+
+An abstract region around a CO where its data representation influence fades with distance squared, creating a fuzzy, probabilistic boundary rather than sharp edges.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** zone of influence, soft token
+
+---
+
+#### probabilistic data representation
+
+A model where CO data representations are inherently approximate, robust, and represented with degrees of likelihood rather than discrete exactness.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token
+
+---
+
+#### Maximum Bit Content at Zero Distance
+
+Refers to the maximum amount of information (bit content) that can be represented or distinguished at zero distance between correlithm objects (COs) in a CO system, indicating the information density when objects coincide.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO
+
+---
+
+#### Information Density in CO Systems
+
+A property that quantifies the amount of distinct information (bit content) that can be encoded at varying distances between COs, with emphasis on zero or near-zero distances where objects share spatial coordinates.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Fundamental Geometric-Statistical Scaling Law
+
+A scaling law describing the statistical distribution of distances between points in a real unit N-cube, capturing how points tend to be nearly equidistant and nearly orthogonal in high-dimensional space, with predictable mean and standard deviation. This law quantifies the bit content per dimension relevant for correlithm encoding limits and design.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** unit radius, standard distance, Bit Content per Dimension
+
+---
+
+#### Bit Content per Dimension
+
+An approximation that each dimension in the N-cube contributes about 4.122 bits to the information content available in the encoding of points, used as a practical measure in correlithm encoding limits and design.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Fundamental Geometric-Statistical Scaling Law
+
+---
+
+#### Nearly Orthogonal Basis Vectors in High-Dimensional N-Space
+
+In high-dimensional spaces (N-cubes), random points tend to be nearly orthogonal vectors, enabling the construction of vast numbers of nearly orthogonal basis vectors useful for correlithm object encoding.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** superposition, space
+
+---
+
+#### statistical object
+
+A statistical object is a representation in CO space that approximates the geometry of lower-dimensional objects, accounting for variability and noise.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO
+
+---
+
+#### embedding geometry in CO space
+
+Embedding geometry in CO space is the process of representing a lower-dimensional geometrical object, such as a square or sphere, within a higher-dimensional correlithm object space, maintaining proportional distances.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO
+
+---
+
+#### unit square with origin corner
+
+A planar two-dimensional space defined as a square with edges of unit length and origin located at the lower-left corner, used for spatial problem formulations.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** space
+
+---
+
+#### approximate relative location coding
+
+A method to represent relative positions in multidimensional spaces approximately, maintaining closeness relationships within the CO framework.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO
+
+---
+
+#### capture zones of string COs
+
+Capture zones are regions around string COs that similarly capture the approximate shape of an object, enabling matching of similarly shaped objects.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO, zone of influence
+
+---
+
+#### rule pathways
+
+Paths formed by CO rules showing how elements such as q1 generate or control q2 and q3, forming branching and converging generation trees that represent hierarchical control and state building.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** generation tree
+
+---
+
+#### generation tree
+
+A hierarchical structure built by CO rules where a starting element (such as q1) generates child elements (q2, q3) which further generate leaves (q4..q7), representing how CO systems build state and behavior.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, rule pathways, attractor
+
+---
+
+#### attractor
+
+A structure built within CO systems to select a 'winner' among competing pathways or states by creating regions of space with assigned points which latch when triggered by the strongest leaf state.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** state CO, generation tree
+
+---
+
+#### ladder mechanism
+
+A higher-level structure in CO rule pathways that provides hierarchical pattern recognition, function generation, short-term temporal memory through feedback, and context via cross-feed paths.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, state CO
+
+---
+
+#### Feedback Control Systems
+
+We can build arbitrary feedback control systems using CO technology by assembling necessary CO components such as differentiators, integrators, adders, and multipliers.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule
+
+---
+
+#### Mode Change
+
+A modification in the operating mode of a CO system triggered by describing a situation and directed by rules through actors.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** actor
+
+---
+
+#### Learning Mechanisms
+
+Methods that allow CO systems to create their own appropriate rules, enabling the system to adapt and learn beyond those programmed by humans.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, stack machine
+
+---
+
+#### Rule-Level Feedback
+
+A feedback mechanism within CO systems where the state and execution of rules influence future rule processing and system behavior.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, state CO
+
+---
+
+#### Line Segment Topology in CO Space
+
+The concept of joining or not joining endpoints of line segments and string COs to define forms such as open line segments, rings, tubes, and tori within CO spaces.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** space, string CO
+
+---
+
+#### Geometric Pattern Superposition in CO Space
+
+The representation of shapes or patterns in CO space by superposing the CO states of all geometric points, enabling statistical robustness to noise, missing points, or extra points.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** superposition, space, string CO
+
+---
+
+#### Ring CO
+
+A ring CO is formed by joining the endpoints of a string CO to create a continuous looped space.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO
+
+---
+
+#### Influence Tunnel
+
+The influence tunnel is the path swept out around a string CO by the moving influence zone of a point CO, representing the spatial area of effect around the string CO.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** zone of influence, string CO
+
+---
+
+#### Soft Sequence
+
+A soft sequence is represented by a string CO and captures not just discrete sequences but also approximate and noisy variations of sequences in CO systems.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO, soft token
+
+---
+
+#### Learning in CO Systems
+
+Learning in CO systems is limited only by available computing resources and can grow without needing to start over; integrating CO technology with reinforcement learning and simple CO-implied learning mechanisms is a promising direction.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** mechanism, Feedback Space
+
+---
+
+#### Continuous Systems in CO
+
+CO systems are inherently continuous, enabling implementation of continuous functions like differentiators, integrators, and feedback control systems, which can be realized with CO components and executed concurrently.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Prerequisites:** Feedback Control Systems in CO
+
+**Related:** Feedback Space, mechanism
+
+---
+
+#### Feedback Control Systems in CO
+
+Feedback control systems can be built using CO technology by assembling components such as differentiators, integrators, adders, and multipliers, enabling arbitrary feedback control within CO systems.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** mechanism, Feedback Space
+
+---
+
+#### Soft Tokens
+
+Soft tokens are continuous data representations in CO systems with partial membership and influence zones, allowing graded similarity and flexible data handling.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** mechanism, world data
+
+---
+
+#### novelty detector
+
+A CO system construct that detects unfamiliar input by comparing the current state point with known input points to instantiate a 'novel' or 'known' novelty status.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, state CO, learning mechanism
+
+---
+
+#### learning mechanism
+
+Processes in CO systems that add rules and states to adapt based on experience, such as adding new rules when unfamiliar situations are detected, but cannot alter the types of data converters available.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** converter, novelty detector
+
+---
+
+#### synapse conductivity learning
+
+Learning in neurons involving increasing conductivity of currently active synapses to retain correlithm objects by pairing input COs with output pulse rates.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** state CO
+
+---
+
+#### feedback space
+
+Part of a CO system input space where a space receives input from itself to provide hierarchical short-term temporal memory to maintain the current state of recognition and action.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** state CO
+
+---
+
+#### through-feed space
+
+A CO system input space that provides a direct feedforward pathway refining information from one level to another on a through-feed path.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### bit content of proximity
+
+A measure indicating how much information a near-perfect match between points in a space carries, increasing with the number of dimensions.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO
+
+---
+
+#### randomness in CO space
+
+Utilization of randomness in the distribution of CO points or problems to provide statistical robustness and computational efficiency in high-dimensional bounded spaces.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO, space
+
+---
+
+#### synapse
+
+A connection region where source membrane watches CO and activates synapses that stimulate target membrane regions; learning involves changing the conductivity of synapses to retain the current CO.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Prerequisites:** learning
+
+**Related:** rule execution
+
+---
+
+#### learning
+
+The process of adjusting synapse conductivities based on currently active synapses to retain or capture the CO currently received.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule execution
+
+---
+
+#### mapping correlithm objects
+
+Neurons or CO systems manipulate information by mapping one correlithm object to another, generating new CO outputs based on input comparisons.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, rule execution
+
+---
+
+#### Bit Content of Proximity
+
+An expression linking the information content or bit content of how close two points are within a space, which approximates to 6 times the difference between mean distance and actual distance normalized by the standard deviation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** correlithm object, standard distance
+
+---
+
+#### Orthogonality of Random Points
+
+The property that any pair of points selected at random from a unit N-cube, when viewed from the midpoint as origin, have vectors that are approximately orthogonal (their inner product is approximately zero).
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** symmetric bounded N-space
+
+---
+
+#### Distribution of Point-to-Point Distances
+
+The statistical distribution of distances between two points randomly selected within a unit N-cube follows a normal (Gaussian) distribution with mean approximated by N/6 and a small standard deviation, making most pairs about the same distance apart in high dimensions.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** unit edge, standard distance, point capacity
+
+---
+
+#### soft token pattern
+
+A soft token pattern is a configuration of soft tokens representing data in a CO system, where pattern points are selected with associated influence zones to approximate geometric or data patterns softly.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token, string CO, superposition mechanism, influence zone overlap
+
+---
+
+#### floor mechanism
+
+A criterion that selects which rules to include in target nominations by applying a threshold distance; pattern points beyond this threshold receive zero weight.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule execution, standard distance, linear approximation in CO systems
+
+---
+
+#### influence zone overlap
+
+The merging of influence zones of nearby CO points forming soft boundaries, enabling the approximation of complex patterns through overlapping soft tokens.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** zone of influence, string CO, soft token pattern
+
+---
+
+#### superposition mechanism
+
+A property of CO systems where one state point simultaneously represents all of the soft tokens in a space and their weight ratios, enabling combined and weighted data representation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** superposition, soft token, soft token pattern
+
+---
+
+#### linear approximation in CO systems
+
+A method to approximate non-linear functions piece-wise by isolating pairs of adjacent pattern points in a string CO using the floor mechanism for rule weighting.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO, floor mechanism
+
+---
+
+#### Foveal Spot
+
+The sensitive central point in the visual field of the eye where image recognition is sharpest and where shapes and letters are best recognized.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** space
+
+---
+
+#### Pattern Point
+
+A single token or CO point at the top of a hierarchy representing a whole complex pattern or arrangement, summarizing multiple geometrical relationships in an image or object.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO, state CO
+
+---
+
+#### Equal Stature (of Soft Tokens)
+
+Within a space, soft tokens have equal stature, meaning they form a set of independent objects with no intrinsic ordering or hierarchy.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token, CO
+
+---
+
+#### Huge Number of Soft Tokens
+
+CO systems inherently provide a huge number of soft tokens available in a given space, allowing rich, flexible data representation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token, CO
+
+---
+
+#### Robustness of Soft Tokens
+
+Rules built with soft tokens are inherently error correcting and robust in the presence of noise, due to their continuous nature and distribution in high-dimensional space.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** soft token
+
+---
+
+#### Soft String Token
+
+A sequence of COs forming a string CO where these COs have unequal stature, thus they form 'soft string tokens' distinct from standard soft tokens that have equal stature.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** string CO, soft token
+
+---
+
+#### continuous system
+
+A system characterized by continuous rather than discrete behavior, which can be implemented by CO systems to realize continuous functions like integrators and differentiators.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO system
+
+---
+
+#### CO system rule
+
+The fundamental operational unit in a CO system that maps source correlithm objects to target correlithm objects, often instantiated as chains of special rules including those for converters.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** rule, CO system
+
+---
+
+#### general-purpose analog computer
+
+A general-purpose computer implemented using purely analog hardware, which CO systems can realize to gain advantages like lower power and increased speed.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO system
+
+---
+
+#### Soft Tokens
+
+When a correlithm object represents data, it acts as a token standing for the data and inherently captures the 'strength' at which the data is represented, resulting in soft, continuous data representation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO
+
+---
+
+#### Mind (in CO context)
+
+Complex, useful behaviors in CO systems motivated by an engineering question aiming to replicate living neural system flexibility and adaptation rather than traditional computer precision.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO system
+
+---
+
+#### Turing Completeness of CO Systems
+
+CO systems are Turing complete, meaning they are general-purpose computing frameworks capable of performing any computation a traditional computer can, with distinctive strengths in adaptability and similarity judgment.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** CO system
+
+---
+
 ## Relationships
 
 | Source | Relationship | Target |
@@ -6985,9 +7759,11 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Emergent Behavior | → requires | Group Mind |
 | Equilateral Triangle with Poles | → requires | Pole (of an N-Sphere) |
 | Fail-Soft Operation | → requires | Sampling in CO Systems |
+| Feedback Control Systems in CO | → requires | Continuous Systems in CO |
 | First Moment (in CO Systems) | → requires | Interpolation (in CO Systems) |
 | Function Generation | → requires | Soft Actions |
 | Function Generation | → requires | Hierarchical Pattern Recognition |
+| Fundamental Geometric-Statistical Scaling Law | → requires | correlithm object |
 | General Purpose Analog Computers | → requires | Continuous Systems |
 | geometric probability | → requires | correlithm object machine |
 | Grammar Systems | → requires | Parse Trees (CO Systems) |
@@ -7000,15 +7776,21 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Higher Dimensions in Correlithm | → requires | 2D Approximate Relative Position Mapping |
 | Hilbert spaces | → requires | unitarity constraint |
 | Independent variable | → requires | Linear expression |
+| influence zone | → requires | soft token |
 | information content | → requires | point capacity |
 | Information content in bits | → requires | Bit content of proximity event |
+| Information Density in CO Systems | → requires | superposition |
+| Information Density in CO Systems | → requires | superposition |
 | Information Storage in Neurons | → requires | Information Manipulation in Living Systems |
 | Integrator | → requires | Integral Equation |
 | Intercept | → requires | Linear expression |
 | Internal Control | → requires | rule |
 | Interpolation (in CO Systems) | → requires | Continuous System (CO Technology) |
 | Latching Rules | → requires | Turing Completeness of CO Machines |
+| learning | → requires | synapse |
 | Learning (Synaptic Plasticity) | → requires | Neural Information Processing via CO Mapping |
+| learning mechanism | → requires | rule |
+| Line Segment Topology in CO Space | → requires | string CO |
 | Linear interpolation | → requires | Continuous CO system |
 | Living Neural Systems | → requires | Neuron Pulse Rate |
 | Living Neural Systems | → requires | Correlithm Object Technology |
@@ -7023,6 +7805,8 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Meaning (Model) | → requires | Natural Language (Processing) |
 | Membership Function | → requires | Partial Truth |
 | Midpoint (of an N-Cube) | → requires | Orthogonal Basis Vectors from Random Points |
+| Mind (in CO context) | → requires | CO system |
+| Mode Change | → requires | rule |
 | N-cube | → requires | Hamming distance |
 | N-cube | → requires | random point |
 | N-cube | → requires | random corner |
@@ -7052,6 +7836,8 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Point (CO - Correlithm Object) | → requires | Random selection of spaces and points |
 | Point capacity of N-cube | → requires | Bit content of proximity event |
 | Point COs | → requires | String COs |
+| points sharing coordinates | → requires | space |
+| points sharing coordinates | → requires | combined spaces |
 | Pole (of an N-Sphere) | → requires | Equator of an N-Sphere |
 | Probability of random proximity | → requires | Distance between points in N-space |
 | Pulse Rate | → requires | Neural Ensemble |
@@ -7071,8 +7857,10 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | rule execution | → requires | rule |
 | Rule Operation Independence | → requires | Concurrent Rules |
 | Rule Pathway | → requires | Function Generation (in CO Systems) |
+| rule pathways | → requires | rule |
 | Rule Source Side Evaluation Concurrency | → requires | Source Evaluation Strategies |
 | Rules (in Correlithm Object Computing) | → requires | Flip-Flop (in CO Computing) |
+| Sampling | → requires | correlithm object |
 | Sampling in CO Systems | → requires | Rule Overlaps in CO Spaces |
 | sensor | → requires | soft token |
 | Set-theoretic operations on plies | → requires | Full ply |
@@ -7080,8 +7868,12 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Short-term Temporal Memory | → requires | Attractors (in CO Systems) |
 | Similarity | → requires | Adaptation (in CO Systems) |
 | Slope | → requires | Linear expression |
+| soft parse tree | → requires | superposition |
+| soft parse tree | → requires | superposition |
 | Soft Parse Tree | → requires | superposition |
 | Soft Parse Tree | → requires | superposition |
+| Soft Tokens | → requires | soft token |
+| Soft Tokens | → requires | soft token |
 | Space (in CO systems) | → requires | Rule (in CO systems) |
 | stack machine | → requires | rule execution |
 | Standard deviation (σ) of distances in unit N-cube | → requires | Distribution of point-to-point distances in unit N-cube |
@@ -7105,12 +7897,15 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Training Set | → requires | Training Phase |
 | Transition Region | → requires | Effective Synaptic Transmission |
 | Turing Completeness of CO Model | → requires | The Other Computer Industry |
+| Turing Completeness of CO Systems | → requires | rule |
+| Turing Completeness of CO Systems | → requires | rule |
 | Unit N-cube Cartesian Distance | → requires | Mean and Standard Deviation of Distances in N-cube |
 | Weighted Average | → requires | Neural Information Processing via CO Mapping |
 | (state) Annotation | ↔ related to | Rule (in CO system) |
 | 2D Approximate Relative Position Mapping | ↔ related to | String Correlithm Object (String CO) Coding |
 | Active Region of Digital Components | ↔ related to | Analog CO Systems |
 | actor | ↔ related to | Converters |
+| actor | ↔ related to | Mode Change |
 | Actors | ↔ related to | Modes of Operation |
 | Actors | ↔ related to | Rule-Level Feedback |
 | Adaptation | ↔ related to | rule |
@@ -7124,9 +7919,12 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Approximate number of points c for given probability p | ↔ related to | Token Capacity |
 | Approximate relationship between number of pairs and probability | ↔ related to | Token Capacity |
 | Approximate Relative Location | ↔ related to | Geometrical relationships in CO systems |
+| approximate relative location coding | ↔ related to | string CO |
+| approximate relative location coding | ↔ related to | string CO |
 | Artificial Neural Network | ↔ related to | Living Neural Systems |
 | Artificial Neural Networks | ↔ related to | Learning (in CO Systems) |
 | Artificial Neural Networks | ↔ related to | Artificial Neural Network |
+| attractor | ↔ related to | state CO |
 | Attractor (in CO Systems) | ↔ related to | Latch (in CO Systems) |
 | Attractor (in CO Systems) | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Attractor Latch State | ↔ related to | Simulation Capability |
@@ -7139,13 +7937,18 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Behavior | ↔ related to | Function Generation (in CO Systems) |
 | Binary N-cube | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Binomial Coefficients | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
+| bit content of proximity | ↔ related to | CO |
+| bit content of proximity | ↔ related to | CO |
 | Bit content of proximity | ↔ related to | Information content in bits |
+| Bit Content of Proximity | ↔ related to | correlithm object |
 | Bit content of proximity event | ↔ related to | Bit content of proximity |
 | Bit content of proximity event | ↔ related to | Information content in bits |
 | bounded N-space | ↔ related to | High-Dimensional Bounded Spaces |
 | bounded variable | ↔ related to | continuous converter |
 | bounded variable | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Capture Zone | ↔ related to | Robustness (CO Systems) |
+| capture zones of string COs | ↔ related to | zone of influence |
+| capture zones of string COs | ↔ related to | zone of influence |
 | cardinal converter | ↔ related to | Converters |
 | cardinal objects | ↔ related to | Converters |
 | Cardinal Set | ↔ related to | Natural Language (Processing) |
@@ -7172,8 +7975,15 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | CO soft tokens | ↔ related to | Soft Tokens |
 | CO space | ↔ related to | High-Dimensional Bounded Spaces |
 | CO system | ↔ related to | CO technology |
+| CO system | ↔ related to | continuous system |
+| CO system | ↔ related to | general-purpose analog computer |
+| CO system | ↔ related to | CO system rule |
+| CO system rule | ↔ related to | rule |
 | CO System Rule | ↔ related to | Rule (in CO system) |
 | CO technology | ↔ related to | Traditional Computer Science |
+| combined spaces | ↔ related to | space |
+| combined spaces | ↔ related to | ply |
+| combined spaces | ↔ related to | overlapping dimensions |
 | Command | ↔ related to | Push-Pop Connection |
 | Command | ↔ related to | Rule (in CO system) |
 | complementary error function | ↔ related to | correlithm object statistics |
@@ -7188,6 +7998,10 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Computing paradigm | ↔ related to | Ensemble-to-Ensemble Mapping |
 | concurrency | ↔ related to | CO system |
 | concurrency | ↔ related to | CO Architecture Machines |
+| concurrent and superposed rules | ↔ related to | rule |
+| concurrent and superposed rules | ↔ related to | superposition |
+| concurrent and superposed rules | ↔ related to | rule |
+| concurrent and superposed rules | ↔ related to | superposition |
 | Concurrent Computing (in CO Systems) | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Concurrent Computing Resources | ↔ related to | CO Architecture Machines |
 | Concurrent Resource | ↔ related to | Robustness (in CO systems) |
@@ -7208,7 +8022,11 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Continuous Function of Time | ↔ related to | Continuous Systems |
 | Continuous Integrator | ↔ related to | Continuous Systems |
 | Continuous Space | ↔ related to | Continuous Systems |
+| continuous system | ↔ related to | CO system |
 | Continuous Systems | ↔ related to | Correlithm Object Technology (CO Technology) |
+| Continuous Systems in CO | ↔ related to | Feedback Space |
+| Continuous Systems in CO | ↔ related to | mechanism |
+| Continuous Systems in CO | ↔ related to | Feedback Space |
 | Converging Pathways | ↔ related to | Interaction between Pathways |
 | Converging Pathways | ↔ related to | Pathways |
 | converter | ↔ related to | correlithm object |
@@ -7282,15 +8100,24 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Distances in Unit N-Cubes | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Distributed Systems | ↔ related to | Holographic Nature |
 | Distributed Systems | ↔ related to | Correlithm Object Technology (CO Technology) |
+| Distribution of Point-to-Point Distances | ↔ related to | unit edge |
+| Distribution of Point-to-Point Distances | ↔ related to | standard distance |
 | Distribution of point-to-point distances in unit N-cube | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | DNA Four-Valued Elements | ↔ related to | Correlithm Object Technology (CO Technology) |
 | ebits | ↔ related to | Quantum Information Science (QIS) |
 | Effective Synaptic Transmission | ↔ related to | Functional Relationship in Dendritic Tree |
+| embedding geometry in CO space | ↔ related to | string CO |
+| embedding geometry in CO space | ↔ related to | string CO |
 | Emergent Behavior | ↔ related to | CO system |
 | Engineering Question of Building Minds | ↔ related to | CO technology |
 | English alphabet string CO | ↔ related to | String Correlithm Object (String CO) Coding |
 | ensemble | ↔ related to | Living Neural Systems |
 | Ensemble-to-Ensemble Mapping | ↔ related to | Living Neural Systems |
+| Equal Stature (of Soft Tokens) | ↔ related to | soft token |
+| Equal Stature (of Soft Tokens) | ↔ related to | CO |
+| Equal Stature (of Soft Tokens) | ↔ related to | soft token |
+| equal stature of soft tokens | ↔ related to | soft token |
+| equal stature of soft tokens | ↔ related to | soft token |
 | Equator of an N-Sphere | ↔ related to | Complex unitary N-sphere |
 | Equidistant Points | ↔ related to | Robustness (CO Systems) |
 | Equilateral Triangle with Poles | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
@@ -7303,24 +8130,36 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Fail-Soft Fit | ↔ related to | Robustness (CO Systems) |
 | Fail-Soft Operation | ↔ related to | Robustness (CO Systems) |
 | Feedback Control System | ↔ related to | Correlithm Object Technology (CO Technology) |
+| Feedback Control Systems | ↔ related to | rule |
+| Feedback Control Systems in CO | ↔ related to | mechanism |
+| Feedback Control Systems in CO | ↔ related to | Feedback Space |
 | Feedback Loop | ↔ related to | Cross-Feed Loop |
 | Feedback Loop | ↔ related to | Rule (in CO system) |
+| feedback space | ↔ related to | state CO |
 | Feedback Space | ↔ related to | Ladder (in CO Systems) |
 | Finite Automata | ↔ related to | CO system |
 | Finite Bounded N-Dimensional Space | ↔ related to | Distribution of point-to-point distances in unit N-cube |
 | Finite Number of Stack Positions | ↔ related to | Turing Completeness of CO Model |
 | fires | ↔ related to | Rule (in CO system) |
+| Flexibility of CO Systems | ↔ related to | superposition |
+| Flexibility of CO Systems | ↔ related to | superposition |
 | Flip-Flop | ↔ related to | State |
 | Flip-Flop | ↔ related to | Flip-Flop (in CO systems) |
 | Flip-Flop (in CO Computing) | ↔ related to | Turing Completeness of CO Model |
 | Flip-Flop (in CO systems) | ↔ related to | CO Architecture Machines |
 | Flip-Flop in Correlithm Objects | ↔ related to | Latching Rules |
 | Flip-Flop in Correlithm Objects | ↔ related to | Turing Completeness of CO Machines |
+| floor mechanism | ↔ related to | rule execution |
+| floor mechanism | ↔ related to | standard distance |
+| floor mechanism | ↔ related to | linear approximation in CO systems |
 | Floor Mechanism | ↔ related to | Rule (in CO system) |
+| floor technique | ↔ related to | string CO |
 | Form (general problem of form) | ↔ related to | Geometrical relationships in CO systems |
 | Formal Grammar | ↔ related to | Finite Automata |
 | Formal Grammar | ↔ related to | Rule (in CO system) |
 | Fovea (Foveal Spot) | ↔ related to | Living Neural Systems |
+| Foveal Spot | ↔ related to | space |
+| Foveal Spot | ↔ related to | space |
 | FPGA (Field Programmable Gate Array) | ↔ related to | Concurrent Computing Resources |
 | Full ply | ↔ related to | Dimension (in CO Systems) |
 | full ply / full space | ↔ related to | Dimension (in CO Systems) |
@@ -7330,16 +8169,25 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Function Generation (in CO Systems) | ↔ related to | Function Mapping |
 | Function Mapping | ↔ related to | Artificial Neural Network |
 | Function Mapping | ↔ related to | Function Generation (in CO Systems) |
+| Fundamental Geometric-Statistical Scaling Law | ↔ related to | unit radius |
+| Fundamental Geometric-Statistical Scaling Law | ↔ related to | standard distance |
+| Fundamental Geometric-Statistical Scaling Law | ↔ related to | Bit Content per Dimension |
 | fuzzy logic | ↔ related to | Human Mind |
 | fuzzy logic | ↔ related to | Soft Tokens |
 | Gaussian Spot Modeling of Synapses | ↔ related to | Spot Location |
 | Gaussian Spot Modeling of Synapses | ↔ related to | Functional Relationship in Dendritic Tree |
 | General Learning Theory | ↔ related to | Learning (Synaptic Plasticity) |
+| general-purpose analog computer | ↔ related to | CO system |
 | General-Purpose Analog Computer | ↔ related to | Turing Completeness of CO Systems |
 | General-Purpose Analog Computer | ↔ related to | CO Architecture Machines |
 | Generalization (in Expert Systems) | ↔ related to | Expert System |
+| generation tree | ↔ related to | rule |
+| generation tree | ↔ related to | attractor |
 | Generation Trees | ↔ related to | Functional Relationship in Dendritic Tree |
 | Generic Stack Machine | ↔ related to | Turing Completeness of CO Model |
+| Geometric Pattern Superposition in CO Space | ↔ related to | superposition |
+| Geometric Pattern Superposition in CO Space | ↔ related to | space |
+| Geometric Pattern Superposition in CO Space | ↔ related to | string CO |
 | geometric probability | ↔ related to | High-Dimensional Bounded Spaces |
 | Geometrical Mappings in CO Space | ↔ related to | string CO |
 | Geometrical Object | ↔ related to | High-Dimensional Bounded Spaces |
@@ -7373,17 +8221,30 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Hologram | ↔ related to | Statistical Holograms |
 | Holograph | ↔ related to | CO system |
 | Holographic Nature | ↔ related to | Statistical Holograms |
+| Huge Number of Soft Tokens | ↔ related to | soft token |
+| Huge Number of Soft Tokens | ↔ related to | CO |
+| Huge Number of Soft Tokens | ↔ related to | soft token |
 | Human Mind | ↔ related to | Living Neural Systems |
 | If-Then-Else Rule (in Expert Systems) | ↔ related to | If-Then-Else System |
 | Incremental Target Cell Computation | ↔ related to | Target Cell Autonomy |
 | Independent variable | ↔ related to | Function Generation (in CO Systems) |
 | Influence Tunnel | ↔ related to | correlithm objects (COs) |
+| Influence Tunnel | ↔ related to | zone of influence |
+| Influence Tunnel | ↔ related to | string CO |
+| Influence Tunnel | ↔ related to | zone of influence |
+| influence zone | ↔ related to | zone of influence |
+| influence zone | ↔ related to | soft token |
 | Influence Zone | ↔ related to | Influence Zones |
+| influence zone overlap | ↔ related to | zone of influence |
+| influence zone overlap | ↔ related to | soft token pattern |
 | Influence Zones | ↔ related to | Soft Tokens |
 | Information content in bits | ↔ related to | Pattern Recognition (in CO Systems) |
 | Information Content of a Dimension | ↔ related to | State Point in CO system |
 | Information Content of a Dimension | ↔ related to | Dimension (in CO Systems) |
 | Information Content of Proximity | ↔ related to | High-Dimensional Bounded Spaces |
+| information field | ↔ related to | zone of influence |
+| information field | ↔ related to | soft token |
+| information field | ↔ related to | zone of influence |
 | Information Manipulation in Living Systems | ↔ related to | Living Neural Systems |
 | Information Storage in Neurons | ↔ related to | Living Neural Systems |
 | inner product | ↔ related to | High-Dimensional Bounded Spaces |
@@ -7401,10 +8262,13 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | ladder | ↔ related to | mechanism |
 | ladder | ↔ related to | Ladder (in CO Systems) |
 | Ladder (in CO Systems) | ↔ related to | Rule (in CO system) |
+| ladder mechanism | ↔ related to | rule |
+| ladder mechanism | ↔ related to | state CO |
 | Ladder Model | ↔ related to | Ladder (in CO Systems) |
 | Latch (in CO Systems) | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Latch Space | ↔ related to | Functional Relationship in Dendritic Tree |
 | Latching Rules | ↔ related to | Rule (in CO system) |
+| learning | ↔ related to | rule execution |
 | Learning | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Learning (in CO Systems) | ↔ related to | Expert Systems |
 | Learning (in CO Systems) | ↔ related to | Turing Completeness of CO Model |
@@ -7412,6 +8276,16 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | learning in CO systems | ↔ related to | Actors' Limitations in Learning |
 | learning in CO systems | ↔ related to | Learning Limitations |
 | learning in CO systems | ↔ related to | rule |
+| Learning in CO Systems | ↔ related to | mechanism |
+| Learning in CO Systems | ↔ related to | Feedback Space |
+| Learning in CO Systems | ↔ related to | mechanism |
+| learning mechanism | ↔ related to | converter |
+| Learning Mechanisms | ↔ related to | rule |
+| Learning Mechanisms | ↔ related to | stack machine |
+| Learning Mechanisms | ↔ related to | rule |
+| Line Segment Topology in CO Space | ↔ related to | space |
+| Line Segment Topology in CO Space | ↔ related to | space |
+| linear approximation in CO systems | ↔ related to | string CO |
 | Linear Bounded Automata | ↔ related to | Formal Grammar |
 | Linear expression | ↔ related to | Linear interpolation |
 | Linear Grammar | ↔ related to | Formal Grammar |
@@ -7436,19 +8310,29 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Looping of String COs | ↔ related to | String Correlithm Object (String CO) Coding |
 | Major Diagonal of N-Cube | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Mapping Between Geometrical Object G and Point P | ↔ related to | Mapping Points Between Spaces |
+| mapping correlithm objects | ↔ related to | rule |
+| mapping correlithm objects | ↔ related to | rule execution |
+| mapping correlithm objects | ↔ related to | rule execution |
 | Mapping Points Between Spaces | ↔ related to | Dimension (in CO Systems) |
 | Mapping Rules | ↔ related to | Random CO |
 | Mapping Rules | ↔ related to | Rule (in CO system) |
 | Match Bits | ↔ related to | Rule Overlaps in CO Spaces |
 | Match Bits | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Maximum bit content at zero distance | ↔ related to | Bit content of proximity event |
+| Maximum Bit Content at Zero Distance | ↔ related to | string CO |
+| Maximum Bit Content at Zero Distance | ↔ related to | string CO |
 | Membership Function | ↔ related to | Soft Tokens |
 | midpoint | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Midpoint (of an N-Cube) | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
+| Mind | ↔ related to | Synthorg® |
+| Mind | ↔ related to | swarm mind |
+| Mind | ↔ related to | swarm mind |
 | Mind (CO system analogy) | ↔ related to | Living Neural Systems |
 | Mind (CO Theory) | ↔ related to | Correlithm Object Technology (CO Technology) |
+| Mind (in CO context) | ↔ related to | CO system |
 | Minimum distance between points (d_m) | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Möbius strip | ↔ related to | Geometrical relationships in CO systems |
+| Mode Change | ↔ related to | actor |
 | Modes of Operation | ↔ related to | Rule (in CO system) |
 | Modulo operation in geometry | ↔ related to | Finite Bounded N-Dimensional Space |
 | Multi-CPU Machines | ↔ related to | Concurrent Computing Resources |
@@ -7459,8 +8343,12 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | N-space | ↔ related to | High-Dimensional Bounded Spaces |
 | N-sphere | ↔ related to | High-Dimensional Bounded Spaces |
 | N-sphere (N-hedron) | ↔ related to | High-Dimensional Bounded Spaces |
+| N-sphere (N-hedron) | ↔ related to | bounded N-space |
 | N-torus | ↔ related to | Geometrical relationships in CO systems |
 | Natural Language Descriptions | ↔ related to | Natural Language (Processing) |
+| Nearly Orthogonal Basis Vectors in High-Dimensional N-Space | ↔ related to | superposition |
+| Nearly Orthogonal Basis Vectors in High-Dimensional N-Space | ↔ related to | space |
+| Nearly Orthogonal Basis Vectors in High-Dimensional N-Space | ↔ related to | superposition |
 | Neural Ensemble | ↔ related to | Living Neural Systems |
 | Neural Information Processing via CO Mapping | ↔ related to | Living Neural Systems |
 | neurodiagnostics | ↔ related to | CO technology |
@@ -7486,6 +8374,9 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Non-zero Time Delay | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Notch Phenomenon | ↔ related to | Mapping Rules |
 | Notch Phenomenon | ↔ related to | Rule (in CO system) |
+| novelty detector | ↔ related to | rule |
+| novelty detector | ↔ related to | state CO |
+| novelty detector | ↔ related to | learning mechanism |
 | Novelty Detector | ↔ related to | Latch Space |
 | Novelty Detector | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Novelty Instantiation | ↔ related to | rule |
@@ -7499,11 +8390,18 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Ordinality | ↔ related to | String Correlithm Object (String CO) Coding |
 | Origin | ↔ related to | Coordinate System (in CO spaces) |
 | Origin (in N-cube) | ↔ related to | Unit N-cube Cartesian Distance |
+| origin placement in bounded N-space | ↔ related to | symmetric bounded N-space |
+| origin placement in bounded N-space | ↔ related to | orthogonal basis vectors |
+| origin placement in bounded N-space | ↔ related to | symmetric bounded N-space |
 | orthogonal basis vectors | ↔ related to | High-Dimensional Bounded Spaces |
 | Orthogonal Basis Vectors from Random Points | ↔ related to | High-Dimensional Bounded Spaces |
 | Orthogonal Vectors | ↔ related to | High-Dimensional Bounded Spaces |
+| Orthogonality of Random Points | ↔ related to | symmetric bounded N-space |
+| Orthogonality of Random Points | ↔ related to | symmetric bounded N-space |
 | Output Generation in State Machines | ↔ related to | Function Generation (in CO Systems) |
 | Overlap (in spaces) | ↔ related to | Dimension (in CO Systems) |
+| overlapping dimensions | ↔ related to | space |
+| overlapping dimensions | ↔ related to | ply |
 | Parse Trees (CO Systems) | ↔ related to | Concurrency in CO Systems |
 | part | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Partial Truth | ↔ related to | fuzzy logic |
@@ -7514,6 +8412,9 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Pattern Generation | ↔ related to | Function Generation (in CO Systems) |
 | Pattern Point | ↔ related to | point |
 | Pattern Point | ↔ related to | point |
+| Pattern Point | ↔ related to | string CO |
+| Pattern Point | ↔ related to | state CO |
+| Pattern Point | ↔ related to | state CO |
 | Pattern Point (P) | ↔ related to | Coordinate System (in CO spaces) |
 | Pattern Point (P) | ↔ related to | Pattern Recognition (in CO Systems) |
 | Pattern Points (True and False) | ↔ related to | Pattern Recognition (in CO Systems) |
@@ -7528,13 +8429,19 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Point (CO - Correlithm Object) | ↔ related to | Correlithm Object Technology (CO Technology) |
 | point capacity | ↔ related to | ensemble |
 | point capacity | ↔ related to | Token Capacity |
+| point capacity | ↔ related to | probability of proximity |
+| point capacity | ↔ related to | Distribution of Point-to-Point Distances |
 | Point capacity of N-cube | ↔ related to | point capacity |
 | Point COs | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Point representation perspectives | ↔ related to | High-dimensional points |
 | Point representation perspectives | ↔ related to | High-Dimensional Bounded Spaces |
+| points sharing coordinates | ↔ related to | point |
+| points sharing coordinates | ↔ related to | overlapping dimensions |
 | Pole (of an N-Sphere) | ↔ related to | Complex unitary N-sphere |
 | Pop Operation | ↔ related to | Stack |
 | primer | ↔ related to | Correlithm Object Technology (CO Technology) |
+| probabilistic data representation | ↔ related to | soft token |
+| probabilistic data representation | ↔ related to | soft token |
 | Probability all distances exceed threshold | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | probability of proximity | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Probability of random proximity | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
@@ -7571,13 +8478,20 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Random Points Distribution in Unit N-Cube | ↔ related to | Orthogonal Basis Vectors from Random Points |
 | Random Points Distribution in Unit N-Cube | ↔ related to | High-Dimensional Bounded Spaces |
 | Random selection of spaces and points | ↔ related to | CO system |
+| randomness in CO space | ↔ related to | CO |
+| randomness in CO space | ↔ related to | space |
+| randomness in CO space | ↔ related to | CO |
+| randomness in CO space | ↔ related to | space |
 | Randomness in Correlithm Coding | ↔ related to | Robustness (CO Systems) |
 | Real Numbers in CO Computing Machines | ↔ related to | Correlithm Object Technology (CO Technology) |
 | real unit N-cube | ↔ related to | High-Dimensional Bounded Spaces |
+| real unit N-cube | ↔ related to | bounded N-space |
 | Reinforcement Learning | ↔ related to | Correlithm Object (CO) System |
 | Reinforcement Learning | ↔ related to | Learning (Synaptic Plasticity) |
 | Right Angle in an N-Cube | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | Ring CO | ↔ related to | String Correlithm Object (String CO) Coding |
+| Ring CO | ↔ related to | string CO |
+| Ring CO | ↔ related to | string CO |
 | Ring Correlithm Objects (Ring COs) | ↔ related to | string CO |
 | Robust Behavioral Patterns | ↔ related to | Emergent Behavior |
 | Robust Behavioral Patterns | ↔ related to | Robustness (CO Systems) |
@@ -7585,11 +8499,16 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Robustness | ↔ related to | straddler |
 | Robustness | ↔ related to | swarm |
 | Robustness | ↔ related to | straddler |
+| Robustness | ↔ related to | correlithm object |
 | Robustness (CO Systems) | ↔ related to | Soft Tokens |
 | Robustness (in CO systems) | ↔ related to | Fail-Soft Operation |
 | Robustness (in CO systems) | ↔ related to | Robustness (CO Systems) |
 | Robustness in CO systems | ↔ related to | soft token |
 | Robustness in CO systems | ↔ related to | correlithm object |
+| robustness of soft tokens | ↔ related to | soft token |
+| robustness of soft tokens | ↔ related to | soft token |
+| Robustness of Soft Tokens | ↔ related to | soft token |
+| Robustness of Soft Tokens | ↔ related to | soft token |
 | rule | ↔ related to | Rule (in CO system) |
 | Rule (CO Machine Model) | ↔ related to | Rule (in CO system) |
 | Rule (CO Machine Rule) | ↔ related to | Rule (in CO system) |
@@ -7604,16 +8523,23 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | rule operator | ↔ related to | Rule (in CO system) |
 | Rule Overlaps in CO Spaces | ↔ related to | Rule (in CO system) |
 | Rule Pathway | ↔ related to | Rule (in CO system) |
+| rule pathways | ↔ related to | generation tree |
 | Rule Set | ↔ related to | Rule (in CO system) |
 | Rule Source Side Evaluation Concurrency | ↔ related to | Concurrent Rules |
 | Rule-Level Feedback | ↔ related to | Rule (in CO system) |
+| Rule-Level Feedback | ↔ related to | state CO |
 | Rules (in Correlithm Object Computing) | ↔ related to | Rule (in CO system) |
 | sampled rule | ↔ related to | Rule (in CO system) |
+| sampled rule | ↔ related to | subspace |
+| Sampling | ↔ related to | subspace |
+| Sampling | ↔ related to | subspace |
 | Sampling in CO Systems | ↔ related to | CO system |
 | Saturation (in digital systems) | ↔ related to | Sharp boundaries |
 | sensor | ↔ related to | Converters |
 | Serial Computer | ↔ related to | Digital Computer |
 | Serial Implementation | ↔ related to | Serial Computer |
+| Set Operations | ↔ related to | ply |
+| Set Operations | ↔ related to | ply |
 | Set-theoretic operations on plies | ↔ related to | Dimension (in CO Systems) |
 | Short-Term Memory Chemical Component | ↔ related to | Chemical Substances Affecting Neural Systems |
 | Short-Term Memory Chemical Component | ↔ related to | Living Neural Systems |
@@ -7625,14 +8551,31 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Soft Actions | ↔ related to | Function Generation (in CO Systems) |
 | Soft Classes | ↔ related to | Pattern Recognition (in CO Systems) |
 | Soft Parse Tree | ↔ related to | rule |
+| Soft Sequence | ↔ related to | string CO |
+| Soft Sequence | ↔ related to | soft token |
+| Soft Sequence | ↔ related to | soft token |
+| Soft String Token | ↔ related to | string CO |
+| Soft String Token | ↔ related to | soft token |
+| Soft String Token | ↔ related to | string CO |
 | soft token | ↔ related to | Soft Tokens |
 | soft token | ↔ related to | Robustness in CO systems |
 | soft token | ↔ related to | zone of influence |
+| soft token | ↔ related to | term |
+| soft token | ↔ related to | CO |
+| soft token | ↔ related to | CO |
+| soft token | ↔ related to | zone of influence |
 | Soft Token Equal Stature | ↔ related to | soft token |
 | Soft Token Equal Stature | ↔ related to | soft token |
+| soft token pattern | ↔ related to | string CO |
+| soft token pattern | ↔ related to | superposition mechanism |
 | Soft Tokens | ↔ related to | term |
 | Soft Tokens | ↔ related to | sensor |
 | Soft Tokens | ↔ related to | sensor |
+| Soft Tokens | ↔ related to | mechanism |
+| Soft Tokens | ↔ related to | world data |
+| Soft Tokens | ↔ related to | world data |
+| Soft Tokens | ↔ related to | CO |
+| Soft Tokens | ↔ related to | CO |
 | source | ↔ related to | Rule (in CO system) |
 | Source Evaluation Strategies | ↔ related to | Rule (in CO system) |
 | space | ↔ related to | Space (in CO systems) |
@@ -7650,11 +8593,16 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | standard diameter | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | standard distance | ↔ related to | standard radius |
 | standard distance | ↔ related to | High-Dimensional Bounded Spaces |
+| standard distance | ↔ related to | standard radius |
+| standard distance | ↔ related to | Bit Content of Proximity |
 | standard radius | ↔ related to | standard diameter |
 | standard radius | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
 | State | ↔ related to | State Point in CO system |
 | state CO | ↔ related to | CO system |
 | State Machine | ↔ related to | CO system |
+| state point | ↔ related to | state CO |
+| state point | ↔ related to | soft token |
+| state point | ↔ related to | state CO |
 | State Point | ↔ related to | state CO |
 | State Point | ↔ related to | point |
 | State Point | ↔ related to | point |
@@ -7669,12 +8617,17 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Statistical Computing Paradigm | ↔ related to | Target Cell Independence |
 | Statistical Computing Paradigm | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Statistical landmark | ↔ related to | Robustness (CO Systems) |
+| statistical object | ↔ related to | string CO |
 | Statistics of distances in high-dimensional spaces | ↔ related to | High-Dimensional Bounded Spaces |
 | Storage Location (in CO systems) | ↔ related to | CO system |
 | straddler | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Strength of Match (in CO systems) | ↔ related to | Rule (in CO systems) |
 | Strength of Match (in CO systems) | ↔ related to | Robustness (CO Systems) |
 | string CO | ↔ related to | String Correlithm Object (String CO) Coding |
+| string CO | ↔ related to | string CO |
+| string CO | ↔ related to | statistical object |
+| string CO | ↔ related to | Line Segment Topology in CO Space |
+| string CO | ↔ related to | zone of influence |
 | String CO Hierarchical Mapping | ↔ related to | String Correlithm Object (String CO) Coding |
 | String Correlithm Object (String CO) | ↔ related to | String Correlithm Object (String CO) Coding |
 | String Correlithm Object (String CO) Coding | ↔ related to | Geometrical Object |
@@ -7691,8 +8644,11 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | superposition | ↔ related to | Soft Tokens |
 | superposition | ↔ related to | Pattern Point |
 | superposition | ↔ related to | CO |
+| superposition | ↔ related to | correlithm object |
 | Superposition (in CO Systems) | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Superposition in CO Systems | ↔ related to | Correlithm Object Technology (CO Technology) |
+| superposition mechanism | ↔ related to | superposition |
+| superposition mechanism | ↔ related to | soft token |
 | Superposition Property | ↔ related to | Superposition (in CO Systems) |
 | swarm | ↔ related to | Distributed Systems |
 | Swarm Intelligence | ↔ related to | Emergent Behavior |
@@ -7701,7 +8657,9 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | symmetric bounded N-space | ↔ related to | High-Dimensional Bounded Spaces |
 | Symmetry Problem in 2D CO Mapping | ↔ related to | Distance Troughs |
 | Symmetry Problem in 2D CO Mapping | ↔ related to | String Correlithm Object (String CO) Coding |
+| synapse | ↔ related to | rule execution |
 | Synapse | ↔ related to | Living Neural Systems |
+| synapse conductivity learning | ↔ related to | state CO |
 | Synaptic Strength | ↔ related to | Living Neural Systems |
 | Synthorg® | ↔ related to | world data |
 | Synthorg® | ↔ related to | Correlithm Object Technology (CO Technology) |
@@ -7737,6 +8695,9 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Turing Completeness of CO Machines | ↔ related to | Turing Completeness of CO Model |
 | Turing Completeness of CO Model | ↔ related to | Correlithm Object Technology (CO Technology) |
 | Turing Completeness of CO Systems | ↔ related to | Turing Completeness of CO Model |
+| Turing Completeness of CO Systems | ↔ related to | rule execution |
+| Turing Completeness of CO Systems | ↔ related to | CO system |
+| Turing Completeness of CO Systems | ↔ related to | CO system |
 | Turing Machine | ↔ related to | Turing Completeness of CO Model |
 | Type Zero Grammar | ↔ related to | Turing Completeness of CO Model |
 | Unfamiliarity Mechanism | ↔ related to | Correlithm Object Technology (CO Technology) |
@@ -7745,7 +8706,9 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | unit N-cube | ↔ related to | N-cube |
 | unit radius | ↔ related to | standard radius |
 | unit radius | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
+| unit radius | ↔ related to | N-sphere (N-hedron) |
 | unit radius statistics | ↔ related to | Mean and Standard Deviation of Distances in N-cube |
+| unit square with origin corner | ↔ related to | space |
 | unitarity constraint | ↔ related to | Hilbert Space |
 | Virtual Digital Computer (as a CO system) | ↔ related to | Turing Completeness of CO Systems |
 | Virtual Digital Computer (as a CO system) | ↔ related to | CO Architecture Machines |
@@ -7759,6 +8722,7 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | actor | ⊃ contains | Internal Control |
 | Aggregated CO | ⊃ contains | Random CO |
 | Artificial Neural Network | ⊃ contains | Hidden Layers |
+| capture zones of string COs | ⊃ contains | string CO |
 | cell | ⊃ contains | correlithm object |
 | CO Cell | ⊃ contains | Logic Gate (in CO systems) |
 | CO Cell | ⊃ contains | Flip-Flop (in CO systems) |
@@ -7773,6 +8737,8 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Conical Neuronal Membrane | ⊃ contains | Diameter (of Neuronal Membrane) |
 | Conical Neuronal Membrane | ⊃ contains | Transition Region |
 | Conical Neuronal Membrane | ⊃ contains | Cutoff Region |
+| converter | ⊃ contains | sensor |
+| converter | ⊃ contains | actor |
 | Coordinate Object (CO) Space | ⊃ contains | CO Cell |
 | Coordinate System | ⊃ contains | Origin |
 | Correlithm Object (CO) System | ⊃ contains | CO Rules |
@@ -7786,6 +8752,7 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Digital Computer | ⊃ contains | Serial Computer |
 | Distance Calculation in CO Systems | ⊃ contains | Differential Amplifier |
 | Flip-Flop (in CO systems) | ⊃ contains | Virtual Digital Computer (as a CO system) |
+| floor technique | ⊃ contains | string CO |
 | Form (general problem of form) | ⊃ contains | Möbius strip |
 | Form (general problem of form) | ⊃ contains | Torus |
 | Form (general problem of form) | ⊃ contains | Tube |
@@ -7802,10 +8769,12 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Holographic-like Characteristics | ⊃ contains | CO systems |
 | If-Then-Else Rule (in Expert Systems) | ⊃ contains | Tree Structure (in Expert Systems) |
 | If-Then-Else System | ⊃ contains | Expert System |
+| influence zone overlap | ⊃ contains | string CO |
 | Internal Control | ⊃ contains | actor |
 | Ladder (in CO Systems) | ⊃ contains | Feedback Space |
 | Ladder (in CO Systems) | ⊃ contains | Cross-feed Space |
 | Ladder (in CO Systems) | ⊃ contains | Through-feed Space |
+| ladder mechanism | ⊃ contains | rule |
 | learning in CO systems | ⊃ contains | Learning by Adding Rules and States |
 | Living Organisms | ⊃ contains | Neuronal Ensemble |
 | Logic Gate (in CO systems) | ⊃ contains | Virtual Digital Computer (as a CO system) |
@@ -7823,6 +8792,10 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | rule | ⊃ contains | source |
 | Rule (in CO systems) | ⊃ contains | Rule Set |
 | Rule-Level Feedback | ⊃ contains | Actors |
+| Rule-Level Feedback | ⊃ contains | rule |
+| Rule-Level Feedback | ⊃ contains | rule |
+| soft token | ⊃ contains | zone of influence |
+| soft token pattern | ⊃ contains | soft token |
 | space | ⊃ contains | subspace |
 | Space (in Logical NOT Example) | ⊃ contains | Pattern Points (True and False) |
 | Stack | ⊃ contains | Push Operation |
@@ -7833,6 +8806,10 @@ The ability of CO systems to handle similarity and approximate data effectively 
 | Storage Location (in CO systems) | ⊃ contains | State Point in CO system |
 | Straddlers | ⊃ contains | straddler |
 | string CO | ⊃ contains | string CO |
+| string CO | ⊃ contains | CO |
+| string CO | ⊃ contains | correlithm object |
+| string CO | ⊃ contains | CO |
+| string CO | ⊃ contains | Pattern Point |
 | string CO | ⊃ contains | CO |
 | String CO Hierarchical Mapping | ⊃ contains | String Correlithm Object (String CO) |
 | String Correlithm Object (String CO) | ⊃ contains | Mapping Between Geometrical Object G and Point P |

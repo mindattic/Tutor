@@ -3,19 +3,19 @@ title: "J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map"
 id: 9684a851-bca8-4e3d-b81a-ec23c0acc055
 resource_id: 89eaab8d-cc29-4781-b1de-aa3d0ac61db8
 status: Ready
-concepts: 595
-relations: 910
+concepts: 628
+relations: 965
 created: 2026-01-24T21:37:29.3022297Z
-updated: 2026-02-11T02:39:57.4347390Z
-version: 21
+updated: 2026-03-17T02:13:32.9420172Z
+version: 29
 ---
 
 # J. K. Rowling - Harry Potter and the Sorcerer's Stone Concept Map - Concept Map
 
 Concept map generated from: J. K. Rowling - Harry Potter and the Sorcerer's Stone
 
-**Total Concepts (Nodes):** 595
-**Total Relations (Edges):** 910
+**Total Concepts (Nodes):** 628
+**Total Relations (Edges):** 965
 
 ---
 
@@ -29,7 +29,7 @@ A magical pub in London that serves as a gateway between the non-magical world a
 
 **Tags:** Harry Potter, locations, magical establishments, entry points
 
-**Related:** London (Wizarding context), Pub, Magical world, Bartender, Sherry, Muggle world
+**Related:** London (Wizarding context), Pub, Magical world, Bartender, Sherry, Muggle world, Tom the barman
 
 ---
 
@@ -51,9 +51,9 @@ A magical boarding school where young witches and wizards receive their educatio
 
 **Tags:** Harry Potter, locations, education, Harry Potter universe, Magic, fantasy, fiction, Harry Potter lore, fictional institution, setting, fictional school, wizarding culture
 
-**Prerequisites:** Auror, Auror, First Year Hogwarts Preparation, Introduction to Hogwarts Peer Group, Auror
+**Prerequisites:** Auror, Auror, First Year Hogwarts Preparation, Introduction to Hogwarts Peer Group, Auror, O.W.L. Exams
 
-**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat, Professor Umbridge, Professor Dolores Umbridge
+**Related:** Hermione Granger, Quidditch Match, Hogwarts, Professor Flitwick, Professor Binns, Peeves, Strengthening Solution, Professor Umbridge, Magical Creature Regulation at Hogwarts, Remus Lupin, Remus Lupin, Werewolves, Three Ds of Apparation, Sorting Hat, Professor Umbridge, Professor Dolores Umbridge, King's Cross Station, Money Fund at Hogwarts, Professor Grubbly-Plank, Suppression of Harry’s magical belongings
 
 ---
 
@@ -65,7 +65,7 @@ The wizarding bank located in Diagon Alley, recognized by its imposing white bui
 
 **Tags:** Harry Potter, locations, magic economy, wizarding world, security, financial institution, institution, banking, Harry Potter locations, Wizarding economy, finance, wizarding institutions
 
-**Related:** Diagon Alley
+**Related:** Diagon Alley, Goblins' View on Ownership, Gringotts Vault Security, Goblin Griphook, Vault Seven Hundred and Thirteen, Griphook
 
 ---
 
@@ -75,7 +75,7 @@ A highly intelligent and diligent Hogwarts student known for her extensive knowl
 
 **Tags:** Harry Potter, characters, Hogwarts, Harry Potter Characters, Student, Fictional Characters, character, Harry Potter series, literature, fiction, Students, Wizarding world, Hogwarts Student, Wizardry, Friendship
 
-**Related:** Hogwarts School of Witchcraft and Wizardry, Hogwarts, Muggle family, Bowtruckle, Four Point Spell, Integration with Magical Elements, Bowtruckle, Bowtruckles
+**Related:** Hogwarts School of Witchcraft and Wizardry, Hogwarts, Muggle family, Bowtruckle, Four Point Spell, Integration with Magical Elements, Bowtruckle, Bowtruckles, Harry Potter's Defence Against the Dark Arts Lessons, Hermione's Role in Initiating Defence Lessons
 
 ---
 
@@ -109,7 +109,7 @@ The protagonist of the series, a young wizard who became famous for surviving an
 
 **Tags:** Harry Potter, characters, protagonist, character, literature, fiction, Wizardry, Hogwarts Student, fictional wizard, Harry Potter Series, fantasy, wizards
 
-**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path, Auror Career Path, Sword of Gryffindor, Harry Potter’s Early Life
+**Related:** Lightning Scar, Dursleys, Love Protection, Invisibility Cloak, Fear of a Name, Uncle Vernon, Nightmare, Lightning-shaped scar, Lightning-bolt scar, Wand, Holly Wand, Lightnng Scar, Harry Potter’s Fame, Sirius Black, Draco Malfoy, The Boy Who Lived, Harry Potter's Lightning-shaped Scar, Harry Potter Day, Harry Potter's Family (The Potters), Wizard, Willow Wand, Ollivanders, Curse Mark on Harry's Forehead, Dream, Harry's Interaction with the Snake, Harry's magical hair regrowth, Harry's Scar, J. K. Rowling, Children’s Book Award, Smarties Prize, National Book Award, Mirror of Erised, Poking Around (Investigating), Stealth and Secrecy in Magical Operations, Wizards, Harry Potter’s Letters, Sorcerer, Neville, The Standard Book of Spells (Grade 1), Exam Results, Oliver Wood, Auror Career Path, Auror Career Path, Sword of Gryffindor, Harry Potter’s Early Life, Harry Potter's Defence Against the Dark Arts Lessons, Viktor Krum's Acknowledgement of Harry's Magical Ability, The Dursleys, Dudley's gang, Uncle Vernon, Aunt Petunia, and Dudley
 
 ---
 
@@ -133,7 +133,7 @@ Albus Dumbledore is the wise and powerful headmaster of Hogwarts who awards hous
 
 **Tags:** Harry Potter, characters, Hogwarts, mentorship, Harry Potter universe, leadership, Harry Potter Characters, Authority Figure, Fictional Characters, wizardry, Harry Potter lore, wizards, Harry Potter series
 
-**Related:** Order of Merlin, Dumbledore's Office, You-Know-Who's fear of Dumbledore, Alchemy, Hogwarts Teachers' Protection of the Sorcerer's Stone, Philosophy on Death by Dumbledore, Grindelwald, Dumbledore's Advice on the Mirror of Erised, Golden Watch with Planets, Lemon Drop, Professor Dumbledore, Chocolate Frog Card, London Underground Map Scar, Dumbledore's Orders, Snape as Quidditch Referee, Remus Lupin, Sword of Gryffindor, Qualities of Gryffindor
+**Related:** Order of Merlin, Dumbledore's Office, You-Know-Who's fear of Dumbledore, Alchemy, Hogwarts Teachers' Protection of the Sorcerer's Stone, Philosophy on Death by Dumbledore, Grindelwald, Dumbledore's Advice on the Mirror of Erised, Golden Watch with Planets, Lemon Drop, Professor Dumbledore, Chocolate Frog Card, London Underground Map Scar, Dumbledore's Orders, Snape as Quidditch Referee, Remus Lupin, Sword of Gryffindor, Qualities of Gryffindor, Vault Seven Hundred and Thirteen, You-Know-What
 
 ---
 
@@ -167,7 +167,7 @@ The dark wizard antagonist obsessed with immortality and power, who shares Quirr
 
 **Tags:** Harry Potter, dark wizards, antagonists
 
-**Related:** Sorcerer's Stone, Quirinus Quirrell, Dark Magic, Fenrir Greyback, Remus Lupin, Fenrir Greyback, Werewolves
+**Related:** Sorcerer's Stone, Quirinus Quirrell, Dark Magic, Fenrir Greyback, Remus Lupin, Fenrir Greyback, Werewolves, Hokey, Borgin and Burkes, Tom the barman
 
 ---
 
@@ -193,7 +193,7 @@ Severus Snape is a Hogwarts professor whose complex motivations include a strong
 
 **Tags:** Harry Potter, characters, Hogwarts, protection, professors, Harry Potter lore, character, wizarding world, Harry Potter universe, teacher, Potions, Harry Potter series, wizardry, Hogwarts Faculty
 
-**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge, Professor Umbridge, Professor Dolores Umbridge
+**Related:** Countercurse, Hogwarts Teachers' Protection of the Sorcerer's Stone, Professor Umbridge, Strengthening Solution, Professor Umbridge, Professor Umbridge, Professor Dolores Umbridge, Unforgivable Curses
 
 ---
 
@@ -205,7 +205,7 @@ A baby Norwegian Ridgeback dragon cared for by Hagrid and later sent away for sa
 
 **Tags:** magical creatures, dragons, magical creature, dragon, Harry Potter
 
-**Related:** Norwegian Ridgeback
+**Related:** Norwegian Ridgeback, Dragon (Norwegian Ridgeback)
 
 ---
 
@@ -261,7 +261,9 @@ The study of magical plants and fungi at Hogwarts, focusing on their care and pr
 
 **Tags:** magic, education, plants, Botany, Hogwarts, Class
 
-**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle, Magical Creature Regulation at Hogwarts, Bowtruckles, Bowtruckle
+**Prerequisites:** O.W.L. Exams and Course Preparation
+
+**Related:** Hogwarts Herbology Class, Professor Sprout, Professor Grubbly-Plank, Bowtruckle, Bowtruckle, Magical Creature Regulation at Hogwarts, Bowtruckles, Bowtruckle, Bowtruckles, O.W.L. Exams and Course Preparation
 
 ---
 
@@ -309,7 +311,7 @@ A character who serves as Keeper of Keys and Grounds at Hogwarts, known for his 
 
 **Prerequisites:** Professor Grubbly-Plank, Maze Creatures
 
-**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures, Professor Grubbly-Plank, Professor Grubbly-Plank, Temporary Caretaker Professor Grubbly-Plank
+**Related:** Fang, Neville, Devil's Snare, Nettle Wine, Rock Cakes, Magical Boogers, Centaur, Rubeus Hagrid, Muggle world, Professor Grubbly-Plank, Temporary Caretaking of Magical Creatures, Blast-Ended Skrewt, Bowtruckle, Maze Creatures, Professor Grubbly-Plank, Professor Grubbly-Plank, Temporary Caretaker Professor Grubbly-Plank, Professor Grubbly-Plank
 
 ---
 
@@ -543,7 +545,9 @@ A complex and potentially dangerous branch of magic involving the transformation
 
 **Tags:** magic, spellcasting, Harry Potter universe, Hogwarts, Class, Harry Potter, Subjects, magic disciplines, wizardry
 
-**Related:** Professor McGonagall
+**Prerequisites:** O.W.L. Exams and Course Preparation
+
+**Related:** Professor McGonagall, O.W.L. Exams and Course Preparation
 
 ---
 
@@ -6555,6 +6559,332 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 
 ---
 
+#### Hokey
+
+A very old house-elf who witnessed important events related to Voldemort.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Lord Voldemort
+
+---
+
+#### Borgin and Burkes
+
+A place where Voldemort worked after leaving Hogwarts, attracting him due to its nature.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Lord Voldemort
+
+---
+
+#### Tom the barman
+
+The barman at the Leaky Cauldron named Tom, sharing the same name as Tom Riddle.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Leaky Cauldron, Lord Voldemort
+
+---
+
+#### King's Cross Station
+
+The train station from where wizards leave to go to Hogwarts on the first of September.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Money Fund at Hogwarts
+
+A fund at Hogwarts for students who require financial assistance to buy books and robes.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Goblins' View on Ownership
+
+Goblins believe the rightful master of any object is the maker, not the purchaser, and consider the passing of goblin-made objects between wizards as a form of renting or even theft.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gringotts
+
+---
+
+#### Gringotts Vault Security
+
+Gringotts features very high security vaults including those guarded by dragons and protected by traps that can suck in unauthorized intruders, with some vaults being deep underground and extremely difficult to escape from.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gringotts
+
+---
+
+#### Goblin Griphook
+
+Griphook is a goblin who works at Gringotts Wizarding Bank and is knowledgeable about its security and goblins’ perspectives on ownership.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gringotts
+
+---
+
+#### Defensive Magical Theory by Wilbert Slinkhard
+
+A Ministry-approved textbook used in Defence Against the Dark Arts classes, teaching the principles and legal use of defensive magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Ministry-Approved Defensive Magic Curriculum
+
+---
+
+#### Ministry-Approved Defensive Magic Curriculum
+
+A carefully structured, theory-centred Defence Against the Dark Arts course approved by the Ministry of Magic to address disrupted teaching.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Defensive Magical Theory by Wilbert Slinkhard
+
+---
+
+#### Bowtruckles
+
+Small tree-guardian creatures that live in wand-quality wood trees and eat woodlice and fairy eggs; capable of gouging eyes if angered.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Herbology, Professor Grubbly-Plank
+
+---
+
+#### Professor Grubbly-Plank
+
+A temporary Hogwarts teacher who covers the Care of Magical Creatures class in Hagrid’s extended absence, teaching about creatures such as Bowtruckles.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hagrid, Bowtruckles
+
+---
+
+#### O.W.L. Exams and Course Preparation
+
+Important standardized magical exams requiring serious study and practice, influencing students’ futures and covered in classes like Charms, Transfiguration, and Care of Magical Creatures.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Transfiguration, Herbology
+
+---
+
+#### Vault Seven Hundred and Thirteen
+
+A mysteriously secured vault in Gringotts with no keyhole, accessible only by goblins, containing highly secretive and valuable items, including You-Know-What.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gringotts, Dumbledore, You-Know-What, Griphook
+
+---
+
+#### Griphook
+
+A Goblin working at Gringotts who can open special vaults like Vault Seven Hundred and Thirteen and assists Harry and Hagrid during their visit.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Gringotts, Vault Seven Hundred and Thirteen
+
+---
+
+#### You-Know-What
+
+An unspecified, highly secretive object or item stored within Vault Seven Hundred and Thirteen, its nature kept confidential by Hogwarts staff and goblins alike.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Dumbledore, Vault Seven Hundred and Thirteen
+
+---
+
+#### Harry Potter's Defence Against the Dark Arts Lessons
+
+Harry Potter teaches Defence Against the Dark Arts to Hermione Granger and Ron Weasley to prepare themselves practically against Voldemort and other threats, focusing on spells and real defensive skills beyond textbook knowledge.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Prerequisites:** Hermione's Role in Initiating Defence Lessons
+
+**Related:** Hermione Granger, Harry Potter
+
+---
+
+#### Viktor Krum's Acknowledgement of Harry's Magical Ability
+
+Viktor Krum, a final year student at Durmstrang, acknowledges that Harry possesses magical skills that even he does not, highlighting Harry's advanced ability in Defence Against the Dark Arts and Patronus production.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter
+
+---
+
+#### Hermione's Role in Initiating Defence Lessons
+
+Hermione Granger is the key initiator and proponent of the idea for Harry to teach Defence Against the Dark Arts lessons, motivated by the need for practical skill beyond the official curriculum.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hermione Granger
+
+---
+
+#### Unbreakable Vow
+
+A magical promise that cannot be broken without causing the death of the person who breaks it.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Lavender Brown
+
+A young witch at Hogwarts who is linked to Ron Weasley in a social/friendly way as noted by his brothers.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Professor Grubbly-Plank
+
+The substitute Care of Magical Creatures teacher who oversees magical creature classes at Hogwarts.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry
+
+---
+
+#### Dragon (Norwegian Ridgeback)
+
+A type of dragon known as the Norwegian Ridgeback, with a baby dragon named Norbert cared for and later sent away for safety.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Norbert
+
+---
+
+#### O.W.L. Exams
+
+The Ordinary Wizarding Level exams are standardized tests that Hogwarts students take in their fifth year, covering various magical subjects including theory and practical spells.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### Defensive Magical Theory by Wilbert Slinkhard
+
+A Ministry-approved textbook focusing on the principles and practical use of defensive magic, assigned by Professor Umbridge during lessons.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Prerequisites:** O.W.L. Exams
+
+**Related:** Course Aims of Defensive Magic
+
+---
+
+#### Course Aims of Defensive Magic
+
+The structured goals set by Professor Umbridge for the Ministry-approved Defense Against the Dark Arts curriculum, including understanding principles, recognizing legal use, and practical application of defensive magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Defensive Magical Theory by Wilbert Slinkhard
+
+---
+
+#### Unforgivable Curses
+
+Three dark and illegal curses—Avada Kedavra, Imperius, and Cruciatus—known for their dangerous effects and strict legal consequences, introduced to students to teach vigilance and defense.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Severus Snape
+
+---
+
+#### Professor Grubbly-Plank
+
+A Hogwarts substitute teacher for Care of Magical Creatures who temporarily replaces Hagrid, teaching students about magical creatures such as Bowtruckles.
+
+**Tags:** dynamic-expansion, query-generated
+
+---
+
+#### The Dursleys
+
+Harry's only living non-magical relatives who treat him poorly and try to suppress his magical background.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter, Suppression of Harry’s magical belongings, Dudley's gang, Uncle Vernon, Aunt Petunia, and Dudley, Harry’s cupboard under the stairs
+
+---
+
+#### Harry’s cupboard under the stairs
+
+A small, cramped cupboard where Harry was forced to live by the Dursleys, symbolizing neglect and poor treatment.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** The Dursleys
+
+---
+
+#### Dudley's gang
+
+A group of bullies led by Harry's cousin Dudley, who bully and harass Harry regularly.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter, The Dursleys
+
+---
+
+#### Suppression of Harry’s magical belongings
+
+The Dursleys lock away Harry’s magical items such as spellbooks, wand, cauldron, and broomstick during summer to isolate him from magic.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Hogwarts School of Witchcraft and Wizardry, The Dursleys
+
+---
+
+#### Uncle Vernon, Aunt Petunia, and Dudley
+
+Members of the Dursley family who are hostile or neglectful toward Harry, contributing to his challenges before Hogwarts.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Harry Potter, The Dursleys
+
+---
+
 ## Relationships
 
 | Source | Relationship | Target |
@@ -6583,6 +6913,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Harry's Scar | → requires | Harry's scar origin |
 | Herbology | → requires | Snakelike Tendrils |
 | Herbology | → requires | Creepers (magical plant part) |
+| Hermione's Role in Initiating Defence Lessons | → requires | Harry Potter's Defence Against the Dark Arts Lessons |
 | Holly Wand | → requires | Wand Arm |
 | House Points | → requires | House Cup |
 | Introduction to Hogwarts Peer Group | → requires | Hogwarts School of Witchcraft and Wizardry |
@@ -6598,6 +6929,10 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Magical creature care | → requires | Dragon bite infection |
 | Maze Creatures | → requires | Hagrid |
 | Mirror of Erised | → requires | Sorcerer's Stone |
+| O.W.L. Exams | → requires | Hogwarts School of Witchcraft and Wizardry |
+| O.W.L. Exams | → requires | Defensive Magical Theory by Wilbert Slinkhard |
+| O.W.L. Exams and Course Preparation | → requires | Transfiguration |
+| O.W.L. Exams and Course Preparation | → requires | Herbology |
 | Password (to Gryffindor Common Room) | → requires | Gryffindor Common Room |
 | Platform Nine and Three-Quarters | → requires | Hogwarts Express |
 | Potions Class | → requires | Wolfsbane |
@@ -6658,6 +6993,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Bodyguards | ↔ related to | Draco Malfoy |
 | Boiled Down Magic Concept: Curse | ↔ related to | Dark Magic |
 | Boils | ↔ related to | Potions Class |
+| Borgin and Burkes | ↔ related to | Lord Voldemort |
+| Borgin and Burkes | ↔ related to | Lord Voldemort |
 | Bowtruckle | ↔ related to | Herbology |
 | Bowtruckle | ↔ related to | Hermione Granger |
 | Bowtruckle | ↔ related to | Herbology |
@@ -6670,6 +7007,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Bowtruckle | ↔ related to | Herbology |
 | Bowtruckles | ↔ related to | Herbology |
 | Bowtruckles | ↔ related to | Hermione Granger |
+| Bowtruckles | ↔ related to | Herbology |
 | Brass Scales | ↔ related to | Glass or Crystal Phials |
 | Brass Scales | ↔ related to | Potions Class |
 | Bravery | ↔ related to | Hogwarts Houses |
@@ -6720,6 +7058,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Courage | ↔ related to | Hogwarts Houses |
 | Courage | ↔ related to | Gryffindor |
 | Course Aims of Defense Against the Dark Arts | ↔ related to | Defensive Magical Theory by Wilbert Slinkhard |
+| Course Aims of Defensive Magic | ↔ related to | Defensive Magical Theory by Wilbert Slinkhard |
 | Crabbe | ↔ related to | Bodyguards |
 | Crabbe and Goyle | ↔ related to | Draco Malfoy |
 | Creepers (magical plant part) | ↔ related to | Devil’s Snare |
@@ -6769,6 +7108,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Dudley's best friend - Piers Polkiss | ↔ related to | Dudley Dursley |
 | Dudley’s Birthday | ↔ related to | Dudley Dursley |
 | Dudley's gang | ↔ related to | Muggle Families |
+| Dudley's gang | ↔ related to | Harry Potter |
+| Dudley's gang | ↔ related to | The Dursleys |
 | Dudley's Knickerbocker Glory Tantrum | ↔ related to | Muggle Families |
 | Dudley’s physical description | ↔ related to | Muggle Families |
 | Dudley’s Second Bedroom | ↔ related to | Dudley’s physical description |
@@ -6840,7 +7181,11 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Glass Enclosure | ↔ related to | Hogwarts Herbology Class |
 | Glass or Crystal Phials | ↔ related to | Potions Class |
 | Goblin | ↔ related to | Gringotts Wizarding Bank |
+| Goblin Griphook | ↔ related to | Gringotts |
+| Goblin Griphook | ↔ related to | Gringotts |
 | Goblins | ↔ related to | Hogwarts |
+| Goblins' View on Ownership | ↔ related to | Gringotts |
+| Goblins' View on Ownership | ↔ related to | Gringotts |
 | Godric's Hollow | ↔ related to | Potters |
 | Golden Watch with Planets | ↔ related to | Dumbledore |
 | Gorilla scratching its head | ↔ related to | Animal exhibits at the zoo |
@@ -6856,6 +7201,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Gringotts Break-in | ↔ related to | Dark Wizards |
 | Gringotts Wizarding Bank | ↔ related to | Hogwarts |
 | Griphook | ↔ related to | Gringotts Wizarding Bank |
+| Griphook | ↔ related to | Gringotts |
+| Griphook | ↔ related to | Vault Seven Hundred and Thirteen |
 | Grunnings | ↔ related to | Muggle Families |
 | Gryffindor Common Room | ↔ related to | Gryffindor |
 | Gryffindor House | ↔ related to | Gryffindor |
@@ -6874,6 +7221,9 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Harry Potter | ↔ related to | Fear of a Name |
 | Harry Potter Day | ↔ related to | Potters |
 | Harry Potter Day | ↔ related to | Harry Potter |
+| Harry Potter's Defence Against the Dark Arts Lessons | ↔ related to | Hermione Granger |
+| Harry Potter's Defence Against the Dark Arts Lessons | ↔ related to | Harry Potter |
+| Harry Potter's Defence Against the Dark Arts Lessons | ↔ related to | Hermione Granger |
 | Harry Potter’s Early Life | ↔ related to | Quidditch Match |
 | Harry Potter’s Fame | ↔ related to | Harry Potter |
 | Harry Potter's Family (The Potters) | ↔ related to | Dumbledore's Advice on the Mirror of Erised |
@@ -6883,6 +7233,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Harry Potter's Lightning-shaped Scar | ↔ related to | Harry Potter |
 | Harry Potter’s Scar | ↔ related to | Hooded Figure |
 | Harry's cupboard bedroom | ↔ related to | Cupboard Under the Stairs |
+| Harry’s cupboard under the stairs | ↔ related to | The Dursleys |
 | Harry's dream about flying motorcycle | ↔ related to | Dursleys' treatment of Harry |
 | Harry's dream about flying motorcycle | ↔ related to | The Dursleys |
 | Harry's Interaction with the Snake | ↔ related to | Zoo Director |
@@ -6894,6 +7245,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Hedwig | ↔ related to | Owl Post |
 | Herbology | ↔ related to | Hogwarts Herbology Class |
 | Hermione Granger | ↔ related to | Hogwarts |
+| Hermione's Role in Initiating Defence Lessons | ↔ related to | Hermione Granger |
 | Hidden Passageway | ↔ related to | Forbidden Corridor |
 | Hidden Passageway | ↔ related to | Hogwarts |
 | High Table | ↔ related to | Hogwarts |
@@ -6909,6 +7261,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Hogwarts School of Witchcraft and Wizardry | ↔ related to | Hogwarts |
 | Hogwarts Staircases | ↔ related to | Magical Doors at Hogwarts |
 | Hogwarts Teachers' Protection of the Sorcerer's Stone | ↔ related to | Dumbledore |
+| Hokey | ↔ related to | Lord Voldemort |
+| Hokey | ↔ related to | Lord Voldemort |
 | Holly Wand | ↔ related to | Harry Potter |
 | Hooded Figure | ↔ related to | Nightmare |
 | Horned Slug Stew | ↔ related to | Potions Class |
@@ -6938,6 +7292,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Keeper of Keys and Grounds at Hogwarts | ↔ related to | Rubeus Hagrid |
 | King's Cross Station | ↔ related to | Letter from Hogwarts |
 | King's Cross Station | ↔ related to | Magical world |
+| King's Cross Station | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| King's Cross Station | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Knobbly Sticks | ↔ related to | Smeltings Uniform |
 | Knuts | ↔ related to | Hogwarts |
 | Leaky Cauldron | ↔ related to | Magical world |
@@ -6996,6 +7352,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Ministry of Magic | ↔ related to | Magical world |
 | Ministry of Magic Enforcers | ↔ related to | Werewolf Registration |
 | Mirror of Erised | ↔ related to | Harry Potter |
+| Money Fund at Hogwarts | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
+| Money Fund at Hogwarts | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Monkshood | ↔ related to | Hogwarts Herbology Class |
 | Moonlight | ↔ related to | Astronomy Tower |
 | Moony | ↔ related to | Remus Lupin |
@@ -7033,6 +7391,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Norbert | ↔ related to | Norwegian Ridgeback |
 | Norwegian Ridgeback | ↔ related to | Dragon Egg Incubation |
 | Norwegian Ridgeback | ↔ related to | Hogwarts Herbology Class |
+| O.W.L. Exams and Course Preparation | ↔ related to | Transfiguration |
+| O.W.L. Exams and Course Preparation | ↔ related to | Herbology |
 | Oak Wand | ↔ related to | Rubeus Hagrid |
 | Oliver Wood | ↔ related to | Gryffindor |
 | Oliver Wood | ↔ related to | Seeker (Quidditch role) |
@@ -7102,6 +7462,9 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Professor Grubbly-Plank | ↔ related to | Hagrid |
 | Professor Grubbly-Plank | ↔ related to | Hagrid |
 | Professor Grubbly-Plank | ↔ related to | Bowtruckles |
+| Professor Grubbly-Plank | ↔ related to | Hagrid |
+| Professor Grubbly-Plank | ↔ related to | Bowtruckles |
+| Professor Grubbly-Plank | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Professor Quirrell | ↔ related to | Body Bind Curse |
 | Professor Quirrell | ↔ related to | Hogwarts |
 | Professor Quirrell's Turban | ↔ related to | Defense Against the Dark Arts |
@@ -7215,6 +7578,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Stranger | ↔ related to | Rubeus Hagrid |
 | Strengthening Solution | ↔ related to | Severus Snape |
 | Strengthening Solution | ↔ related to | Severus Snape |
+| Suppression of Harry’s magical belongings | ↔ related to | Hogwarts School of Witchcraft and Wizardry |
 | Switching Spells | ↔ related to | Hogwarts |
 | Sword of Gryffindor | ↔ related to | Harry Potter |
 | Sword of Gryffindor | ↔ related to | Dumbledore |
@@ -7227,6 +7591,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | The Boy Who Lived | ↔ related to | Harry Potter |
 | The Dark Forces: A Guide to Self Protection | ↔ related to | Dark Magic |
 | The Dursleys | ↔ related to | Muggle Families |
+| The Dursleys | ↔ related to | Harry Potter |
+| The Dursleys | ↔ related to | Suppression of Harry’s magical belongings |
 | The Fat Lady | ↔ related to | Gryffindor House |
 | The Fat Lady | ↔ related to | Portraits at Hogwarts |
 | The Great Hall's Tables | ↔ related to | Hogwarts |
@@ -7242,6 +7608,9 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Three-headed dog | ↔ related to | Hogwarts Teachers' Protection of the Sorcerer's Stone |
 | Three-headed dog (Fluffy) | ↔ related to | Rubeus Hagrid |
 | Toad | ↔ related to | Hogwarts |
+| Tom the barman | ↔ related to | Leaky Cauldron |
+| Tom the barman | ↔ related to | Lord Voldemort |
+| Tom the barman | ↔ related to | Leaky Cauldron |
 | Top hat | ↔ related to | Hogwarts |
 | Tracking via Magical Indicators | ↔ related to | Green and Red Sparks Signal |
 | Tracking via Magical Indicators | ↔ related to | Rubeus Hagrid |
@@ -7251,12 +7620,14 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Troll Incident in Hogwarts | ↔ related to | Quirinus Quirrell |
 | Troll Incident in Hogwarts | ↔ related to | Hogwarts |
 | Trophy Room | ↔ related to | House Cup |
+| Uncle Vernon, Aunt Petunia, and Dudley | ↔ related to | Harry Potter |
 | Underground | ↔ related to | London (Wizarding context) |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
 | Unforgivable Curses | ↔ related to | Countercurse |
+| Unforgivable Curses | ↔ related to | Severus Snape |
 | Unicorn | ↔ related to | Hogwarts Herbology Class |
 | Unicorn Blood | ↔ related to | Curse of Drinking Unicorn Blood |
 | Unicorn Blood | ↔ related to | Dark Magic |
@@ -7265,7 +7636,11 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Use of magic in the Muggle world | ↔ related to | Muggle world |
 | Vampires | ↔ related to | Professor Quirrell |
 | Vault seven hundred and thirteen | ↔ related to | Gringotts Break-in |
+| Vault Seven Hundred and Thirteen | ↔ related to | Dumbledore |
+| Vault Seven Hundred and Thirteen | ↔ related to | Dumbledore |
 | Velvety Black Ceiling | ↔ related to | Hogwarts |
+| Viktor Krum's Acknowledgement of Harry's Magical Ability | ↔ related to | Harry Potter |
+| Viktor Krum's Acknowledgement of Harry's Magical Ability | ↔ related to | Harry Potter |
 | Violet/Purple Cloak | ↔ related to | Hogwarts |
 | Voldemort | ↔ related to | Dark Magic |
 | Wand | ↔ related to | Harry Potter |
@@ -7300,6 +7675,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Wrought Iron Archway at Platform Nine and Three-Quarters | ↔ related to | Platform Nine and Three-Quarters |
 | Yew Wand | ↔ related to | Lightnng Scar |
 | Yew Wand | ↔ related to | Holly Wand |
+| You-Know-What | ↔ related to | Dumbledore |
+| You-Know-What | ↔ related to | Dumbledore |
 | You-Know-Who's fear of Dumbledore | ↔ related to | Dumbledore |
 | Zoo Director | ↔ related to | The Dursleys |
 | Zoo trip | ↔ related to | Muggle Families |
@@ -7307,8 +7684,10 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Centaur | ⊃ contains | Astrology (in Centaur Context) |
 | Chocolate Frog Cards | ⊃ contains | Morgana |
 | Christmas crackers | ⊃ contains | Luminous Balloons |
+| Defensive Magical Theory by Wilbert Slinkhard | ⊃ contains | Ministry-Approved Defensive Magic Curriculum |
 | Detention | ⊃ contains | Hogwarts Detention Work |
 | Diagon Alley | ⊃ contains | Gringotts |
+| Dragon (Norwegian Ridgeback) | ⊃ contains | Norbert |
 | Dumbledore's Office | ⊃ contains | Dumbledore |
 | Dungeon (Hogwarts) | ⊃ contains | Potions Class |
 | Eeylops Owl Emporium | ⊃ contains | Owls in Harry Potter |
@@ -7319,6 +7698,8 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Ginny Weasley | ⊃ contains | Weasley Family |
 | Goal Posts (in Quidditch) | ⊃ contains | Quidditch |
 | Golden Snitch | ⊃ contains | Quidditch |
+| Gringotts Vault Security | ⊃ contains | Gringotts |
+| Gringotts Vault Security | ⊃ contains | Gringotts |
 | Gryffindor | ⊃ contains | Hogwarts |
 | Gryffindor House | ⊃ contains | Fat Lady Portrait |
 | Gryffindor Tower | ⊃ contains | Gryffindor House |
@@ -7381,6 +7762,9 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Sword of Gryffindor | ⊃ contains | Gryffindor |
 | The Sorcerer’s Stone | ⊃ contains | Elixir of Life |
 | Trapdoor | ⊃ contains | Third floor corridor |
+| Uncle Vernon, Aunt Petunia, and Dudley | ⊃ contains | The Dursleys |
+| Vault Seven Hundred and Thirteen | ⊃ contains | Gringotts |
+| Vault Seven Hundred and Thirteen | ⊃ contains | You-Know-What |
 | Wizarding Course Books | ⊃ contains | The Standard Book of Spells (Grade 1) |
 | Wizarding Course Books | ⊃ contains | A Beginners’ Guide to Transfiguration |
 | Wizarding Course Books | ⊃ contains | The Dark Forces: A Guide to Self Protection |
@@ -7433,6 +7817,7 @@ A strict Ministry-appointed Hogwarts teacher enforcing a rigid Ministry-approved
 | Monkshood | ∈ instance of | Wolfsbane |
 | Mrs. Weasley | ∈ instance of | Weasley Family |
 | Neville Longbottom | ∈ instance of | House Points |
+| Norbert | ∈ instance of | Dragon (Norwegian Ridgeback) |
 | Norwegian Ridgeback | ∈ instance of | Dragon Breeding |
 | Oliver Wood | ∈ instance of | House Gryffindor |
 | Order of Merlin | ∈ instance of | Dumbledore |
