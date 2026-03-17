@@ -3,19 +3,19 @@ title: "Tax with SAP S4HANA Configuration and Determination Concept Map"
 id: 8ce631f4-a4b1-4004-b38a-453c08fe255c
 resource_id: 2f7ce469-3b0f-4490-98d5-5432b501f0a4
 status: Ready
-concepts: 2359
-relations: 2280
+concepts: 2364
+relations: 2286
 created: 2026-02-20T06:02:08.2436865Z
-updated: 2026-02-20T06:57:45.6654204Z
-version: 2
+updated: 2026-02-20T17:05:01.7683227Z
+version: 3
 ---
 
 # Tax with SAP S4HANA Configuration and Determination Concept Map - Concept Map
 
 Concept map generated from: Tax with SAP S4HANA Configuration and Determination
 
-**Total Concepts (Nodes):** 2359
-**Total Relations (Edges):** 2280
+**Total Concepts (Nodes):** 2364
+**Total Relations (Edges):** 2286
 
 ---
 
@@ -61,7 +61,7 @@ Transaction type describes the specific category or nature of a transaction, suc
 
 **Tags:** accounting, business processes
 
-**Related:** Transaction, Transaction Group
+**Related:** Transaction, Transaction Group, Taxation Subjects
 
 ---
 
@@ -71,7 +71,7 @@ A transaction tag is a metadata label applied to transactions to facilitate trac
 
 **Tags:** data labeling, accounting systems
 
-**Related:** Transaction
+**Related:** Transaction, Master Data Structures for Tax, Tax Tagging Concept
 
 ---
 
@@ -20473,7 +20473,7 @@ A time-dependent tax is a type of tax whose applicability or calculation depends
 
 **Prerequisites:** Time Dependency
 
-**Related:** Tax Determination
+**Related:** Tax Determination, Parallel Tax Valuation Areas
 
 ---
 
@@ -25843,6 +25843,8 @@ SAP S/4HANA functionalities and additional reporting capabilities aimed at provi
 
 **Prerequisites:** Transfer Pricing Testing
 
+**Related:** Chart of Accounts Setup for Tax Reporting
+
 ---
 
 #### Balance carryforward
@@ -26210,6 +26212,56 @@ Follow-up activities to ensure that corrective actions are completed and that co
 **Prerequisites:** Corrective Actions
 
 **Related:** Worklists (Tax Compliance)
+
+---
+
+#### Taxation Subjects
+
+Taxation subjects are tax-related corporate structures which need to be mapped appropriately in SAP S/4HANA organizational structures.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Transaction Type
+
+---
+
+#### Master Data Structures for Tax
+
+Master data structures in SAP S/4HANA can be defined to support the recording of tax-relevant facts in the best possible way.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Transaction Tag
+
+---
+
+#### Parallel Tax Valuation Areas
+
+Fixed asset accounting in SAP S/4HANA can be designed to meet the requirement of parallel tax valuation areas to support multiple tax valuations.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Time-Dependent Tax
+
+---
+
+#### Chart of Accounts Setup for Tax Reporting
+
+The chart of accounts in SAP S/4HANA can be set up to enable automated transfer of account balances, including off-balance sheet items, for tax reporting and returns preparation.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Transfer Pricing Reporting
+
+---
+
+#### Tax Tagging Concept
+
+An alternative to using the chart of accounts for direct taxes is the use of a tax tagging concept that assigns tax information directly to transactions.
+
+**Tags:** dynamic-expansion, query-generated
+
+**Related:** Transaction Tag
 
 ---
 
@@ -26881,6 +26933,7 @@ Follow-up activities to ensure that corrective actions are completed and that co
 | Chain Transactions / Drop Shipments | ↔ related to | Tax Determination Automation |
 | Change Management (in Tax Monitoring Projects) | ↔ related to | Real-Time Tax Monitoring |
 | Chart of Accounts (for Tax Reporting) | ↔ related to | Tax Data Model |
+| Chart of Accounts Setup for Tax Reporting | ↔ related to | Transfer Pricing Reporting |
 | Check Routines | ↔ related to | Analytical Review |
 | CHECK statement (ABAP) | ↔ related to | Function Module Exits in Materials Management |
 | Classic Coding Block | ↔ related to | Validation/Substitution Tools (Transactions GGB0/GGB1) |
@@ -27316,6 +27369,7 @@ Follow-up activities to ensure that corrective actions are completed and that co
 | Master Data Incompleteness | ↔ related to | Rule Set Mistakes |
 | Master Data Model | ↔ related to | SAP Fiori |
 | Master data screening | ↔ related to | Tax Monitoring Process |
+| Master Data Structures for Tax | ↔ related to | Transaction Tag |
 | Master file | ↔ related to | Multinational enterprise (MNE) |
 | Master file | ↔ related to | Tax Data Model |
 | Matching Condition Record | ↔ related to | Tax Determination |
@@ -27407,6 +27461,7 @@ Follow-up activities to ensure that corrective actions are completed and that co
 | Parallel Evaluations | ↔ related to | Actual Costing |
 | Parallel Evaluations | ↔ related to | Simulation of Reports |
 | Parallel Ledgers | ↔ related to | Extension Ledger |
+| Parallel Tax Valuation Areas | ↔ related to | Time-Dependent Tax |
 | Parallel valuation functionality | ↔ related to | Legal valuation |
 | Parallel valuation functionality | ↔ related to | Group valuation |
 | Parallel valuation functionality | ↔ related to | Tax Process Solutions |
@@ -27798,6 +27853,7 @@ Follow-up activities to ensure that corrective actions are completed and that co
 | Taxable Profit | ↔ related to | Tax Reporting Process |
 | Taxation Characteristics | ↔ related to | Tax Account Descriptions |
 | Taxation Characteristics | ↔ related to | Tax Data Model |
+| Taxation Subjects | ↔ related to | Transaction Type |
 | Taxing Rights | ↔ related to | Tax Determination |
 | Taxpayer | ↔ related to | Tax Authority |
 | Teamwork | ↔ related to | Transfer Pricing Management |
@@ -28207,6 +28263,8 @@ Follow-up activities to ensure that corrective actions are completed and that co
 | Tax Reporting Solutions | ⊃ contains | Tax Returns |
 | Tax Resources | ⊃ contains | Tax Talents |
 | Tax Scenarios | ⊃ contains | Stories (in SAP Analytics Cloud) |
+| Tax Tagging Concept | ⊃ contains | Transaction Tag |
+| Tax Tagging Concept | ⊃ contains | Transaction Tag |
 | Tax Talents | ⊃ contains | Tax Technology Hybrids |
 | Tax Talents | ⊃ contains | IT Experts |
 | Tax Talents | ⊃ contains | Tax Advisors |
