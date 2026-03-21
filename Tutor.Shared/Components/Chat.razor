@@ -1,0 +1,1975 @@
+@using System.Text
+@using System.Text.RegularExpressions
+@using Microsoft.JSInterop
+@using Tutor.Core.Services
+@using Tutor.Core.Services.Logging
+@using Tutor.Core.Models
+@inject OpenAIService Ai
+@inject InstructionsService Instructions
+@inject SettingsService Settings
+@inject CourseService CourseService
+@inject ConceptMapStorageService ConceptMapStorageService
+@inject DynamicConceptExpansionService ConceptExpansionService
+@inject UserProgressService ProgressService
+@implements IDisposable
+
+@* Top header with course selector and mode info *@
+<div class="learn-header">
+    <div class="learn-header-left">
+        <div class="course-selector">
+            <label for="courseSelect">Course:</label>
+            <select id="courseSelect" @bind="selectedCourseId" @bind:after="OnCourseChanged" disabled="@(isSending || isQuizMode)">
+                @if (availableCourses.Count == 0)
+                {
+                    <option value="">No courses available</option>
+                }
+                else
+                {
+                    @foreach (var course in availableCourses)
+                    {
+                        <option value="@course.Id">@course.Name</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+    <div class="learn-header-center">
+        @if (isQuizMode)
+        {
+            <div class="mode-badge quiz">
+                <span class="icon-quiz-white"></span>
+                <span>Quiz Mode</span>
+                <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
+            </div>
+        }
+        else if (isLessonMode && lessonTopics.Count > 0)
+        {
+            <div class="mode-badge lesson">
+                <span class="icon-teach-white"></span>
+                <span>Learning</span>
+                <span class="mode-progress">@GetLessonProgressText()</span>
+            </div>
+        }
+    </div>
+    <div class="learn-header-right">
+        @* Reading timer display *@
+        @if (isLessonMode && hasStartedLearning && !isQuizMode && readingTimer != null && displayTimerSeconds > 0)
+        {
+            <div class="reading-timer @(GetReadingProgress() >= 100 ? "complete" : "")" title="Reading time for this section">
+                <div class="reading-timer-progress" style="width: @GetReadingProgress()%"></div>
+                <span class="reading-timer-text">
+                    <span class="bi @(GetReadingProgress() >= 100 ? "bi-check-circle" : "bi-clock")"></span>
+                    @GetReadingTimerDisplay()
+                </span>
+            </div>
+        }
+        
+        @if (isQuizMode)
+        {
+            <button class="header-action-btn" @onclick="ConfirmRestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span></button>
+            <button class="header-action-btn danger" @onclick="ConfirmCancelQuiz" title="Cancel Quiz"><span class="bi bi-x-lg"></span></button>
+        }
+        else if (isLessonMode)
+        {
+            <button class="header-action-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span></button>
+        }
+    </div>
+</div>
+
+@* Confirmation modal (for restart and cancel) *@
+@if (showConfirmModal)
+{
+    <div class="modal-overlay" @onclick="CloseConfirmModal">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>@confirmModalTitle</span>
+                <button class="close-btn" @onclick="CloseConfirmModal"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <p>@confirmModalMessage</p>
+                <div class="modal-actions">
+                    <button class="settings-btn" @onclick="CloseConfirmModal">Cancel</button>
+                    <button class="settings-btn danger" @onclick="ExecuteConfirmedAction">@confirmModalActionText</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Knowledge Base modal (Terminology) *@
+@if (showKnowledgeBase)
+{
+    <div class="modal-overlay" @onclick="CloseKnowledgeBase">
+        <div class="modal-content kb-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span><span class="bi bi-journal-text"></span> Terminology</span>
+                <button class="close-btn" @onclick="CloseKnowledgeBase"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body kb-body">
+                @if (knowledgeBaseConcepts.Count == 0)
+                {
+                    <p class="kb-empty">No concepts available. Build a knowledge base in Courses.</p>
+                }
+                else
+                {
+                    <p class="kb-instruction">All concepts from your knowledge base:</p>
+                    <div class="kb-concepts">
+                        @foreach (var concept in knowledgeBaseConcepts.OrderBy(c => c.Title))
+                        {
+                            var isLearned = learnedConcepts.Contains(concept.Title);
+                            <div class="kb-concept @(isLearned ? "learned" : "")" @onclick="() => SelectConcept(concept)">
+                                <div class="kb-concept-header">
+                                    <span class="kb-concept-title">@concept.Title</span>
+                                    @if (isLearned)
+                                    {
+                                        <span class="kb-concept-status"><span class="bi bi-check-circle-fill"></span></span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(concept.Summary))
+                                {
+                                    <div class="kb-concept-summary">@concept.Summary</div>
+                                }
+                                @if (concept.Tags.Count > 0)
+                                {
+                                    <div class="kb-concept-tags">
+                                        @foreach (var tag in concept.Tags.Take(3))
+                                        {
+                                            <span class="kb-tag">@tag</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="kb-legend">
+                        <span><span class="legend-icon bi bi-check-circle-fill"></span> Learned</span>
+                        <span class="kb-count">@knowledgeBaseConcepts.Count concepts total</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+@* Knowledge Base Explorer modal (Force diagram) *@
+@if (showKnowledgeBaseExplorer && activeCourse != null)
+{
+    <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
+        <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span><span class="bi bi-diagram-3"></span> Concept Map Explorer</span>
+                <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body kb-explorer-body">
+                <ConceptMapCollectionGraph CourseId="@activeCourse.Id" OnTeachConcept="TeachConceptFromExplorer" />
+            </div>
+        </div>
+    </div>
+}
+
+<div class="learn-container">
+    @* Left sidebar with Table of Contents *@
+    @if (isLessonMode && lessonTopics.Count > 0 && !isQuizMode)
+    {
+        <div class="toc-sidebar">
+            <div class="toc-sidebar-header">
+                <span class="bi bi-list-ul"></span> Contents
+            </div>
+            <div class="toc-sidebar-list">
+                @for (int i = 0; i < lessonTopics.Count; i++)
+                {
+                    var index = i;
+                    var topic = lessonTopics[i];
+                    var isCurrentTopic = i == currentLessonIndex;
+                    var isCompleted = learnedConcepts.Contains(topic);
+                    var isVisited = visitedTopicIndices.Contains(i);
+                    
+                    <button class="toc-sidebar-item @(isCurrentTopic ? "current" : "") @(isCompleted ? "completed" : "") @(isVisited && !isCompleted ? "visited" : "")"
+                            @onclick="() => JumpToTopic(index)" disabled="@isSending">
+                        <span class="toc-sidebar-number">@(i + 1)</span>
+                        <span class="toc-sidebar-topic" title="@topic">@TruncateText(topic, 40)</span>
+                        @if (isCompleted)
+                        {
+                            <span class="toc-sidebar-status"><span class="bi bi-check-lg"></span></span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    @* Main chat area *@
+    <div class="chat-shell @(isLessonMode && lessonTopics.Count > 0 && !isQuizMode ? "with-sidebar" : "")">
+        <div class="chat-log" @ref="chatLogRef">
+            @{
+                var messageIndex = 0;
+                var hiddenCount = GetHiddenMessageCount();
+                var startIndex = showAllMessages ? 0 : Math.Max(0, messages.Count - RecentMessageCount);
+            }
+
+            @* Show expand button if there are hidden messages *@
+            @if (hiddenCount > 0 && !showAllMessages)
+            {
+                <div class="hidden-messages-notice">
+                    <button class="expand-messages-btn" @onclick="() => showAllMessages = true">
+                        <span class="bi bi-chevron-up"></span>
+                        Show @hiddenCount older message@(hiddenCount == 1 ? "" : "s")
+                    </button>
+                </div>
+            }
+            @if (showAllMessages && messages.Count > RecentMessageCount)
+            {
+                <div class="hidden-messages-notice">
+                    <button class="expand-messages-btn" @onclick="() => showAllMessages = false">
+                        <span class="bi bi-chevron-down"></span>
+                        Hide older messages
+                    </button>
+                </div>
+            }
+
+            @foreach (var m in messages)
+            {
+                var idx = messageIndex;
+                var isLastAssistantMessage = m.Role == "assistant" && idx == GetLastAssistantMessageIndex();
+                var isVisible = showAllMessages || idx >= startIndex;
+
+                @if (isVisible)
+                {
+                    <div class="msg-wrapper @(m.Role)">
+                        <div class="msg-avatar @(m.Role)">
+                            @if (m.Role == "user" && !string.IsNullOrEmpty(userCustomAvatar))
+                            {
+                                <img src="@userCustomAvatar" alt="@userDisplayName" />
+                            }
+                            else if (m.Role == "assistant" && !string.IsNullOrEmpty(assistantCustomAvatar))
+                            {
+                                <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                            }
+                            else
+                            {
+                                <span class="bi @(m.Role == "user" ? userAvatarIcon : assistantAvatarIcon)"></span>
+                            }
+                        </div>
+                        <div class="msg @(m.Role)">
+                            <div class="msg-header">
+                                <span class="role">@(m.Role == "user" ? userDisplayName : assistantDisplayName)</span>
+                                <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                            </div>
+                            <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
+
+                            @* Show navigation buttons in assistant messages during lesson mode *@
+                        @if (m.Role == "assistant" && isLessonMode && lessonTopics.Count > 0 && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
+                        {
+                            <div class="lesson-nav-bar">
+                                <button class="lesson-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0 || !hasStartedLearning)" title="@GetPreviousTopicTitle()">
+                                    <span class="bi bi-chevron-left"></span>
+                                    <span class="lesson-nav-text">@GetPreviousTopicName()</span>
+                                </button>
+                                <button class="lesson-nav-btn continue" @onclick="ContinueLesson" title="@GetNextTopicTitle()">
+                                    <span class="lesson-nav-text">@GetNextTopicName()</span>
+                                    <span class="bi bi-chevron-right"></span>
+                                </button>
+                            </div>
+                        }
+
+                        @* Show Back and Continue buttons for term exploration *@
+                        @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
+                        {
+                            <div class="lesson-nav-bar">
+                                <button class="lesson-nav-btn previous" @onclick="BackToLesson" title="Go back to where you were">
+                                    <span class="bi bi-chevron-left"></span>
+                                    <span class="lesson-nav-text">Back</span>
+                                </button>
+                                <button class="lesson-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
+                                    <span class="lesson-nav-text">Continue</span>
+                                    <span class="bi bi-chevron-right"></span>
+                                </button>
+                            </div>
+                        }
+
+                        @* Suggestion area for follow-up questions *@
+                        <div class="msg-suggestions"></div>
+                    </div>
+                </div>
+            }
+            messageIndex++;
+        }
+
+        @if (isSending)
+        {
+            <div class="msg-wrapper assistant">
+                <div class="msg-avatar assistant">
+                    @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                    {
+                        <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                    }
+                    else
+                    {
+                        <span class="bi @assistantAvatarIcon"></span>
+                    }
+                </div>
+                <div class="msg assistant">
+                    <div class="msg-header">
+                        <span class="role">@assistantDisplayName</span>
+                    </div>
+                    <div class="content thinking">
+                        <span class="thinking-dots">
+                            <span></span><span></span><span></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="chat-input">
+        <textarea @ref="textareaRef"
+                  @bind="prompt"
+                  @bind:event="oninput"
+                  @bind:after="AutoGrow"
+                  rows="1"
+                  disabled="@isSending"
+                  placeholder="@placeholderText"></textarea>
+
+        <div class="chat-actions-row">
+            <div class="actions-spacer"></div>
+            @if (isSending)
+            {
+                <button class="action-btn cancel" @onclick="CancelRequest" title="Cancel">
+                    <span class="bi bi-stop-fill"></span>
+                    Cancel
+                </button>
+            }
+            <button class="action-btn send" @onclick="SendAsync" disabled="@(isSending || string.IsNullOrWhiteSpace(prompt))" title="Send">
+                <span class="bi bi-send-fill"></span>
+                Send
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Full Response</span>
+                <button class="close-btn" @onclick="CloseModal"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <pre>@modalContent</pre>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+// Parameters from parent page
+[Parameter] public string? StartTopic { get; set; }
+[Parameter] public bool AutoStartLesson { get; set; }
+[Parameter] public bool EmbeddedMode { get; set; }
+[Parameter] public EventCallback<string> OnNavigateToConcept { get; set; }
+[Parameter] public EventCallback<string> OnNavigateToVisualize { get; set; }
+
+private readonly List<ChatMessage> messages = new();
+private string prompt = "";
+private bool isSending;
+private bool showModal;
+private string modalContent = "";
+private ElementReference textareaRef;
+private ElementReference chatLogRef;
+private DotNetObjectReference<Chat>? dotNetRef;
+private CancellationTokenSource? cts;
+private bool enterToSend = true;
+private string placeholderText = "Ask a question...";
+private string? pendingDisplayText; // Simplified display text for next message
+private bool pendingIsExploration; // Whether next message is part of exploration
+
+// Avatar settings
+private string userDisplayName = "User";
+private string assistantDisplayName = "Assistant";
+private string userAvatarIcon = "bi-person-fill";
+private string assistantAvatarIcon = "bi-robot";
+private string? userCustomAvatar;
+private string? assistantCustomAvatar;
+
+// Message visibility
+private const int RecentMessageCount = 4; // Show last N messages by default
+private bool showAllMessages;
+
+// Course state
+private Course? activeCourse;
+private List<Course> availableCourses = new();
+private string selectedCourseId = "";
+
+// Lesson state
+private bool isLessonMode;
+private bool hasStartedLearning; // True after first "Begin" click
+private int currentLessonIndex;
+private List<string> lessonTopics = new();
+private List<string> learnedConcepts = new();
+private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
+
+
+
+// Term exploration state
+private bool isTermExploration;
+private int messageIndexBeforeExploration;
+
+// Reading time tracking
+private System.Timers.Timer? readingTimer;
+private DateTime sectionStartTime;
+private int currentSectionReadingSeconds;
+private int minimumReadingTimeSeconds = 5; // Default 5 seconds, loaded from settings
+private bool useCalculatedReadingTime;
+private int calculatedReadingTimeSeconds; // Based on response text length
+private int displayTimerSeconds; // Timer shown in UI
+
+// Confirmation modal state
+private bool showConfirmModal;
+private string confirmModalTitle = "";
+private string confirmModalMessage = "";
+private string confirmModalActionText = "";
+private Func<Task>? confirmedAction;
+
+
+// Quiz state
+private bool isQuizMode;
+private int totalQuestions;
+private int currentQuestionNumber;
+private GradingScale gradingScale;
+
+// Table of Contents state (kept for compatibility, but now using sidebar)
+private bool showTableOfContents;
+
+// Knowledge Base state
+private bool showKnowledgeBase;
+private List<Concept> knowledgeBaseConcepts = [];
+
+// Knowledge Base Explorer state (Force diagram)
+private bool showKnowledgeBaseExplorer;
+
+[Inject] private IJSRuntime JS { get; set; } = default!;
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadAvailableCourses();
+    await LoadCourseState();
+    await LoadLessonStateAsync();
+        
+    // Handle starting from a specific topic (from TOC navigation)
+    if (!string.IsNullOrEmpty(StartTopic) && activeCourse != null)
+    {
+        await StartLessonFromTopic(StartTopic);
+    }
+    // Auto-start lesson if requested or if course is active and not already in lesson mode
+    else if ((AutoStartLesson || activeCourse != null) && !isLessonMode)
+    {
+        await StartLesson();
+    }
+}
+
+    private async Task LoadAvailableCourses()
+    {
+        availableCourses = await CourseService.GetAllCoursesAsync();
+    }
+
+    private async Task LoadCourseState()
+    {
+        activeCourse = await CourseService.GetActiveCourseAsync();
+        selectedCourseId = activeCourse?.Id ?? "";
+    }
+
+    private async Task OnCourseChanged()
+    {
+        if (string.IsNullOrEmpty(selectedCourseId))
+            return;
+
+        var newCourse = availableCourses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (newCourse == null || newCourse.Id == activeCourse?.Id)
+            return;
+
+        // Set as active course
+        await CourseService.SetActiveCourseAsync(newCourse.Id);
+        activeCourse = newCourse;
+
+        // Reset lesson state for the new course
+        isLessonMode = false;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        lessonTopics.Clear();
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+        await Settings.ClearLessonStateAsync();
+
+        // Start the new lesson
+        await StartLesson();
+    }
+
+    // Helper methods for navigation button text
+    private string GetPreviousTopicName()
+    {
+        if (!hasStartedLearning || currentLessonIndex <= 0 || lessonTopics.Count == 0)
+            return "";
+        return lessonTopics[currentLessonIndex - 1];
+    }
+
+    private string GetPreviousTopicTitle()
+    {
+        if (!hasStartedLearning || currentLessonIndex <= 0 || lessonTopics.Count == 0)
+            return "No previous topic";
+        return lessonTopics[currentLessonIndex - 1];
+    }
+
+    private string GetNextTopicName()
+    {
+        if (!hasStartedLearning)
+            return "Begin";
+        if (currentLessonIndex >= lessonTopics.Count - 1)
+            return "Complete";
+        return lessonTopics[currentLessonIndex + 1];
+    }
+
+    private string GetNextTopicTitle()
+    {
+        if (!hasStartedLearning)
+            return "Begin the lesson";
+        if (currentLessonIndex >= lessonTopics.Count - 1)
+            return "Complete the lesson";
+        return lessonTopics[currentLessonIndex + 1];
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength - 1) + "�";
+    }
+
+    private async Task LoadLessonStateAsync()
+    {
+        var state = await Settings.GetLessonStateAsync();
+        if (state == null || activeCourse == null || state.CurriculumId != activeCourse.Id)
+            return;
+
+        // Restore lesson state
+        isLessonMode = true;
+        hasStartedLearning = state.HasStartedLearning;
+        currentLessonIndex = state.CurrentLessonIndex;
+        lessonTopics = state.LessonTopics;
+        learnedConcepts = state.LearnedConcepts;
+        visitedTopicIndices = [.. state.VisitedTopicIndices];
+
+        // Restore messages
+        messages.Clear();
+        foreach (var msg in state.Messages)
+        {
+            messages.Add(new ChatMessage(msg.Role, msg.Text, msg.FullJson));
+        }
+    }
+
+    private async Task SaveLessonStateAsync()
+    {
+        if (!isLessonMode || activeCourse == null)
+        {
+            await Settings.ClearLessonStateAsync();
+            return;
+        }
+
+        var state = new LessonState
+        {
+            CurriculumId = activeCourse.Id,
+            CurrentLessonIndex = currentLessonIndex,
+            HasStartedLearning = hasStartedLearning,
+            LessonTopics = lessonTopics,
+            LearnedConcepts = learnedConcepts,
+            VisitedTopicIndices = [.. visitedTopicIndices],
+            Messages = messages.Select(m => new ChatMessageState
+            {
+                Role = m.Role,
+                Text = m.Text,
+                FullJson = m.FullJson
+            }).ToList()
+        };
+
+        await Settings.SaveLessonStateAsync(state);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            enterToSend = await Settings.GetEnterToSendAsync();
+            
+            // Load avatar settings
+            userDisplayName = await Settings.GetUserDisplayNameAsync();
+            assistantDisplayName = await Settings.GetAssistantDisplayNameAsync();
+            userAvatarIcon = await Settings.GetUserAvatarIconAsync();
+            assistantAvatarIcon = await Settings.GetAssistantAvatarIconAsync();
+            userCustomAvatar = await Settings.GetUserCustomAvatarAsync();
+            assistantCustomAvatar = await Settings.GetAssistantCustomAvatarAsync();
+            
+            // Load reading time settings
+            minimumReadingTimeSeconds = await Settings.GetReadingTimeSecondsAsync();
+            useCalculatedReadingTime = await Settings.GetUseCalculatedReadingTimeAsync();
+            
+            UpdatePlaceholder();
+            StateHasChanged();
+
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupTextareaEnterHandler", textareaRef, dotNetRef, enterToSend);
+            await JS.InvokeVoidAsync("setupTabFocus", textareaRef);
+            await JS.InvokeVoidAsync("setupTermClickHandler", dotNetRef);
+            await FocusTextarea();
+        }
+    }
+
+    private int GetLastAssistantMessageIndex()
+    {
+        for (int i = messages.Count - 1; i >= 0; i--)
+        {
+            if (messages[i].Role == "assistant")
+                return i;
+        }
+        return -1;
+    }
+
+    private int GetHiddenMessageCount()
+    {
+        return Math.Max(0, messages.Count - RecentMessageCount);
+    }
+
+    private void UpdatePlaceholder()
+    {
+        placeholderText = enterToSend
+            ? "Ask a question... (Enter to send, Shift+Enter for new line)"
+            : "Ask a question... (Click Send button to submit)";
+    }
+
+    private async Task FocusTextarea()
+    {
+        await JS.InvokeVoidAsync("focusElement", textareaRef);
+    }
+
+    private void CancelRequest()
+    {
+        cts?.Cancel();
+    }
+
+    // Lesson functionality
+    private async Task StartLesson()
+    {
+        if (activeCourse == null) return;
+        
+        Log.Info($"Chat: Starting lesson for course '{activeCourse.Name}'");
+
+        var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
+        if (resources.Count == 0)
+        {
+            Log.Warn($"Chat: Course '{activeCourse.Name}' has no resources");
+            messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
+            StateHasChanged();
+            return;
+        }
+        
+        Log.Debug($"Chat: Found {resources.Count} resources for course '{activeCourse.Name}'");
+
+        // Initialize lesson mode
+        isLessonMode = true;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+
+        // Build a prompt that emphasizes using ALL resources together
+        var resourceNames = string.Join(", ", resources.Select(r => r.Title));
+        var topicsPrompt = $@"Based on ALL the course resources ({resourceNames}), create a unified curriculum.
+
+IMPORTANT: You must synthesize knowledge from ALL {resources.Count} resources to create topics that:
+- Cover the breadth of information across ALL resources
+- Integrate related concepts from different resources
+- Present a logical learning progression
+
+Return ONLY a numbered list of topic names, one per line, like:
+1. Topic Name
+2. Topic Name
+etc.
+Keep it to 8-15 main topics to ensure comprehensive coverage.";
+
+        prompt = topicsPrompt;
+        pendingDisplayText = "Generate curriculum for this course";
+        await SendAsyncInternal(captureTopics: true);
+    }
+
+    /// <summary>
+    /// Start a lesson from a specific topic (used when navigating from TOC)
+    /// </summary>
+    private async Task StartLessonFromTopic(string topicName)
+    {
+        if (activeCourse == null) return;
+
+        var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
+        if (resources.Count == 0)
+        {
+            messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
+            StateHasChanged();
+            return;
+        }
+
+        // Initialize lesson mode
+        isLessonMode = true;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+
+        // Build a prompt that gets topics and includes the target topic
+        var resourceNames = string.Join(", ", resources.Select(r => r.Title));
+        var topicsPrompt = $@"Based on ALL the course resources ({resourceNames}), create a unified curriculum.
+
+IMPORTANT: 
+1. You must synthesize knowledge from ALL {resources.Count} resources
+2. The curriculum MUST include a topic about ""{topicName}"" (this is where the student wants to start)
+3. Present a logical learning progression
+
+Return ONLY a numbered list of topic names, one per line, like:
+1. Topic Name
+2. Topic Name
+etc.
+Keep it to 8-15 main topics to ensure comprehensive coverage.
+Make sure to include ""{topicName}"" or a very similar topic name.";
+
+        // Store the target topic to jump to after topics are loaded
+        pendingStartTopic = topicName;
+        
+        prompt = topicsPrompt;
+        pendingDisplayText = $"Start learning from \"{topicName}\"";
+        await SendAsyncInternal(captureTopics: true);
+    }
+
+
+    private string? pendingStartTopic; // Topic to jump to after curriculum is loaded
+
+    private async Task ContinueLesson()
+    {
+        if (!isLessonMode || activeCourse == null) return;
+
+        // Stop reading timer for current section
+        StopReadingTimer();
+
+        // If this is the first time clicking (Begin), teach the first topic
+        if (!hasStartedLearning)
+        {
+            hasStartedLearning = true;
+            visitedTopicIndices.Add(currentLessonIndex);
+            
+            // Mark section as visited
+            var sectionId = $"topic-{currentLessonIndex}";
+            var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+            progress.MarkSectionVisited(sectionId);
+            await ProgressService.SaveProgressAsync(progress);
+            
+            // Reading timer will be started after AI response in SendAsyncInternal
+            await TeachCurrentTopic();
+            return;
+        }
+
+        // Mark current topic as learned
+        if (currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!learnedConcepts.Contains(currentTopic))
+            {
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        currentLessonIndex++;
+
+        if (currentLessonIndex >= lessonTopics.Count)
+        {
+            messages.Add(new ChatMessage("assistant", "?? **Congratulations!** You've completed all the topics in this lesson. You can use the **Previous** button to review any topic, or take a **Quiz** to test your knowledge!", "Lesson completed"));
+            StateHasChanged();
+            return;
+        }
+
+        // Check if we've visited this topic before (spiral learning)
+        var enrichWithLearned = visitedTopicIndices.Contains(currentLessonIndex);
+        visitedTopicIndices.Add(currentLessonIndex);
+
+        // Mark new section as visited
+        var newSectionId = $"topic-{currentLessonIndex}";
+        var newProgress = await ProgressService.GetProgressAsync(activeCourse.Id);
+        newProgress.MarkSectionVisited(newSectionId);
+        await ProgressService.SaveProgressAsync(newProgress);
+        
+        // Reading timer will be started after AI response in SendAsyncInternal
+        await TeachCurrentTopic(enrichWithLearned);
+    }
+
+    private async Task PreviousLesson()
+    {
+        if (!isLessonMode || currentLessonIndex <= 0) return;
+
+        // Stop reading timer for current section
+        StopReadingTimer();
+
+        // Mark current topic as learned before going back
+        if (currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!learnedConcepts.Contains(currentTopic))
+            {
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        currentLessonIndex--;
+
+        // Reading timer will be started after AI response in SendAsyncInternal
+
+        // Going back always enriches with learned concepts (spiral learning)
+        await TeachCurrentTopic(enrichWithLearned: true);
+    }
+
+    private async Task TeachCurrentTopic(bool enrichWithLearned = false)
+    {
+        if (currentLessonIndex >= lessonTopics.Count) return;
+
+        var topic = lessonTopics[currentLessonIndex];
+
+        string teachPrompt;
+        if (enrichWithLearned && learnedConcepts.Count > 0)
+        {
+            var learnedList = string.Join(", ", learnedConcepts);
+            teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
+
+IMPORTANT CONTEXT - SPIRAL LEARNING:
+The student has already learned these concepts: {learnedList}
+
+Since the student is REVISITING this topic after learning more advanced concepts, you must:
+1. Connect ""{topic}"" to the concepts they already know
+2. Show how ""{topic}"" relates to and supports their existing knowledge
+3. Provide deeper insights now that they have more context
+4. Use examples that reference the other concepts they've learned
+
+This is spiral learning - enrich the explanation with their accumulated knowledge.
+
+Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
+__First specific question about {topic}?__
+__Second specific question about {topic}?__
+__Third specific question about {topic}?__";
+        }
+        else
+        {
+            teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
+Explain the key concepts clearly, as if you're a tutor.
+
+At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
+__First specific question?__
+__Second specific question?__
+__Third specific question?__
+
+The questions should be specific to what you just taught, not generic.";
+        }
+
+        prompt = teachPrompt;
+        pendingDisplayText = $"Teach me about \"{topic}\"";
+        await SendAsync();
+    }
+
+    private async Task BackToLesson()
+    {
+        if (!isTermExploration) return;
+
+        // Remove messages added during exploration
+        while (messages.Count > messageIndexBeforeExploration)
+        {
+            messages.RemoveAt(messages.Count - 1);
+        }
+
+        isTermExploration = false;
+        StateHasChanged();
+
+        // Save state after returning to lesson
+        if (isLessonMode)
+        {
+            await SaveLessonStateAsync();
+        }
+    }
+
+    private async Task ContinueFromExploration()
+    {
+        // Clear exploration state and continue with the lesson
+        isTermExploration = false;
+        
+        // Continue to next topic if we're in lesson mode
+        if (isLessonMode)
+        {
+            await ContinueLesson();
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task RestartLesson()
+    {
+        // Clear all lesson state
+        isLessonMode = false;
+        hasStartedLearning = false;
+        currentLessonIndex = 0;
+        lessonTopics.Clear();
+        learnedConcepts.Clear();
+        visitedTopicIndices.Clear();
+        messages.Clear();
+        await Settings.ClearLessonStateAsync();
+        
+        // Restart the lesson from the beginning
+        await StartLesson();
+    }
+
+    // Table of Contents functionality
+    private void ShowTableOfContents()
+    {
+        showTableOfContents = true;
+    }
+
+    private void CloseTableOfContents()
+    {
+        showTableOfContents = false;
+    }
+
+    // Knowledge Base functionality
+    private async Task ShowKnowledgeBase()
+    {
+        // Load concepts from knowledge base if not already loaded
+        if (knowledgeBaseConcepts.Count == 0 && activeCourse != null)
+        {
+            await LoadKnowledgeBaseConcepts();
+        }
+        showKnowledgeBase = true;
+    }
+
+    private void CloseKnowledgeBase()
+    {
+        showKnowledgeBase = false;
+    }
+
+    // Knowledge Base Explorer (Force diagram)
+    private void OpenKnowledgeBaseExplorer()
+    {
+        if (activeCourse != null)
+        {
+            // Use CourseId to load aggregated KBs from all resources
+            showKnowledgeBaseExplorer = true;
+        }
+    }
+
+    private void CloseKnowledgeBaseExplorer()
+    {
+        showKnowledgeBaseExplorer = false;
+    }
+
+    /// <summary>
+    /// Navigate to Concepts tab (embedded mode)
+    /// </summary>
+    private async Task NavigateToConceptsTab()
+    {
+        if (OnNavigateToConcept.HasDelegate)
+        {
+            // Pass empty string to just switch tabs without selecting a specific concept
+            await OnNavigateToConcept.InvokeAsync("");
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Visualize tab (embedded mode)
+    /// </summary>
+    private async Task NavigateToVisualizeTab()
+    {
+        if (OnNavigateToVisualize.HasDelegate)
+        {
+            // Pass empty string to just switch tabs without selecting a specific concept
+            await OnNavigateToVisualize.InvokeAsync("");
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Concepts tab with a specific concept selected (embedded mode)
+    /// </summary>
+    private async Task NavigateToConceptById(string conceptId)
+    {
+        if (OnNavigateToConcept.HasDelegate)
+        {
+            await OnNavigateToConcept.InvokeAsync(conceptId);
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Visualize tab with a specific concept centered (embedded mode)
+    /// </summary>
+    private async Task NavigateToVisualizeById(string conceptId)
+    {
+        if (OnNavigateToVisualize.HasDelegate)
+        {
+            await OnNavigateToVisualize.InvokeAsync(conceptId);
+        }
+    }
+
+    /// <summary>
+    /// Called when user clicks "Teach Me" in the Concept Map Explorer
+    /// </summary>
+    private async Task TeachConceptFromExplorer(string conceptTitle)
+    {
+        // Close the explorer
+        showKnowledgeBaseExplorer = false;
+        StateHasChanged();
+
+        // Ask about the concept (same as clicking a term link)
+        await AskAboutTerm(conceptTitle);
+    }
+
+    private async Task LoadKnowledgeBaseConcepts()
+    {
+        if (activeCourse == null)
+            return;
+
+        // Load concepts from all resources' ConceptMaps in this course
+        var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(activeCourse.Id);
+        
+        if (conceptMapIds.Count == 0)
+        {
+            Log.Debug("Chat: No ConceptMaps found for course resources");
+            return;
+        }
+
+
+        var allConcepts = new List<Concept>();
+        
+        foreach (var cmId in conceptMapIds)
+        {
+            var conceptMap = await ConceptMapStorageService.LoadAsync(cmId);
+            if (conceptMap != null && conceptMap.Status == ConceptMapStatus.Ready)
+            {
+                allConcepts.AddRange(conceptMap.Concepts);
+            }
+        }
+        
+        knowledgeBaseConcepts = allConcepts;
+        Log.Debug($"Chat: Loaded {knowledgeBaseConcepts.Count} concepts from {conceptMapIds.Count} ConceptMaps");
+    }
+
+    private async Task SelectConcept(Concept concept)
+    {
+        // Close the ConceptMap modal
+        showKnowledgeBase = false;
+
+
+        // Teach this concept
+        var teachPrompt = $@"Teach me about ""{concept.Title}"".
+
+{(string.IsNullOrEmpty(concept.Summary) ? "" : $"Context: {concept.Summary}")}
+
+Explain clearly, then at the end suggest THREE natural follow-up questions I might have. Format each as a clickable link on its own line:
+__First specific question about {concept.Title}?__
+__Second specific question about {concept.Title}?__
+__Third specific question about {concept.Title}?__";
+
+        prompt = teachPrompt;
+        pendingDisplayText = $"Teach me about \"{concept.Title}\"";
+        await SendAsync();
+    }
+
+    private async Task JumpToTopic(int topicIndex)
+    {
+        if (topicIndex < 0 || topicIndex >= lessonTopics.Count) return;
+
+        // Close the TOC modal
+        showTableOfContents = false;
+
+        // Mark current topic as learned if we've started learning
+        if (hasStartedLearning && currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!learnedConcepts.Contains(currentTopic))
+            {
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+        // Jump to the selected topic
+        currentLessonIndex = topicIndex;
+        hasStartedLearning = true;
+
+        // Check if we've visited this topic before (for spiral learning enrichment)
+        var enrichWithLearned = visitedTopicIndices.Contains(topicIndex) && learnedConcepts.Count > 0;
+        visitedTopicIndices.Add(topicIndex);
+
+        await TeachCurrentTopic(enrichWithLearned);
+    }
+
+    private string GetLessonProgressText()
+    {
+        if (lessonTopics.Count == 0) return "";
+        var completed = learnedConcepts.Count;
+        var total = lessonTopics.Count;
+        var percentage = (int)((double)completed / total * 100);
+        return $"{completed}/{total} completed ({percentage}%)";
+    }
+
+    // Quiz at current point in lesson (inline quiz)
+    private async Task StartQuizAtCurrentPoint()
+    {
+        if (activeCourse == null || learnedConcepts.Count == 0)
+        {
+            // If no concepts learned yet, quiz on the current topic
+            if (currentLessonIndex < lessonTopics.Count)
+            {
+                var currentTopic = lessonTopics[currentLessonIndex];
+                learnedConcepts.Add(currentTopic);
+            }
+        }
+
+
+        // Get quiz settings
+        var questionCount = Math.Min(await Settings.GetQuizQuestionCountAsync(), Math.Max(3, learnedConcepts.Count));
+        gradingScale = await Settings.GetGradingScaleAsync();
+        currentQuestionNumber = 1;
+        totalQuestions = questionCount;
+        isQuizMode = true;
+        // Keep lesson mode active so we can return to it
+
+        var topicsList = string.Join(", ", learnedConcepts);
+        var quizPrompt = $@"Quiz me on what I've learned so far. I have covered these topics: {topicsList}
+
+Please ask me {questionCount} questions ONLY about these specific topics I've learned.
+
+QUIZ RULES:
+1. Ask ONE question at a time
+2. Wait for my answer before asking the next question
+3. After I answer, tell me if I'm correct or incorrect and briefly explain why
+4. Keep track of my score
+5. After all {questionCount} questions, provide a summary and then I'll continue with my lesson
+
+Please start with Question 1.";
+
+        prompt = quizPrompt;
+        await SendAsync();
+    }
+
+    // Quiz Me functionality (full course quiz)
+    private async Task StartQuizMe()
+    {
+        if (activeCourse == null) return;
+
+        var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
+        if (resources.Count == 0)
+        {
+            messages.Add(new ChatMessage("assistant", "This course has no resources yet. Please add some resources first.", "No resources in course."));
+            StateHasChanged();
+            return;
+        }
+
+        // Get quiz settings
+        totalQuestions = await Settings.GetQuizQuestionCountAsync();
+        gradingScale = await Settings.GetGradingScaleAsync();
+        currentQuestionNumber = 1;
+        isQuizMode = true;
+        isLessonMode = false;
+
+        // Clear previous messages for fresh quiz
+        messages.Clear();
+
+        var quizPrompt = $@"I want to take a quiz on the curriculum material. Please quiz me with exactly {totalQuestions} questions based ONLY on the resources provided.
+
+QUIZ RULES:
+1. Ask ONE question at a time
+2. Wait for my answer before asking the next question
+3. After I answer, tell me if I'm correct or incorrect and briefly explain why
+4. Keep track of my score
+5. After all {totalQuestions} questions, provide a final summary with:
+   - Total correct: X/{totalQuestions}
+   - Percentage: X%
+   - Areas I did well in
+   - Areas I need to review
+
+
+
+Please start with Question 1.";
+
+        prompt = quizPrompt;
+        await SendAsync();
+    }
+
+    private async Task RestartQuiz()
+    {
+        // Clear quiz state
+        isQuizMode = false;
+        currentQuestionNumber = 0;
+        totalQuestions = 0;
+        messages.Clear();
+        
+        // Restart quiz from the beginning
+        await StartQuizAtCurrentPoint();
+    }
+
+    private void CancelQuiz()
+    {
+        // Clear quiz state and return to lesson mode
+        isQuizMode = false;
+        currentQuestionNumber = 0;
+        totalQuestions = 0;
+        messages.Add(new ChatMessage("assistant", "Quiz cancelled. You can continue with your lesson or start a new quiz anytime.", "Quiz cancelled by user."));
+        StateHasChanged();
+    }
+
+    // Confirmation dialog methods
+    private void ConfirmRestartLesson()
+    {
+        confirmModalTitle = "Confirm Restart";
+        confirmModalMessage = "Are you sure you want to restart the lesson? All current progress will be lost.";
+        confirmModalActionText = "Yes, Restart";
+        confirmedAction = RestartLesson;
+        showConfirmModal = true;
+    }
+
+    private void ConfirmRestartQuiz()
+    {
+        confirmModalTitle = "Confirm Restart";
+        confirmModalMessage = "Are you sure you want to restart the quiz? Your current progress will be lost.";
+        confirmModalActionText = "Yes, Restart";
+        confirmedAction = RestartQuiz;
+        showConfirmModal = true;
+    }
+
+    private void ConfirmCancelQuiz()
+    {
+        confirmModalTitle = "Cancel Quiz";
+        confirmModalMessage = "Are you sure you want to cancel the quiz? You can start a new quiz anytime.";
+        confirmModalActionText = "Yes, Cancel Quiz";
+        confirmedAction = () => { CancelQuiz(); return Task.CompletedTask; };
+        showConfirmModal = true;
+    }
+
+    private void CloseConfirmModal()
+    {
+        showConfirmModal = false;
+        confirmedAction = null;
+    }
+
+    private async Task ExecuteConfirmedAction()
+    {
+        showConfirmModal = false;
+        
+        if (confirmedAction != null)
+        {
+            await confirmedAction();
+            confirmedAction = null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task SendFromJs()
+    {
+        await SendAsync();
+        StateHasChanged();
+    }
+
+    private Task SendAsync() => SendAsyncInternal(captureTopics: false);
+
+
+    private async Task SendAsyncInternal(bool captureTopics)
+    {
+        var userText = prompt?.Trim();
+        if (string.IsNullOrWhiteSpace(userText)) return;
+        
+        Log.Debug($"Chat: Sending message (captureTopics={captureTopics}, quizMode={isQuizMode}, lessonMode={isLessonMode})");
+
+        prompt = "";
+        await ResetTextareaHeight();
+        
+        // Capture pending state for this message
+        var displayText = pendingDisplayText;
+        var isExploration = pendingIsExploration;
+        pendingDisplayText = null;
+        pendingIsExploration = false;
+        
+        messages.Add(new ChatMessage("user", userText, userText, displayText, isExploration));
+        StateHasChanged();
+
+        isSending = true;
+        cts = new CancellationTokenSource();
+        StateHasChanged();
+
+        try
+        {
+            var instructions = await Instructions.GetCombinedInstructionsAsync();
+            
+            // Use unified context for curriculum planning (captureTopics), otherwise use RAG
+            string courseContext;
+            if (captureTopics)
+            {
+                // For curriculum planning, we need to see ALL resources holistically
+                Log.Debug("Chat: Using unified curriculum context for topic planning");
+                courseContext = await CourseService.GetUnifiedCurriculumContextAsync(ct: cts.Token);
+            }
+            else
+            {
+                // For regular queries, use RAG to get only relevant content
+                Log.Trace("Chat: Using RAG context for query");
+                courseContext = await CourseService.GetRelevantContentAsync(userText, topK: 5, cts.Token);
+            }
+
+            // Build context based on mode
+            string fullInstructions;
+            if (isQuizMode)
+            {
+                Log.Debug($"Chat: Quiz mode - Question {currentQuestionNumber}/{totalQuestions}");
+                var quizInstructions = $@"You are conducting a quiz. Current question: {currentQuestionNumber} of {totalQuestions}.
+After the student answers, evaluate their response and indicate if it's correct or incorrect.
+When evaluating, be fair but accurate - partial credit is okay for partially correct answers.
+Keep track of the running score.";
+
+                fullInstructions = string.IsNullOrEmpty(courseContext)
+                    ? quizInstructions + "\n\n" + instructions
+                    : courseContext + "\n\n" + quizInstructions + "\n\n" + instructions;
+            }
+            else if (isLessonMode && learnedConcepts.Count > 0)
+            {
+                var learnedContext = $"SPIRAL LEARNING CONTEXT: The student has already learned these concepts: {string.Join(", ", learnedConcepts)}. Always reference and connect to these concepts when explaining new material.";
+                fullInstructions = string.IsNullOrEmpty(courseContext)
+                    ? learnedContext + "\n\n" + instructions
+                    : courseContext + "\n\n" + learnedContext + "\n\n" + instructions;
+            }
+            else
+            {
+                fullInstructions = string.IsNullOrEmpty(courseContext)
+                    ? instructions
+                    : courseContext + "\n\n" + instructions;
+            }
+
+            Log.Info($"Chat: Calling AI service ({userText.Length} chars input)");
+            var reply = await Ai.GetReplyAsync(messages, fullInstructions, cts.Token);
+            messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson, null, isExploration));
+            Log.Info($"Chat: AI reply received ({reply.Text.Length} chars)");
+
+            // Start reading timer with the response text (for calculated reading time)
+            if (isLessonMode && hasStartedLearning && !isQuizMode)
+            {
+                StartReadingTimer(reply.Text);
+            }
+
+            // Capture topics if this is the initial lesson request
+            if (captureTopics && isLessonMode)
+            {
+                ParseTopicsFromResponse(reply.Text);
+                Log.Info($"Chat: Parsed {lessonTopics.Count} topics from curriculum response");
+                
+                // If we have a pending start topic, jump to it
+                if (!string.IsNullOrEmpty(pendingStartTopic) && lessonTopics.Count > 0)
+                {
+                    var targetIndex = FindTopicIndex(pendingStartTopic);
+                    if (targetIndex >= 0)
+                    {
+                        Log.Debug($"Chat: Jumping to topic index {targetIndex}: {pendingStartTopic}");
+                        currentLessonIndex = targetIndex;
+                        hasStartedLearning = true;
+                        visitedTopicIndices.Add(targetIndex);
+                        pendingStartTopic = null;
+                        await TeachCurrentTopic();
+                        return;
+                    }
+                    pendingStartTopic = null;
+                }
+                
+                // Auto-show the Table of Contents after topics are generated
+                if (lessonTopics.Count > 0)
+                {
+                    showTableOfContents = true;
+                }
+            }
+
+            // Update quiz question counter if in quiz mode
+            if (isQuizMode && currentQuestionNumber < totalQuestions)
+            {
+                var responseText = reply.Text.ToLowerInvariant();
+                var nextQuestionNum = (currentQuestionNumber + 1).ToString();
+                if (responseText.Contains("question") && (responseText.Contains(nextQuestionNum) || responseText.Contains("next")))
+                {
+                    currentQuestionNumber++;
+                }
+            }
+            else if (isQuizMode && currentQuestionNumber >= totalQuestions)
+            {
+                var responseText = reply.Text.ToLowerInvariant();
+                if (responseText.Contains("final") || responseText.Contains("summary") || responseText.Contains("total"))
+                {
+                    Log.Info("Chat: Quiz completed");
+                    isQuizMode = false;
+                }
+            }
+
+            // Dynamic concept expansion: Check if the user's question might benefit from expanding the knowledge graph
+            // This happens in the background and doesn't block the response
+            if (activeCourse != null && !captureTopics && !isQuizMode)
+            {
+                _ = TryExpandConceptsAsync(userText, cts?.Token ?? CancellationToken.None);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Warn("Chat: Request cancelled by user");
+            messages.Add(new ChatMessage("assistant", "Request cancelled.", "Request was cancelled by user."));
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Chat: Error during message send - {ex.Message}", ex);
+            messages.Add(new ChatMessage("assistant", $"Error: {ex.Message}", ex.ToString()));
+        }
+        finally
+        {
+            cts?.Dispose();
+            cts = null;
+            isSending = false;
+            StateHasChanged();
+
+            // Save lesson state after each interaction
+            if (isLessonMode)
+            {
+                await SaveLessonStateAsync();
+            }
+        }
+    }
+
+    private void ParseTopicsFromResponse(string response)
+    {
+        lessonTopics.Clear();
+        var lines = response.Split('\n');
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            // Match lines like "1. Topic Name" or "1) Topic Name"
+            var match = Regex.Match(trimmed, @"^\d+[\.\)]\s*(.+)$");
+            if (match.Success)
+            {
+                var topic = match.Groups[1].Value.Trim();
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    lessonTopics.Add(topic);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Find the index of a topic by name (fuzzy matching)
+    /// </summary>
+    private int FindTopicIndex(string targetTopic)
+    {
+        // First try exact match
+        var exactIndex = lessonTopics.FindIndex(t => 
+            t.Equals(targetTopic, StringComparison.OrdinalIgnoreCase));
+        if (exactIndex >= 0) return exactIndex;
+
+        // Try contains match (topic contains target or target contains topic)
+        var containsIndex = lessonTopics.FindIndex(t => 
+            t.Contains(targetTopic, StringComparison.OrdinalIgnoreCase) ||
+            targetTopic.Contains(t, StringComparison.OrdinalIgnoreCase));
+        if (containsIndex >= 0) return containsIndex;
+
+        // Try word overlap matching (find best match by common words)
+        var targetWords = targetTopic.ToLowerInvariant()
+            .Split([' ', ',', ':', '-', '�', '�'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 2)
+            .ToHashSet();
+
+        int bestIndex = -1;
+        int bestScore = 0;
+
+        for (int i = 0; i < lessonTopics.Count; i++)
+        {
+            var topicWords = lessonTopics[i].ToLowerInvariant()
+                .Split([' ', ',', ':', '-', '�', '�'], StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length > 2)
+                .ToHashSet();
+
+            var overlap = targetWords.Intersect(topicWords).Count();
+            if (overlap > bestScore)
+            {
+                bestScore = overlap;
+                bestIndex = i;
+            }
+        }
+
+        // Only return if we have at least 2 word matches
+        return bestScore >= 2 ? bestIndex : -1;
+    }
+
+    /// <summary>
+    /// Attempts to dynamically expand the concept graph based on the user's query.
+    /// This runs in the background and doesn't block the chat response.
+    /// If the query mentions concepts related to but not in the graph, new concepts
+    /// will be extracted from the course resources and added to the knowledge graph.
+    /// </summary>
+    private async Task TryExpandConceptsAsync(string userQuery, CancellationToken ct)
+    {
+        if (activeCourse == null || string.IsNullOrWhiteSpace(userQuery))
+            return;
+
+        try
+        {
+            // First check if expansion might be beneficial (quick heuristic check)
+            var shouldExpand = await ConceptExpansionService.ShouldExpandForQueryAsync(
+                userQuery,
+                activeCourse.Id,
+                ct);
+
+            if (!shouldExpand)
+            {
+                Log.Trace($"Chat: Concept expansion not needed for query");
+                return;
+            }
+
+            Log.Info($"Chat: Attempting concept expansion for query: '{userQuery}'");
+
+            // Get context concepts (currently learned concepts in lesson mode)
+            var contextConceptIds = new List<string>();
+            if (isLessonMode && learnedConcepts.Count > 0)
+            {
+                // Try to find concept IDs that match learned topic names
+                var resources = await CourseService.GetCourseResourcesAsync(activeCourse.Id);
+                foreach (var resource in resources.Where(r => r.HasConceptMap))
+                {
+                    var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId!, ct);
+                    if (conceptMap?.Concepts != null)
+                    {
+                        foreach (var concept in conceptMap.Concepts)
+                        {
+                            if (learnedConcepts.Any(lc => 
+                                concept.Title.Contains(lc, StringComparison.OrdinalIgnoreCase) ||
+                                lc.Contains(concept.Title, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                contextConceptIds.Add(concept.Id);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Request expansion
+            var request = new ConceptExpansionRequest
+            {
+                Query = userQuery,
+                CourseId = activeCourse.Id,
+                ContextConceptIds = contextConceptIds,
+                MaxNewConcepts = 5,
+                MinConfidence = 0.7f
+            };
+
+            var result = await ConceptExpansionService.ExpandConceptsAsync(request, ct);
+
+            if (result.Success && result.NewConcepts.Count > 0)
+            {
+                Log.Info($"Chat: Dynamically added {result.NewConcepts.Count} new concepts: {string.Join(", ", result.NewConcepts.Select(c => c.Title))}");
+                
+                // Refresh the knowledge base concepts if the modal is open
+                if (showKnowledgeBase)
+                {
+                    await LoadKnowledgeBaseConcepts();
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            else if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                Log.Warn($"Chat: Concept expansion failed - {result.ErrorMessage}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancelled, ignore
+        }
+        catch (Exception ex)
+        {
+            // Log but don't show to user - this is a background enhancement
+            Log.Warn($"Chat: Background concept expansion failed - {ex.Message}");
+        }
+    }
+
+    private async Task AutoGrow()
+    {
+        await JS.InvokeVoidAsync("autoGrowTextarea", textareaRef);
+    }
+
+    private async Task ResetTextareaHeight()
+    {
+        await JS.InvokeVoidAsync("resetTextareaHeight", textareaRef);
+    }
+
+    private void Clear()
+    {
+        messages.Clear();
+        prompt = "";
+    }
+
+    private void ShowModal(string content)
+    {
+        modalContent = content;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        modalContent = "";
+    }
+
+    private string ParseMarkdown(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return "";
+
+        // Decode any HTML entities from the AI response (e.g., &amp; -> &, &gt; -> >)
+        text = System.Net.WebUtility.HtmlDecode(text);
+        
+        // Only escape < and > to prevent HTML injection, but preserve & for display
+        // We do this selectively to avoid double-encoding
+        text = text.Replace("<", "&lt;").Replace(">", "&gt;");
+
+        // Process line by line for block elements
+        var lines = text.Split('\n');
+        var result = new StringBuilder();
+        var inList = false;
+        var listType = "";
+
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.TrimStart();
+
+            // Headers (must be at start of line)
+            if (trimmedLine.StartsWith("###### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h6>{ProcessInlineMarkdown(trimmedLine.Substring(7))}</h6>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("##### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h5>{ProcessInlineMarkdown(trimmedLine.Substring(6))}</h5>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("#### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h4>{ProcessInlineMarkdown(trimmedLine.Substring(5))}</h4>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("### "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h3>{ProcessInlineMarkdown(trimmedLine.Substring(4))}</h3>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("## "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h2>{ProcessInlineMarkdown(trimmedLine.Substring(3))}</h2>");
+                continue;
+            }
+            if (trimmedLine.StartsWith("# "))
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine($"<h1>{ProcessInlineMarkdown(trimmedLine.Substring(2))}</h1>");
+                continue;
+            }
+
+            // Horizontal rule
+            if (trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___")
+            {
+                CloseList(ref inList, ref listType, result);
+                result.AppendLine("<hr />");
+                continue;
+            }
+
+            // Unordered list items
+            if (trimmedLine.StartsWith("- ") || trimmedLine.StartsWith("* "))
+            {
+                if (!inList || listType != "ul")
+                {
+                    CloseList(ref inList, ref listType, result);
+                    result.AppendLine("<ul>");
+                    inList = true;
+                    listType = "ul";
+                }
+                var itemContent = ProcessInlineMarkdown(trimmedLine.Substring(2));
+                result.AppendLine($"<li>{itemContent}</li>");
+                continue;
+            }
+
+            // Ordered list items
+            var orderedMatch = Regex.Match(trimmedLine, @"^(\d+)\.\s+(.*)$");
+            if (orderedMatch.Success)
+            {
+                if (!inList || listType != "ol")
+                {
+                    CloseList(ref inList, ref listType, result);
+                    result.AppendLine("<ol>");
+                    inList = true;
+                    listType = "ol";
+                }
+                var itemContent = ProcessInlineMarkdown(orderedMatch.Groups[2].Value);
+                result.AppendLine($"<li>{itemContent}</li>");
+                continue;
+            }
+
+            // Empty line - skip (paragraph spacing is handled by CSS)
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                CloseList(ref inList, ref listType, result);
+                continue;
+            }
+
+            // Check if line is a suggested question (starts with __ or [question?])
+            var trimmedLineContent = line.Trim();
+            if ((trimmedLineContent.StartsWith("__") && trimmedLineContent.EndsWith("__")) ||
+                (trimmedLineContent.StartsWith("[") && trimmedLineContent.EndsWith("?]")))
+            {
+                CloseList(ref inList, ref listType, result);
+                var processed = ProcessInlineMarkdown(line);
+                result.AppendLine($"<div class=\"suggested-question-wrapper\">{processed}</div>");
+                continue;
+            }
+
+            // Regular paragraph
+            CloseList(ref inList, ref listType, result);
+            var processedParagraph = ProcessInlineMarkdown(line);
+            result.AppendLine($"<p>{processedParagraph}</p>");
+        }
+
+        CloseList(ref inList, ref listType, result);
+        return result.ToString();
+    }
+
+    private void CloseList(ref bool inList, ref string listType, StringBuilder result)
+    {
+        if (inList)
+        {
+            result.AppendLine(listType == "ul" ? "</ul>" : "</ol>");
+            inList = false;
+            listType = "";
+        }
+    }
+
+    private string ProcessInlineMarkdown(string text)
+    {
+        // Suggested question link: __text__ - renders as a blue clickable question
+        // MUST be processed BEFORE italic to avoid _text_ matching
+        text = Regex.Replace(text, @"__(.+?)__", match =>
+        {
+            var question = match.Groups[1].Value;
+            var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
+            var escapedForJs = EscapeJsString(question);
+            var escapedForAttr = System.Net.WebUtility.HtmlEncode(question);
+            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{escapedForJs}')\" title=\"Click to ask: {escapedForAttr}\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
+        });
+
+        // Bold with clickable term link: **text**
+        // Bold text is NOT styled as a link, just the icon next to it
+        text = Regex.Replace(text, @"\*\*(.+?)\*\*", match =>
+        {
+            var term = match.Groups[1].Value;
+            var encodedTerm = System.Net.WebUtility.HtmlEncode(term);
+            var escapedForJs = EscapeJsString(term);
+            return $"<strong>{encodedTerm}</strong><a class=\"term-link\" onclick=\"window.askAboutTerm('{escapedForJs}')\" title=\"Learn more about {encodedTerm}\"><span class=\"bi bi-question-circle\"></span></a>";
+        });
+
+        // Italic: *text* (but NOT ** which is bold)
+        text = Regex.Replace(text, @"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", "<em>$1</em>");
+        
+        // Italic: _text_ (but NOT __ which is suggested question - only match single underscores)
+        text = Regex.Replace(text, @"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", "<em>$1</em>");
+
+        // Inline code: `code`
+        text = Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
+
+        // Links: [text](url) - must be processed BEFORE square bracket questions
+        text = Regex.Replace(text, @"\[(.+?)\]\((.+?)\)", "<a href=\"$2\" target=\"_blank\">$1</a>");
+        
+        // Suggested question link: [text?] - follow-up questions in square brackets ending with ?
+        // This must come AFTER markdown link processing to avoid conflicts
+        text = Regex.Replace(text, @"\[([^\]\(]+\?)\]", match =>
+        {
+            var question = match.Groups[1].Value;
+            var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
+            var escapedForJs = EscapeJsString(question);
+            var escapedForAttr = System.Net.WebUtility.HtmlEncode(question);
+            return $"<a class=\"suggested-question\" onclick=\"window.askAboutTerm('{escapedForJs}')\" title=\"Click to ask: {escapedForAttr}\"><span class=\"bi bi-chat-right-quote\"></span> {encodedQuestion}</a>";
+        });
+
+        return text;
+    }
+
+    private string EscapeJsString(string text)
+    {
+        return text.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+    }
+
+    [JSInvokable]
+    public async Task AskAboutTerm(string term)
+    {
+        // Track that we're exploring a term so we can go back
+        if (!isTermExploration)
+        {
+            isTermExploration = true;
+            messageIndexBeforeExploration = messages.Count;
+        }
+
+        // Build context-aware prompt for term exploration
+        // Include instruction to suggest follow-up questions
+        string termPrompt;
+        if (learnedConcepts.Count > 0)
+        {
+            var learnedList = string.Join(", ", learnedConcepts);
+            termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
+
+The student has already learned: {learnedList}
+Connect your explanation to these concepts where relevant.
+
+At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
+__First specific question?__
+__Second specific question?__
+__Third specific question?__
+
+The questions should be specific and relevant to what you just explained, not generic.";
+        }
+        else
+        {
+            termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
+
+At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
+__First specific question?__
+__Second specific question?__
+__Third specific question?__
+
+The questions should be specific and relevant to what you just explained, not generic.";
+        }
+
+        // Show simplified display text but send full prompt to AI
+        // Clean up the term for display by removing trailing punctuation
+        var cleanTerm = term.TrimEnd(':', '-', '�', '�', ',', ';', '.', '!', '?', ' ');
+        var displayText = $"{cleanTerm}?";
+        prompt = termPrompt;
+        pendingDisplayText = displayText;
+        pendingIsExploration = true;
+        StateHasChanged();
+        await SendAsync();
+    }
+
+    public void Dispose()
+    {
+        StopReadingTimer();
+        readingTimer?.Dispose();
+        cts?.Cancel();
+        cts?.Dispose();
+        dotNetRef?.Dispose();
+    }
+
+    private void StartReadingTimer(string? responseText = null)
+    {
+        sectionStartTime = DateTime.UtcNow;
+        currentSectionReadingSeconds = 0;
+        displayTimerSeconds = 0;
+        
+        // Calculate reading time based on text if enabled
+        if (useCalculatedReadingTime && !string.IsNullOrEmpty(responseText))
+        {
+            // Average reading speed: ~200-250 words per minute
+            // Use 200 wpm for educational content (more careful reading)
+            var wordCount = responseText.Split([' ', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries).Length;
+            calculatedReadingTimeSeconds = Math.Max(5, (int)(wordCount / 200.0 * 60)); // At least 5 seconds
+        }
+        else
+        {
+            calculatedReadingTimeSeconds = minimumReadingTimeSeconds;
+        }
+        
+        readingTimer?.Dispose();
+        readingTimer = new System.Timers.Timer(1000); // Tick every second
+        readingTimer.Elapsed += OnReadingTimerElapsed;
+        readingTimer.Start();
+    }
+
+    private void StopReadingTimer()
+    {
+        readingTimer?.Stop();
+        
+        // Record time spent and check if section should be marked as read
+        if (activeCourse != null && isLessonMode && hasStartedLearning && currentLessonIndex < lessonTopics.Count)
+        {
+            var elapsedSeconds = (int)(DateTime.UtcNow - sectionStartTime).TotalSeconds;
+            currentSectionReadingSeconds += elapsedSeconds;
+            
+            // Get current topic as section ID (for now using topic index)
+            var sectionId = $"topic-{currentLessonIndex}";
+            
+            // Determine the target reading time
+            var targetReadingTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
+            
+            // Record reading time
+            _ = InvokeAsync(async () =>
+            {
+                var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+                progress.RecordSectionTime(sectionId, currentSectionReadingSeconds);
+                
+                // Mark as read if spent enough time
+                if (currentSectionReadingSeconds >= targetReadingTime)
+                {
+                    progress.MarkSectionRead(sectionId);
+                }
+                
+                await ProgressService.SaveProgressAsync(progress);
+            });
+        }
+        
+        displayTimerSeconds = 0;
+    }
+
+    private void OnReadingTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        currentSectionReadingSeconds++;
+        displayTimerSeconds++;
+        
+        // Update UI on main thread
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private string GetReadingTimerDisplay()
+    {
+        var targetTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
+        var remaining = Math.Max(0, targetTime - displayTimerSeconds);
+        
+        if (displayTimerSeconds >= targetTime)
+        {
+            return "? Read";
+        }
+        
+        var minutes = remaining / 60;
+        var seconds = remaining % 60;
+        return minutes > 0 ? $"{minutes}:{seconds:D2}" : $"{seconds}s";
+    }
+
+    private int GetReadingProgress()
+    {
+        var targetTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
+        if (targetTime <= 0) return 100;
+        return Math.Min(100, (int)((double)displayTimerSeconds / targetTime * 100));
+    }
+
+}

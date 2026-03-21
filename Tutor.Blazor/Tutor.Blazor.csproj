@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>Tutor.Blazor</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Tutor.Core\Tutor.Core.csproj" />
+        <ProjectReference Include="..\Tutor.Shared\Tutor.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,10 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using Tutor.Shared.Components.Layout
+@using Tutor.Shared.Components.Pages
+
+<Router AppAssembly="typeof(Home).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>

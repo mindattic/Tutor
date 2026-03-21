@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="Tutor.csproj">
+  <Project Path="Tutor.Core\Tutor.Core.csproj" />
+  <Project Path="Tutor.Shared\Tutor.Shared.csproj" />
+  <Project Path="Tutor.MAUI\Tutor.MAUI.csproj">
     <Deploy Solution="Debug|*" />
   </Project>
+  <Project Path="Tutor.Blazor\Tutor.Blazor.csproj" />
 </Solution>

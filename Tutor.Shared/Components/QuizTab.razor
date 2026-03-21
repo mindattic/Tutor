@@ -1,0 +1,426 @@
+@using Tutor.Core.Models
+@using Tutor.Core.Services
+@inject QuizService QuizService
+@inject CourseService CourseService
+@inject ConceptMapStorageService ConceptMapStorageService
+@implements IDisposable
+
+<div class="quiz-tab">
+    @if (string.IsNullOrEmpty(CourseId))
+    {
+        <div class="quiz-empty">
+            <span class="bi bi-book"></span>
+            <h3>No Course Selected</h3>
+            <p>Please select a course to start a quiz.</p>
+        </div>
+    }
+    else if (_loading)
+    {
+        <div class="quiz-loading">
+            <span class="spinner"></span>
+            <p>Loading quiz...</p>
+        </div>
+    }
+    else if (QuizService.HasActiveSession)
+    {
+        @* Active Quiz Session *@
+        <div class="quiz-active">
+            <div class="quiz-progress-bar">
+                <div class="quiz-progress" style="width: @GetProgressPercentage()%"></div>
+            </div>
+            <div class="quiz-header">
+                <span class="question-counter">Question @(QuizService.CurrentSession!.CurrentQuestionIndex + 1) of @QuizService.CurrentSession.Questions.Count</span>
+            </div>
+
+            @if (_currentQuestion != null)
+            {
+                <div class="question-bubble">
+                    <span class="bi bi-question-circle"></span>
+                    <div class="question-text">@_currentQuestion.QuestionText</div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_feedback))
+                {
+                    <div class="feedback-bubble @(_lastAnswerCorrect ? "correct" : "incorrect")">
+                        <span class="bi @(_lastAnswerCorrect ? "bi-check-circle" : "bi-x-circle")"></span>
+                        <div class="feedback-text">@_feedback</div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(_currentQuestion.Explanation))
+                    {
+                        <div class="explanation-bubble">
+                            <span class="bi bi-lightbulb"></span>
+                            <div class="explanation-text">@_currentQuestion.Explanation</div>
+                        </div>
+                    }
+
+                    <button class="quiz-btn primary" @onclick="NextQuestion">
+                        @if (_quizComplete)
+                        {
+                            <span>View Results</span>
+                        }
+                        else
+                        {
+                            <span>Next Question</span>
+                        }
+                        <span class="bi bi-arrow-right"></span>
+                    </button>
+                }
+                else
+                {
+                    <div class="answer-section">
+                        <textarea @bind="_userAnswer" @bind:event="oninput"
+                                  placeholder="Type your answer here..."
+                                  rows="3"
+                                  disabled="@_submitting"></textarea>
+                        
+                        <button class="quiz-btn primary" @onclick="SubmitAnswer" 
+                                disabled="@(string.IsNullOrWhiteSpace(_userAnswer) || _submitting)">
+                            @if (_submitting)
+                            {
+                                <span class="spinner-small"></span>
+                            }
+                            else
+                            {
+                                <span class="bi bi-send"></span>
+                            }
+                            <span>Submit Answer</span>
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+    }
+    else if (_quizResult != null)
+    {
+        @* Quiz Results *@
+        <div class="quiz-results">
+            <div class="results-header @(_quizResult.Passed ? "passed" : "failed")">
+                <span class="bi @(_quizResult.Passed ? "bi-trophy" : "bi-emoji-frown")"></span>
+                <h2>@(_quizResult.Passed ? "Congratulations!" : "Keep Learning!")</h2>
+            </div>
+            
+            <div class="results-score">
+                <div class="score-circle @(_quizResult.Passed ? "passed" : "failed")">
+                    <span class="score-value">@(_quizResult.ScorePercentage.ToString("0"))%</span>
+                </div>
+                <div class="score-details">
+                    <p>@_quizResult.CorrectAnswers of @_quizResult.TotalQuestions correct</p>
+                    <p class="points">@_quizResult.EarnedPoints / @_quizResult.TotalPoints points</p>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <button class="quiz-btn secondary" @onclick="RetryQuiz">
+                    <span class="bi bi-arrow-repeat"></span>
+                    <span>Try Again</span>
+                </button>
+                <button class="quiz-btn primary" @onclick="BackToLesson">
+                    <span class="bi bi-book"></span>
+                    <span>Continue Learning</span>
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        @* Quiz Start Screen *@
+        <div class="quiz-start">
+            <div class="quiz-start-header">
+                <span class="bi bi-question-circle"></span>
+                @if (_isSectionQuiz)
+                {
+                    <h2>Section Quiz</h2>
+                    <p>Complete this quiz to master: <strong>@SectionTitle</strong></p>
+                }
+                else
+                {
+                    <h2>Ready for a Quiz?</h2>
+                    <p>Test your knowledge based on what you've learned so far.</p>
+                }
+            </div>
+
+            @if (_conceptIds.Count == 0 && LearnedConcepts.Count == 0)
+            {
+                <div class="quiz-warning">
+                    <span class="bi bi-info-circle"></span>
+                    <p>You haven't learned any concepts yet. Start a lesson first to unlock quizzes!</p>
+                </div>
+                
+                <button class="quiz-btn secondary" @onclick="BackToLesson">
+                    <span class="bi bi-book"></span>
+                    <span>Go to Lessons</span>
+                </button>
+            }
+            else
+            {
+                <div class="quiz-info">
+                    <div class="info-item">
+                        <span class="bi bi-journal-check"></span>
+                        <span>@(_isSectionQuiz ? $"{_conceptIds.Count} concepts in section" : $"{LearnedConcepts.Count} concepts learned")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="bi bi-list-ol"></span>
+                        <span>@GetQuestionCount() questions</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="bi bi-clock"></span>
+                        <span>~@GetEstimatedMinutes() minutes</span>
+                    </div>
+                </div>
+
+                <button class="quiz-btn primary large" @onclick="StartQuiz" disabled="@_starting">
+                    @if (_starting)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span class="bi bi-play-fill"></span>
+                    }
+                    <span>Start Quiz</span>
+                </button>
+            }
+
+            @if (_quizHistory.Count > 0 && !_isSectionQuiz)
+            {
+                <div class="quiz-history">
+                    <h3>Recent Quizzes</h3>
+                    @foreach (var result in _quizHistory.Take(3))
+                    {
+                        <div class="history-item @(result.Passed ? "passed" : "failed")">
+                            <span class="history-score">@(result.ScorePercentage.ToString("0"))%</span>
+                            <span class="history-date">@result.CompletedAt.ToString("MMM d, h:mm tt")</span>
+                            <span class="bi @(result.Passed ? "bi-check-circle" : "bi-x-circle")"></span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+[Parameter]
+public string? CourseId { get; set; }
+
+[Parameter]
+public HashSet<string> LearnedConcepts { get; set; } = [];
+
+[Parameter]
+public EventCallback OnBackToLesson { get; set; }
+
+/// <summary>
+/// Optional: Section ID to scope the quiz to a specific section
+/// </summary>
+[Parameter]
+public string? SectionId { get; set; }
+
+/// <summary>
+/// Optional: Section title for display purposes
+/// </summary>
+[Parameter]
+public string? SectionTitle { get; set; }
+
+/// <summary>
+/// Optional: Concept IDs to quiz on (overrides LearnedConcepts if provided)
+/// </summary>
+[Parameter]
+public List<string>? SectionConceptIds { get; set; }
+
+/// <summary>
+/// Event fired when section quiz is completed
+/// </summary>
+[Parameter]
+public EventCallback<QuizResult> OnSectionQuizCompleted { get; set; }
+
+private bool _loading;
+private bool _starting;
+private bool _submitting;
+private bool _quizComplete;
+private bool _lastAnswerCorrect;
+private string _userAnswer = "";
+private string? _feedback;
+private QuizQuestion? _currentQuestion;
+private QuizResult? _quizResult;
+private List<QuizResult> _quizHistory = [];
+private List<string> _conceptIds = [];
+private bool _isSectionQuiz => !string.IsNullOrEmpty(SectionId);
+
+protected override async Task OnInitializedAsync()
+{
+    QuizService.OnQuizStateChanged += HandleQuizStateChanged;
+    await LoadDataAsync();
+}
+
+protected override async Task OnParametersSetAsync()
+{
+    await LoadDataAsync();
+}
+
+private async Task LoadDataAsync()
+{
+    if (string.IsNullOrEmpty(CourseId))
+        return;
+
+    _loading = true;
+    StateHasChanged();
+
+    try
+    {
+        // If section concept IDs are provided, use those
+        if (SectionConceptIds != null && SectionConceptIds.Count > 0)
+        {
+            _conceptIds = SectionConceptIds.ToList();
+        }
+        else
+        {
+            // Load concept IDs for learned concepts
+            var course = await CourseService.GetCourseAsync(CourseId);
+            if (course != null && !string.IsNullOrEmpty(course.ConceptMapCollectionId))
+            {
+                var conceptMap = await ConceptMapStorageService.LoadAsync(course.ConceptMapCollectionId);
+                if (conceptMap != null)
+                {
+                    _conceptIds = conceptMap.Concepts
+                        .Where(c => LearnedConcepts.Contains(c.Title))
+                        .Select(c => c.Id)
+                        .ToList();
+                }
+            }
+        }
+
+            // Load quiz history
+            _quizHistory = await QuizService.GetQuizHistoryAsync(CourseId);
+
+            // Update current question if quiz is active
+            _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task StartQuiz()
+    {
+        if (string.IsNullOrEmpty(CourseId) || _conceptIds.Count == 0)
+            return;
+
+        _starting = true;
+        _quizResult = null;
+        _feedback = null;
+        StateHasChanged();
+
+        try
+        {
+            var sectionIds = _isSectionQuiz ? [SectionId!] : new List<string>();
+            var questionCount = GetQuestionCount();
+            
+            await QuizService.StartQuizAsync(CourseId, sectionIds, _conceptIds, questionCount);
+            _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        finally
+        {
+            _starting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitAnswer()
+    {
+        if (string.IsNullOrWhiteSpace(_userAnswer))
+            return;
+
+        _submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var (isCorrect, feedback, complete) = await QuizService.SubmitAnswerAsync(_userAnswer);
+            _lastAnswerCorrect = isCorrect;
+            _feedback = feedback;
+            _quizComplete = complete;
+        }
+        finally
+        {
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task NextQuestion()
+    {
+        if (_quizComplete)
+        {
+            _quizResult = QuizService.GetCurrentResult();
+            QuizService.CancelQuiz();
+            
+            // Notify if section quiz completed
+            if (_isSectionQuiz && _quizResult != null)
+            {
+                await OnSectionQuizCompleted.InvokeAsync(_quizResult);
+            }
+        }
+        else
+        {
+            _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        
+        _userAnswer = "";
+        _feedback = null;
+        StateHasChanged();
+    }
+
+    private async Task RetryQuiz()
+    {
+        _quizResult = null;
+        await StartQuiz();
+    }
+
+    private async Task BackToLesson()
+    {
+        _quizResult = null;
+        await OnBackToLesson.InvokeAsync();
+    }
+
+    private double GetProgressPercentage()
+    {
+        if (QuizService.CurrentSession == null)
+            return 0;
+        
+        var total = QuizService.CurrentSession.Questions.Count;
+        var current = QuizService.CurrentSession.CurrentQuestionIndex;
+        return (double)current / total * 100;
+    }
+
+    private int GetQuestionCount()
+    {
+        // For section quizzes, use a smaller number based on concept count
+        if (_isSectionQuiz)
+        {
+            return Math.Max(3, Math.Min(5, _conceptIds.Count));
+        }
+        return 5;
+    }
+
+    private int GetEstimatedMinutes()
+    {
+        return GetQuestionCount();
+    }
+
+    private void HandleQuizStateChanged()
+    {
+        InvokeAsync(() =>
+        {
+            _currentQuestion = QuizService.GetCurrentQuestion();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        QuizService.OnQuizStateChanged -= HandleQuizStateChanged;
+    }
+}

@@ -1,0 +1,56 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Tutor.Blazor/1.0.0": {
+        "dependencies": {
+          "Tutor.Core": "1.0.0",
+          "Tutor.Shared": "1.0.0"
+        },
+        "runtime": {
+          "Tutor.Blazor.dll": {}
+        }
+      },
+      "Tutor.Core/1.0.0": {
+        "runtime": {
+          "Tutor.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Tutor.Shared/1.0.0": {
+        "dependencies": {
+          "Tutor.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tutor.Shared.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Tutor.Blazor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tutor.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tutor.Shared/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

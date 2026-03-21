@@ -1,0 +1,1378 @@
+﻿@page "/settings"
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Forms
+@using Tutor.Core.Services
+@using Tutor.Core.Services.Logging
+@inject NavigationManager Nav
+@inject ThemeService ThemeService
+@inject SettingsService SettingsService
+@inject FileResourceService FileResourceService
+@inject SideNavService SideNavService
+@inject AppUiState UiState
+@inject IJSRuntime JS
+@inject LogStorageService LogStorageService
+@inject ConceptMapStorageService ConceptMapStorageService
+@inject ISecurePreferences SecurePreferences
+@implements IDisposable
+
+<AuthGuard RequiredRole="UserRole.Admin">
+
+<div class="settings-page">
+<div class="tabs">
+        <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
+        <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
+        <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
+        <button class="tab @(activeTab == "Learning" ? "active" : "")" @onclick="@(() => activeTab = "Learning")">Learning</button>
+        <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
+        <button class="tab @(activeTab == "Credentials" ? "active" : "")" @onclick="@(() => activeTab = "Credentials")">Credentials</button>
+        <button class="tab @(activeTab == "Logs" ? "active" : "")" @onclick="@(() => activeTab = "Logs")">Logs</button>
+        <button class="tab @(activeTab == "About" ? "active" : "")" @onclick="@(() => activeTab = "About")">About</button>
+    </div>
+
+    <div class="tab-content">
+        @if (activeTab == "General")
+        {
+            <div class="settings-section">
+                <h4>Theme</h4>
+                <select class="theme-select" @bind="selectedTheme" @bind:after="SaveThemeAsync">
+                    @foreach (var theme in ThemeService.AvailableThemes)
+                    {
+                        <option value="@theme">@theme</option>
+                    }
+                </select>
+                <p>Choose a color theme for the application.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Active AI Model</h4>
+                <select class="theme-select" @bind="selectedModel" @bind:after="SaveSelectedModelAsync">
+                    <option value="ChatGPT">ChatGPT (OpenAI)</option>
+                    <option value="Claude">Claude (Anthropic)</option>
+                    <option value="Gemini">Gemini (Google)</option>
+                </select>
+                <p>Select which AI model to use for chat.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Chat Behavior</h4>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="enterToSend" @bind="enterToSend" @bind:after="SaveEnterToSendAsync" style="width: 18px; height: 18px;" />
+                    <label for="enterToSend">Press Enter to send message</label>
+                </div>
+                <p>When enabled, press Enter to send. Use Shift+Enter for new line.</p>
+            </div>
+        }
+        else if (activeTab == "Appearance")
+        {
+            <div class="settings-section">
+                <h4>User Avatar</h4>
+                <div class="avatar-settings-row">
+                    <div class="avatar-preview user">
+                        @if (!string.IsNullOrEmpty(userCustomAvatar))
+                        {
+                            <img src="@userCustomAvatar" alt="User" />
+                        }
+                        else
+                        {
+                            <span class="bi @userAvatarIcon"></span>
+                        }
+                    </div>
+                    <div class="avatar-controls">
+                        <div class="avatar-name-row">
+                            <label>Display Name:</label>
+                            <input type="text" class="settings-input small" @bind="userDisplayName" @bind:after="SaveUserDisplayNameAsync" placeholder="User" />
+                        </div>
+                        <div class="avatar-icon-row">
+                            <label>Icon:</label>
+                            <select class="theme-select small" @bind="userAvatarIcon" @bind:after="SaveUserAvatarIconAsync">
+                                @foreach (var icon in AvailableAvatarIcons)
+                                {
+                                    <option value="@icon.Value">@icon.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="avatar-actions">
+                            <label class="settings-btn upload-btn">
+                                <span class="bi bi-upload"></span> Upload Image
+                                <InputFile OnChange="OnUserAvatarUpload" accept="image/*" style="display: none;" />
+                            </label>
+                            @if (!string.IsNullOrEmpty(userCustomAvatar))
+                            {
+                                <button class="settings-btn danger small" @onclick="ClearUserCustomAvatar">
+                                    <span class="bi bi-x"></span> Clear
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Assistant Avatar</h4>
+                <div class="avatar-settings-row">
+                    <div class="avatar-preview assistant">
+                        @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                        {
+                            <img src="@assistantCustomAvatar" alt="Assistant" />
+                        }
+                        else
+                        {
+                            <span class="bi @assistantAvatarIcon"></span>
+                        }
+                    </div>
+                    <div class="avatar-controls">
+                        <div class="avatar-name-row">
+                            <label>Display Name:</label>
+                            <input type="text" class="settings-input small" @bind="assistantDisplayName" @bind:after="SaveAssistantDisplayNameAsync" placeholder="Assistant" />
+                        </div>
+                        <div class="avatar-icon-row">
+                            <label>Icon:</label>
+                            <select class="theme-select small" @bind="assistantAvatarIcon" @bind:after="SaveAssistantAvatarIconAsync">
+                                @foreach (var icon in AvailableAvatarIcons)
+                                {
+                                    <option value="@icon.Value">@icon.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="avatar-actions">
+                            <label class="settings-btn upload-btn">
+                                <span class="bi bi-upload"></span> Upload Image
+                                <InputFile OnChange="OnAssistantAvatarUpload" accept="image/*" style="display: none;" />
+                            </label>
+                            @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                            {
+                                <button class="settings-btn danger small" @onclick="ClearAssistantCustomAvatar">
+                                    <span class="bi bi-x"></span> Clear
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Border Radius</h4>
+                <div class="slider-row">
+                    <input type="range" min="0" max="10" step="1" @bind="borderRadius" @bind:after="SaveBorderRadiusAsync" class="settings-slider" />
+                    <span class="slider-value">@(borderRadius)px</span>
+                </div>
+                <p>Adjust the corner roundness for buttons, inputs, and cards (0px = square, 10px = rounded).</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Paragraph Spacing</h4>
+                <div class="slider-row">
+                    <input type="range" min="0.5" max="2.0" step="0.1" @bind="paragraphSpacing" @bind:after="SaveParagraphSpacingAsync" class="settings-slider" />
+                    <span class="slider-value">@(paragraphSpacing.ToString("F1"))em</span>
+                </div>
+                <p>Adjust the spacing between paragraphs in chat messages (0.5em = tight, 2.0em = loose).</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Date & Time Format</h4>
+                <select class="theme-select" @bind="dateFormat" @bind:after="SaveDateFormatAsync">
+                    <option value="yyyy-MM-dd hh:mm:ss tt">2024-01-15 06:30:45 PM (Default)</option>
+                    <option value="yyyy-MM-dd HH:mm:ss">2024-01-15 18:30:45 (24-hour)</option>
+                    <option value="MM/dd/yyyy hh:mm:ss tt">01/15/2024 06:30:45 PM (US)</option>
+                    <option value="dd/MM/yyyy HH:mm:ss">15/01/2024 18:30:45 (EU)</option>
+                    <option value="MMM dd, yyyy h:mm tt">Jan 15, 2024 6:30 PM (Short)</option>
+                    <option value="MMMM dd, yyyy h:mm:ss tt">January 15, 2024 6:30:45 PM (Long)</option>
+                    <option value="yyyy-MM-dd HH:mm:ss.fff">2024-01-15 18:30:45.123 (ISO with ms)</option>
+                </select>
+                <p>Preview: <code>@GetDateFormatPreview()</code></p>
+                <p class="settings-hint">This format is used throughout the app for displaying dates and times.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Preview</h4>
+                <div class="chat-preview">
+                    <div class="preview-msg user">
+                        <div class="preview-avatar user">
+                            @if (!string.IsNullOrEmpty(userCustomAvatar))
+                            {
+                                <img src="@userCustomAvatar" alt="User" />
+                            }
+                            else
+                            {
+                                <span class="bi @userAvatarIcon"></span>
+                            }
+                        </div>
+                        <div class="preview-content">
+                            <span class="preview-name">@userDisplayName</span>
+                            <span class="preview-text">Hello, can you help me?</span>
+                        </div>
+                    </div>
+                    <div class="preview-msg assistant">
+                        <div class="preview-avatar assistant">
+                            @if (!string.IsNullOrEmpty(assistantCustomAvatar))
+                            {
+                                <img src="@assistantCustomAvatar" alt="Assistant" />
+                            }
+                            else
+                            {
+                                <span class="bi @assistantAvatarIcon"></span>
+                            }
+                        </div>
+                        <div class="preview-content">
+                            <span class="preview-name">@assistantDisplayName</span>
+                            <span class="preview-text">Of course! I'm here to help.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (activeTab == "Storage")
+        {
+            <div class="settings-section">
+                <h4>Learning Resources Directory</h4>
+                <div class="path-input-row">
+                    <input type="text" class="settings-input path-input" value="@learningResourcesPath" readonly />
+                    <button class="settings-btn" @onclick="OpenResourcesFolder" title="Open folder">
+                        <span class="bi bi-folder2-open"></span>
+                    </button>
+                </div>
+                <p>Learning resources are saved to this folder and can be checked into GitHub.</p>
+                
+                <div class="folder-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Original files:</span>
+                        <span class="stat-value">@originalFileCount</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Formatted files:</span>
+                        <span class="stat-value">@formattedFileCount</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Storage Options</h4>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" id="saveFormatted" @bind="saveFormattedAsMarkdown" @bind:after="SaveStorageOptionsAsync" style="width: 18px; height: 18px;" />
+                    <label for="saveFormatted">Save formatted resources as .md files</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="preserveOriginal" @bind="preserveOriginalFiles" @bind:after="SaveStorageOptionsAsync" style="width: 18px; height: 18px;" />
+                    <label for="preserveOriginal">Preserve original uploaded files</label>
+                </div>
+                <p>These options control how resources are saved to the file system.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Concept Maps Directory</h4>
+                <div class="path-input-row">
+                    <input type="text" class="settings-input path-input" value="@conceptMapsPath" readonly />
+                    <button class="settings-btn" @onclick="OpenConceptMapsFolder" title="Open folder">
+                        <span class="bi bi-folder2-open"></span>
+                    </button>
+                </div>
+                <p>Concept maps contain extracted concepts and relationships for courses.</p>
+                
+                <div class="folder-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Concept maps:</span>
+                        <span class="stat-value">@conceptMapCount</span>
+                    </div>
+                </div>
+
+                @if (conceptMaps.Count > 0)
+                {
+                    <div class="kb-list" style="margin-top: 15px;">
+                        <table class="kb-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Concepts</th>
+                                    <th>Relations</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cm in conceptMaps)
+                                {
+                                    <tr>
+                                        <td>@cm.Name</td>
+                                        <td>@cm.ConceptCount</td>
+                                        <td>@cm.RelationCount</td>
+                                        <td>
+                                            <span class="kb-status @cm.Status.ToString().ToLower()">@cm.Status</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn-icon-small danger" @onclick="() => DeleteConceptMapAsync(cm.Id)" title="Delete">
+                                                <span class="bi bi-trash"></span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="settings-section">
+                <h4>Folder Structure</h4>
+                <div class="folder-tree">
+                    <div class="folder-item">📁 Resources/</div>
+                    <div class="folder-item indent">📁 Original/ - Original uploaded files</div>
+                    <div class="folder-item indent">📁 Formatted/ - AI-formatted markdown files</div>
+                    <div class="folder-item indent">📁 Courses/ - Course definitions</div>
+                    <div class="folder-item">📁 ConceptMaps/ - AI-generated concept graphs</div>
+                </div>
+            </div>
+        }
+        else if (activeTab == "Learning")
+        {
+            <div class="settings-section">
+                <h4>Reading Time Tracking</h4>
+                <p>Configure how long a section must be viewed before it's marked as "read".</p>
+                
+                <div class="settings-row" style="margin-top: 16px;">
+                    <label>
+                        <input type="checkbox" @bind="useCalculatedReadingTime" @bind:after="SaveUseCalculatedReadingTimeAsync" />
+                        Calculate reading time based on text length
+                    </label>
+                </div>
+                <p class="hint">When enabled, reading time is calculated at ~200 words per minute (average adult reading speed).</p>
+                
+                @if (!useCalculatedReadingTime)
+                {
+                    <div class="settings-row" style="margin-top: 16px;">
+                        <label>Fixed Reading Time:</label>
+                        <select class="theme-select" @bind="readingTimeSeconds" @bind:after="SaveReadingTimeSecondsAsync">
+                            <option value="5">5 seconds (quick)</option>
+                            <option value="10">10 seconds</option>
+                            <option value="15">15 seconds</option>
+                            <option value="30">30 seconds</option>
+                            <option value="60">1 minute</option>
+                            <option value="120">2 minutes</option>
+                        </select>
+                    </div>
+                    <p class="hint">Minimum time to spend on a section before it's considered "read".</p>
+                }
+                else
+                {
+                    <div class="reading-time-info">
+                        <span class="bi bi-info-circle"></span>
+                        <div>
+                            <strong>Calculated Reading Time Examples:</strong>
+                            <ul>
+                                <li>100 words → ~30 seconds</li>
+                                <li>200 words → ~1 minute</li>
+                                <li>500 words → ~2.5 minutes</li>
+                                <li>1000 words → ~5 minutes</li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="settings-section">
+                <h4>Reading Timer Display</h4>
+                <p>A timer appears in the upper-right corner of the chat while learning, showing:</p>
+                <ul style="margin-left: 20px; color: var(--text-secondary);">
+                    <li>Time remaining until section is marked "read"</li>
+                    <li>Progress bar filling as you read</li>
+                    <li>Checkmark when reading time is complete</li>
+                </ul>
+            </div>
+        }
+        else if (activeTab == "Quiz")
+        {
+            <div class="settings-section">
+                <h4>Number of Quiz Questions</h4>
+                <select class="theme-select" @bind="quizQuestionCount" @bind:after="SaveQuizQuestionCountAsync">
+                    <option value="3">3 questions</option>
+                    <option value="5">5 questions</option>
+                    <option value="10">10 questions</option>
+                    <option value="15">15 questions</option>
+                    <option value="20">20 questions</option>
+                </select>
+                <p>Select how many questions to include in each quiz.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Grading Scale</h4>
+                <select class="theme-select" @bind="gradingScale" @bind:after="SaveGradingScaleAsync">
+                    <option value="Standard">Standard (A=90%, B=80%, C=70%, D=60%)</option>
+                    <option value="PlusMinus">Plus/Minus (A+, A, A-, B+, etc.)</option>
+                    <option value="Lenient">Lenient (A=85%, B=75%, C=65%, D=55%)</option>
+                    <option value="Strict">Strict (A=95%, B=85%, C=75%, D=65%)</option>
+                </select>
+                <p>Choose the grading scale for quiz results.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Grading Scale Preview</h4>
+                <div class="grading-preview">
+                    @foreach (var grade in GetGradingPreview())
+                    {
+                        <div class="grade-item">
+                            <span class="grade-letter">@grade.Letter</span>
+                            <span class="grade-range">@grade.Range</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Concept Map Linking</h4>
+                <p>Control how aggressively the AI links orphaned concepts in the knowledge graph.</p>
+                
+                <div class="settings-row" style="margin-top: 10px;">
+                    <label>Max Linking Iterations:</label>
+                    <select class="theme-select small" @bind="orphanLinkingMaxIterations" @bind:after="SaveOrphanLinkingMaxIterationsAsync">
+                        <option value="1">1 (minimal)</option>
+                        <option value="3">3 (light)</option>
+                        <option value="5">5 (moderate)</option>
+                        <option value="10">10 (default)</option>
+                        <option value="15">15 (aggressive)</option>
+                        <option value="20">20 (very aggressive)</option>
+                    </select>
+                </div>
+                <p class="hint">Higher values mean more AI calls to find connections. Default: 10</p>
+                
+                <div class="settings-row" style="margin-top: 10px;">
+                    <label>Min Confidence Threshold:</label>
+                    <select class="theme-select small" @bind="orphanLinkingMinConfidenceStr" @bind:after="SaveOrphanLinkingMinConfidenceAsync">
+                        <option value="0.1">0.1 (very permissive)</option>
+                        <option value="0.2">0.2 (permissive)</option>
+                        <option value="0.3">0.3 (default)</option>
+                        <option value="0.4">0.4 (moderate)</option>
+                        <option value="0.5">0.5 (selective)</option>
+                        <option value="0.6">0.6 (strict)</option>
+                        <option value="0.7">0.7 (very strict)</option>
+                    </select>
+                </div>
+                <p class="hint">Lower values allow weaker connections. Default: 0.3</p>
+            </div>
+        }
+        else if (activeTab == "Credentials")
+        {
+            <div class="settings-section">
+                <h4>OpenAI (ChatGPT)</h4>
+                <div class="credential-row">
+                    <div class="credential-input-group">
+                        <label>API Key</label>
+                        <input type="password"
+                               class="settings-input"
+                               @bind="chatGptApiKey"
+                               placeholder="sk-..." />
+                    </div>
+                    <div class="credential-actions">
+                        <button class="settings-btn small" @onclick="SaveChatGptKeyAsync" disabled="@isBusy">Save</button>
+                        <button class="settings-btn small" @onclick="ClearChatGptKeyAsync" disabled="@isBusy">Clear</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(chatGptKeyPreview))
+                {
+                    <p class="key-preview">Stored: <code>@chatGptKeyPreview</code></p>
+                }
+                <div class="credential-model-row">
+                    <label>Model:</label>
+                    <select class="theme-select small" @bind="chatGptModel" @bind:after="SaveChatGptModelAsync">
+                        <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                        <option value="gpt-4.1">GPT-4.1</option>
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    </select>
+                </div>
+                <p class="credential-link">Get your key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Anthropic (Claude) <span class="coming-soon-badge">Coming Soon</span></h4>
+                <div class="credential-row">
+                    <div class="credential-input-group">
+                        <label>API Key</label>
+                        <input type="password"
+                               class="settings-input"
+                               @bind="claudeApiKey"
+                               placeholder="sk-ant-..." />
+                    </div>
+                    <div class="credential-actions">
+                        <button class="settings-btn small" @onclick="SaveClaudeKeyAsync" disabled="@isBusy">Save</button>
+                        <button class="settings-btn small" @onclick="ClearClaudeKeyAsync" disabled="@isBusy">Clear</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(claudeKeyPreview))
+                {
+                    <p class="key-preview">Stored: <code>@claudeKeyPreview</code></p>
+                }
+                <p class="credential-link">Get your key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a></p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Google AI (Gemini) <span class="coming-soon-badge">Coming Soon</span></h4>
+                <div class="credential-row">
+                    <div class="credential-input-group">
+                        <label>API Key</label>
+                        <input type="password"
+                               class="settings-input"
+                               @bind="geminiApiKey"
+                               placeholder="AIza..." />
+                    </div>
+                    <div class="credential-actions">
+                        <button class="settings-btn small" @onclick="SaveGeminiKeyAsync" disabled="@isBusy">Save</button>
+                        <button class="settings-btn small" @onclick="ClearGeminiKeyAsync" disabled="@isBusy">Clear</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(geminiKeyPreview))
+                {
+                    <p class="key-preview">Stored: <code>@geminiKeyPreview</code></p>
+                }
+                <p class="credential-link">Get your key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(status))
+            {
+                <div class="status-message @(status.Contains("Error") || status.Contains("failed") ? "error" : "success")">
+                    @status
+                </div>
+            }
+        }
+        else if (activeTab == "Logs")
+        {
+            <div class="settings-section">
+                <h4>Log Level Settings</h4>
+                <p class="settings-hint">Enable or disable logging for each severity level. Disabled levels won't be captured.</p>
+                <div class="log-level-toggles">
+                    <label class="log-level-toggle">
+                        <input type="checkbox" checked="@logTraceEnabled" @onchange="@(e => ToggleLogLevel(LogSeverity.Trace, (bool)(e.Value ?? false)))" />
+                        <span class="severity-badge trace">Trace</span>
+                        <span class="level-desc">Detailed diagnostic information</span>
+                    </label>
+                    <label class="log-level-toggle">
+                        <input type="checkbox" checked="@logDebugEnabled" @onchange="@(e => ToggleLogLevel(LogSeverity.Debug, (bool)(e.Value ?? false)))" />
+                        <span class="severity-badge debug">Debug</span>
+                        <span class="level-desc">Debug information for development</span>
+                    </label>
+                    <label class="log-level-toggle">
+                        <input type="checkbox" checked="@logInfoEnabled" @onchange="@(e => ToggleLogLevel(LogSeverity.Information, (bool)(e.Value ?? false)))" />
+                        <span class="severity-badge info">Info</span>
+                        <span class="level-desc">General operational messages</span>
+                    </label>
+                    <label class="log-level-toggle">
+                        <input type="checkbox" checked="@logWarningEnabled" @onchange="@(e => ToggleLogLevel(LogSeverity.Warning, (bool)(e.Value ?? false)))" />
+                        <span class="severity-badge warning">Warning</span>
+                        <span class="level-desc">Potential issues or unexpected behavior</span>
+                    </label>
+                    <label class="log-level-toggle">
+                        <input type="checkbox" checked="@logErrorEnabled" @onchange="@(e => ToggleLogLevel(LogSeverity.Error, (bool)(e.Value ?? false)))" />
+                        <span class="severity-badge error">Error</span>
+                        <span class="level-desc">Operation failures</span>
+                    </label>
+                    <label class="log-level-toggle">
+                        <input type="checkbox" checked="@logCriticalEnabled" @onchange="@(e => ToggleLogLevel(LogSeverity.Critical, (bool)(e.Value ?? false)))" />
+                        <span class="severity-badge critical">Critical</span>
+                        <span class="level-desc">Critical errors (always recommended)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Log Viewer</h4>
+                <div class="log-controls">
+                    <div class="log-filters">
+                        <label class="filter-label">Display Filter:</label>
+                        @foreach (var severity in Enum.GetValues<LogSeverity>())
+                        {
+                            <label class="filter-checkbox">
+                                <input type="checkbox" 
+                                       checked="@logFilters.Contains(severity)"
+                                       @onchange="@(e => ToggleLogFilter(severity, (bool)(e.Value ?? false)))" />
+                                <span class="severity-badge @severity.ToString().ToLower()">@severity</span>
+                            </label>
+                        }
+                    </div>
+                    <div class="log-actions">
+                        <button class="settings-btn small" @onclick="RefreshLogs">
+                            <span class="bi bi-arrow-clockwise"></span> Refresh
+                        </button>
+                        <button class="settings-btn danger small" @onclick="ClearLogs">
+                            <span class="bi bi-trash"></span> Clear All
+                        </button>
+                    </div>
+                </div>
+                <p class="log-count">Showing @filteredLogs.Count of @totalLogCount entries</p>
+            </div>
+
+            <div class="log-viewer">
+                @if (filteredLogs.Count == 0)
+                {
+                    <div class="log-empty">
+                        <span class="bi bi-journal-text"></span>
+                        <p>No log entries to display.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var entry in filteredLogs)
+                    {
+                        <div class="log-entry @entry.SeverityCssClass">
+                            <div class="log-entry-header">
+                                <span class="log-severity">
+                                    <span class="bi @entry.SeverityIcon"></span>
+                                    @entry.Severity
+                                </span>
+                                <span class="log-timestamp">@entry.TimestampDisplay</span>
+                            </div>
+                            <div class="log-message">@entry.Message</div>
+                            @if (!string.IsNullOrEmpty(entry.SourceDisplay))
+                            {
+                                <div class="log-source">@entry.SourceDisplay</div>
+                            }
+                            @if (entry.Exception != null)
+                            {
+                                <div class="log-exception">
+                                    <strong>@entry.Exception.GetType().Name:</strong> @entry.Exception.Message
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+        else if (activeTab == "About")
+        {
+            <div class="settings-section">
+                <h4>Tutor</h4>
+                <p>Version 1.0.0</p>
+                <p>A multi-model AI chat application built with .NET MAUI Blazor.</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Supported Models</h4>
+                <p>• ChatGPT (OpenAI) - Active</p>
+                <p>• Claude (Anthropic) - Coming Soon</p>
+                <p>• Gemini (Google) - Coming Soon</p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Links</h4>
+                <p><a href="https://github.com/mindattic/Tutor" target="_blank">GitHub Repository</a></p>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(status))
+    {
+        <p style="color: var(--text-secondary); margin-top: 16px;">@status</p>
+    }
+</div>
+
+</AuthGuard>
+
+@code
+{
+    private const string SelectedModelKey = "SELECTED_MODEL";
+    private const string ChatGptApiKeyName = "OPENAI_API_KEY";
+    private const string ClaudeApiKeyName = "CLAUDE_API_KEY";
+    private const string GeminiApiKeyName = "GEMINI_API_KEY";
+    private const string EnterToSendKey = "ENTER_TO_SEND";
+    private const string ChatGptModelKey = "CHATGPT_MODEL";
+
+    private string activeTab = "General";
+    private string selectedTheme = "Light";
+    private string selectedModel = "ChatGPT";
+    private string chatGptModel = "gpt-4.1-mini";
+    private string chatGptApiKey = "";
+    private string claudeApiKey = "";
+    private string geminiApiKey = "";
+    private string chatGptKeyPreview = "";
+    private string claudeKeyPreview = "";
+    private string geminiKeyPreview = "";
+    private string status = "";
+    private bool isBusy;
+    private bool enterToSend = true;
+    
+    // Quiz settings
+    private int quizQuestionCount = 3;
+    private GradingScale gradingScale = GradingScale.Standard;
+
+    // Reading time settings
+    private int readingTimeSeconds = 5;
+    private bool useCalculatedReadingTime = false;
+    private readonly int[] readingTimeOptions = [5, 10, 15, 30, 60, 120];
+
+    // Orphan linking settings
+    private int orphanLinkingMaxIterations = 10;
+    private string orphanLinkingMinConfidenceStr = "0.3";
+
+    // Log settings - display filters
+    private HashSet<LogSeverity> logFilters = [LogSeverity.Information, LogSeverity.Warning, LogSeverity.Error, LogSeverity.Critical];
+    private List<LogEntry> filteredLogs = [];
+    private int totalLogCount = 0;
+    
+    // Log settings - capture toggles
+    private bool logTraceEnabled = false;
+    private bool logDebugEnabled = true;
+    private bool logInfoEnabled = true;
+    private bool logWarningEnabled = true;
+    private bool logErrorEnabled = true;
+    private bool logCriticalEnabled = true;
+
+
+    // Storage settings
+    private string learningResourcesPath = "";
+    private bool saveFormattedAsMarkdown = true;
+    private bool preserveOriginalFiles = true;
+    private int originalFileCount = 0;
+    private int formattedFileCount = 0;
+
+    // Concept Map storage settings
+    private string conceptMapsPath = "";
+    private int conceptMapCount = 0;
+    private List<ConceptMapSummary> conceptMaps = [];
+
+
+    // Avatar settings
+    private string userDisplayName = "User";
+    private string assistantDisplayName = "Assistant";
+    private string userAvatarIcon = "bi-person-fill";
+    private string assistantAvatarIcon = "bi-robot";
+    private string? userCustomAvatar;
+    private string? assistantCustomAvatar;
+
+
+    // Appearance settings
+    private int borderRadius = 6;
+    private double paragraphSpacing = 1.0;
+    private string dateFormat = "yyyy-MM-dd hh:mm:ss tt";
+
+    // Available avatar icons
+    private static readonly List<(string Name, string Value)> AvailableAvatarIcons =
+    [
+        ("Person", "bi-person-fill"),
+        ("Person Circle", "bi-person-circle"),
+        ("Person Badge", "bi-person-badge-fill"),
+        ("Emoji Smile", "bi-emoji-smile-fill"),
+        ("Emoji Sunglasses", "bi-emoji-sunglasses-fill"),
+        ("Emoji Heart Eyes", "bi-emoji-heart-eyes-fill"),
+        ("Star", "bi-star-fill"),
+        ("Heart", "bi-heart-fill"),
+        ("Lightning", "bi-lightning-fill"),
+        ("Fire", "bi-fire"),
+        ("Rocket", "bi-rocket-takeoff-fill"),
+        ("Trophy", "bi-trophy-fill"),
+        ("Robot", "bi-robot"),
+        ("CPU", "bi-cpu-fill"),
+        ("Lightbulb", "bi-lightbulb-fill"),
+        ("Book", "bi-book-fill"),
+        ("Mortarboard", "bi-mortarboard-fill"),
+        ("Chat", "bi-chat-dots-fill"),
+        ("Magic", "bi-magic"),
+        ("Gem", "bi-gem"),
+        ("Shield", "bi-shield-fill"),
+        ("Globe", "bi-globe"),
+        ("Moon", "bi-moon-fill"),
+        ("Sun", "bi-sun-fill"),
+        ("Cloud", "bi-cloud-fill"),
+        ("Music Note", "bi-music-note-beamed"),
+        ("Controller", "bi-controller"),
+        ("Puzzle", "bi-puzzle-fill"),
+        ("Flower", "bi-flower1"),
+        ("Tree", "bi-tree-fill"),
+    ];
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set up side nav for Settings tab
+        UiState.SetActiveTab(TopTab.Settings);
+        SideNavService.PopulateSettingsNav();
+
+        selectedTheme = await ThemeService.GetThemeAsync();
+        await LoadSelectedModelAsync();
+        await LoadAllApiKeysAsync();
+        await LoadEnterToSendAsync();
+        await LoadChatGptModelAsync();
+        await LoadQuizSettingsAsync();
+        await LoadReadingTimeSettingsAsync();
+        await LoadAvatarSettingsAsync();
+        await LoadAppearanceSettingsAsync();
+        await LoadLogLevelSettingsAsync();
+        LoadStorageSettings();
+        await LoadConceptMapSettingsAsync();
+        LoadLogs();
+
+        // Subscribe to log updates
+        Log.Store.EntryAdded += OnLogEntryAdded;
+        Log.Store.EntriesCleared += OnLogsCleared;
+    }
+
+    public void Dispose()
+    {
+        Log.Store.EntryAdded -= OnLogEntryAdded;
+        Log.Store.EntriesCleared -= OnLogsCleared;
+    }
+    
+    private async Task LoadLogLevelSettingsAsync()
+    {
+        logTraceEnabled = await SettingsService.GetLogTraceEnabledAsync();
+        logDebugEnabled = await SettingsService.GetLogDebugEnabledAsync();
+        logInfoEnabled = await SettingsService.GetLogInfoEnabledAsync();
+        logWarningEnabled = await SettingsService.GetLogWarningEnabledAsync();
+        logErrorEnabled = await SettingsService.GetLogErrorEnabledAsync();
+        logCriticalEnabled = await SettingsService.GetLogCriticalEnabledAsync();
+    }
+    
+    private async Task ToggleLogLevel(LogSeverity severity, bool enabled)
+    {
+        switch (severity)
+        {
+            case LogSeverity.Trace:
+                logTraceEnabled = enabled;
+                await SettingsService.SetLogTraceEnabledAsync(enabled);
+                break;
+            case LogSeverity.Debug:
+                logDebugEnabled = enabled;
+                await SettingsService.SetLogDebugEnabledAsync(enabled);
+                break;
+            case LogSeverity.Information:
+                logInfoEnabled = enabled;
+                await SettingsService.SetLogInfoEnabledAsync(enabled);
+                break;
+            case LogSeverity.Warning:
+                logWarningEnabled = enabled;
+                await SettingsService.SetLogWarningEnabledAsync(enabled);
+                break;
+            case LogSeverity.Error:
+                logErrorEnabled = enabled;
+                await SettingsService.SetLogErrorEnabledAsync(enabled);
+                break;
+            case LogSeverity.Critical:
+                logCriticalEnabled = enabled;
+                await SettingsService.SetLogCriticalEnabledAsync(enabled);
+                break;
+        }
+        status = $"{severity} logging {(enabled ? "enabled" : "disabled")}.";
+    }
+
+    private void OnLogEntryAdded(object? sender, LogEntry entry)
+    {
+        InvokeAsync(() =>
+        {
+            LoadLogs();
+            StateHasChanged();
+        });
+    }
+
+    private void OnLogsCleared(object? sender, EventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            LoadLogs();
+            StateHasChanged();
+        });
+    }
+
+    private void LoadLogs()
+    {
+        totalLogCount = Log.Store.Count;
+        filteredLogs = Log.Store.GetFiltered(logFilters).ToList();
+    }
+
+    private void RefreshLogs()
+    {
+        LoadLogs();
+        status = $"Logs refreshed. {filteredLogs.Count} entries displayed.";
+    }
+
+    private void ToggleLogFilter(LogSeverity severity, bool included)
+    {
+        if (included)
+            logFilters.Add(severity);
+        else
+            logFilters.Remove(severity);
+        LoadLogs();
+    }
+
+    private void ClearLogs()
+    {
+        LogStorageService.ClearPersistedLogs();
+        status = "All logs cleared.";
+    }
+
+    private async Task LoadAppearanceSettingsAsync()
+    {
+        borderRadius = await SettingsService.GetBorderRadiusAsync();
+        paragraphSpacing = await SettingsService.GetParagraphSpacingAsync();
+        dateFormat = await SettingsService.GetDateFormatAsync();
+    }
+
+    private async Task SaveBorderRadiusAsync()
+    {
+        await SettingsService.SetBorderRadiusAsync(borderRadius);
+        await JS.InvokeVoidAsync("setBorderRadius", borderRadius);
+        status = "Border radius saved.";
+    }
+
+    private async Task SaveParagraphSpacingAsync()
+    {
+        await SettingsService.SetParagraphSpacingAsync(paragraphSpacing);
+        await JS.InvokeVoidAsync("setParagraphSpacing", paragraphSpacing);
+        status = "Paragraph spacing saved.";
+    }
+
+    private async Task SaveDateFormatAsync()
+    {
+        await SettingsService.SetDateFormatAsync(dateFormat);
+        status = "Date format saved.";
+    }
+
+    private string GetDateFormatPreview()
+    {
+        return DateTime.Now.ToString(dateFormat);
+    }
+
+    private async Task LoadAvatarSettingsAsync()
+    {
+        userDisplayName = await SettingsService.GetUserDisplayNameAsync();
+        assistantDisplayName = await SettingsService.GetAssistantDisplayNameAsync();
+        userAvatarIcon = await SettingsService.GetUserAvatarIconAsync();
+        assistantAvatarIcon = await SettingsService.GetAssistantAvatarIconAsync();
+        userCustomAvatar = await SettingsService.GetUserCustomAvatarAsync();
+        assistantCustomAvatar = await SettingsService.GetAssistantCustomAvatarAsync();
+    }
+
+    private async Task SaveUserDisplayNameAsync()
+    {
+        await SettingsService.SetUserDisplayNameAsync(userDisplayName);
+        status = "User display name saved.";
+    }
+
+    private async Task SaveAssistantDisplayNameAsync()
+    {
+        await SettingsService.SetAssistantDisplayNameAsync(assistantDisplayName);
+        status = "Assistant display name saved.";
+    }
+
+    private async Task SaveUserAvatarIconAsync()
+    {
+        await SettingsService.SetUserAvatarIconAsync(userAvatarIcon);
+        status = "User avatar icon saved.";
+    }
+
+    private async Task SaveAssistantAvatarIconAsync()
+    {
+        await SettingsService.SetAssistantAvatarIconAsync(assistantAvatarIcon);
+        status = "Assistant avatar icon saved.";
+    }
+
+    private async Task OnUserAvatarUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file.Size > 512 * 1024) // 512KB limit
+            {
+                status = "Image too large. Please use an image under 512KB.";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 512 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var dataUrl = $"data:{file.ContentType};base64,{base64}";
+            
+            userCustomAvatar = dataUrl;
+            await SettingsService.SetUserCustomAvatarAsync(dataUrl);
+            status = "User avatar uploaded.";
+        }
+        catch (Exception ex)
+        {
+            status = $"Failed to upload: {ex.Message}";
+        }
+    }
+
+    private async Task OnAssistantAvatarUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file.Size > 512 * 1024)
+            {
+                status = "Image too large. Please use an image under 512KB.";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 512 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var dataUrl = $"data:{file.ContentType};base64,{base64}";
+            
+            assistantCustomAvatar = dataUrl;
+            await SettingsService.SetAssistantCustomAvatarAsync(dataUrl);
+            status = "Assistant avatar uploaded.";
+        }
+        catch (Exception ex)
+        {
+            status = $"Failed to upload: {ex.Message}";
+        }
+    }
+
+    private async Task ClearUserCustomAvatar()
+    {
+        userCustomAvatar = null;
+        await SettingsService.SetUserCustomAvatarAsync(null);
+        status = "User custom avatar cleared.";
+    }
+
+    private async Task ClearAssistantCustomAvatar()
+    {
+        assistantCustomAvatar = null;
+        await SettingsService.SetAssistantCustomAvatarAsync(null);
+        status = "Assistant custom avatar cleared.";
+    }
+
+    private void LoadStorageSettings()
+    {
+        StorageSettings.Load();
+        learningResourcesPath = StorageSettings.GetResolvedDirectory();
+        saveFormattedAsMarkdown = StorageSettings.SaveFormattedAsMarkdown;
+        preserveOriginalFiles = StorageSettings.PreserveOriginalFiles;
+        
+        // Count files
+        originalFileCount = FileResourceService.GetOriginalFiles().Count;
+        formattedFileCount = FileResourceService.GetFormattedFiles().Count;
+    }
+
+    private async Task LoadConceptMapSettingsAsync()
+    {
+        conceptMapsPath = DataStorageSettings.GetKnowledgeBasesDirectory();
+        conceptMaps = await ConceptMapStorageService.GetSummariesAsync();
+        conceptMapCount = conceptMaps.Count;
+    }
+
+    private void OpenConceptMapsFolder()
+    {
+        try
+        {
+            if (Directory.Exists(conceptMapsPath))
+            {
+#if WINDOWS
+                System.Diagnostics.Process.Start("explorer.exe", conceptMapsPath);
+#elif MACCATALYST
+                System.Diagnostics.Process.Start("open", conceptMapsPath);
+#endif
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Could not open folder: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteConceptMapAsync(string id)
+    {
+        await ConceptMapStorageService.DeleteAsync(id);
+        await LoadConceptMapSettingsAsync();
+        status = "Concept map deleted.";
+    }
+
+    private void SaveStorageOptionsAsync()
+    {
+        StorageSettings.SaveFormattedAsMarkdown = saveFormattedAsMarkdown;
+        StorageSettings.PreserveOriginalFiles = preserveOriginalFiles;
+        StorageSettings.Save();
+        status = "Storage options saved.";
+    }
+
+    private void OpenResourcesFolder()
+    {
+        FileResourceService.OpenResourcesDirectory();
+    }
+
+    private async Task LoadQuizSettingsAsync()
+    {
+        quizQuestionCount = await SettingsService.GetQuizQuestionCountAsync();
+        gradingScale = await SettingsService.GetGradingScaleAsync();
+        orphanLinkingMaxIterations = await SettingsService.GetOrphanLinkingMaxIterationsAsync();
+        var minConfidence = await SettingsService.GetOrphanLinkingMinConfidenceAsync();
+        orphanLinkingMinConfidenceStr = minConfidence.ToString("0.0");
+    }
+
+    private async Task LoadReadingTimeSettingsAsync()
+    {
+        readingTimeSeconds = await SettingsService.GetReadingTimeSecondsAsync();
+        useCalculatedReadingTime = await SettingsService.GetUseCalculatedReadingTimeAsync();
+    }
+
+    private async Task SaveReadingTimeSecondsAsync()
+    {
+        await SettingsService.SetReadingTimeSecondsAsync(readingTimeSeconds);
+        status = $"Reading time set to {readingTimeSeconds} seconds.";
+    }
+
+    private async Task SaveUseCalculatedReadingTimeAsync()
+    {
+        await SettingsService.SetUseCalculatedReadingTimeAsync(useCalculatedReadingTime);
+        if (useCalculatedReadingTime)
+        {
+            status = "Reading time will be calculated based on text length (~200 words/min).";
+        }
+        else
+        {
+            status = $"Using fixed reading time of {readingTimeSeconds} seconds.";
+        }
+    }
+
+    private async Task SaveQuizQuestionCountAsync()
+    {
+        await SettingsService.SetQuizQuestionCountAsync(quizQuestionCount);
+        status = $"Quiz will have {quizQuestionCount} questions.";
+    }
+
+    private async Task SaveGradingScaleAsync()
+    {
+        await SettingsService.SetGradingScaleAsync(gradingScale);
+        status = $"Grading scale set to {gradingScale}.";
+    }
+
+    private async Task SaveOrphanLinkingMaxIterationsAsync()
+    {
+        await SettingsService.SetOrphanLinkingMaxIterationsAsync(orphanLinkingMaxIterations);
+        status = $"Max linking iterations set to {orphanLinkingMaxIterations}.";
+    }
+
+    private async Task SaveOrphanLinkingMinConfidenceAsync()
+    {
+        if (float.TryParse(orphanLinkingMinConfidenceStr, out var confidence))
+        {
+            await SettingsService.SetOrphanLinkingMinConfidenceAsync(confidence);
+            status = $"Min linking confidence set to {confidence:0.0}.";
+        }
+    }
+
+    private List<(string Letter, string Range)> GetGradingPreview()
+    {
+        return gradingScale switch
+        {
+            GradingScale.Standard => new List<(string, string)>
+            {
+                ("A", "90-100%"), ("B", "80-89%"), ("C", "70-79%"), ("D", "60-69%"), ("F", "0-59%")
+            },
+            GradingScale.PlusMinus => new List<(string, string)>
+            {
+                ("A+", "97-100%"), ("A", "93-96%"), ("A-", "90-92%"),
+                ("B+", "87-89%"), ("B", "83-86%"), ("B-", "80-82%"),
+                ("C+", "77-79%"), ("C", "73-76%"), ("C-", "70-72%"),
+                ("D+", "67-69%"), ("D", "63-66%"), ("D-", "60-62%"),
+                ("F", "0-59%")
+            },
+            GradingScale.Lenient => new List<(string, string)>
+            {
+                ("A", "85-100%"), ("B", "75-84%"), ("C", "65-74%"), ("D", "55-64%"), ("F", "0-54%")
+            },
+            GradingScale.Strict => new List<(string, string)>
+            {
+                ("A", "95-100%"), ("B", "85-94%"), ("C", "75-84%"), ("D", "65-74%"), ("F", "0-64%")
+            },
+            _ => new List<(string, string)>()
+        };
+    }
+
+    private async Task SaveThemeAsync()
+    {
+        await ThemeService.SetThemeAsync(selectedTheme);
+        await JS.InvokeVoidAsync("setTheme", selectedTheme);
+        status = $"Theme changed to {selectedTheme}.";
+    }
+
+    private async Task LoadSelectedModelAsync()
+    {
+        try
+        {
+            var model = await SecurePreferences.GetAsync(SelectedModelKey);
+            if (!string.IsNullOrEmpty(model))
+            {
+                selectedModel = model;
+            }
+        }
+        catch { }
+    }
+
+    private async Task SaveSelectedModelAsync()
+    {
+        try
+        {
+            await SecurePreferences.SetAsync(SelectedModelKey, selectedModel);
+            status = $"{selectedModel} selected as active model.";
+        }
+        catch (Exception ex)
+        {
+            status = "Failed to save selection: " + ex.Message;
+        }
+    }
+
+    private async Task LoadChatGptModelAsync()
+    {
+        try
+        {
+            var model = await SecurePreferences.GetAsync(ChatGptModelKey);
+            if (!string.IsNullOrEmpty(model))
+            {
+                chatGptModel = model;
+            }
+        }
+        catch { }
+    }
+
+    private async Task SaveChatGptModelAsync()
+    {
+        try
+        {
+            await SecurePreferences.SetAsync(ChatGptModelKey, chatGptModel);
+            status = $"ChatGPT model set to {chatGptModel}.";
+        }
+        catch (Exception ex)
+        {
+            status = "Failed to save model: " + ex.Message;
+        }
+    }
+
+    private async Task LoadAllApiKeysAsync()
+    {
+        chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
+        claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
+        geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
+    }
+
+    private async Task<string> LoadKeyPreviewAsync(string keyName)
+    {
+        try
+        {
+            var key = await SecurePreferences.GetAsync(keyName);
+            return string.IsNullOrWhiteSpace(key) ? "" : MaskKey(key);
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private async Task SaveChatGptKeyAsync()
+    {
+        await SaveApiKeyAsync(ChatGptApiKeyName, chatGptApiKey, "ChatGPT");
+        chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
+        chatGptApiKey = "";
+    }
+
+    private async Task ClearChatGptKeyAsync()
+    {
+        await ClearApiKeyAsync(ChatGptApiKeyName, "ChatGPT");
+        chatGptKeyPreview = "";
+        chatGptApiKey = "";
+    }
+
+    private async Task SaveClaudeKeyAsync()
+    {
+        await SaveApiKeyAsync(ClaudeApiKeyName, claudeApiKey, "Claude");
+        claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
+        claudeApiKey = "";
+    }
+
+    private async Task ClearClaudeKeyAsync()
+    {
+        await ClearApiKeyAsync(ClaudeApiKeyName, "Claude");
+        claudeKeyPreview = "";
+        claudeApiKey = "";
+    }
+
+    private async Task SaveGeminiKeyAsync()
+    {
+        await SaveApiKeyAsync(GeminiApiKeyName, geminiApiKey, "Gemini");
+        geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
+        geminiApiKey = "";
+    }
+
+    private async Task ClearGeminiKeyAsync()
+    {
+        await ClearApiKeyAsync(GeminiApiKeyName, "Gemini");
+        geminiKeyPreview = "";
+        geminiApiKey = "";
+    }
+
+    private async Task SaveApiKeyAsync(string keyName, string keyValue, string modelName)
+    {
+        var trimmed = (keyValue ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            status = $"{modelName} API key is empty.";
+            return;
+        }
+
+        isBusy = true;
+        try
+        {
+            await SecurePreferences.SetAsync(keyName, trimmed);
+            status = $"{modelName} API key saved.";
+        }
+        catch (Exception ex)
+        {
+            status = "Save failed: " + ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ClearApiKeyAsync(string keyName, string modelName)
+    {
+        isBusy = true;
+        try
+        {
+            SecurePreferences.Remove(keyName);
+            status = $"{modelName} API key cleared.";
+        }
+        catch (Exception ex)
+        {
+            status = "Clear failed: " + ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task LoadEnterToSendAsync()
+    {
+        try
+        {
+            var value = await SecurePreferences.GetAsync(EnterToSendKey);
+            enterToSend = string.IsNullOrEmpty(value) || value == "true";
+        }
+        catch
+        {
+            enterToSend = true;
+        }
+    }
+
+    private async Task SaveEnterToSendAsync()
+    {
+        try
+        {
+            await SecurePreferences.SetAsync(EnterToSendKey, enterToSend.ToString().ToLower());
+            status = enterToSend ? "Enter to send enabled." : "Enter to send disabled.";
+        }
+        catch (Exception ex)
+        {
+            status = "Save failed: " + ex.Message;
+        }
+    }
+
+    private static string MaskKey(string key)
+    {
+        if (key.Length <= 12) return new string('*', key.Length);
+
+        var start = key.Substring(0, 6);
+        var end = key.Substring(key.Length - 4, 4);
+        return start + "..." + end;
+    }
+}

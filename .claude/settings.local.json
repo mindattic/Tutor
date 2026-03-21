@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo:*)",
+      "Bash(where gh:*)",
+      "Bash(git clone:*)",
+      "Bash(grep -E \"\\\\.\\(xaml|cs|xml\\)$\")",
+      "Bash(cp /d/Projects/Tutor/wwwroot/css/*.css /d/Projects/Tutor/Tutor.Shared/wwwroot/css/)",
+      "Bash(cp -r /d/Projects/Tutor/wwwroot/images/* /d/Projects/Tutor/Tutor.Shared/wwwroot/images/)",
+      "Bash(cp -r /d/Projects/Tutor/wwwroot/lib/* /d/Projects/Tutor/Tutor.Shared/wwwroot/lib/)",
+      "Bash(dotnet build:*)"
+    ]
+  }
+}

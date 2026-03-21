@@ -1,0 +1,81 @@
+{
+  "Files": [
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\obj\\Debug\\net10.0\\scopedcss\\projectbundle\\Tutor.Shared.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Tutor.Shared.83wdbz3za5.bundle.scp.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\css\\home.css",
+      "PackagePath": "staticwebassets\\css\\home.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\css\\quiz.css",
+      "PackagePath": "staticwebassets\\css\\quiz.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\css\\reading-timer.css",
+      "PackagePath": "staticwebassets\\css\\reading-timer.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\images\\avatar-assistant.svg",
+      "PackagePath": "staticwebassets\\images\\avatar-assistant.svg"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\images\\avatar-user.svg",
+      "PackagePath": "staticwebassets\\images\\avatar-user.svg"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\lib\\bootstrap-icons\\font\\bootstrap-icons.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap-icons\\font\\bootstrap-icons.min.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\lib\\bootstrap-icons\\font\\fonts\\bootstrap-icons.woff",
+      "PackagePath": "staticwebassets\\lib\\bootstrap-icons\\font\\fonts\\bootstrap-icons.woff"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\lib\\bootstrap-icons\\font\\fonts\\bootstrap-icons.woff2",
+      "PackagePath": "staticwebassets\\lib\\bootstrap-icons\\font\\fonts\\bootstrap-icons.woff2"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\themes.css",
+      "PackagePath": "staticwebassets\\themes.css"
+    },
+    {
+      "Id": "D:\\Projects\\Tutor\\Tutor.Shared\\wwwroot\\tutor-interop.js",
+      "PackagePath": "staticwebassets\\tutor-interop.js"
+    },
+    {
+      "Id": "obj\\Debug\\net10.0\\staticwebassets\\msbuild.Tutor.Shared.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net10.0\\staticwebassets\\msbuild.Tutor.Shared.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net10.0\\staticwebassets\\msbuild.build.Tutor.Shared.props",
+      "PackagePath": "build\\Tutor.Shared.props"
+    },
+    {
+      "Id": "obj\\Debug\\net10.0\\staticwebassets\\msbuild.buildMultiTargeting.Tutor.Shared.props",
+      "PackagePath": "buildMultiTargeting\\Tutor.Shared.props"
+    },
+    {
+      "Id": "obj\\Debug\\net10.0\\staticwebassets\\msbuild.buildTransitive.Tutor.Shared.props",
+      "PackagePath": "buildTransitive\\Tutor.Shared.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

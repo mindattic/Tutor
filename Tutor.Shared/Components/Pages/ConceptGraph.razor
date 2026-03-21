@@ -1,0 +1,449 @@
+@page "/knowledge-bases"
+@page "/knowledge-graph"
+@using Tutor.Core.Models
+@using Tutor.Core.Services
+@inject KnowledgeGraphService GraphService
+@inject CourseService CourseService
+
+<AuthGuard>
+<div class="page-title">Knowledge Bases</div>
+
+<div class="knowledge-graph-page">
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    }
+    else if (string.IsNullOrEmpty(activeCourseId))
+    {
+        <div class="no-course-state">
+            <div class="empty-icon">
+                <span class="bi bi-book"></span>
+            </div>
+            <h4>No Active Course</h4>
+            <p>Select an active course to view or build its knowledge graph.</p>
+            <a href="courses" class="settings-btn primary">
+                <span class="bi bi-book-fill"></span> Go to Courses
+            </a>
+        </div>
+    }
+    else if (isBuilding)
+    {
+        <div class="graph-building-progress">
+            <div class="building-header">
+                <span class="building-icon bi bi-diagram-3"></span>
+                <span class="building-title">Building Knowledge Graph</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: @(buildProgress.PercentComplete)%"></div>
+            </div>
+            <div class="building-status">
+                <span class="status-message">@buildProgress.Message</span>
+                @if (!string.IsNullOrEmpty(buildProgress.Detail))
+                {
+                    <span class="status-detail">@buildProgress.Detail</span>
+                }
+            </div>
+            <div class="building-step">
+                Step @buildProgress.CurrentStep of @buildProgress.TotalSteps
+            </div>
+        </div>
+    }
+    else if (graph == null)
+    {
+        <div class="empty-graph-state">
+            <div class="empty-icon">
+                <span class="bi bi-diagram-3"></span>
+            </div>
+            <h4>No Knowledge Graph</h4>
+            <p>Build a knowledge graph from <strong>@activeCourse?.Name</strong> to see concepts organized hierarchically.</p>
+            @if (resources.Count > 0)
+            {
+                <p class="resource-count">@resources.Count resource(s) available for analysis</p>
+                <button class="settings-btn primary" @onclick="BuildGraph">
+                    <span class="bi bi-lightning-charge"></span> Build Knowledge Graph
+                </button>
+            }
+            else
+            {
+                <p class="hint">Add resources to your course first, then build the knowledge graph.</p>
+                <a href="courses" class="settings-btn">
+                    <span class="bi bi-plus-lg"></span> Add Resources
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="graph-header">
+            <div class="graph-title">
+                <span class="bi bi-diagram-3"></span>
+                <span>@activeCourse?.Name</span>
+            </div>
+            <div class="graph-stats">
+                <span class="stat">
+                    <span class="stat-value">@stats.TotalConcepts</span>
+                    <span class="stat-label">concepts</span>
+                </span>
+                <span class="stat">
+                    <span class="stat-value">@stats.TotalRelationships</span>
+                    <span class="stat-label">relationships</span>
+                </span>
+                <span class="stat">
+                    <span class="stat-value">@stats.MaxDepth</span>
+                    <span class="stat-label">depth</span>
+                </span>
+            </div>
+            <div class="graph-actions">
+                <button class="icon-btn" title="Refresh" @onclick="RefreshGraph">
+                    <span class="bi bi-arrow-clockwise"></span>
+                </button>
+                <button class="icon-btn" title="Rebuild Graph" @onclick="BuildGraph">
+                    <span class="bi bi-lightning-charge"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="graph-toolbar">
+            <div class="view-toggle">
+                <button class="toggle-btn @(viewMode == "hierarchy" ? "active" : "")" @onclick="@(() => viewMode = "hierarchy")">
+                    <span class="bi bi-list-nested"></span> Hierarchy
+                </button>
+                <button class="toggle-btn @(viewMode == "path" ? "active" : "")" @onclick="@(() => viewMode = "path")">
+                    <span class="bi bi-signpost-split"></span> Learning Path
+                </button>
+                <button class="toggle-btn @(viewMode == "search" ? "active" : "")" @onclick="@(() => viewMode = "search")">
+                    <span class="bi bi-search"></span> Search
+                </button>
+            </div>
+            
+            @if (viewMode == "path" || viewMode == "search")
+            {
+                <div class="search-box">
+                    <input type="text" 
+                           class="settings-input" 
+                           placeholder="@(viewMode == "path" ? "Enter concept to explore..." : "Search concepts...")"
+                           @bind="searchQuery"
+                           @bind:event="oninput"
+                           @onkeyup="OnSearchKeyUp" />
+                    @if (!string.IsNullOrEmpty(searchQuery))
+                    {
+                        <button class="clear-btn" @onclick="ClearSearch">
+                            <span class="bi bi-x"></span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="graph-content">
+            @if (viewMode == "hierarchy")
+            {
+                <div class="toc-view">
+                    <div class="path-placeholder">
+                        <span class="bi bi-diagram-3"></span>
+                        <p>Hierarchy view is being updated</p>
+                        <p class="hint">Use the Courses page to build a KnowledgeBase and CourseStructure for a structured view.</p>
+                    </div>
+                </div>
+            }
+            else if (viewMode == "path")
+            {
+                <div class="path-placeholder">
+                    <span class="bi bi-signpost-split"></span>
+                    <p>Learning path view is being updated</p>
+                    <p class="hint">Use the Learn page to access the new structured learning experience.</p>
+                </div>
+            }
+            else if (viewMode == "search")
+            {
+                @if (searchResults.Count > 0)
+                {
+                    <div class="search-results">
+                        <p class="results-count">Found @searchResults.Count concepts</p>
+                        @foreach (var concept in searchResults)
+                        {
+                            <div class="concept-card @(selectedConceptId == concept.Id ? "selected" : "")"
+                                 @onclick="@(() => SelectConcept(concept.Id))">
+                                <div class="concept-term">@concept.Term</div>
+                                <div class="concept-description">@Truncate(concept.Description, 150)</div>
+                                <div class="concept-meta">
+                                    <span class="meta-item">Depth @concept.HierarchyDepth</span>
+                                    @if (concept.PrerequisiteIds.Count > 0)
+                                    {
+                                        <span class="meta-item">@concept.PrerequisiteIds.Count prereqs</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(searchQuery))
+                {
+                    <div class="no-results">
+                        <p>No concepts found matching "@searchQuery"</p>
+                    </div>
+                }
+            }
+        </div>
+
+        @* Concept Detail Panel *@
+        @if (selectedConcept != null)
+        {
+            <div class="concept-detail-panel">
+                <div class="detail-header">
+                    <h3>@selectedConcept.Term</h3>
+                    <button class="close-btn" @onclick="DeselectConcept">
+                        <span class="bi bi-x-lg"></span>
+                    </button>
+                </div>
+                <div class="detail-body">
+                    <div class="detail-section">
+                        <p class="detail-description">@selectedConcept.Description</p>
+                    </div>
+
+                    @if (selectedConcept.Aliases.Count > 0)
+                    {
+                        <div class="detail-section">
+                            <label>Also known as</label>
+                            <p>@string.Join(", ", selectedConcept.Aliases)</p>
+                        </div>
+                    }
+
+                    <div class="detail-section">
+                        <label>Hierarchy</label>
+                        <div class="hierarchy-info">
+                            <span class="depth-badge">Depth @selectedConcept.HierarchyDepth</span>
+                            @if (selectedConcept.IsFoundational)
+                            {
+                                <span class="badge foundational">Foundational</span>
+                            }
+                            @if (selectedConcept.IsLeaf)
+                            {
+                                <span class="badge leaf">Leaf</span>
+                            }
+                        </div>
+                    </div>
+
+                    @if (selectedPrerequisites.Count > 0)
+                    {
+                        <div class="detail-section">
+                            <label>Prerequisites (@selectedPrerequisites.Count)</label>
+                            <div class="related-concepts">
+                                @foreach (var prereq in selectedPrerequisites)
+                                {
+                                    <button class="concept-link" @onclick="@(() => SelectConcept(prereq.Id))">
+                                        <span class="bi bi-arrow-left"></span> @prereq.Term
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (selectedDependents.Count > 0)
+                    {
+                        <div class="detail-section">
+                            <label>Unlocks (@selectedDependents.Count)</label>
+                            <div class="related-concepts">
+                                @foreach (var dep in selectedDependents)
+                                {
+                                    <button class="concept-link" @onclick="@(() => SelectConcept(dep.Id))">
+                                        @dep.Term <span class="bi bi-arrow-right"></span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="detail-actions">
+                        <button class="settings-btn" @onclick="ShowPathTo">
+                            <span class="bi bi-arrow-left"></span> Path To This
+                        </button>
+                        <button class="settings-btn" @onclick="ShowPathFrom">
+                            Path From This <span class="bi bi-arrow-right"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+</AuthGuard>
+
+@code {
+    private string? activeCourseId;
+    private Course? activeCourse;
+    private List<CourseResource> resources = [];
+    
+    private KnowledgeGraph? graph;
+    private KnowledgeGraphStats stats = new();
+    
+    private string viewMode = "hierarchy";
+    private string searchQuery = "";
+    private List<ConceptNode> searchResults = [];
+    
+    private string? selectedConceptId;
+    private ConceptNode? selectedConcept;
+    private List<ConceptNode> selectedPrerequisites = [];
+    private List<ConceptNode> selectedDependents = [];
+
+
+    private bool isLoading = true;
+    private bool isBuilding;
+    private GraphBuildProgress buildProgress = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Get active course
+            activeCourseId = await CourseService.GetActiveCourseIdAsync();
+            
+            if (!string.IsNullOrEmpty(activeCourseId))
+            {
+                var courses = await CourseService.GetAllCoursesAsync();
+                activeCourse = courses.FirstOrDefault(c => c.Id == activeCourseId);
+                
+                if (activeCourse != null)
+                {
+                    // Load resources for this course
+                    var allResources = await CourseService.GetAllResourcesAsync();
+                    resources = allResources.Where(r => activeCourse.ResourceIds.Contains(r.Id)).ToList();
+                    
+                    // Load existing graph if available
+                    graph = await GraphService.GetGraphForCourseAsync(activeCourseId);
+                    
+                    if (graph != null)
+                    {
+                        stats = graph.GetStats();
+                    }
+                }
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshGraph()
+    {
+        await LoadDataAsync();
+        StateHasChanged();
+    }
+
+    private async Task BuildGraph()
+    {
+        if (string.IsNullOrEmpty(activeCourseId) || resources.Count == 0)
+            return;
+
+        isBuilding = true;
+        buildProgress = new GraphBuildProgress { Message = "Initializing..." };
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<GraphBuildProgress>(p =>
+            {
+                buildProgress = p;
+                InvokeAsync(StateHasChanged);
+            });
+
+            graph = await GraphService.CreateGraphFromResourcesAsync(
+                activeCourse?.Name ?? "Knowledge Graph",
+                activeCourseId,
+                resources,
+                progress);
+
+            stats = graph.GetStats();
+        }
+        catch (Exception ex)
+        {
+            buildProgress = new GraphBuildProgress { Message = $"Error: {ex.Message}" };
+        }
+        finally
+        {
+            isBuilding = false;
+        }
+    }
+
+    private void SelectConcept(string conceptId)
+    {
+        if (graph == null)
+            return;
+
+        selectedConceptId = conceptId;
+        
+        if (graph.Nodes.TryGetValue(conceptId, out var concept))
+        {
+            selectedConcept = concept;
+            selectedPrerequisites = graph.GetPrerequisites(conceptId).ToList();
+            selectedDependents = graph.GetDependents(conceptId).ToList();
+        }
+    }
+
+    private void DeselectConcept()
+    {
+        selectedConceptId = null;
+        selectedConcept = null;
+        selectedPrerequisites.Clear();
+        selectedDependents.Clear();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchQuery))
+        {
+            await PerformSearch();
+        }
+    }
+
+    private async Task PerformSearch()
+    {
+        if (graph == null || string.IsNullOrWhiteSpace(searchQuery))
+            return;
+
+        searchResults = await GraphService.FindSimilarConceptsAsync(graph.Id, searchQuery, 10);
+        
+        var exactMatch = graph.FindByTerm(searchQuery);
+        if (exactMatch != null && !searchResults.Any(c => c.Id == exactMatch.Id))
+        {
+            searchResults.Insert(0, exactMatch);
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = "";
+        searchResults.Clear();
+    }
+
+    private void ShowPathTo()
+    {
+        // Path view is being redesigned - redirect to Learn page
+        viewMode = "path";
+    }
+
+    private void ShowPathFrom()
+    {
+        // Path view is being redesigned - redirect to Learn page
+        viewMode = "path";
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text[..maxLength] + "...";
+    }
+}

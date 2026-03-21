@@ -1,0 +1,2009 @@
+@using Tutor.Core.Models
+@using Tutor.Core.Services
+@using Tutor.Core.Services.Logging
+@inject CourseService CourseService
+@inject ResourceProcessingService ProcessingService
+@inject ConceptMapService ConceptMapService
+@inject ConceptMapStorageService ConceptMapStorageService
+@inject ConceptMergeService ConceptMergeService
+@inject CourseConceptMapService CourseConceptMapService
+@inject ConceptMapCollectionService ConceptMapCollectionService
+@inject SettingsService Settings
+@inject IJSRuntime JS
+@inject IFilePickerService FilePickerService
+@implements IDisposable
+
+<div class="resources-container">
+@* Course Selector *@
+    <div class="curriculum-selector">
+        <div class="curriculum-dropdown-container">
+            <label>Active Course:</label>
+            <div class="curriculum-select-row">
+                <select class="curriculum-select" @bind="selectedCourseId" @bind:after="OnCourseChanged">
+                    <option value="">None (Standard ChatGPT)</option>
+                    @foreach (var course in courses)
+                    {
+                        <option value="@course.Id">@course.Name (@course.ResourceIds.Count resources)</option>
+                    }
+                </select>
+                <button class="icon-btn" title="New Course" @onclick="ShowNewCourseModal">
+                    <span class="icon-add"></span>
+                </button>
+                @if (!string.IsNullOrEmpty(selectedCourseId))
+                {
+                    <button class="icon-btn" title="Rename" @onclick="ShowRenameCourseModal">
+                        <span class="icon-edit"></span>
+                    </button>
+                    <button class="icon-btn danger" title="Delete Course" @onclick="ConfirmDeleteCourse">
+                        <span class="icon-delete"></span>
+                    </button>
+                }
+            </div>
+        </div>
+        
+        @if (string.IsNullOrEmpty(selectedCourseId))
+        {
+            <div class="curriculum-info-box">
+                <span class="icon-info"></span>
+                <span>No course selected. Chat will use standard ChatGPT with full knowledge.</span>
+            </div>
+        }
+        else
+        {
+            var activeCourse = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+            if (activeCourse != null)
+            {
+            <div class="curriculum-info-box active">
+                    <span class="icon-book"></span>
+                    <span><strong>@activeCourse.Name</strong> is active. Chat will only use knowledge from the @activeCourse.ResourceIds.Count selected resource(s).</span>
+                </div>
+                
+                
+                @* Concept Map Section *@
+                <div class="kb-section">
+                    <div class="kb-status-row">
+                        <div class="kb-status-info">
+                            @if (resourcesWithKb > 0)
+                            {
+                                <span class="kb-status @(resourcesWithKb < totalResourcesInCourse ? "needs-update" : "ready")">
+                                    @if (resourcesWithKb < totalResourcesInCourse)
+                                    {
+                                        <span class="bi bi-arrow-clockwise"></span>
+                                        <span>@resourcesWithKb/@totalResourcesInCourse resources have Concept Maps (@knowledgeBaseConceptCount concepts)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bi bi-check-circle-fill"></span>
+                                        <span>All resources ready (@knowledgeBaseConceptCount concepts from @resourcesWithKb sources)</span>
+                                    }
+                                </span>
+                            }
+                            else if (totalResourcesInCourse > 0)
+                            {
+                                <span class="kb-status not-built">
+                                    <span class="bi bi-exclamation-circle"></span>
+                                    <span>No Concept Maps - Build them to enable concept exploration</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="kb-status not-built">
+                                    <span class="bi bi-info-circle"></span>
+                                    <span>Add resources to build Concept Maps</span>
+                                </span>
+                            }
+                        </div>
+                        <div class="kb-actions">
+                            @if (resourcesWithKb > 0)
+                            {
+                                <button class="settings-btn small @(isMergingDuplicates ? "processing" : "")" 
+                                        @onclick="MergeDuplicatesAsync" 
+                                        disabled="@isMergingDuplicates"
+                                        title="Find and merge duplicate concepts across resources">
+                                    @if (isMergingDuplicates)
+                                    {
+                                        <span>Merging...</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bi bi-layers"></span>
+                                        <span>Merge Duplicates</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                    </div>
+                    @* Merge Progress Bar *@
+                    @if (isMergingDuplicates && !string.IsNullOrEmpty(mergeProgressMessage))
+                    {
+                        <div class="merge-progress-container">
+                            <div class="merge-progress-bar">
+                                <div class="merge-progress-fill" style="width: @mergeProgressPercent%"></div>
+                            </div>
+                            <div class="merge-progress-status">
+                                <span class="bi bi-hourglass-split"></span>
+                                <span>@mergeProgressMessage</span>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(kbErrorMessage))
+                    {
+                        <div class="kb-error">
+                            <span class="bi bi-exclamation-triangle"></span>
+                            <span>@kbErrorMessage</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(mergeResultMessage))
+                    {
+                        <div class="merge-result @(mergeResultSuccess ? "success" : "info")">
+                            <span class="bi @(mergeResultSuccess ? "bi-check-circle" : "bi-info-circle")"></span>
+                            <span>@mergeResultMessage</span>
+                            <button class="dismiss-btn" @onclick="DismissMergeMessage">
+                                <span class="bi bi-x"></span>
+                            </button>
+                        </div>
+                    }
+                    @if (showSimilarConceptsModal && pendingSimilarPairs.Count > 0)
+                    {
+                        <div class="similar-concepts-panel">
+                            <div class="similar-panel-header">
+                                <span class="bi bi-question-circle"></span>
+                                <span>Similar Concepts Found - Please Review</span>
+                            </div>
+                            <p class="similar-panel-hint">These concepts appear similar. Confirm which ones to merge:</p>
+                            <div class="similar-pairs-list">
+                                @for (int i = 0; i < Math.Min(pendingSimilarPairs.Count, 10); i++)
+                                {
+                                    var index = i;
+                                    var pair = pendingSimilarPairs[index];
+                                    <div class="similar-pair">
+                                        <div class="pair-concepts">
+                                            <span class="concept-name">@pair.ConceptA.Title</span>
+                                            <span class="bi bi-arrows-angle-expand"></span>
+                                            <span class="concept-name">@pair.ConceptB.Title</span>
+                                        </div>
+                                        <div class="pair-score">
+                                            @($"{pair.SimilarityScore:P0}") similar
+                                        </div>
+                                        <div class="pair-actions">
+                                            <button class="btn-merge" @onclick="@(() => ApproveSimilarMergeAt(index))" title="Merge these concepts">
+                                                <span class="bi bi-check-lg"></span>
+                                            </button>
+                                            <button class="btn-skip" @onclick="@(() => SkipSimilarMergeAt(index))" title="Keep separate">
+                                                <span class="bi bi-x-lg"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            @if (pendingSimilarPairs.Count > 10)
+                            {
+                                <p class="more-pairs">+@(pendingSimilarPairs.Count - 10) more pairs to review</p>
+                            }
+                            <div class="similar-panel-actions">
+                                <button class="settings-btn small" @onclick="ApplyApprovedMerges">
+                                    <span class="bi bi-check-all"></span>
+                                    Apply @(approvedMerges.Count) Merge(s)
+                                </button>
+                                <button class="settings-btn small secondary" @onclick="CloseSimilarConceptsModal">
+                                    Done
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @* Tabs for Library and Add Resource *@
+    <div class="tabs">
+        <button class="tab @(activeTab == "Library" ? "active" : "")" @onclick="@(() => activeTab = "Library")">
+            Resource Library
+            @if (!string.IsNullOrEmpty(selectedCourseId))
+            {
+                var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+                if (course != null)
+                {
+                    <span class="tab-badge">@course.ResourceIds.Count in course</span>
+                }
+            }
+        </button>
+        <button class="tab @(activeTab == "Add" ? "active" : "")" @onclick="@(() => activeTab = "Add")">Add Resource</button>
+    </div>
+
+    <div class="tab-content">
+        @if (activeTab == "Library")
+        {
+            <div class="library-section">
+            @{
+                var processedResources = resources.Where(r => r.IsProcessed && r.HasConceptMap).ToList();
+            }
+            @if (processedResources.Count == 0)
+            {
+                <div class="empty-state">
+                    @if (processingTasks.Count > 0)
+                    {
+                        <p>Resources are being processed. They will appear here once AI formatting and Concept Map generation is complete.</p>
+                    }
+                    else
+                    {
+                        <p>No resources yet. Add some resources to build your knowledge base.</p>
+                        <button class="settings-btn primary" @onclick="@(() => activeTab = "Add")">Add First Resource</button>
+                    }
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(selectedCourseId))
+                {
+                    <p class="library-hint">Check resources to add them to the active course. Uncheck to remove.</p>
+                }
+                else
+                {
+                    <p class="library-hint">Select a course above to manage which resources are included.</p>
+                }
+                    
+                    
+                <div class="resource-list">
+                    @foreach (var item in processedResources)
+                        {
+                            var isInCourse = !string.IsNullOrEmpty(selectedCourseId) && 
+                                courses.FirstOrDefault(c => c.Id == selectedCourseId)?.ResourceIds.Contains(item.Id) == true;
+                            var isExpanded = IsResourceExpanded(item.Id);
+                            var kbDetails = GetResourceKbDetails(item.Id);
+                            
+                            <div class="resource-item @(isInCourse ? "in-curriculum" : "") @(isExpanded ? "expanded" : "")">
+                                <div class="resource-item-header">
+                                    @if (!string.IsNullOrEmpty(selectedCourseId))
+                                    {
+                                        <div class="resource-checkbox">
+                                            <input type="checkbox" 
+                                                   checked="@isInCourse"
+                                                   @onchange="@(() => ToggleResourceInCourse(item.Id))" />
+                                        </div>
+                                    }
+                                    <div class="resource-info" @onclick="@(() => ToggleResourceExpanded(item.Id))">
+                                        <div class="resource-title">
+                                            <span class="expand-icon bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></span>
+                                            @item.Title
+                                            @if (isInCourse)
+                                            {
+                                                <span class="in-curriculum-badge">In Course</span>
+                                            }
+                                        </div>
+                                        <div class="resource-meta">
+                                            @if (!string.IsNullOrEmpty(item.Author))
+                                            {
+                                                <span>@item.Author</span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Year))
+                                            {
+                                                <span>(@item.Year)</span>
+                                            }
+                                            <span class="resource-type">@item.Type</span>
+                                            @* Status indicators *@
+                                            @if (!string.IsNullOrEmpty(item.FormattedContent))
+                                            {
+                                                <span class="status-badge formatted" title="Content has been formatted">
+                                                    <span class="bi bi-check-circle-fill"></span> Formatted
+                                                </span>
+                                            }
+                                            @if (item.HasConceptMap || (kbDetails?.ConceptCount > 0))
+                                            {
+                                                <span class="status-badge has-kb" title="Has Concept Map">
+                                                    <span class="bi bi-lightbulb-fill"></span> @(kbDetails?.ConceptCount ?? 0) concepts
+                                                </span>
+                                            }
+                                            else if (!string.IsNullOrEmpty(item.ConceptMapId) && item.ConceptMapStatus != ConceptMapStatus.Ready)
+                                            {
+                                                <span class="status-badge kb-pending" title="Concept Map building">
+                                                    <span class="bi bi-hourglass-split"></span> Building...
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="resource-actions">
+                                        <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
+                                            <span class="icon-edit"></span>
+                                        </button>
+                                        <button class="icon-btn danger" title="Delete" @onclick="@(() => ConfirmDeleteResource(item))">
+                                            <span class="icon-delete"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                @* Expandable details panel *@
+                                @if (isExpanded)
+                                {
+                                    <div class="resource-details-panel">
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <div class="resource-description">@item.Description</div>
+                                        }
+                                        
+                                        <div class="details-grid">
+                                            @* Content Section *@
+                                            <div class="details-section">
+                                                <h5><span class="bi bi-file-text"></span> Content</h5>
+                                                <div class="details-row">
+                                                    <span class="details-label">Original:</span>
+                                                    <span class="details-value">@((item.Content?.Length ?? 0).ToString("N0")) characters</span>
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(item.FormattedContent))
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Formatted:</span>
+                                                        <span class="details-value success">
+                                                            <span class="bi bi-check-circle-fill"></span>
+                                                            @(item.FormattedContent.Length.ToString("N0")) characters
+                                                        </span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Formatted:</span>
+                                                        <span class="details-value muted">
+                                                            <span class="bi bi-x-circle"></span> Not formatted
+                                                        </span>
+                                                    </div>
+                                                }
+                                            </div>
+                                            
+                                            @* Knowledge Base Section *@
+                                            <div class="details-section">
+                                                <h5><span class="bi bi-diagram-3"></span> Concept Map</h5>
+                                                @if (kbDetails != null && kbDetails.ConceptCount > 0)
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Status:</span>
+                                                        <span class="details-value success">
+                                                            <span class="bi bi-check-circle-fill"></span> Ready
+                                                        </span>
+                                                    </div>
+                                                    <div class="details-row">
+                                                        <span class="details-label">Concepts:</span>
+                                                        <span class="details-value">@kbDetails.ConceptCount.ToString("N0")</span>
+                                                    </div>
+                                                    <div class="details-row">
+                                                        <span class="details-label">Relations:</span>
+                                                        <span class="details-value">@kbDetails.RelationCount.ToString("N0")</span>
+                                                    </div>
+                                                    @if (kbDetails.KnowledgeBaseUpdatedAt.HasValue)
+                                                    {
+                                                        <div class="details-row">
+                                                            <span class="details-label">Built:</span>
+                                                            <span class="details-value">@kbDetails.KnowledgeBaseUpdatedAt.Value.ToString("MMM d, yyyy")</span>
+                                                        </div>
+                                                    }
+                                                    <div class="details-actions">
+                                                        <button class="settings-btn small" 
+                                                                @onclick="@(() => OpenConceptMapFile(item))"
+                                                                title="Open ConceptMap JSON file">
+                                                            <span class="bi bi-folder2-open"></span>
+                                                            <span>Open</span>
+                                                        </button>
+                                                        <button class="settings-btn small" 
+                                                                @onclick="@(() => RegenerateConceptMap(item))"
+                                                                disabled="@IsRegeneratingConceptMap(item.Id)"
+                                                                title="Regenerate from formatted content">
+                                                            @if (IsRegeneratingConceptMap(item.Id))
+                                                            {
+                                                                <span class="bi bi-hourglass-split"></span>
+                                                                <span>Regenerating...</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="bi bi-arrow-clockwise"></span>
+                                                                <span>Regenerate</span>
+                                                            }
+                                                        </button>
+                                                    </div>
+                                                }
+                                                else if (!string.IsNullOrEmpty(item.ConceptMapId))
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Status:</span>
+                                                        <span class="details-value warning">
+                                                            <span class="bi bi-hourglass-split"></span> @item.ConceptMapStatus
+                                                        </span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="details-row">
+                                                        <span class="details-label">Status:</span>
+                                                        <span class="details-value muted">
+                                                            <span class="bi bi-x-circle"></span> Not built
+                                                        </span>
+                                                    </div>
+                                                    <div class="details-row hint">
+                                                        <span class="bi bi-info-circle"></span>
+                                                        Concept Map will be built when resource is processed.
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        
+                                        @* Course Association Info *@
+                                        @if (kbDetails != null && kbDetails.ConceptCount > 0)
+                                        {
+                                            <div class="course-association-hint">
+                                                <span class="bi bi-info-circle"></span>
+                                                This resource's Concept Map can be combined with others when added to a Course.
+                                            </div>
+                                        }
+
+                                        @* Advanced Linking Settings (per-resource override) *@
+                                        <div class="resource-advanced-settings">
+                                            <button class="advanced-toggle" @onclick="@(() => ToggleAdvancedSettings(item.Id))">
+                                                <span class="bi @(expandedAdvancedSettings.Contains(item.Id) ? "bi-chevron-up" : "bi-chevron-down")"></span>
+                                                Advanced Linking Settings
+                                            </button>
+                                            @if (expandedAdvancedSettings.Contains(item.Id))
+                                            {
+                                                <div class="advanced-settings-panel">
+                                                    <div class="settings-row">
+                                                        <label>Max Iterations:</label>
+                                                        <select class="theme-select small" 
+                                                                value="@(item.OrphanLinkingMaxIterations?.ToString() ?? "")"
+                                                                @onchange="@(e => UpdateResourceMaxIterations(item, e))">
+                                                            <option value="">Use global (@globalMaxIterations)</option>
+                                                            <option value="1">1 (minimal)</option>
+                                                            <option value="3">3 (light)</option>
+                                                            <option value="5">5 (moderate)</option>
+                                                            <option value="10">10</option>
+                                                            <option value="15">15 (aggressive)</option>
+                                                            <option value="20">20 (very aggressive)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="settings-row">
+                                                        <label>Min Confidence:</label>
+                                                        <select class="theme-select small"
+                                                                value="@(item.OrphanLinkingMinConfidence?.ToString("0.0") ?? "")"
+                                                                @onchange="@(e => UpdateResourceMinConfidence(item, e))">
+                                                            <option value="">Use global (@globalMinConfidence.ToString("0.0"))</option>
+                                                            <option value="0.1">0.1 (very permissive)</option>
+                                                            <option value="0.2">0.2 (permissive)</option>
+                                                            <option value="0.3">0.3</option>
+                                                            <option value="0.4">0.4 (moderate)</option>
+                                                            <option value="0.5">0.5 (selective)</option>
+                                                            <option value="0.6">0.6 (strict)</option>
+                                                            <option value="0.7">0.7 (very strict)</option>
+                                                        </select>
+                                                    </div>
+                                                    <p class="hint">Override global settings for this resource only.</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else if (activeTab == "Add")
+        {
+            <div class="add-section">
+                @* Processing Queue Status - shown in Add tab *@
+                @{
+                    var activeTasks = processingTasks.Values.Where(t => t.Stage != ProcessingStage.Failed && t.Stage != ProcessingStage.Complete).OrderBy(t => t.QueuedAt).ToList();
+                    var failedTasks = processingTasks.Values.Where(t => t.Stage == ProcessingStage.Failed).OrderBy(t => t.QueuedAt).ToList();
+                }
+                
+                @if (activeTasks.Count > 0 || failedTasks.Count > 0)
+                {
+                    <div class="processing-queue">
+                        @* Active Processing Tasks *@
+                        @if (activeTasks.Count > 0)
+                        {
+                            <div class="queue-header">
+                                <span class="bi bi-hourglass-split"></span>
+                                <span>Processing @activeTasks.Count resource(s)...</span>
+                                <span class="processing-note">(Resources will appear in library when complete)</span>
+                            </div>
+                            @foreach (var task in activeTasks)
+                            {
+                                <div class="queue-item @task.Stage.ToString().ToLower()">
+                                    <div class="queue-item-header">
+                                        <span class="queue-item-title">@task.ResourceTitle</span>
+                                        <span class="queue-item-stage">@task.StageDisplayName</span>
+                                        <span class="queue-item-time">@task.ElapsedTimeFormatted</span>
+                                        <button class="queue-cancel-btn" 
+                                                title="Cancel upload" 
+                                                @onclick="@(() => ConfirmCancelTask(task.TaskId, task.ResourceTitle))">
+                                            <span class="bi bi-x-lg"></span>
+                                        </button>
+                                    </div>
+                                    <div class="progress-bar-container small">
+                                        <div class="progress-bar" style="width: @(task.Progress)%"></div>
+                                    </div>
+                                    <div class="queue-item-status">@task.CurrentOperation</div>
+                                </div>
+                            }
+                        }
+                        
+                        @* Failed Tasks with Resume Option *@
+                        @if (failedTasks.Count > 0)
+                        {
+                            <div class="queue-header failed">
+                                <span class="bi bi-exclamation-triangle"></span>
+                                <span>@failedTasks.Count task(s) need attention</span>
+                                <span class="processing-note">(Can be resumed from last checkpoint)</span>
+                            </div>
+                            @foreach (var task in failedTasks)
+                            {
+                                <div class="queue-item failed">
+                                    <div class="queue-item-header">
+                                        <span class="queue-item-title">@task.ResourceTitle</span>
+                                        <span class="queue-item-stage failed">Failed</span>
+                                        <button class="queue-resume-btn" 
+                                                title="Resume from last checkpoint" 
+                                                @onclick="@(() => ResumeFailedTask(task.TaskId))">
+                                            <span class="bi bi-play-fill"></span>
+                                            <span>Resume</span>
+                                        </button>
+                                        <button class="queue-cancel-btn" 
+                                                title="Discard task" 
+                                                @onclick="@(() => ConfirmCancelTask(task.TaskId, task.ResourceTitle))">
+                                            <span class="bi bi-x-lg"></span>
+                                        </button>
+                                    </div>
+                                    <div class="queue-item-error">
+                                        <span class="bi bi-info-circle"></span>
+                                        <span>@(task.CurrentOperation ?? "Processing interrupted - progress saved")</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        
+                        <div class="queue-footer">
+                            <span class="bi bi-clock"></span>
+                            <span>Total Processing Time: @GetCumulativeProcessingTime()</span>
+                            @if (failedTasks.Count > 1)
+                            {
+                                <button class="queue-resume-all-btn" @onclick="ResumeAllFailedTasks">
+                                    <span class="bi bi-play-fill"></span>
+                                    Resume All
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <h4>@(editingResource != null ? "Edit Resource" : "Add New Resource")</h4>
+
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" class="settings-input" @bind="resourceTitle" placeholder="Resource title" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Author</label>
+                        <input type="text" class="settings-input" @bind="resourceAuthor" placeholder="Author name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <input type="text" class="settings-input" @bind="resourceYear" placeholder="2024" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="settings-input" @bind="resourceDescription" placeholder="Brief description of this resource" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Content Source</label>
+                    <div class="toggle-button-group">
+                        <button class="toggle-btn @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">
+                            Paste Text
+                        </button>
+                        <button class="toggle-btn @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">
+                            Upload File
+                        </button>
+                    </div>
+                </div>
+
+                @if (contentSource == "file")
+                {
+                    <div class="form-group">
+                        <label>Upload Document</label>
+                        <div class="file-upload-area">
+                            <button class="settings-btn" @onclick="PickFile">Choose File</button>
+                            @if (!string.IsNullOrEmpty(uploadedFileName))
+                            {
+                                <span class="file-name">@uploadedFileName</span>
+                            }
+                            else
+                            {
+                                <span class="file-hint">Supports .txt, .docx</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label>Content *</label>
+                    @if (contentSource == "file" && !string.IsNullOrEmpty(fullFileContent))
+                    {
+                        <div class="content-preview">
+                            <div class="preview-text">@GetContentPreview()</div>
+                            @if (fullFileContent.Length > 500)
+                            {
+                                <div class="preview-truncated">... (truncated)</div>
+                            }
+                        </div>
+                        <div class="content-stats">@fullFileContent.Length.ToString("N0") characters total</div>
+                    }
+                    else
+                    {
+                        <textarea class="settings-input content-textarea" 
+                                  @bind="resourceContent" 
+                                  placeholder="Paste your educational content here..."
+                                  rows="10"></textarea>
+                        @if (!string.IsNullOrEmpty(resourceContent))
+                        {
+                            <div class="content-stats">@resourceContent.Length.ToString("N0") characters</div>
+                        }
+                    }
+                </div>
+
+                @if (editingResource == null)
+                {
+                    <div class="processing-info-box">
+                        <span class="bi bi-info-circle"></span>
+                        <span>New resources are automatically formatted with AI and a Knowledge Base is generated. This may take several minutes depending on content size.</span>
+                    </div>
+                }
+
+                <div class="form-actions">
+                    @if (editingResource != null)
+                    {
+                        <button class="settings-btn" @onclick="CancelEdit">Cancel</button>
+                        <button class="settings-btn primary" @onclick="QueueResource">
+                            Update Resource
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="settings-btn primary" @onclick="QueueResource">
+                            <span class="bi bi-plus-lg"></span> Add Resource
+                        </button>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "success")">
+                        @statusMessage
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@* New Course Modal *@
+@if (showNewCourseModal)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Create New Course</span>
+                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Course Name *</label>
+                    <input type="text" class="settings-input" @bind="newCourseName" placeholder="e.g., Grade 5 Science" />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="settings-input" @bind="newCourseDescription" placeholder="Brief description..." rows="2"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn primary" @onclick="CreateCourse">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Rename Course Modal *@
+@if (showRenameCourseModal)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Rename Course</span>
+                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>New Name *</label>
+                    <input type="text" class="settings-input" @bind="renameCourseName" placeholder="Enter new name" />
+                </div>
+                <div class="form-actions">
+                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn primary" @onclick="RenameCourse">Rename</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Delete Confirmation Modal *@
+@if (showDeleteConfirmModal)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>@deleteConfirmTitle</span>
+                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <p>@deleteConfirmMessage</p>
+                <div class="form-actions">
+                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn danger" @onclick="ExecuteDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Cancel Processing Confirmation Modal *@
+@if (showCancelConfirmModal)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content small" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <span>Cancel Upload?</span>
+                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel processing "<strong>@cancelTaskTitle</strong>"?</p>
+                <p class="modal-hint">This will stop the upload and any progress will be lost.</p>
+                <div class="form-actions">
+                    <button class="settings-btn" @onclick="CloseModals">Continue Processing</button>
+                    <button class="settings-btn danger" @onclick="ExecuteCancelTask">Cancel Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+private string activeTab = "Library";
+private List<CourseResource> resources = new();
+private List<Course> courses = new();
+private string? selectedCourseId;
+private Dictionary<string, ResourceProcessingStatus> processingTasks = new();
+
+// Concept Map state
+private string kbErrorMessage = "";
+private int knowledgeBaseConceptCount;
+private int resourcesWithKb;
+private int totalResourcesInCourse;
+private HashSet<string> regeneratingConceptMaps = new();
+
+// Add/Edit form
+private CourseResource? editingResource;
+private string resourceTitle = "";
+private string resourceAuthor = "";
+private string resourceYear = "";
+private string resourceDescription = "";
+private string resourceContent = "";
+    private string fullFileContent = ""; // Full content when uploaded via file
+    private string contentSource = "text";
+    private string uploadedFileName = "";
+    private ResourceType uploadedFileType = ResourceType.Text;
+
+    // Modals
+    private bool showNewCourseModal;
+    private string newCourseName = "";
+    private string newCourseDescription = "";
+    
+    private bool showRenameCourseModal;
+    private string renameCourseName = "";
+
+    // Expandable resource details
+    private HashSet<string> expandedResources = new();
+    private Dictionary<string, ResourceKbDetails> resourceKbDetailsCache = new();
+
+    // Delete confirmation modal
+    private bool showDeleteConfirmModal;
+    private string deleteConfirmTitle = "";
+    private string deleteConfirmMessage = "";
+    private Func<Task>? pendingDeleteAction;
+
+    // Advanced settings per resource
+    private HashSet<string> expandedAdvancedSettings = new();
+    private int globalMaxIterations = SettingsService.DefaultOrphanLinkingMaxIterations;
+    private float globalMinConfidence = SettingsService.DefaultOrphanLinkingMinConfidence;
+
+    // Merge duplicates state
+    private bool isMergingDuplicates;
+    private string? mergeResultMessage;
+    private bool mergeResultSuccess;
+    private bool showSimilarConceptsModal;
+    private List<Tutor.Core.Services.SimilarConceptPair> pendingSimilarPairs = [];
+    private List<Tutor.Core.Services.ApprovedMerge> approvedMerges = [];
+    
+    // Merge progress tracking
+    private string? mergeProgressMessage;
+    private int mergeProgressPercent;
+
+    // Cancel task confirmation
+    private bool showCancelConfirmModal;
+    private string? cancelTaskId;
+    private string? cancelTaskTitle;
+
+    private string statusMessage = "";
+    
+    // Timer for updating processing time display
+    private System.Threading.Timer? processingTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to processing events
+        ProcessingService.OnStatusChanged += OnProcessingStatusChanged;
+        ProcessingService.OnProcessingComplete += OnProcessingComplete;
+        ProcessingService.OnProcessingError += OnProcessingError;
+        
+        // Subscribe to CM build progress
+        ConceptMapService.OnProgressChanged += OnConceptMapProgressChanged;
+
+        await LoadData();
+        RefreshProcessingTasks();
+        
+        // Start timer to update processing time display every second
+        processingTimer = new System.Threading.Timer(
+            _ => InvokeAsync(StateHasChanged),
+            null,
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(1));
+    }
+
+    public void Dispose()
+    {
+        processingTimer?.Dispose();
+        ProcessingService.OnStatusChanged -= OnProcessingStatusChanged;
+        ProcessingService.OnProcessingComplete -= OnProcessingComplete;
+        ProcessingService.OnProcessingError -= OnProcessingError;
+        ConceptMapService.OnProgressChanged -= OnConceptMapProgressChanged;
+    }
+
+    private void OnProcessingStatusChanged(ResourceProcessingStatus status)
+    {
+        processingTasks[status.TaskId] = status;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnProcessingComplete(string taskId)
+    {
+        // Refresh data when processing completes
+        await LoadData();
+        
+        // Remove from active tasks after a delay
+        await Task.Delay(2000);
+        processingTasks.Remove(taskId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnProcessingError(string taskId, string error)
+    {
+        statusMessage = $"Error processing resource: {error}";
+        InvokeAsync(StateHasChanged);
+    }
+
+
+    private void RefreshProcessingTasks()
+    {
+        processingTasks = ProcessingService.GetAllStatuses()
+            .ToDictionary(s => s.TaskId, s => s);
+    }
+
+    private async Task LoadData()
+    {
+        resources = await CourseService.GetAllResourcesAsync();
+        courses = await CourseService.GetAllCoursesAsync();
+        selectedCourseId = await CourseService.GetActiveCourseIdAsync();
+        
+        // Load global linking settings
+        globalMaxIterations = await Settings.GetOrphanLinkingMaxIterationsAsync();
+        globalMinConfidence = await Settings.GetOrphanLinkingMinConfidenceAsync();
+        
+        // Pre-load KB details for all processed resources so concept count shows immediately
+        await PreloadResourceKbCounts();
+        
+        // Load concept count for active course
+        await LoadKnowledgeBaseInfo();
+    }
+
+    /// <summary>
+    /// Pre-loads the concept count for all resources so it displays immediately in the library list.
+    /// </summary>
+    private async Task PreloadResourceKbCounts()
+    {
+        foreach (var resource in resources.Where(r => r.IsProcessed && !string.IsNullOrEmpty(r.ConceptMapId)))
+        {
+            // Skip if already cached
+            if (resourceKbDetailsCache.ContainsKey(resource.Id))
+                continue;
+                
+            try
+            {
+                var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId!);
+                if (conceptMap != null)
+                {
+                    resourceKbDetailsCache[resource.Id] = new ResourceKbDetails
+                    {
+                        ContentLength = resource.Content?.Length ?? 0,
+                        FormattedContentLength = resource.FormattedContent?.Length ?? 0,
+                        HasFormattedContent = !string.IsNullOrEmpty(resource.FormattedContent),
+                        ConceptMapId = conceptMap.Id,
+                        ConceptCount = conceptMap.Concepts.Count,
+                        RelationCount = conceptMap.Relations.Count,
+                        ConceptMapName = conceptMap.Name,
+                        ConceptMapStatus = conceptMap.Status,
+                        KnowledgeBaseCreatedAt = conceptMap.CreatedAt,
+                        KnowledgeBaseUpdatedAt = conceptMap.UpdatedAt
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CourseManagement] Error preloading KB details for {resource.Title}: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task LoadKnowledgeBaseInfo()
+    {
+        knowledgeBaseConceptCount = 0;
+        resourcesWithKb = 0;
+        totalResourcesInCourse = 0;
+        
+        if (!string.IsNullOrEmpty(selectedCourseId))
+        {
+            var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+            if (course != null)
+            {
+                totalResourcesInCourse = course.ResourceIds.Count;
+                bool needsSave = false;
+                
+                // Count concepts across all resource ConceptMaps
+                foreach (var resourceId in course.ResourceIds)
+                {
+                    var resource = resources.FirstOrDefault(r => r.Id == resourceId);
+                    if (resource == null) continue;
+                    
+                    // Check if resource has a ConceptMap ID set
+                    if (!string.IsNullOrEmpty(resource.ConceptMapId))
+                    {
+                        var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
+                        if (conceptMap != null && conceptMap.Status == ConceptMapStatus.Ready)
+                        {
+                            knowledgeBaseConceptCount += conceptMap.Concepts.Count;
+                            resourcesWithKb++;
+                            
+                            // Fix up stale resource status if needed (migration for older data)
+                            if (resource.ConceptMapStatus != ConceptMapStatus.Ready)
+                            {
+                                resource.ConceptMapStatus = ConceptMapStatus.Ready;
+                                needsSave = true;
+                            }
+                        }
+                    }
+                }
+                
+                // Save fixed resources if any were updated
+                if (needsSave)
+                {
+                    await CourseService.SaveAllResourcesAsync(resources);
+                }
+            }
+        }
+    }
+
+    private async Task OnCourseChanged()
+    {
+        await CourseService.SetActiveCourseAsync(selectedCourseId);
+        await LoadKnowledgeBaseInfo();
+    }
+
+    private async Task ToggleResourceInCourse(string resourceId)
+    {
+        if (string.IsNullOrEmpty(selectedCourseId))
+            return;
+
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course == null)
+            return;
+
+        bool wasAdded = false;
+        if (course.ResourceIds.Contains(resourceId))
+        {
+            await CourseService.RemoveResourceFromCourseAsync(selectedCourseId, resourceId);
+        }
+        else
+        {
+            await CourseService.AddResourceToCourseAsync(selectedCourseId, resourceId);
+            wasAdded = true;
+        }
+
+        // Invalidate the course's merged map since resources changed
+        await CourseConceptMapService.InvalidateMergedMapAsync(selectedCourseId);
+
+        await LoadData();
+
+        // If a resource was added, rebuild the merged map with auto-deduplication
+        if (wasAdded)
+        {
+            var resource = resources.FirstOrDefault(r => r.Id == resourceId);
+            if (resource?.HasConceptMap == true)
+            {
+                // Rebuild merged map (this auto-merges exact duplicates)
+                await RebuildMergedMapAndCheckSimilarAsync();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the course's merged map and checks for similar concepts.
+    /// This works on COPIES - original resource ConceptMaps are never modified.
+    /// </summary>
+    private async Task RebuildMergedMapAndCheckSimilarAsync()
+    {
+        try
+        {
+            // Rebuild the merged map (this auto-merges exact duplicates)
+            var mergedMap = await CourseConceptMapService.RebuildMergedMapAsync(selectedCourseId!);
+            if (mergedMap == null)
+            {
+                statusMessage = "Resource added to course.";
+                return;
+            }
+
+            // Check for similar concepts that need user review
+            var duplicates = ConceptMergeService.FindDuplicatesInMergedMap(mergedMap);
+
+            var exactMerged = mergedMap.MergedConceptMapping.Count;
+
+            if (duplicates.SimilarConcepts.Count > 0)
+            {
+                pendingSimilarPairs = duplicates.SimilarConcepts
+                    .OrderByDescending(p => p.SimilarityScore)
+                    .ToList();
+                showSimilarConceptsModal = true;
+
+                if (exactMerged > 0)
+                {
+                    mergeResultMessage = $"✓ Auto-merged {exactMerged} duplicate(s). Review {pendingSimilarPairs.Count} similar concept(s) below.";
+                    mergeResultSuccess = true;
+                }
+                else
+                {
+                    mergeResultMessage = $"Found {pendingSimilarPairs.Count} similar concept(s) to review.";
+                    mergeResultSuccess = false;
+                }
+            }
+            else if (exactMerged > 0)
+            {
+                mergeResultMessage = $"✓ Resource added. Auto-merged {exactMerged} duplicate concept(s).";
+                mergeResultSuccess = true;
+                
+                // Refresh KB stats
+                await LoadKnowledgeBaseInfo();
+            }
+            else
+            {
+                statusMessage = "Resource added to course.";
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CourseManagement] Auto-merge error: {ex.Message}");
+            statusMessage = "Resource added. Error during auto-merge: " + ex.Message;
+        }
+    }
+
+    private void EditResource(CourseResource resource)
+    {
+        editingResource = resource;
+        resourceTitle = resource.Title;
+        resourceAuthor = resource.Author;
+        resourceYear = resource.Year;
+        resourceDescription = resource.Description;
+        resourceContent = resource.Content;
+        contentSource = "text";
+        uploadedFileName = resource.FileName;
+        activeTab = "Add";
+    }
+
+    private void CancelEdit()
+    {
+        editingResource = null;
+        ClearForm();
+    }
+
+    private void ClearForm()
+    {
+        resourceTitle = "";
+        resourceAuthor = "";
+        resourceYear = "";
+        resourceDescription = "";
+        resourceContent = "";
+        fullFileContent = "";
+        uploadedFileName = "";
+        uploadedFileType = ResourceType.Text;
+        statusMessage = "";
+    }
+
+    private string GetCumulativeProcessingTime()
+    {
+        return ProcessingService.GetCumulativeProcessingTimeFormatted();
+    }
+
+    private void QueueResource()
+    {
+        if (string.IsNullOrWhiteSpace(resourceTitle))
+        {
+            statusMessage = "Title is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(resourceContent))
+        {
+            statusMessage = "Content is required.";
+            return;
+        }
+
+        var isNew = editingResource == null;
+        var resource = editingResource ?? new CourseResource();
+        resource.Title = resourceTitle.Trim();
+        resource.Author = resourceAuthor.Trim();
+        resource.Year = resourceYear.Trim();
+        resource.Description = resourceDescription.Trim();
+        resource.Content = resourceContent;
+        resource.Type = contentSource == "file" ? uploadedFileType : ResourceType.Text;
+        resource.FileName = uploadedFileName;
+
+        if (isNew)
+        {
+            resource.Id = Guid.NewGuid().ToString();
+        }
+
+        // Queue for async processing - always formats and builds KB for new resources
+        var taskId = ProcessingService.QueueResourceForProcessing(
+            resource,
+            selectedCourseId,
+            autoFormat: isNew,  // Always format new resources
+            buildGraph: isNew); // Always build KB for new resources
+
+        statusMessage = "Resource queued for processing. AI formatting and Knowledge Base generation will begin shortly.";
+        editingResource = null;
+        ClearForm();
+        
+        // Stay on Add tab to allow adding more resources
+        RefreshProcessingTasks();
+        StateHasChanged();
+    }
+
+    private async Task DeleteResource(string id)
+    {
+        await CourseService.DeleteResourceAsync(id);
+        await LoadData();
+    }
+
+    private bool IsRegeneratingConceptMap(string resourceId)
+    {
+        return regeneratingConceptMaps.Contains(resourceId);
+    }
+
+    private async Task RegenerateConceptMap(CourseResource resource)
+    {
+        if (regeneratingConceptMaps.Contains(resource.Id))
+            return;
+
+        // Check if the resource has formatted content
+        var content = resource.GetEffectiveContent();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            Log.Warn($"Cannot regenerate ConceptMap for '{resource.Title}': No content available");
+            return;
+        }
+
+        try
+        {
+            regeneratingConceptMaps.Add(resource.Id);
+            StateHasChanged();
+
+            Log.Info($"Regenerating ConceptMap for resource: {resource.Title}");
+
+            // Clear existing ConceptMap data
+            if (!string.IsNullOrEmpty(resource.ConceptMapId))
+            {
+                await ConceptMapStorageService.DeleteAsync(resource.ConceptMapId);
+            }
+
+            // Reset resource state
+            resource.ConceptMapId = null;
+            resource.ConceptMapStatus = ConceptMapStatus.NotStarted;
+            await CourseService.SaveResourceAsync(resource);
+
+            // Invalidate the cached details
+            resourceKbDetailsCache.Remove(resource.Id);
+
+
+            // Queue the resource for processing (only rebuild ConceptMap, don't re-format)
+            ProcessingService.QueueResourceForProcessing(
+                resource,
+                selectedCourseId,
+                autoFormat: false,  // Don't re-format, use existing formatted content
+                buildGraph: true);  // Build the ConceptMap
+            
+            RefreshProcessingTasks();
+            
+            Log.Info($"ConceptMap regeneration queued for: {resource.Title}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to queue ConceptMap regeneration: {ex.Message}", ex);
+        }
+        finally
+        {
+            regeneratingConceptMaps.Remove(resource.Id);
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Opens the ConceptMap JSON file for the given resource in the OS file explorer.
+    /// </summary>
+    private async Task OpenConceptMapFile(CourseResource resource)
+    {
+        if (string.IsNullOrEmpty(resource.ConceptMapId))
+        {
+            Log.Warn($"Cannot open ConceptMap for '{resource.Title}': No ConceptMap exists");
+            return;
+        }
+
+        try
+        {
+            // Ensure the ConceptMap is saved so the JSON file exists
+            var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
+            if (conceptMap == null)
+            {
+                Log.Warn($"Cannot open ConceptMap for '{resource.Title}': ConceptMap not found");
+                return;
+            }
+
+            await ConceptMapStorageService.SaveAsync(conceptMap);
+
+            // Build the expected JSON path based on storage settings
+            var kbDir = DataStorageSettings.GetKnowledgeBasesDirectory();
+            var jsonPath = Path.Combine(kbDir, conceptMap.Id + ".json");
+
+            if (!File.Exists(jsonPath))
+            {
+                Log.Warn($"ConceptMap JSON file not found at: {jsonPath}");
+                statusMessage = "ConceptMap JSON file not found on disk.";
+                return;
+            }
+
+            // Open the file in the default associated editor/viewer
+            try
+            {
+#if WINDOWS
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = jsonPath,
+                    UseShellExecute = true
+                });
+#else
+                System.Diagnostics.Process.Start(jsonPath);
+#endif
+
+                statusMessage = "Opened ConceptMap JSON in your default editor.";
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Failed to open ConceptMap JSON: {ex.Message}", ex);
+                statusMessage = "Failed to open ConceptMap JSON file.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to open ConceptMap: {ex.Message}", ex);
+            statusMessage = "Error opening ConceptMap JSON file.";
+        }
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return sanitized.ToLowerInvariant().Replace(' ', '-');
+    }
+
+    private async Task PickFile()
+    {
+        try
+        {
+            var picked = await FilePickerService.PickFileAsync(new[] { ".txt", ".docx", ".pdf" });
+
+            if (picked != null)
+            {
+                uploadedFileName = picked.FileName;
+                var extension = Path.GetExtension(picked.FileName).ToLowerInvariant();
+
+                using var stream = picked.Stream;
+
+                switch (extension)
+                {
+                    case ".txt":
+                        uploadedFileType = ResourceType.Txt;
+                        using (var reader = new StreamReader(stream))
+                        {
+                            fullFileContent = await reader.ReadToEndAsync();
+                        }
+                        break;
+
+                    case ".docx":
+                        uploadedFileType = ResourceType.Docx;
+                        fullFileContent = await ReadDocxAsync(stream);
+                        break;
+
+                    case ".pdf":
+                        uploadedFileType = ResourceType.Pdf;
+                        fullFileContent = await ReadPdfAsync(stream);
+                        break;
+
+                    default:
+                        statusMessage = "Unsupported file type.";
+                        return;
+                }
+
+                // Also set resourceContent for saving
+                resourceContent = fullFileContent;
+
+                if (string.IsNullOrEmpty(resourceTitle))
+                {
+                    resourceTitle = Path.GetFileNameWithoutExtension(picked.FileName);
+                }
+
+                statusMessage = $"File loaded: {fullFileContent.Length} characters";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Error reading file: " + ex.Message;
+        }
+    }
+
+    private string GetContentPreview()
+    {
+        if (string.IsNullOrEmpty(fullFileContent))
+            return "";
+        
+        return fullFileContent.Length <= 500 
+            ? fullFileContent 
+            : fullFileContent[..500];
+    }
+
+    private async Task<string> ReadDocxAsync(Stream stream)
+    {
+        try
+        {
+            using var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read);
+            var entry = archive.GetEntry("word/document.xml");
+
+            if (entry == null)
+                return "[Could not read DOCX file]";
+
+            using var entryStream = entry.Open();
+            using var reader = new StreamReader(entryStream);
+            var xml = await reader.ReadToEndAsync();
+
+            var text = System.Text.RegularExpressions.Regex.Replace(xml, "<[^>]+>", " ");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
+            return text.Trim();
+        }
+        catch
+        {
+            return "[Error reading DOCX file]";
+        }
+    }
+
+    private Task<string> ReadPdfAsync(Stream stream)
+    {
+        return Task.FromResult("[PDF content extraction requires additional libraries. Please copy-paste the text content instead, or convert to .txt/.docx format.]");
+    }
+
+    // Course management
+    private void ShowNewCourseModal()
+    {
+        newCourseName = "";
+        newCourseDescription = "";
+        showNewCourseModal = true;
+    }
+
+    private void ShowRenameCourseModal()
+    {
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        renameCourseName = course?.Name ?? "";
+        showRenameCourseModal = true;
+    }
+
+    private void CloseModals()
+    {
+        showNewCourseModal = false;
+        showRenameCourseModal = false;
+        showDeleteConfirmModal = false;
+        showCancelConfirmModal = false;
+        pendingDeleteAction = null;
+        cancelTaskId = null;
+        cancelTaskTitle = null;
+    }
+
+    private void ConfirmDeleteCourse()
+    {
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course == null) return;
+
+        deleteConfirmTitle = "Delete Course";
+        deleteConfirmMessage = $"Are you sure you want to delete \"{course.Name}\"? This will remove the course and its Concept Maps, but resources will remain in the library.";
+        pendingDeleteAction = async () =>
+        {
+            await CourseService.DeleteCourseAsync(selectedCourseId!);
+            selectedCourseId = null;
+            await LoadData();
+        };
+        showDeleteConfirmModal = true;
+    }
+
+    private void ConfirmDeleteResource(CourseResource resource)
+    {
+        deleteConfirmTitle = "Delete Resource";
+        deleteConfirmMessage = $"Are you sure you want to delete \"{resource.Title}\"? This will remove it from all courses.";
+        pendingDeleteAction = async () =>
+        {
+            await CourseService.DeleteResourceAsync(resource.Id);
+            await LoadData();
+        };
+        showDeleteConfirmModal = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (pendingDeleteAction != null)
+        {
+            await pendingDeleteAction();
+        }
+        CloseModals();
+    }
+
+    private void ConfirmCancelTask(string taskId, string taskTitle)
+    {
+        cancelTaskId = taskId;
+        cancelTaskTitle = taskTitle;
+        showCancelConfirmModal = true;
+    }
+
+    private void ExecuteCancelTask()
+    {
+        if (!string.IsNullOrEmpty(cancelTaskId))
+        {
+            // Cancel via the BackgroundQueueService
+            var cancelled = Tutor.Core.Services.Queue.BackgroundQueueService.CancelTask(cancelTaskId);
+            
+            if (cancelled)
+            {
+                // Remove from local tracking
+                processingTasks.Remove(cancelTaskId);
+                statusMessage = $"Cancelled upload: {cancelTaskTitle}";
+                Log.Info($"User cancelled resource upload: {cancelTaskTitle}");
+            }
+            else
+            {
+                statusMessage = $"Could not cancel upload (may have already completed)";
+            }
+        }
+        
+        CloseModals();
+    }
+
+    private void ResumeFailedTask(string taskId)
+    {
+        var resumed = Tutor.Core.Services.Queue.BackgroundQueueService.RetryTask(taskId);
+        
+        if (resumed)
+        {
+            // Update local status to show it's processing again
+            if (processingTasks.TryGetValue(taskId, out var task))
+            {
+                task.Stage = ProcessingStage.Queued;
+                task.CurrentOperation = "Resuming from checkpoint...";
+            }
+            statusMessage = "Task resumed - will continue from last checkpoint";
+            Log.Info($"User resumed failed task: {taskId}");
+        }
+        else
+        {
+            statusMessage = "Could not resume task";
+        }
+        
+        RefreshProcessingTasks();
+        StateHasChanged();
+    }
+
+    private void ResumeAllFailedTasks()
+    {
+        var failedTaskIds = processingTasks.Values
+            .Where(t => t.Stage == ProcessingStage.Failed)
+            .Select(t => t.TaskId)
+            .ToList();
+        
+        var resumedCount = 0;
+        foreach (var taskId in failedTaskIds)
+        {
+            if (Tutor.Core.Services.Queue.BackgroundQueueService.RetryTask(taskId))
+            {
+                resumedCount++;
+            }
+        }
+        
+        statusMessage = $"Resumed {resumedCount} task(s) - will continue from checkpoints";
+        Log.Info($"User resumed {resumedCount} failed tasks");
+        
+        RefreshProcessingTasks();
+        StateHasChanged();
+    }
+
+    private async Task CreateCourse()
+    {
+        if (string.IsNullOrWhiteSpace(newCourseName))
+            return;
+
+        var course = await CourseService.CreateCourseAsync(
+            newCourseName.Trim(), 
+            newCourseDescription.Trim());
+
+        selectedCourseId = course.Id;
+        await CourseService.SetActiveCourseAsync(course.Id);
+        await LoadData();
+        CloseModals();
+    }
+
+    private async Task RenameCourse()
+    {
+        if (string.IsNullOrWhiteSpace(renameCourseName) || string.IsNullOrEmpty(selectedCourseId))
+            return;
+
+        await CourseService.RenameCourseAsync(selectedCourseId, renameCourseName.Trim());
+        await LoadData();
+        CloseModals();
+    }
+
+    // Concept Map generation progress handler
+    private void OnConceptMapProgressChanged(ConceptMapBuildProgress progress)
+    {
+        // Progress is now tracked via the background queue service
+        // This handler keeps the UI responsive during builds
+        InvokeAsync(StateHasChanged);
+    }
+
+    // Expandable resource details
+    private async Task ToggleResourceExpanded(string resourceId)
+    {
+        if (expandedResources.Contains(resourceId))
+        {
+            expandedResources.Remove(resourceId);
+        }
+        else
+        {
+            expandedResources.Add(resourceId);
+            // Load KB details if not cached
+            if (!resourceKbDetailsCache.ContainsKey(resourceId))
+            {
+                await LoadResourceKbDetails(resourceId);
+            }
+        }
+    }
+
+    private async Task LoadResourceKbDetails(string resourceId)
+    {
+        var resource = resources.FirstOrDefault(r => r.Id == resourceId);
+        if (resource == null) return;
+
+        var details = new ResourceKbDetails
+        {
+            ContentLength = resource.Content?.Length ?? 0,
+            FormattedContentLength = resource.FormattedContent?.Length ?? 0,
+            HasFormattedContent = !string.IsNullOrEmpty(resource.FormattedContent),
+            ConceptMapStatus = resource.ConceptMapStatus
+        };
+
+        // Load ConceptMap if exists
+        if (!string.IsNullOrEmpty(resource.ConceptMapId))
+        {
+            var conceptMap = await ConceptMapStorageService.LoadAsync(resource.ConceptMapId);
+            if (conceptMap != null)
+            {
+                details.ConceptMapId = conceptMap.Id;
+                details.ConceptCount = conceptMap.Concepts.Count;
+                details.RelationCount = conceptMap.Relations.Count;
+                details.ConceptMapName = conceptMap.Name;
+                details.ConceptMapStatus = conceptMap.Status;
+                details.KnowledgeBaseCreatedAt = conceptMap.CreatedAt;
+                details.KnowledgeBaseUpdatedAt = conceptMap.UpdatedAt;
+            }
+        }
+
+        resourceKbDetailsCache[resourceId] = details;
+    }
+
+    private bool IsResourceExpanded(string resourceId) => expandedResources.Contains(resourceId);
+
+    private ResourceKbDetails? GetResourceKbDetails(string resourceId)
+    {
+        resourceKbDetailsCache.TryGetValue(resourceId, out var details);
+        return details;
+    }
+
+    // Helper class for caching ConceptMap details
+    private class ResourceKbDetails
+    {
+        public int ContentLength { get; set; }
+        public int FormattedContentLength { get; set; }
+        public bool HasFormattedContent { get; set; }
+        public string? ConceptMapId { get; set; }
+        public string? ConceptMapName { get; set; }
+        public int ConceptCount { get; set; }
+        public int RelationCount { get; set; }
+        public ConceptMapStatus ConceptMapStatus { get; set; }
+        public DateTime? KnowledgeBaseCreatedAt { get; set; }
+        public DateTime? KnowledgeBaseUpdatedAt { get; set; }
+    }
+
+    // Advanced settings toggle
+    private void ToggleAdvancedSettings(string resourceId)
+    {
+        if (expandedAdvancedSettings.Contains(resourceId))
+        {
+            expandedAdvancedSettings.Remove(resourceId);
+        }
+        else
+        {
+            expandedAdvancedSettings.Add(resourceId);
+        }
+    }
+
+    private async Task UpdateResourceMaxIterations(CourseResource resource, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrEmpty(value))
+        {
+            resource.OrphanLinkingMaxIterations = null; // Use global
+        }
+        else if (int.TryParse(value, out var iterations))
+        {
+            resource.OrphanLinkingMaxIterations = iterations;
+        }
+        
+        await CourseService.SaveResourceAsync(resource);
+        statusMessage = $"Linking iterations updated for '{resource.Title}'";
+    }
+
+    private async Task UpdateResourceMinConfidence(CourseResource resource, ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrEmpty(value))
+        {
+            resource.OrphanLinkingMinConfidence = null; // Use global
+        }
+        else if (float.TryParse(value, out var confidence))
+        {
+            resource.OrphanLinkingMinConfidence = confidence;
+        }
+        
+        await CourseService.SaveResourceAsync(resource);
+        statusMessage = $"Linking confidence updated for '{resource.Title}'";
+    }
+
+    /// <summary>
+    /// Updates the merge progress UI.
+    /// </summary>
+    private void UpdateMergeProgress(string message, int percent)
+    {
+        mergeProgressMessage = message;
+        mergeProgressPercent = Math.Clamp(percent, 0, 100);
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Handles progress updates from the async deduplication service.
+    /// </summary>
+    private void OnDuplicateDetectionProgress(DuplicateDetectionProgress progress)
+    {
+        mergeProgressMessage = progress.Phase;
+        mergeProgressPercent = progress.ProgressPercent;
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Finds and merges duplicate concepts in the course's merged map.
+    /// This ONLY modifies the course-specific merged map, NOT the original resource ConceptMaps.
+    /// Uses async parallel processing with progress reporting to avoid UI freezing.
+    /// </summary>
+    private async Task MergeDuplicatesAsync()
+    {
+        if (string.IsNullOrEmpty(selectedCourseId) || isMergingDuplicates)
+            return;
+
+        isMergingDuplicates = true;
+        mergeResultMessage = null;
+        mergeResultSuccess = false;
+        mergeProgressMessage = "Initializing...";
+        mergeProgressPercent = 0;
+        StateHasChanged();
+
+        try
+        {
+            // Step 1: Load ConceptMap IDs
+            UpdateMergeProgress("Loading course resources...", 5);
+            await Task.Delay(50); // Allow UI to update
+            
+            var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(selectedCourseId);
+            if (conceptMapIds.Count == 0)
+            {
+                mergeResultMessage = "No Concept Maps found to merge.";
+                return;
+            }
+
+            // Step 2: Load all source ConceptMaps
+            UpdateMergeProgress($"Loading {conceptMapIds.Count} Concept Map(s)...", 10);
+            await Task.Delay(50);
+            
+            var sourceMaps = new List<ConceptMap>();
+            var loadIndex = 0;
+            foreach (var cmId in conceptMapIds)
+            {
+                loadIndex++;
+                var progressPercent = 10 + (int)(10.0 * loadIndex / conceptMapIds.Count);
+                UpdateMergeProgress($"Loading Concept Map {loadIndex}/{conceptMapIds.Count}...", progressPercent);
+                
+                var cm = await ConceptMapStorageService.LoadAsync(cmId);
+                if (cm != null && cm.Status == ConceptMapStatus.Ready)
+                {
+                    sourceMaps.Add(cm);
+                }
+            }
+
+            if (sourceMaps.Count == 0)
+            {
+                mergeResultMessage = "No ready Concept Maps found.";
+                return;
+            }
+
+            // Step 3: Create merged map with deep copies
+            UpdateMergeProgress($"Creating merged map from {sourceMaps.Count} source(s)...", 22);
+            await Task.Delay(50);
+            
+            var mergedMap = new MergedCourseConceptMap
+            {
+                Id = $"merged-{selectedCourseId}",
+                CourseId = selectedCourseId,
+                Status = MergedMapStatus.Building
+            };
+            mergedMap.InitializeFromConceptMaps(sourceMaps);
+
+            // Step 4: Use async parallel duplicate detection with progress reporting
+            UpdateMergeProgress($"Scanning {mergedMap.TotalConcepts} concepts for duplicates...", 25);
+            await Task.Delay(50);
+            
+            // The async method handles parallelism and chunking internally
+            var duplicateResult = await ConceptMergeService.FindDuplicatesInMergedMapAsync(
+                mergedMap,
+                progress =>
+                {
+                    // Scale progress from 25-75% for the detection phase
+                    var scaledPercent = 25 + (int)(progress.ProgressPercent * 0.50);
+                    UpdateMergeProgress(progress.Phase, scaledPercent);
+                });
+            
+            var exactDupeCount = duplicateResult.ExactDuplicates.Sum(g => g.Concepts.Count - 1);
+
+            // Step 5: Auto-merge exact duplicates
+            if (exactDupeCount > 0)
+            {
+                UpdateMergeProgress($"Auto-merging {exactDupeCount} exact duplicate(s)...", 78);
+                await Task.Yield(); // Allow UI to update
+                
+                var mergeResult = ConceptMergeService.AutoMergeExactDuplicatesInMergedMap(mergedMap);
+            }
+
+            // Step 6: Re-scan for similar concepts after exact merges (use async version)
+            UpdateMergeProgress("Analyzing similar concepts...", 82);
+            await Task.Yield();
+            
+            duplicateResult = await ConceptMergeService.FindDuplicatesInMergedMapAsync(
+                mergedMap,
+                progress =>
+                {
+                    var scaledPercent = 82 + (int)(progress.ProgressPercent * 0.10);
+                    UpdateMergeProgress(progress.Phase, scaledPercent);
+                });
+
+            // Step 7: Save merged map
+            UpdateMergeProgress("Saving merged map...", 95);
+            await Task.Yield();
+            
+            mergedMap.Status = MergedMapStatus.Ready;
+            await CourseConceptMapService.SaveMergedMapAsync(mergedMap);
+
+            var totalMerged = mergedMap.MergedConceptMapping.Count;
+
+            // Step 8: Complete
+            UpdateMergeProgress("Complete!", 100);
+
+            if (duplicateResult.SimilarConcepts.Count > 0)
+            {
+                pendingSimilarPairs = duplicateResult.SimilarConcepts
+                    .OrderByDescending(p => p.SimilarityScore)
+                    .ToList();
+                showSimilarConceptsModal = true;
+                
+                mergeResultMessage = totalMerged > 0
+                    ? $"✓ Auto-merged {totalMerged} exact duplicate(s). Found {pendingSimilarPairs.Count} similar concept pair(s) for review."
+                    : $"Found {pendingSimilarPairs.Count} similar concept pair(s) for review.";
+                mergeResultSuccess = totalMerged > 0;
+            }
+            else if (totalMerged > 0)
+            {
+                mergeResultMessage = $"✓ Successfully merged {totalMerged} duplicate concept(s). Original resource maps unchanged.";
+                mergeResultSuccess = true;
+                
+                // Refresh stats
+                await LoadKnowledgeBaseInfo();
+            }
+            else
+            {
+                mergeResultMessage = "No duplicate concepts found.";
+                mergeResultSuccess = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            mergeResultMessage = $"Error during merge: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[CourseManagement] Merge error: {ex.Message}");
+        }
+        finally
+        {
+            isMergingDuplicates = false;
+            mergeProgressMessage = null;
+            mergeProgressPercent = 0;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Approves a similar concept pair for merging.
+    /// </summary>
+    private void ApproveSimilarMerge(Tutor.Core.Services.SimilarConceptPair pair)
+    {
+        // Select the one with the longer/more complete title as canonical
+        var keepA = pair.ConceptA.Title.Length >= pair.ConceptB.Title.Length;
+        
+        approvedMerges.Add(new ApprovedMerge
+        {
+            ConceptAId = pair.ConceptA.Id,
+            ConceptBId = pair.ConceptB.Id,
+            KeepConceptAId = keepA ? pair.ConceptA.Id : pair.ConceptB.Id,
+            CanonicalTitle = keepA ? pair.ConceptA.Title : pair.ConceptB.Title
+        });
+
+        pendingSimilarPairs.Remove(pair);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Skips a similar concept pair (keeps them separate).
+    /// </summary>
+    private void SkipSimilarMerge(Tutor.Core.Services.SimilarConceptPair pair)
+    {
+        pendingSimilarPairs.Remove(pair);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Approves a similar concept pair at the given index.
+    /// </summary>
+    private void ApproveSimilarMergeAt(int index)
+    {
+        if (index >= 0 && index < pendingSimilarPairs.Count)
+        {
+            ApproveSimilarMerge(pendingSimilarPairs[index]);
+        }
+    }
+
+    /// <summary>
+    /// Skips a similar concept pair at the given index.
+    /// </summary>
+    private void SkipSimilarMergeAt(int index)
+    {
+        if (index >= 0 && index < pendingSimilarPairs.Count)
+        {
+            SkipSimilarMerge(pendingSimilarPairs[index]);
+        }
+    }
+
+    /// <summary>
+    /// Dismisses the merge result message.
+    /// </summary>
+    private void DismissMergeMessage()
+    {
+        mergeResultMessage = null;
+    }
+
+    /// <summary>
+    /// Applies all approved merges for similar concepts to the course's merged map.
+    /// This ONLY modifies the course-specific merged map, NOT the original resource ConceptMaps.
+    /// </summary>
+    private async Task ApplyApprovedMerges()
+    {
+        if (approvedMerges.Count == 0)
+        {
+            CloseSimilarConceptsModal();
+            return;
+        }
+
+        isMergingDuplicates = true;
+        StateHasChanged();
+
+        try
+        {
+            // Apply merges to the course's merged map (NOT the original ConceptMaps)
+            var result = await CourseConceptMapService.MergeApprovedPairsAsync(selectedCourseId!, approvedMerges);
+
+            mergeResultMessage = $"✓ Merged {result.MergedCount} similar concept(s). Original resource maps unchanged.";
+            mergeResultSuccess = true;
+
+            approvedMerges.Clear();
+            CloseSimilarConceptsModal();
+            
+            // Refresh stats
+            await LoadKnowledgeBaseInfo();
+        }
+        catch (Exception ex)
+        {
+            mergeResultMessage = $"Error applying merges: {ex.Message}";
+        }
+        finally
+        {
+            isMergingDuplicates = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Closes the similar concepts confirmation modal.
+    /// </summary>
+    private void CloseSimilarConceptsModal()
+    {
+        showSimilarConceptsModal = false;
+        pendingSimilarPairs.Clear();
+        approvedMerges.Clear();
+    }
+}
+
