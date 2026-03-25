@@ -17,7 +17,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>150125</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\app.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\home.css'))">
@@ -37,7 +37,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>9700</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\home.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\quiz.css'))">
@@ -57,7 +57,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>8149</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\quiz.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\reading-timer.css'))">
@@ -77,7 +77,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>1576</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\reading-timer.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\avatar-assistant.svg'))">
@@ -97,7 +97,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>828</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\avatar-assistant.svg'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\avatar-user.svg'))">
@@ -117,7 +117,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>496</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\avatar-user.svg'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap-icons\font\bootstrap-icons.min.css'))">
@@ -137,7 +137,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>85875</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap-icons\font\bootstrap-icons.min.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap-icons\font\fonts\bootstrap-icons.woff'))">
@@ -157,7 +157,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>176032</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap-icons\font\fonts\bootstrap-icons.woff'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap-icons\font\fonts\bootstrap-icons.woff2'))">
@@ -177,7 +177,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>130396</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap-icons\font\fonts\bootstrap-icons.woff2'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap\dist\css\bootstrap.min.css'))">
@@ -197,7 +197,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>232810</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap\dist\css\bootstrap.min.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap\dist\css\bootstrap.min.css.map'))">
@@ -217,7 +217,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>589893</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap\dist\css\bootstrap.min.css.map'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\themes.css'))">
@@ -237,7 +237,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>5630</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:39 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:43:37 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\themes.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\tutor-interop.js'))">
@@ -257,7 +257,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>53026</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:10:51 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\tutor-interop.js'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\Tutor.Shared.83wdbz3za5.bundle.scp.css'))">
@@ -277,7 +277,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>12974</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:21:34 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\Tutor.Shared.83wdbz3za5.bundle.scp.css'))</OriginalItemSpec>
     </StaticWebAsset>
   </ItemGroup>

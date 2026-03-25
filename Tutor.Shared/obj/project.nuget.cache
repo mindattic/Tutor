@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "c1cO/MUh2os=",
+  "dgSpecHash": "rgs60Nmc7ZQ=",
   "success": true,
-  "projectFilePath": "D:\\Projects\\Tutor\\Tutor.Shared\\Tutor.Shared.csproj",
+  "projectFilePath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Shared\\Tutor.Shared.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.aspnetcore.authorization\\10.0.0-preview.3.25172.1\\microsoft.aspnetcore.authorization.10.0.0-preview.3.25172.1.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.aspnetcore.components\\10.0.0-preview.3.25172.1\\microsoft.aspnetcore.components.10.0.0-preview.3.25172.1.nupkg.sha512",

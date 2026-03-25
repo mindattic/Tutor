@@ -1,22 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Projects\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {}
+    "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {}
   },
   "projects": {
-    "D:\\Projects\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
+    "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\Tutor\\Tutor.Core\\Tutor.Core.csproj",
+        "projectUniqueName": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj",
         "projectName": "Tutor.Core",
-        "projectPath": "D:\\Projects\\Tutor\\Tutor.Core\\Tutor.Core.csproj",
+        "projectPath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj",
         "packagesPath": "C:\\Users\\ryand\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\Tutor\\Tutor.Core\\obj\\",
+        "outputPath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
+          "D:\\Projects\\MindAttic\\NuGet.Config",
           "C:\\Users\\ryand\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
@@ -25,6 +26,7 @@
           "net10.0"
         ],
         "sources": {
+          "C:\\LocalNuGet": {},
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}

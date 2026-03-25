@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "wadUI2+/yTs=",
+  "dgSpecHash": "MbWS9wl+xHw=",
   "success": true,
-  "projectFilePath": "D:\\Projects\\Tutor\\Tutor.Blazor\\Tutor.Blazor.csproj",
+  "projectFilePath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Blazor\\Tutor.Blazor.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.5\\microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512"
   ],

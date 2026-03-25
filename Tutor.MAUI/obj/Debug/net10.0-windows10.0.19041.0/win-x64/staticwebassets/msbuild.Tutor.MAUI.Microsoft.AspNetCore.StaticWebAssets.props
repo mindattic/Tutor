@@ -17,7 +17,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>1478</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:15:37 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:43:37 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\index.html'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\Tutor.MAUI.styles.css'))">
@@ -37,7 +37,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>75</FileLength>
-      <LastWriteTime>Sat, 21 Mar 2026 09:22:03 GMT</LastWriteTime>
+      <LastWriteTime>Wed, 25 Mar 2026 01:43:37 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\Tutor.MAUI.styles.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\_framework\blazor.modules.json'))">
