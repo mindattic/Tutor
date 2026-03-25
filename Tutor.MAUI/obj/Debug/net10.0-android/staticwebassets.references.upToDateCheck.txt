@@ -3,3 +3,5 @@ D:\Projects\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
 D:\Projects\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
