@@ -8,8 +8,20 @@ using Tutor.MAUI.Services;
 
 namespace Tutor.MAUI
 {
+    /// <summary>
+    /// Application entry point and DI composition root for the Tutor platform.
+    /// Registers 40+ services spanning AI-powered concept extraction, knowledge graph construction,
+    /// vector embeddings, course management, quizzes, news, and background task processing.
+    /// HTTP clients for AI services use extended timeouts (2-5 minutes) to accommodate
+    /// large document processing and LLM inference latency.
+    /// </summary>
     public static class MauiProgram
     {
+        /// <summary>
+        /// Builds the MAUI application with all services registered in the DI container.
+        /// Service categories include platform abstractions, OpenAI integration, content processing,
+        /// knowledge graph services, course management, authentication, and background queues.
+        /// </summary>
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
