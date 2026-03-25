@@ -28,6 +28,27 @@ builder.Services.AddHttpClient<OpenAIService>(client =>
     client.Timeout = TimeSpan.FromMinutes(5);
 });
 
+// Claude service (Anthropic)
+builder.Services.AddHttpClient<ClaudeService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
+});
+
+// DeepSeek service
+builder.Services.AddHttpClient<DeepSeekService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
+});
+
+// Gemini service (Google AI)
+builder.Services.AddHttpClient<GeminiService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
+});
+
+// LLM router - routes to the user's selected provider
+builder.Services.AddSingleton<LlmServiceRouter>();
+
 // Embedding service for RAG (with extended timeout)
 builder.Services.AddHttpClient<EmbeddingService>(client =>
 {

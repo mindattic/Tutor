@@ -102,7 +102,6 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets\msbui
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets\msbuild.buildMultiTargeting.Tutor.Shared.props
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets\msbuild.buildTransitive.Tutor.Shared.props
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.pack.json
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Sh.69062A74.Up2Date
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Shared.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\refint\Tutor.Shared.dll

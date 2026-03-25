@@ -24,6 +24,7 @@ using Tutor.Core.Models;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
 
+
 /// <summary>
 /// Response from OpenAI containing the text reply and raw JSON.
 /// </summary>
@@ -38,7 +39,7 @@ public record ChatMessageDto(string Role, string Text);
 /// Service for interacting with OpenAI's API.
 /// Supports chat completions with conversation history, retry logic, and custom instructions.
 /// </summary>
-public sealed class OpenAIService : IDisposable
+public sealed class OpenAIService : ILlmService, IDisposable
 {
     private readonly HttpClient http;
     private readonly OpenAIOptions opt;
@@ -47,6 +48,8 @@ public sealed class OpenAIService : IDisposable
 
     private const int MaxRetries = 5;
     private const int BaseDelayMs = 2000;
+
+    public string ProviderName => "ChatGPT";
 
     public OpenAIService(HttpClient http, OpenAIOptions opt)
     {

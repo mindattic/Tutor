@@ -48,9 +48,10 @@
                 <select class="theme-select" @bind="selectedModel" @bind:after="SaveSelectedModelAsync">
                     <option value="ChatGPT">ChatGPT (OpenAI)</option>
                     <option value="Claude">Claude (Anthropic)</option>
+                    <option value="DeepSeek">DeepSeek</option>
                     <option value="Gemini">Gemini (Google)</option>
                 </select>
-                <p>Select which AI model to use for chat.</p>
+                <p>Select which AI model to use as the teacher.</p>
             </div>
 
             <div class="settings-section">
@@ -482,7 +483,7 @@
             </div>
 
             <div class="settings-section">
-                <h4>Anthropic (Claude) <span class="coming-soon-badge">Coming Soon</span></h4>
+                <h4>Anthropic (Claude)</h4>
                 <div class="credential-row">
                     <div class="credential-input-group">
                         <label>API Key</label>
@@ -500,11 +501,47 @@
                 {
                     <p class="key-preview">Stored: <code>@claudeKeyPreview</code></p>
                 }
+                <div class="credential-model-row">
+                    <label>Model:</label>
+                    <select class="theme-select small" @bind="claudeModel" @bind:after="SaveClaudeModelAsync">
+                        <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                    </select>
+                </div>
                 <p class="credential-link">Get your key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a></p>
             </div>
 
             <div class="settings-section">
-                <h4>Google AI (Gemini) <span class="coming-soon-badge">Coming Soon</span></h4>
+                <h4>DeepSeek</h4>
+                <div class="credential-row">
+                    <div class="credential-input-group">
+                        <label>API Key</label>
+                        <input type="password"
+                               class="settings-input"
+                               @bind="deepSeekApiKey"
+                               placeholder="sk-..." />
+                    </div>
+                    <div class="credential-actions">
+                        <button class="settings-btn small" @onclick="SaveDeepSeekKeyAsync" disabled="@isBusy">Save</button>
+                        <button class="settings-btn small" @onclick="ClearDeepSeekKeyAsync" disabled="@isBusy">Clear</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(deepSeekKeyPreview))
+                {
+                    <p class="key-preview">Stored: <code>@deepSeekKeyPreview</code></p>
+                }
+                <div class="credential-model-row">
+                    <label>Model:</label>
+                    <select class="theme-select small" @bind="deepSeekModel" @bind:after="SaveDeepSeekModelAsync">
+                        <option value="deepseek-chat">DeepSeek Chat (V3)</option>
+                        <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
+                    </select>
+                </div>
+                <p class="credential-link">Get your key from <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek Platform</a></p>
+            </div>
+
+            <div class="settings-section">
+                <h4>Google AI (Gemini)</h4>
                 <div class="credential-row">
                     <div class="credential-input-group">
                         <label>API Key</label>
@@ -522,6 +559,14 @@
                 {
                     <p class="key-preview">Stored: <code>@geminiKeyPreview</code></p>
                 }
+                <div class="credential-model-row">
+                    <label>Model:</label>
+                    <select class="theme-select small" @bind="geminiModel" @bind:after="SaveGeminiModelAsync">
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    </select>
+                </div>
                 <p class="credential-link">Get your key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
             </div>
 
@@ -669,19 +714,28 @@
     private const string SelectedModelKey = "SELECTED_MODEL";
     private const string ChatGptApiKeyName = "OPENAI_API_KEY";
     private const string ClaudeApiKeyName = "CLAUDE_API_KEY";
+    private const string DeepSeekApiKeyName = "DEEPSEEK_API_KEY";
     private const string GeminiApiKeyName = "GEMINI_API_KEY";
     private const string EnterToSendKey = "ENTER_TO_SEND";
     private const string ChatGptModelKey = "CHATGPT_MODEL";
+    private const string ClaudeModelKey = "CLAUDE_MODEL";
+    private const string DeepSeekModelKey = "DEEPSEEK_MODEL";
+    private const string GeminiModelKey = "GEMINI_MODEL";
 
     private string activeTab = "General";
     private string selectedTheme = "Light";
     private string selectedModel = "ChatGPT";
     private string chatGptModel = "gpt-4.1-mini";
+    private string claudeModel = "claude-sonnet-4-20250514";
+    private string deepSeekModel = "deepseek-chat";
+    private string geminiModel = "gemini-2.5-flash";
     private string chatGptApiKey = "";
     private string claudeApiKey = "";
+    private string deepSeekApiKey = "";
     private string geminiApiKey = "";
     private string chatGptKeyPreview = "";
     private string claudeKeyPreview = "";
+    private string deepSeekKeyPreview = "";
     private string geminiKeyPreview = "";
     private string status = "";
     private bool isBusy;
@@ -788,6 +842,9 @@
         await LoadAllApiKeysAsync();
         await LoadEnterToSendAsync();
         await LoadChatGptModelAsync();
+        await LoadClaudeModelAsync();
+        await LoadDeepSeekModelAsync();
+        await LoadGeminiModelAsync();
         await LoadQuizSettingsAsync();
         await LoadReadingTimeSettingsAsync();
         await LoadAvatarSettingsAsync();
@@ -1214,10 +1271,37 @@
         try
         {
             var model = await SecurePreferences.GetAsync(ChatGptModelKey);
-            if (!string.IsNullOrEmpty(model))
-            {
-                chatGptModel = model;
-            }
+            if (!string.IsNullOrEmpty(model)) chatGptModel = model;
+        }
+        catch { }
+    }
+
+    private async Task LoadClaudeModelAsync()
+    {
+        try
+        {
+            var model = await SecurePreferences.GetAsync(ClaudeModelKey);
+            if (!string.IsNullOrEmpty(model)) claudeModel = model;
+        }
+        catch { }
+    }
+
+    private async Task LoadDeepSeekModelAsync()
+    {
+        try
+        {
+            var model = await SecurePreferences.GetAsync(DeepSeekModelKey);
+            if (!string.IsNullOrEmpty(model)) deepSeekModel = model;
+        }
+        catch { }
+    }
+
+    private async Task LoadGeminiModelAsync()
+    {
+        try
+        {
+            var model = await SecurePreferences.GetAsync(GeminiModelKey);
+            if (!string.IsNullOrEmpty(model)) geminiModel = model;
         }
         catch { }
     }
@@ -1239,6 +1323,7 @@
     {
         chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
         claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
+        deepSeekKeyPreview = await LoadKeyPreviewAsync(DeepSeekApiKeyName);
         geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
     }
 
@@ -1295,6 +1380,50 @@
         await ClearApiKeyAsync(GeminiApiKeyName, "Gemini");
         geminiKeyPreview = "";
         geminiApiKey = "";
+    }
+
+    private async Task SaveDeepSeekKeyAsync()
+    {
+        await SaveApiKeyAsync(DeepSeekApiKeyName, deepSeekApiKey, "DeepSeek");
+        deepSeekKeyPreview = await LoadKeyPreviewAsync(DeepSeekApiKeyName);
+        deepSeekApiKey = "";
+    }
+
+    private async Task ClearDeepSeekKeyAsync()
+    {
+        await ClearApiKeyAsync(DeepSeekApiKeyName, "DeepSeek");
+        deepSeekKeyPreview = "";
+        deepSeekApiKey = "";
+    }
+
+    private async Task SaveClaudeModelAsync()
+    {
+        try
+        {
+            await SecurePreferences.SetAsync(ClaudeModelKey, claudeModel);
+            status = $"Claude model set to {claudeModel}.";
+        }
+        catch (Exception ex) { status = "Failed to save model: " + ex.Message; }
+    }
+
+    private async Task SaveDeepSeekModelAsync()
+    {
+        try
+        {
+            await SecurePreferences.SetAsync(DeepSeekModelKey, deepSeekModel);
+            status = $"DeepSeek model set to {deepSeekModel}.";
+        }
+        catch (Exception ex) { status = "Failed to save model: " + ex.Message; }
+    }
+
+    private async Task SaveGeminiModelAsync()
+    {
+        try
+        {
+            await SecurePreferences.SetAsync(GeminiModelKey, geminiModel);
+            status = $"Gemini model set to {geminiModel}.";
+        }
+        catch (Exception ex) { status = "Failed to save model: " + ex.Message; }
     }
 
     private async Task SaveApiKeyAsync(string keyName, string keyValue, string modelName)
