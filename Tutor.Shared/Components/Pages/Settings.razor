@@ -17,6 +17,12 @@
 
 <AuthGuard RequiredRole="UserRole.Admin">
 
+@if (!isLoaded)
+{
+    <p style="padding: 2rem; color: var(--text-secondary);">Loading settings...</p>
+}
+else
+{
 <div class="settings-page">
 <div class="tabs">
         <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
@@ -706,6 +712,7 @@
         <p style="color: var(--text-secondary); margin-top: 16px;">@status</p>
     }
 </div>
+}
 
 </AuthGuard>
 
@@ -739,6 +746,7 @@
     private string geminiKeyPreview = "";
     private string status = "";
     private bool isBusy;
+    private bool isLoaded;
     private bool enterToSend = true;
     
     // Quiz settings
@@ -857,6 +865,8 @@
         // Subscribe to log updates
         Log.Store.EntryAdded += OnLogEntryAdded;
         Log.Store.EntriesCleared += OnLogsCleared;
+
+        isLoaded = true;
     }
 
     public void Dispose()
