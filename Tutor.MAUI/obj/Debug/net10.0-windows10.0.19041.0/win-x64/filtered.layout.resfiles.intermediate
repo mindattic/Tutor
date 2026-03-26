@@ -91,10 +91,10 @@ wwwroot\_content\Tutor.Shared\css\quiz.css
 wwwroot\_content\Tutor.Shared\css\reading-timer.css
 wwwroot\_content\Tutor.Shared\images\avatar-assistant.svg
 wwwroot\_content\Tutor.Shared\images\avatar-user.svg
-wwwroot\_content\Tutor.Shared\lib\bootstrap\dist\css\bootstrap.min.css
-wwwroot\_content\Tutor.Shared\lib\bootstrap\dist\css\bootstrap.min.css.map
 wwwroot\_content\Tutor.Shared\lib\bootstrap-icons\font\bootstrap-icons.min.css
 wwwroot\_content\Tutor.Shared\lib\bootstrap-icons\font\fonts\bootstrap-icons.woff
 wwwroot\_content\Tutor.Shared\lib\bootstrap-icons\font\fonts\bootstrap-icons.woff2
+wwwroot\_content\Tutor.Shared\lib\bootstrap\dist\css\bootstrap.min.css
+wwwroot\_content\Tutor.Shared\lib\bootstrap\dist\css\bootstrap.min.css.map
 wwwroot\_content\Tutor.Shared\themes.css
 wwwroot\_content\Tutor.Shared\tutor-interop.js

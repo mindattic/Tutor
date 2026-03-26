@@ -78,7 +78,6 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\Components\
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\Components\Layout\TopMenu.razor.rz.scp.css
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\bundle\Tutor.Shared.styles.css
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\projectbundle\Tutor.Shared.bundle.scp.css
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\p763vx3a23-{0}-n1okdw4u0a-n1okdw4u0a.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\kp50ohzrsb-{0}-sn2fnx7hg8-sn2fnx7hg8.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\1cji5k0oof-{0}-x9cqchvkb4-x9cqchvkb4.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\mwvtx7ppsz-{0}-7i71nvm13d-7i71nvm13d.gz
@@ -107,4 +106,4 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Shared.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\refint\Tutor.Shared.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Shared.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\ref\Tutor.Shared.dll
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\p763vx3a23-{0}-2dx2jjw8nt-2dx2jjw8nt.gz

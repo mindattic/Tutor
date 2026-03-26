@@ -53,19 +53,20 @@
         {
             case LearnTab.Chat:
                 <div class="tab-panel chat-panel">
-                    <Chat @ref="chatComponent" 
-                          StartTopic="@pendingChatTopic" 
+                    <Chat @ref="chatComponent"
+                          StartTopic="@pendingChatTopic"
                           AutoStartLesson="@autoStartLesson"
                           EmbeddedMode="true"
                           OnNavigateToConcept="HandleNavigateToConcept"
-                          OnNavigateToVisualize="HandleNavigateToVisualize" />
+                          OnNavigateToVisualize="HandleNavigateToVisualize"
+                          OnEncounteredConceptsChanged="HandleEncounteredConceptsChanged" />
                 </div>
                 break;
 
             case LearnTab.Quiz:
                 <div class="tab-panel quiz-panel">
                     <QuizTab CourseId="@activeCourse?.Id"
-                             LearnedConcepts="@learnedConcepts"
+                             LearnedConcepts="@encounteredConcepts"
                              SectionId="@currentSection?.Id"
                              SectionTitle="@currentSection?.Title"
                              SectionConceptIds="@currentSectionConceptIds"
@@ -107,6 +108,7 @@
     private Chat? chatComponent;
     private int conceptCount;
     private HashSet<string> learnedConcepts = [];
+    private HashSet<string> encounteredConcepts = [];
     private string? selectedConceptId;
     private string? pendingChatTopic;
     private bool autoStartLesson;
@@ -228,6 +230,16 @@
     public void UpdateLearnedConcepts(HashSet<string> concepts)
     {
         learnedConcepts = concepts;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Called by Chat component when encountered concepts change (lesson topics + side explorations).
+    /// This feeds into QuizTab so it knows what to quiz on.
+    /// </summary>
+    private void HandleEncounteredConceptsChanged(HashSet<string> concepts)
+    {
+        encounteredConcepts = concepts;
         StateHasChanged();
     }
 

@@ -117,10 +117,100 @@ h1:focus {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     padding-bottom: 20px;
     overflow: hidden;
     min-height: 0;
+}
+
+/* Chat sub-tab bar (side conversations) */
+.chat-tab-bar {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 4px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.chat-tab-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    position: relative;
+    top: 1px;
+    margin-bottom: -1px;
+}
+
+.chat-tab-item:hover:not(.active):not(:disabled) {
+    background: var(--bg-tertiary, rgba(0,0,0,0.04));
+    color: var(--text-primary);
+}
+
+.chat-tab-item.active {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    border-bottom-color: var(--bg-primary);
+    font-weight: 600;
+}
+
+.chat-tab-item.primary .bi {
+    color: var(--accent-color, #1b6ec2);
+}
+
+.chat-tab-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chat-tab-title {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-tab-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+    margin-left: 2px;
+    margin-right: -4px;
+}
+
+.chat-tab-close:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+}
+
+.chat-tab-close:disabled {
+    cursor: not-allowed;
 }
 
 .chat-input {
@@ -143,6 +233,12 @@ h1:focus {
     border-radius: 0;
     background: var(--bg-primary);
     min-height: 0;
+    margin-top: 8px;
+}
+
+.chat-tab-bar + .chat-log {
+    margin-top: 0;
+    border-top: none;
 }
 
 /* Hidden messages expand/collapse */

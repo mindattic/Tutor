@@ -729,6 +729,7 @@ public class LessonState
     public bool HasStartedLearning { get; set; }
     public List<string> LessonTopics { get; set; } = [];
     public List<string> LearnedConcepts { get; set; } = [];
+    public List<string> EncounteredConcepts { get; set; } = [];
     public List<int> VisitedTopicIndices { get; set; } = [];
     public List<ChatMessageState> Messages { get; set; } = [];
 }

@@ -1110,7 +1110,6 @@ D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win
 D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\staticwebassets\msbuild.buildMultiTargeting.Tutor.MAUI.props
 D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\staticwebassets\msbuild.buildTransitive.Tutor.MAUI.props
 D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\staticwebassets.pack.json
-D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\staticwebassets.upToDateCheck.txt
 D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\staticwebassets.publish.json
 D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\staticwebassets.publish.endpoints.json
 D:\Projects\MindAttic\Tutor\Tutor.MAUI\obj\Debug\net10.0-windows10.0.19041.0\win-x64\swae.publish.ex.cache

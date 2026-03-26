@@ -273,20 +273,21 @@ private async Task LoadDataAsync()
         {
             _conceptIds = SectionConceptIds.ToList();
         }
-        else
+        else if (LearnedConcepts.Count > 0)
         {
-            // Load concept IDs for learned concepts
-            var course = await CourseService.GetCourseAsync(CourseId);
-            if (course != null && !string.IsNullOrEmpty(course.ConceptMapCollectionId))
+            // Load concept IDs matching encountered/learned concept names
+            var allConcepts = await LoadAllCourseConceptsAsync();
+            if (allConcepts.Count > 0)
             {
-                var conceptMap = await ConceptMapStorageService.LoadAsync(course.ConceptMapCollectionId);
-                if (conceptMap != null)
-                {
-                    _conceptIds = conceptMap.Concepts
-                        .Where(c => LearnedConcepts.Contains(c.Title))
-                        .Select(c => c.Id)
-                        .ToList();
-                }
+                // Try exact match first, then fuzzy (contains) match
+                _conceptIds = allConcepts
+                    .Where(c => LearnedConcepts.Any(lc =>
+                        c.Title.Equals(lc, StringComparison.OrdinalIgnoreCase) ||
+                        c.Title.Contains(lc, StringComparison.OrdinalIgnoreCase) ||
+                        lc.Contains(c.Title, StringComparison.OrdinalIgnoreCase)))
+                    .Select(c => c.Id)
+                    .Distinct()
+                    .ToList();
             }
         }
 
@@ -301,6 +302,34 @@ private async Task LoadDataAsync()
             _loading = false;
             StateHasChanged();
         }
+    }
+
+    /// <summary>
+    /// Load all concepts from the course - tries collection first, falls back to individual resource maps.
+    /// </summary>
+    private async Task<List<Concept>> LoadAllCourseConceptsAsync()
+    {
+        var course = await CourseService.GetCourseAsync(CourseId!);
+        if (course == null) return [];
+
+        // Try the aggregated collection first
+        if (!string.IsNullOrEmpty(course.ConceptMapCollectionId))
+        {
+            var conceptMap = await ConceptMapStorageService.LoadAsync(course.ConceptMapCollectionId);
+            if (conceptMap != null && conceptMap.Concepts.Count > 0)
+                return conceptMap.Concepts;
+        }
+
+        // Fall back to individual resource concept maps
+        var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(CourseId!);
+        var allConcepts = new List<Concept>();
+        foreach (var cmId in conceptMapIds)
+        {
+            var cm = await ConceptMapStorageService.LoadAsync(cmId);
+            if (cm != null && cm.Status == ConceptMapStatus.Ready)
+                allConcepts.AddRange(cm.Concepts);
+        }
+        return allConcepts;
     }
 
     private async Task StartQuiz()

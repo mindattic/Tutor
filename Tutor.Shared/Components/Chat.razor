@@ -201,6 +201,30 @@
 
     @* Main chat area *@
     <div class="chat-shell @(isLessonMode && lessonTopics.Count > 0 && !isQuizMode ? "with-sidebar" : "")">
+        @* Sub-tab bar for side conversations *@
+        @if (chatTabs.Count > 1)
+        {
+            <div class="chat-tab-bar">
+                @for (int i = 0; i < chatTabs.Count; i++)
+                {
+                    var idx = i;
+                    var tab = chatTabs[i];
+                    <button class="chat-tab-item @(idx == activeTabIndex ? "active" : "") @(!tab.IsCloseable ? "primary" : "")"
+                            @onclick="() => SwitchChatTab(idx)" disabled="@isSending"
+                            title="@tab.Title">
+                        <span class="bi @(tab.IsCloseable ? "bi-chat-right-quote" : "bi-book")"></span>
+                        <span class="chat-tab-title">@TruncateText(tab.Title, 20)</span>
+                        @if (tab.IsCloseable)
+                        {
+                            <button class="chat-tab-close" @onclick:stopPropagation="true" @onclick="() => CloseChatTab(idx)" disabled="@isSending" title="Close tab">
+                                <span class="bi bi-x"></span>
+                            </button>
+                        }
+                    </button>
+                }
+            </div>
+        }
+
         <div class="chat-log" @ref="chatLogRef">
             @{
                 var messageIndex = 0;
@@ -258,8 +282,8 @@
                             </div>
                             <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
 
-                            @* Show navigation buttons in assistant messages during lesson mode *@
-                        @if (m.Role == "assistant" && isLessonMode && lessonTopics.Count > 0 && !isQuizMode && !isSending && isLastAssistantMessage && !isTermExploration)
+                            @* Show navigation buttons in assistant messages during lesson mode (only on Lesson tab) *@
+                        @if (m.Role == "assistant" && isLessonMode && lessonTopics.Count > 0 && !isQuizMode && !isSending && isLastAssistantMessage && activeTabIndex == 0)
                         {
                             <div class="lesson-nav-bar">
                                 <button class="lesson-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0 || !hasStartedLearning)" title="@GetPreviousTopicTitle()">
@@ -268,21 +292,6 @@
                                 </button>
                                 <button class="lesson-nav-btn continue" @onclick="ContinueLesson" title="@GetNextTopicTitle()">
                                     <span class="lesson-nav-text">@GetNextTopicName()</span>
-                                    <span class="bi bi-chevron-right"></span>
-                                </button>
-                            </div>
-                        }
-
-                        @* Show Back and Continue buttons for term exploration *@
-                        @if (m.Role == "assistant" && isTermExploration && isLastAssistantMessage && !isSending)
-                        {
-                            <div class="lesson-nav-bar">
-                                <button class="lesson-nav-btn previous" @onclick="BackToLesson" title="Go back to where you were">
-                                    <span class="bi bi-chevron-left"></span>
-                                    <span class="lesson-nav-text">Back</span>
-                                </button>
-                                <button class="lesson-nav-btn continue" @onclick="ContinueFromExploration" title="Continue with the lesson">
-                                    <span class="lesson-nav-text">Continue</span>
                                     <span class="bi bi-chevron-right"></span>
                                 </button>
                             </div>
@@ -372,8 +381,14 @@
 [Parameter] public bool EmbeddedMode { get; set; }
 [Parameter] public EventCallback<string> OnNavigateToConcept { get; set; }
 [Parameter] public EventCallback<string> OnNavigateToVisualize { get; set; }
+[Parameter] public EventCallback<HashSet<string>> OnEncounteredConceptsChanged { get; set; }
 
-private readonly List<ChatMessage> messages = new();
+// Chat tab system - side conversations open in new tabs instead of inline
+private List<ChatTab> chatTabs = new() { new ChatTab { Title = "Lesson", IsCloseable = false } };
+private int activeTabIndex;
+private int? sendingTabIndex; // Tracks which tab is currently sending (null = not sending)
+private List<ChatMessage> messages => chatTabs[activeTabIndex].Messages;
+
 private string prompt = "";
 private bool isSending;
 private bool showModal;
@@ -385,7 +400,6 @@ private CancellationTokenSource? cts;
 private bool enterToSend = true;
 private string placeholderText = "Ask a question...";
 private string? pendingDisplayText; // Simplified display text for next message
-private bool pendingIsExploration; // Whether next message is part of exploration
 
 // Avatar settings
 private string userDisplayName = "User";
@@ -409,14 +423,20 @@ private bool isLessonMode;
 private bool hasStartedLearning; // True after first "Begin" click
 private int currentLessonIndex;
 private List<string> lessonTopics = new();
-private List<string> learnedConcepts = new();
+private List<string> learnedConcepts = new(); // Completed lesson topics (for progress tracking)
+private HashSet<string> encounteredConcepts = new(); // All concepts user has been exposed to (topics + side explorations)
 private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
 
 
 
-// Term exploration state
-private bool isTermExploration;
-private int messageIndexBeforeExploration;
+// ChatTab inner class for sub-tab system
+private class ChatTab
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Title { get; set; } = "Lesson";
+    public bool IsCloseable { get; set; } = true;
+    public List<ChatMessage> Messages { get; set; } = new();
+}
 
 // Reading time tracking
 private System.Timers.Timer? readingTimer;
@@ -501,7 +521,9 @@ protected override async Task OnInitializedAsync()
         currentLessonIndex = 0;
         lessonTopics.Clear();
         learnedConcepts.Clear();
+        encounteredConcepts.Clear();
         visitedTopicIndices.Clear();
+        ResetToLessonTab();
         messages.Clear();
         await Settings.ClearLessonStateAsync();
 
@@ -561,14 +583,18 @@ protected override async Task OnInitializedAsync()
         currentLessonIndex = state.CurrentLessonIndex;
         lessonTopics = state.LessonTopics;
         learnedConcepts = state.LearnedConcepts;
+        encounteredConcepts = [.. state.EncounteredConcepts];
         visitedTopicIndices = [.. state.VisitedTopicIndices];
 
-        // Restore messages
-        messages.Clear();
+        // Restore messages to the Lesson tab (always index 0)
+        chatTabs[0].Messages.Clear();
         foreach (var msg in state.Messages)
         {
-            messages.Add(new ChatMessage(msg.Role, msg.Text, msg.FullJson));
+            chatTabs[0].Messages.Add(new ChatMessage(msg.Role, msg.Text, msg.FullJson));
         }
+
+        // Notify parent of restored encountered concepts
+        await NotifyEncounteredConcepts();
     }
 
     private async Task SaveLessonStateAsync()
@@ -586,8 +612,9 @@ protected override async Task OnInitializedAsync()
             HasStartedLearning = hasStartedLearning,
             LessonTopics = lessonTopics,
             LearnedConcepts = learnedConcepts,
+            EncounteredConcepts = [.. encounteredConcepts],
             VisitedTopicIndices = [.. visitedTopicIndices],
-            Messages = messages.Select(m => new ChatMessageState
+            Messages = chatTabs[0].Messages.Select(m => new ChatMessageState
             {
                 Role = m.Role,
                 Text = m.Text,
@@ -682,7 +709,9 @@ protected override async Task OnInitializedAsync()
         hasStartedLearning = false;
         currentLessonIndex = 0;
         learnedConcepts.Clear();
+        encounteredConcepts.Clear();
         visitedTopicIndices.Clear();
+        ResetToLessonTab();
         messages.Clear();
 
         // Build a prompt that emphasizes using ALL resources together
@@ -725,7 +754,9 @@ Keep it to 8-15 main topics to ensure comprehensive coverage.";
         hasStartedLearning = false;
         currentLessonIndex = 0;
         learnedConcepts.Clear();
+        encounteredConcepts.Clear();
         visitedTopicIndices.Clear();
+        ResetToLessonTab();
         messages.Clear();
 
         // Build a prompt that gets topics and includes the target topic
@@ -787,6 +818,7 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
             {
                 learnedConcepts.Add(currentTopic);
             }
+            await TrackEncounteredConcept(currentTopic);
         }
 
         currentLessonIndex++;
@@ -827,6 +859,7 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
             {
                 learnedConcepts.Add(currentTopic);
             }
+            await TrackEncounteredConcept(currentTopic);
         }
 
         currentLessonIndex--;
@@ -843,22 +876,26 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
 
         var topic = lessonTopics[currentLessonIndex];
 
+        // Use encounteredConcepts for enrichment - includes both completed topics AND side explorations
+        var hasEncountered = encounteredConcepts.Count > 0;
+        var shouldEnrich = enrichWithLearned || hasEncountered;
+
         string teachPrompt;
-        if (enrichWithLearned && learnedConcepts.Count > 0)
+        if (shouldEnrich && encounteredConcepts.Count > 0)
         {
-            var learnedList = string.Join(", ", learnedConcepts);
+            var encounteredList = string.Join(", ", encounteredConcepts);
+            var isRevisit = enrichWithLearned && learnedConcepts.Count > 0;
             teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
 
 IMPORTANT CONTEXT - SPIRAL LEARNING:
-The student has already learned these concepts: {learnedList}
+The student has already encountered these concepts: {encounteredList}
+{(isRevisit ? $"The student is REVISITING \"{topic}\" after learning more advanced material." : "The student has explored these concepts through the lesson and side conversations.")}
 
-Since the student is REVISITING this topic after learning more advanced concepts, you must:
+You must:
 1. Connect ""{topic}"" to the concepts they already know
-2. Show how ""{topic}"" relates to and supports their existing knowledge
-3. Provide deeper insights now that they have more context
-4. Use examples that reference the other concepts they've learned
-
-This is spiral learning - enrich the explanation with their accumulated knowledge.
+2. Reference and build upon their existing knowledge naturally
+3. {(isRevisit ? "Provide deeper insights now that they have more context" : "Introduce new material while weaving in familiar concepts")}
+4. Use examples that reference the concepts they've encountered
 
 Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
 __First specific question about {topic}?__
@@ -883,39 +920,56 @@ The questions should be specific to what you just taught, not generic.";
         await SendAsync();
     }
 
-    private async Task BackToLesson()
+    // Tab management methods
+    private void SwitchChatTab(int index)
     {
-        if (!isTermExploration) return;
-
-        // Remove messages added during exploration
-        while (messages.Count > messageIndexBeforeExploration)
-        {
-            messages.RemoveAt(messages.Count - 1);
-        }
-
-        isTermExploration = false;
+        if (isSending || index < 0 || index >= chatTabs.Count) return;
+        activeTabIndex = index;
+        showAllMessages = false;
         StateHasChanged();
+    }
 
-        // Save state after returning to lesson
-        if (isLessonMode)
+    private void CloseChatTab(int index)
+    {
+        if (isSending || index <= 0 || index >= chatTabs.Count) return; // Can't close Lesson tab (index 0)
+        chatTabs.RemoveAt(index);
+        if (activeTabIndex >= chatTabs.Count)
+            activeTabIndex = chatTabs.Count - 1;
+        else if (activeTabIndex > index)
+            activeTabIndex--;
+        StateHasChanged();
+    }
+
+    private void ResetToLessonTab()
+    {
+        chatTabs.RemoveRange(1, chatTabs.Count - 1);
+        activeTabIndex = 0;
+    }
+
+    /// <summary>
+    /// Track a concept the user has encountered (lesson topic or side exploration).
+    /// Notifies parent so Quiz and other tabs have access.
+    /// </summary>
+    private async Task TrackEncounteredConcept(string concept)
+    {
+        if (string.IsNullOrWhiteSpace(concept)) return;
+        if (encounteredConcepts.Add(concept))
         {
-            await SaveLessonStateAsync();
+            if (OnEncounteredConceptsChanged.HasDelegate)
+            {
+                await OnEncounteredConceptsChanged.InvokeAsync(encounteredConcepts);
+            }
         }
     }
 
-    private async Task ContinueFromExploration()
+    /// <summary>
+    /// Notify parent of current encountered concepts (e.g. after loading state).
+    /// </summary>
+    private async Task NotifyEncounteredConcepts()
     {
-        // Clear exploration state and continue with the lesson
-        isTermExploration = false;
-        
-        // Continue to next topic if we're in lesson mode
-        if (isLessonMode)
+        if (OnEncounteredConceptsChanged.HasDelegate)
         {
-            await ContinueLesson();
-        }
-        else
-        {
-            StateHasChanged();
+            await OnEncounteredConceptsChanged.InvokeAsync(encounteredConcepts);
         }
     }
 
@@ -927,10 +981,12 @@ The questions should be specific to what you just taught, not generic.";
         currentLessonIndex = 0;
         lessonTopics.Clear();
         learnedConcepts.Clear();
+        encounteredConcepts.Clear();
         visitedTopicIndices.Clear();
+        ResetToLessonTab();
         messages.Clear();
         await Settings.ClearLessonStateAsync();
-        
+
         // Restart the lesson from the beginning
         await StartLesson();
     }
@@ -1102,6 +1158,7 @@ __Third specific question about {concept.Title}?__";
             {
                 learnedConcepts.Add(currentTopic);
             }
+            await TrackEncounteredConcept(currentTopic);
         }
 
         // Jump to the selected topic
@@ -1134,6 +1191,7 @@ __Third specific question about {concept.Title}?__";
             {
                 var currentTopic = lessonTopics[currentLessonIndex];
                 learnedConcepts.Add(currentTopic);
+                await TrackEncounteredConcept(currentTopic);
             }
         }
 
@@ -1185,6 +1243,7 @@ Please start with Question 1.";
         isLessonMode = false;
 
         // Clear previous messages for fresh quiz
+        ResetToLessonTab();
         messages.Clear();
 
         var quizPrompt = $@"I want to take a quiz on the curriculum material. Please quiz me with exactly {totalQuestions} questions based ONLY on the resources provided.
@@ -1214,6 +1273,7 @@ Please start with Question 1.";
         isQuizMode = false;
         currentQuestionNumber = 0;
         totalQuestions = 0;
+        ResetToLessonTab();
         messages.Clear();
         
         // Restart quiz from the beginning
@@ -1297,11 +1357,13 @@ Please start with Question 1.";
         
         // Capture pending state for this message
         var displayText = pendingDisplayText;
-        var isExploration = pendingIsExploration;
         pendingDisplayText = null;
-        pendingIsExploration = false;
-        
-        messages.Add(new ChatMessage("user", userText, userText, displayText, isExploration));
+
+        // Lock which tab we're sending to (prevent tab switch from redirecting the response)
+        sendingTabIndex = activeTabIndex;
+        var tabMessages = chatTabs[sendingTabIndex.Value].Messages;
+
+        tabMessages.Add(new ChatMessage("user", userText, userText, displayText));
         StateHasChanged();
 
         isSending = true;
@@ -1341,9 +1403,9 @@ Keep track of the running score.";
                     ? quizInstructions + "\n\n" + instructions
                     : courseContext + "\n\n" + quizInstructions + "\n\n" + instructions;
             }
-            else if (isLessonMode && learnedConcepts.Count > 0)
+            else if (isLessonMode && encounteredConcepts.Count > 0)
             {
-                var learnedContext = $"SPIRAL LEARNING CONTEXT: The student has already learned these concepts: {string.Join(", ", learnedConcepts)}. Always reference and connect to these concepts when explaining new material.";
+                var learnedContext = $"SPIRAL LEARNING CONTEXT: The student has encountered these concepts so far: {string.Join(", ", encounteredConcepts)}. Always reference and connect to these concepts when explaining new material.";
                 fullInstructions = string.IsNullOrEmpty(courseContext)
                     ? learnedContext + "\n\n" + instructions
                     : courseContext + "\n\n" + learnedContext + "\n\n" + instructions;
@@ -1356,8 +1418,8 @@ Keep track of the running score.";
             }
 
             Log.Info($"Chat: Calling AI service ({userText.Length} chars input)");
-            var reply = await Ai.GetReplyAsync(messages, fullInstructions, cts.Token);
-            messages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson, null, isExploration));
+            var reply = await Ai.GetReplyAsync(tabMessages, fullInstructions, cts.Token);
+            tabMessages.Add(new ChatMessage("assistant", reply.Text, reply.FullJson));
             Log.Info($"Chat: AI reply received ({reply.Text.Length} chars)");
 
             // Start reading timer with the response text (for calculated reading time)
@@ -1426,15 +1488,16 @@ Keep track of the running score.";
         catch (OperationCanceledException)
         {
             Log.Warn("Chat: Request cancelled by user");
-            messages.Add(new ChatMessage("assistant", "Request cancelled.", "Request was cancelled by user."));
+            tabMessages.Add(new ChatMessage("assistant", "Request cancelled.", "Request was cancelled by user."));
         }
         catch (Exception ex)
         {
             Log.Error($"Chat: Error during message send - {ex.Message}", ex);
-            messages.Add(new ChatMessage("assistant", $"Error: {ex.Message}", ex.ToString()));
+            tabMessages.Add(new ChatMessage("assistant", $"Error: {ex.Message}", ex.ToString()));
         }
         finally
         {
+            sendingTabIndex = null;
             cts?.Dispose();
             cts = null;
             isSending = false;
@@ -1614,6 +1677,7 @@ Keep track of the running score.";
 
     private void Clear()
     {
+        ResetToLessonTab();
         messages.Clear();
         prompt = "";
     }
@@ -1824,22 +1888,38 @@ Keep track of the running score.";
     [JSInvokable]
     public async Task AskAboutTerm(string term)
     {
-        // Track that we're exploring a term so we can go back
-        if (!isTermExploration)
+        // Clean up the term for display
+        var cleanTerm = term.TrimEnd(':', '-', '\u2014', '\u2013', ',', ';', '.', '!', '?', ' ');
+
+        // Check if there's already a tab open for this exact term
+        var existingTabIndex = chatTabs.FindIndex(t => t.IsCloseable && t.Title == cleanTerm);
+        if (existingTabIndex >= 0)
         {
-            isTermExploration = true;
-            messageIndexBeforeExploration = messages.Count;
+            activeTabIndex = existingTabIndex;
+            StateHasChanged();
+            return;
         }
 
-        // Build context-aware prompt for term exploration
-        // Include instruction to suggest follow-up questions
-        string termPrompt;
-        if (learnedConcepts.Count > 0)
+        // Track this concept as encountered (user is exploring it)
+        await TrackEncounteredConcept(cleanTerm);
+
+        // Create a new tab for this side conversation
+        var newTab = new ChatTab
         {
-            var learnedList = string.Join(", ", learnedConcepts);
+            Title = cleanTerm,
+            IsCloseable = true
+        };
+        chatTabs.Add(newTab);
+        activeTabIndex = chatTabs.Count - 1;
+
+        // Build context-aware prompt for term exploration
+        string termPrompt;
+        if (encounteredConcepts.Count > 0)
+        {
+            var encounteredList = string.Join(", ", encounteredConcepts);
             termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
 
-The student has already learned: {learnedList}
+The student has already encountered these concepts: {encounteredList}
 Connect your explanation to these concepts where relevant.
 
 At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
@@ -1861,13 +1941,8 @@ __Third specific question?__
 The questions should be specific and relevant to what you just explained, not generic.";
         }
 
-        // Show simplified display text but send full prompt to AI
-        // Clean up the term for display by removing trailing punctuation
-        var cleanTerm = term.TrimEnd(':', '-', '�', '�', ',', ';', '.', '!', '?', ' ');
-        var displayText = $"{cleanTerm}?";
         prompt = termPrompt;
-        pendingDisplayText = displayText;
-        pendingIsExploration = true;
+        pendingDisplayText = $"{cleanTerm}?";
         StateHasChanged();
         await SendAsync();
     }
