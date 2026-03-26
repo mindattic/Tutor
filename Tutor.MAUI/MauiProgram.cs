@@ -79,11 +79,8 @@ namespace Tutor.MAUI
                 client.Timeout = TimeSpan.FromMinutes(2);
             });
 
-            // Content formatter service for auto-formatting imports (with extended timeout)
-            builder.Services.AddHttpClient<ContentFormatterService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            // Content formatter service for auto-formatting imports
+            builder.Services.AddSingleton<ContentFormatterService>();
 
             // Chunking service for splitting content
             builder.Services.AddSingleton<ChunkingService>();
@@ -124,17 +121,11 @@ namespace Tutor.MAUI
             // Concept autocomplete service (search suggestions)
             builder.Services.AddSingleton<ConceptAutoCompleteService>();
 
-            // Concept extraction service (LLM-based concept discovery) (with extended timeout)
-            builder.Services.AddHttpClient<ConceptExtractionService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            // Concept extraction service (LLM-based concept discovery)
+            builder.Services.AddSingleton<ConceptExtractionService>();
 
-            // Concept correlation service (relationship discovery) (with extended timeout)
-            builder.Services.AddHttpClient<ConceptCorrelationService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            // Concept correlation service (relationship discovery)
+            builder.Services.AddSingleton<ConceptCorrelationService>();
 
             // Knowledge graph service (graph management and persistence)
             builder.Services.AddSingleton<KnowledgeGraphService>();
@@ -151,44 +142,26 @@ namespace Tutor.MAUI
             // Course structure storage service (persistence for CourseStructures)
             builder.Services.AddSingleton<CourseStructureStorageService>();
 
-            // Concept map service (builds ConceptMap from Resources) (with extended timeout)
-            builder.Services.AddHttpClient<ConceptMapService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(5);
-            });
+            // Concept map service (builds ConceptMap from Resources)
+            builder.Services.AddSingleton<ConceptMapService>();
 
             // Orphan concept linker service (detects and links disconnected concepts)
-            builder.Services.AddHttpClient<OrphanConceptLinkerService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            builder.Services.AddSingleton<OrphanConceptLinkerService>();
 
             // Dynamic concept expansion service (expands concepts from user queries)
-            builder.Services.AddHttpClient<DynamicConceptExpansionService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            builder.Services.AddSingleton<DynamicConceptExpansionService>();
 
             // Concept merge service (detects and merges duplicate/similar concepts)
-            builder.Services.AddHttpClient<ConceptMergeService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            builder.Services.AddSingleton<ConceptMergeService>();
 
             // Course ConceptMap service (manages course-specific merged maps)
             builder.Services.AddSingleton<CourseConceptMapService>();
 
             // Section content service (generates hierarchical sections with content)
-            builder.Services.AddHttpClient<SectionContentService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            builder.Services.AddSingleton<SectionContentService>();
 
-            // Course structure service (generates learning path from ConceptMap) (with extended timeout)
-            builder.Services.AddHttpClient<CourseStructureService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(3);
-            });
+            // Course structure service (generates learning path from ConceptMap)
+            builder.Services.AddSingleton<CourseStructureService>();
 
             // Resource processing service (async pipeline with throttling)
             builder.Services.AddSingleton<ResourceProcessingService>();

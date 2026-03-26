@@ -9,11 +9,11 @@
       "PackagePath": "staticwebassets\\_framework\\blazor.webview.js"
     },
     {
-      "Id": "D:\\Projects\\Tutor\\Tutor.MAUI\\obj\\Debug\\net10.0-maccatalyst\\maccatalyst-x64\\scopedcss\\bundle\\Tutor.MAUI.styles.css",
+      "Id": "D:\\Projects\\MindAttic\\Tutor\\Tutor.MAUI\\obj\\Debug\\net10.0-maccatalyst\\maccatalyst-x64\\scopedcss\\bundle\\Tutor.MAUI.styles.css",
       "PackagePath": "staticwebassets\\Tutor.MAUI.styles.css"
     },
     {
-      "Id": "D:\\Projects\\Tutor\\Tutor.MAUI\\wwwroot\\index.html",
+      "Id": "D:\\Projects\\MindAttic\\Tutor\\Tutor.MAUI\\wwwroot\\index.html",
       "PackagePath": "staticwebassets\\index.html"
     },
     {

@@ -1,4 +1,4 @@
-<api type="debug" assembly-name="Tutor.MAUI" mvid="e84993488cb743128c0bad66b6671325">
+<api type="debug" assembly-name="Tutor.MAUI" mvid="f8ec0906b74d46608ac8a9af473b64af">
   <java-to-managed>
     <entry java-name="crc64a54b245149b121d2/MainActivity" managed-name="Tutor.MAUI.MainActivity, Tutor.MAUI" managed-type-token-id="33554440" />
     <entry java-name="crc64a54b245149b121d2/MainApplication" managed-name="Tutor.MAUI.MainApplication, Tutor.MAUI" managed-type-token-id="33554441" />

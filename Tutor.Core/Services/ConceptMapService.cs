@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Tutor.Core.Models;
@@ -23,8 +22,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class ConceptMapService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
     private readonly ConceptMapStorageService storageService;
     private readonly OrphanConceptLinkerService orphanLinkerService;
 
@@ -114,13 +112,11 @@ public sealed class ConceptMapService
     public event Action<ConceptMapBuildProgress>? OnProgressChanged;
 
     public ConceptMapService(
-        HttpClient http,
-        OpenAIOptions opt,
+        LlmServiceRouter router,
         ConceptMapStorageService storageService,
         OrphanConceptLinkerService orphanLinkerService)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         this.storageService = storageService;
         this.orphanLinkerService = orphanLinkerService;
     }
@@ -517,13 +513,6 @@ public sealed class ConceptMapService
     {
         Log.Debug($"ExtractConceptsAsync: Starting concept extraction for CM {conceptMapId}");
         
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            Log.Error("OpenAI API key is missing - cannot extract concepts");
-            throw new InvalidOperationException("OpenAI API key is missing.");
-        }
-
         // Split content into chunks to avoid token limits
         var chunks = SplitIntoChunks(combinedContent, maxChunkSize: MaxChunkSize);
         Log.Info($"ExtractConceptsAsync: Split content into {chunks.Count} chunk(s) for parallel processing");
@@ -662,10 +651,6 @@ public sealed class ConceptMapService
         List<Concept> concepts,
         CancellationToken ct = default)
     {
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("OpenAI API key is missing.");
-
         if (concepts.Count == 0)
             return [];
 
@@ -980,161 +965,54 @@ public sealed class ConceptMapService
     /// </summary>
     private async Task<T?> CallAiCoreAsync<T>(string systemPrompt, string content, CancellationToken ct)
     {
-        var apiKey = await opt.GetApiKeyAsync();
-        
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            Log.Error("CallAiAsync: OpenAI API key is missing");
-            throw new InvalidOperationException("OpenAI API key is missing. Configure it in Settings ? Credentials.");
-        }
-        
         var contentPreview = content.Length > 100 ? content[..100] + "..." : content;
-        Log.Info($"CallAiAsync: Starting API request to OpenAI (model: {opt.Model}, content: {content.Length} chars)");
+        Log.Info($"CallAiAsync: Starting API request via router (content: {content.Length} chars)");
         Log.Trace($"CallAiAsync: Content preview: {contentPreview}");
 
         var input = string.IsNullOrWhiteSpace(content)
             ? "Please analyze and respond."
             : $"Content to analyze:\n\n{content}";
 
-        var payload = new
-        {
-            model = opt.Model,
-            input = input,
-            instructions = systemPrompt
-        };
-
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        var messages = new[] { new ChatMessage("user", input, input) };
 
         try
         {
-            Log.Trace($"CallAiAsync: Sending HTTP request...");
-            using var resp = await http.SendAsync(req, ct);
-            var statusCode = (int)resp.StatusCode;
-            var json = await resp.Content.ReadAsStringAsync(ct);
+            Log.Trace($"CallAiAsync: Sending request via router...");
+            var reply = await router.GetReplyAsync(messages, systemPrompt, ct);
+            var responseText = reply.Text;
 
-            // Log all non-200 responses
-            if (statusCode != 200)
-            {
-                Log.Error($"OpenAI API non-200 response: HTTP {statusCode} {resp.ReasonPhrase}");
-                Log.Debug($"OpenAI error response body: {(json.Length > 500 ? json[..500] + "..." : json)}");
-                
-                // Provide specific error messages based on status code
-                var errorMessage = statusCode switch
-                {
-                    400 => $"Bad Request - Invalid API parameters: {json}",
-                    401 => "Unauthorized - Invalid or missing API key",
-                    403 => "Forbidden - API key doesn't have access to this resource",
-                    404 => "Not Found - Invalid API endpoint or model",
-                    429 => "Rate Limited - Too many requests, please wait and try again",
-                    500 => "OpenAI Server Error - Please try again later",
-                    502 => "Bad Gateway - OpenAI service temporarily unavailable",
-                    503 => "Service Unavailable - OpenAI is overloaded, try again later",
-                    _ => $"OpenAI API error: {json}"
-                };
-                
-                throw new InvalidOperationException($"OpenAI HTTP {statusCode}: {errorMessage}");
-            }
-            
-            Log.Debug($"OpenAI API response received: HTTP {statusCode} ({json.Length} chars)");
-            Log.Trace($"OpenAI response preview: {(json.Length > 200 ? json[..200] + "..." : json)}");
-
-            var responseText = ExtractResponseText(json);
-            
             if (string.IsNullOrWhiteSpace(responseText))
             {
-                Log.Warn("OpenAI response text extraction returned empty string");
+                Log.Warn("Router response text was empty");
             }
             else
             {
                 Log.Trace($"Extracted response text: {(responseText.Length > 200 ? responseText[..200] + "..." : responseText)}");
             }
-            
+
             var result = ParseJsonResponse<T>(responseText);
-            
+
             if (result == null)
             {
-                Log.Warn($"Failed to parse OpenAI response to {typeof(T).Name}");
+                Log.Warn($"Failed to parse response to {typeof(T).Name}");
                 Log.Debug($"Unparseable response: {(responseText.Length > 500 ? responseText[..500] + "..." : responseText)}");
             }
             else
             {
                 Log.Debug($"Successfully parsed response to {typeof(T).Name}");
             }
-            
+
             return result;
-        }
-        catch (HttpRequestException ex)
-        {
-            Log.Error($"HTTP request to OpenAI failed: {ex.Message} (Status: {ex.StatusCode})", ex);
-            throw new InvalidOperationException($"Network error calling OpenAI: {ex.Message}", ex);
-        }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            Log.Error($"OpenAI API request timed out after waiting", ex);
-            throw new InvalidOperationException("OpenAI API request timed out - the server took too long to respond", ex);
         }
         catch (TaskCanceledException)
         {
-            Log.Debug("OpenAI API request was cancelled by user");
+            Log.Debug("API request was cancelled by user");
             throw;
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Log.Error($"Failed to parse OpenAI response JSON: {ex.Message}", ex);
-            throw new InvalidOperationException($"Invalid JSON response from OpenAI: {ex.Message}", ex);
-        }
-    }
-
-    private static string ExtractResponseText(string json)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-
-            if (doc.RootElement.TryGetProperty("output_text", out var outText) &&
-                outText.ValueKind == JsonValueKind.String)
-            {
-                return outText.GetString() ?? "";
-            }
-
-            if (doc.RootElement.TryGetProperty("choices", out var choices) &&
-                choices.ValueKind == JsonValueKind.Array && choices.GetArrayLength() > 0)
-            {
-                var first = choices[0];
-                if (first.TryGetProperty("message", out var message) &&
-                    message.TryGetProperty("content", out var msgContent))
-                {
-                    return msgContent.GetString() ?? "";
-                }
-            }
-
-            if (doc.RootElement.TryGetProperty("output", out var output))
-            {
-                if (output.ValueKind == JsonValueKind.Array && output.GetArrayLength() > 0)
-                {
-                    foreach (var item in output.EnumerateArray())
-                    {
-                        if (item.TryGetProperty("content", out var contentArr) &&
-                            contentArr.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var c in contentArr.EnumerateArray())
-                            {
-                                if (c.TryGetProperty("text", out var txt))
-                                    return txt.GetString() ?? "";
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            return json;
-        }
-        catch
-        {
-            return json;
+            Log.Error($"API request failed: {ex.Message}", ex);
+            throw;
         }
     }
 

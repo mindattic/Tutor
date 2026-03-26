@@ -38,18 +38,32 @@ public sealed class LogStorageService
         Log.Info("Logging system initialized");
     }
 
-    private void OnEntryAdded(object? sender, LogEntry entry)
+    private async void OnEntryAdded(object? sender, LogEntry entry)
     {
         // Debounced save - only save every 10 entries or on important ones
         if (entry.Severity >= LogSeverity.Warning || Log.Store.Count % 10 == 0)
         {
-            SaveLogsAsync().ConfigureAwait(false);
+            try
+            {
+                await SaveLogsAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LogStorageService] Failed to save on entry added: {ex.Message}");
+            }
         }
     }
 
-    private void OnEntriesCleared(object? sender, EventArgs e)
+    private async void OnEntriesCleared(object? sender, EventArgs e)
     {
-        SaveLogsAsync().ConfigureAwait(false);
+        try
+        {
+            await SaveLogsAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LogStorageService] Failed to save on entries cleared: {ex.Message}");
+        }
     }
 
     /// <summary>

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -112,8 +111,7 @@ public class ConceptExpansionResult
 /// </summary>
 public sealed class DynamicConceptExpansionService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
     private readonly VectorStoreService vectorStore;
     private readonly EmbeddingService embeddingService;
     private readonly CourseService courseService;
@@ -184,16 +182,14 @@ public sealed class DynamicConceptExpansionService
         """;
 
     public DynamicConceptExpansionService(
-        HttpClient http,
-        OpenAIOptions opt,
+        LlmServiceRouter router,
         VectorStoreService vectorStore,
         EmbeddingService embeddingService,
         CourseService courseService,
         ConceptMapStorageService conceptMapStorage,
         ConceptMapCollectionService collectionService)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         this.vectorStore = vectorStore;
         this.embeddingService = embeddingService;
         this.courseService = courseService;
@@ -427,12 +423,6 @@ public sealed class DynamicConceptExpansionService
         string sourceContent,
         CancellationToken ct)
     {
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            throw new InvalidOperationException("OpenAI API key is missing.");
-        }
-
         // Format existing concepts for the prompt
         var existingConceptsText = existingConcepts.Count > 0
             ? string.Join("\n", existingConcepts.Take(30).Select(c => $"- {c.Title}: {c.Summary}"))
@@ -443,78 +433,12 @@ public sealed class DynamicConceptExpansionService
             .Replace("{EXISTING_CONCEPTS}", existingConceptsText)
             .Replace("{SOURCE_CONTENT}", sourceContent);
 
-        var payload = new
-        {
-            model = opt.Model,
-            input = prompt,
-            instructions = "Return only valid JSON. Do not include any explanatory text outside the JSON structure."
-        };
-
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        using var resp = await http.SendAsync(req, ct);
-        var json = await resp.Content.ReadAsStringAsync(ct);
-
-        if (!resp.IsSuccessStatusCode)
-        {
-            Log.Error($"DynamicExpansion: AI call failed - {resp.StatusCode}: {json}");
-            throw new InvalidOperationException($"OpenAI error {(int)resp.StatusCode}: {json}");
-        }
+        var messages = new[] { new ChatMessage("user", prompt, prompt) };
+        var reply = await router.GetReplyAsync(messages, "Return only valid JSON. Do not include any explanatory text outside the JSON structure.", ct);
 
         // Parse the response
-        var responseText = ExtractResponseText(json);
+        var responseText = reply.Text;
         return ParseExpansionResponse(responseText);
-    }
-
-    /// <summary>
-    /// Extracts the text content from OpenAI's response JSON.
-    /// </summary>
-    private static string ExtractResponseText(string responseJson)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(responseJson);
-            var root = doc.RootElement;
-
-            // Try to get output array first (newer API format)
-            if (root.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in output.EnumerateArray())
-                {
-                    if (item.TryGetProperty("content", out var contentArray) &&
-                        contentArray.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var content in contentArray.EnumerateArray())
-                        {
-                            if (content.TryGetProperty("text", out var text))
-                            {
-                                return text.GetString() ?? "";
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Fallback: try choices array (older format)
-            if (root.TryGetProperty("choices", out var choices) && choices.ValueKind == JsonValueKind.Array)
-            {
-                var firstChoice = choices[0];
-                if (firstChoice.TryGetProperty("message", out var message) &&
-                    message.TryGetProperty("content", out var content))
-                {
-                    return content.GetString() ?? "";
-                }
-            }
-
-            return "";
-        }
-        catch (Exception ex)
-        {
-            Log.Warn($"DynamicExpansion: Failed to extract response text - {ex.Message}");
-            return "";
-        }
     }
 
     /// <summary>

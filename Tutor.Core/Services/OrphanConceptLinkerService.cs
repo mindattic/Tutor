@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,8 +12,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class OrphanConceptLinkerService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
 
     private const string OrphanLinkingPrompt = """
         You are an expert knowledge analyst. Analyze these orphaned concepts and determine how they should connect to the main concept cluster.
@@ -60,10 +58,9 @@ public sealed class OrphanConceptLinkerService
         - Consider that orphaned concepts might bridge multiple main concepts
         """;
 
-    public OrphanConceptLinkerService(HttpClient http, OpenAIOptions opt)
+    public OrphanConceptLinkerService(LlmServiceRouter router)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
     }
 
     /// <summary>
@@ -554,87 +551,14 @@ public sealed class OrphanConceptLinkerService
 
     private async Task<T?> CallAiAsync<T>(string prompt, CancellationToken ct)
     {
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("OpenAI API key is missing. Configure it in Settings → Credentials.");
+        var messages = new[] { new ChatMessage("user", "Analyze the orphaned concepts and suggest connections.", "Analyze the orphaned concepts and suggest connections.") };
+        var reply = await router.GetReplyAsync(messages, prompt, ct);
 
-        var payload = new
-        {
-            model = opt.Model,
-            input = "Analyze the orphaned concepts and suggest connections.",
-            instructions = prompt
-        };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(payload),
-            Encoding.UTF8,
-            "application/json");
-
-        var response = await http.SendAsync(request, ct);
-        var responseText = await response.Content.ReadAsStringAsync(ct);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"OpenAI API error: {response.StatusCode} - {responseText}");
-        }
-
-        // Parse the response using the same pattern as ConceptMapService
-        var content = ExtractResponseText(responseText);
-
+        var content = reply.Text;
         if (string.IsNullOrEmpty(content))
             return default;
 
         return ParseJsonResponse<T>(content);
-    }
-
-    /// <summary>
-    /// Extracts the text content from the OpenAI responses API response.
-    /// </summary>
-    private static string ExtractResponseText(string json)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            // Try to get output array (responses API format)
-            if (root.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in output.EnumerateArray())
-                {
-                    if (item.TryGetProperty("content", out var contentArray) && 
-                        contentArray.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var contentItem in contentArray.EnumerateArray())
-                        {
-                            if (contentItem.TryGetProperty("text", out var text))
-                            {
-                                return text.GetString() ?? "";
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Fallback to choices format (chat completions)
-            if (root.TryGetProperty("choices", out var choices) && choices.ValueKind == JsonValueKind.Array)
-            {
-                var firstChoice = choices[0];
-                if (firstChoice.TryGetProperty("message", out var message) &&
-                    message.TryGetProperty("content", out var msgContent))
-                {
-                    return msgContent.GetString() ?? "";
-                }
-            }
-
-            return "";
-        }
-        catch
-        {
-            return "";
-        }
     }
 
     /// <summary>

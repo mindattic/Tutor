@@ -1,6 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using Tutor.Core.Models;
 
@@ -12,8 +10,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class ConceptExtractionService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
     private readonly EmbeddingService embeddingService;
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
@@ -52,14 +49,12 @@ public sealed class ConceptExtractionService
         """;
 
     public ConceptExtractionService(
-        HttpClient http, 
-        OpenAIOptions opt,
+        LlmServiceRouter router,
         EmbeddingService embeddingService,
         LSHService lshService,
         SimHashService simHashService)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         this.embeddingService = embeddingService;
         this.lshService = lshService;
         this.simHashService = simHashService;
@@ -76,36 +71,16 @@ public sealed class ConceptExtractionService
         if (string.IsNullOrWhiteSpace(content))
             return [];
 
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("OpenAI API key is missing.");
-
         // Truncate content if too long (leaving room for prompt)
         var maxContentLength = 12000;
-        var truncatedContent = content.Length > maxContentLength 
-            ? content[..maxContentLength] + "\n\n[Content truncated...]" 
+        var truncatedContent = content.Length > maxContentLength
+            ? content[..maxContentLength] + "\n\n[Content truncated...]"
             : content;
 
-        var payload = new
-        {
-            model = opt.Model,
-            input = $"Content to analyze:\n\n{truncatedContent}",
-            instructions = ExtractionPrompt
-        };
+        var messages = new[] { new ChatMessage("user", $"Content to analyze:\n\n{truncatedContent}", $"Content to analyze:\n\n{truncatedContent}") };
+        var reply = await router.GetReplyAsync(messages, ExtractionPrompt, ct);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        using var resp = await http.SendAsync(req, ct);
-        var json = await resp.Content.ReadAsStringAsync(ct);
-
-        if (!resp.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"OpenAI error {(int)resp.StatusCode}: {json}");
-        }
-
-        var responseText = ExtractResponseText(json);
+        var responseText = reply.Text;
         var concepts = ParseExtractedConcepts(responseText, resourceId);
 
         return concepts;
@@ -235,39 +210,6 @@ public sealed class ConceptExtractionService
         }
 
         return merged.Values.ToList();
-    }
-
-    private static string ExtractResponseText(string json)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            
-            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
-            {
-                return outText.GetString() ?? "";
-            }
-
-            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in output.EnumerateArray())
-                {
-                    if (item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var c in content.EnumerateArray())
-                        {
-                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
-                            {
-                                return textProp.GetString() ?? "";
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch { }
-
-        return json;
     }
 
     private static List<ExtractedConcept> ParseExtractedConcepts(string responseText, string resourceId)

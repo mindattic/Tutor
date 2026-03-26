@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Tutor.Core.Models;
@@ -22,8 +21,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class CourseStructureService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
     private readonly CourseStructureStorageService storageService;
     private readonly ConceptMapStorageService conceptMapStorageService;
     private readonly SectionContentService? sectionContentService;
@@ -79,14 +77,12 @@ public sealed class CourseStructureService
     public event Action<CourseStructureProgress>? OnProgressChanged;
 
     public CourseStructureService(
-        HttpClient http,
-        OpenAIOptions opt,
+        LlmServiceRouter router,
         CourseStructureStorageService storageService,
         ConceptMapStorageService conceptMapStorageService,
         SectionContentService? sectionContentService = null)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         this.storageService = storageService;
         this.conceptMapStorageService = conceptMapStorageService;
         this.sectionContentService = sectionContentService;
@@ -238,10 +234,6 @@ public sealed class CourseStructureService
         ConceptMap conceptMap,
         CancellationToken ct)
     {
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("OpenAI API key is missing.");
-
         // Build concept list with complexity info
         var conceptList = new StringBuilder();
         foreach (var concept in conceptMap.GetConceptsByComplexity())
@@ -423,81 +415,15 @@ public sealed class CourseStructureService
 
     private async Task<T?> CallAiAsync<T>(string systemPrompt, string content, CancellationToken ct)
     {
-        var apiKey = await opt.GetApiKeyAsync();
-
         var input = string.IsNullOrWhiteSpace(content)
             ? "Please analyze and respond."
             : $"Content to analyze:\n\n{content}";
 
-        var payload = new
-        {
-            model = opt.Model,
-            input = input,
-            instructions = systemPrompt
-        };
+        var messages = new[] { new ChatMessage("user", input, input) };
+        var reply = await router.GetReplyAsync(messages, systemPrompt, ct);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        using var resp = await http.SendAsync(req, ct);
-        var json = await resp.Content.ReadAsStringAsync(ct);
-
-        if (!resp.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"OpenAI error {(int)resp.StatusCode}: {json}");
-        }
-
-        var responseText = ExtractResponseText(json);
+        var responseText = reply.Text;
         return ParseJsonResponse<T>(responseText);
-    }
-
-    private static string ExtractResponseText(string json)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-
-            if (doc.RootElement.TryGetProperty("output_text", out var outText) &&
-                outText.ValueKind == JsonValueKind.String)
-            {
-                return outText.GetString() ?? "";
-            }
-
-            if (doc.RootElement.TryGetProperty("choices", out var choices) &&
-                choices.ValueKind == JsonValueKind.Array && choices.GetArrayLength() > 0)
-            {
-                var first = choices[0];
-                if (first.TryGetProperty("message", out var message) &&
-                    message.TryGetProperty("content", out var msgContent))
-                {
-                    return msgContent.GetString() ?? "";
-                }
-            }
-
-            if (doc.RootElement.TryGetProperty("output", out var output) &&
-                output.ValueKind == JsonValueKind.Array && output.GetArrayLength() > 0)
-            {
-                foreach (var item in output.EnumerateArray())
-                {
-                    if (item.TryGetProperty("content", out var contentArr) &&
-                        contentArr.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var c in contentArr.EnumerateArray())
-                        {
-                            if (c.TryGetProperty("text", out var txt))
-                                return txt.GetString() ?? "";
-                        }
-                    }
-                }
-            }
-
-            return json;
-        }
-        catch
-        {
-            return json;
-        }
     }
 
     private static T? ParseJsonResponse<T>(string text)

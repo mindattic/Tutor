@@ -73,16 +73,23 @@ else
         }
     }
 
-    private void HandleAuthStateChanged()
+    private async void HandleAuthStateChanged()
     {
-        InvokeAsync(() =>
+        try
         {
-            if (!AuthService.IsAuthenticated && !Silent)
+            await InvokeAsync(() =>
             {
-                Nav.NavigateTo("/");
-            }
-            StateHasChanged();
-        });
+                if (!AuthService.IsAuthenticated && !Silent)
+                {
+                    Nav.NavigateTo("/");
+                }
+                StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+            // Component was disposed before the callback could run
+        }
     }
 
     private void GoHome()

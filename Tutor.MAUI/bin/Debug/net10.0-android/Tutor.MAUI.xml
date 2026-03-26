@@ -4,6 +4,91 @@
         <name>Tutor.MAUI</name>
     </assembly>
     <members>
+        <member name="T:Tutor.MAUI.App">
+            <summary>
+            MAUI application shell for the Tutor platform. Handles application lifecycle events
+            including initializing the logging subsystem, loading log-level settings, bootstrapping
+            the background task queue on startup, and persisting queue state when the app is suspended.
+            </summary>
+        </member>
+        <member name="M:Tutor.MAUI.App.#ctor(Tutor.Core.Services.Logging.LogStorageService,SettingsService,System.IServiceProvider)">
+            <summary>
+            Initializes the application, loading persisted logs, log-level settings,
+            and bootstrapping the background queue service for async task processing.
+            </summary>
+        </member>
+        <member name="M:Tutor.MAUI.App.CreateWindow(Microsoft.Maui.IActivationState)">
+            <summary>Creates the application window with the main Blazor WebView page.</summary>
+        </member>
+        <member name="M:Tutor.MAUI.App.OnSleep">
+            <summary>Persists background queue state when the app enters the background.</summary>
+        </member>
+        <member name="T:Tutor.MAUI.MainPage">
+            <summary>
+            Root content page hosting the <c>BlazorWebView</c> that renders the Tutor
+            platform's Razor-based educational interface.
+            </summary>
+        </member>
+        <member name="M:Tutor.MAUI.MainPage.#ctor">
+            <summary>Initializes the Blazor WebView host page from XAML.</summary>
+        </member>
+        <member name="T:Tutor.MAUI.MauiProgram">
+            <summary>
+            Application entry point and DI composition root for the Tutor platform.
+            Registers 40+ services spanning AI-powered concept extraction, knowledge graph construction,
+            vector embeddings, course management, quizzes, news, and background task processing.
+            HTTP clients for AI services use extended timeouts (2-5 minutes) to accommodate
+            large document processing and LLM inference latency.
+            </summary>
+        </member>
+        <member name="M:Tutor.MAUI.MauiProgram.CreateMauiApp">
+            <summary>
+            Builds the MAUI application with all services registered in the DI container.
+            Service categories include platform abstractions, OpenAI integration, content processing,
+            knowledge graph services, course management, authentication, and background queues.
+            </summary>
+        </member>
+        <member name="T:Tutor.MAUI.Services.MauiAppDataPathProvider">
+            <summary>
+            MAUI platform implementation of <see cref="T:Tutor.Core.Services.Abstractions.IAppDataPathProvider"/>.
+            Resolves to the platform-specific app data directory (e.g., <c>%LOCALAPPDATA%</c> on Windows,
+            <c>~/Library/Application Support</c> on macOS) for persistent file storage.
+            </summary>
+        </member>
+        <member name="P:Tutor.MAUI.Services.MauiAppDataPathProvider.AppDataDirectory">
+            <inheritdoc/>
+        </member>
+        <member name="T:Tutor.MAUI.Services.MauiFilePickerService">
+            <summary>
+            MAUI platform implementation of <see cref="T:Tutor.Core.Services.Abstractions.IFilePickerService"/>.
+            Presents the native file picker dialog with platform-specific MIME type mapping,
+            allowing users to select learning resources (PDFs, documents, etc.) for import.
+            </summary>
+        </member>
+        <member name="M:Tutor.MAUI.Services.MauiFilePickerService.PickFileAsync(System.String[])">
+            <summary>
+            Opens the native file picker filtered to the specified extensions.
+            Maps extensions to MIME types for Android compatibility.
+            Returns <c>null</c> if the user cancels the picker.
+            </summary>
+        </member>
+        <member name="T:Tutor.MAUI.Services.MauiSecurePreferences">
+            <summary>
+            MAUI platform implementation of <see cref="T:Tutor.Core.Services.Abstractions.ISecurePreferences"/> using
+            <see cref="T:Microsoft.Maui.Storage.SecureStorage"/>. Provides encrypted key-value storage backed by
+            the platform's secure enclave (Keychain on iOS/macOS, KeyStore on Android,
+            DPAPI on Windows) for storing sensitive data like API keys.
+            </summary>
+        </member>
+        <member name="M:Tutor.MAUI.Services.MauiSecurePreferences.GetAsync(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Tutor.MAUI.Services.MauiSecurePreferences.SetAsync(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Tutor.MAUI.Services.MauiSecurePreferences.Remove(System.String)">
+            <inheritdoc/>
+        </member>
         <member name="T:Tutor.MAUI.Resource">
             <summary>
             Android Resource Designer class.

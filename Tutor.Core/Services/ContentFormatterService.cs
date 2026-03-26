@@ -1,6 +1,6 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Tutor.Core.Models;
 using Tutor.Core.Services.Logging;
 
 namespace Tutor.Core.Services;
@@ -11,8 +11,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class ContentFormatterService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
 
     // Formatting instructions for the AI
     private const string FormattingPrompt = @"You are a document formatter. Convert the following raw text into well-structured markdown for educational use.
@@ -39,10 +38,9 @@ Return ONLY the formatted markdown, nothing else.
 TEXT TO FORMAT:
 ";
 
-    public ContentFormatterService(HttpClient http, OpenAIOptions opt)
+    public ContentFormatterService(LlmServiceRouter router)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         Log.Debug("ContentFormatterService initialized");
     }
 
@@ -64,22 +62,15 @@ TEXT TO FORMAT:
 
         Log.Info($"ContentFormatter: Starting formatting ({rawContent.Length} chars)");
 
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            Log.Error("ContentFormatter: API key is missing");
-            throw new InvalidOperationException("OpenAI API key is missing.");
-        }
-
         // For very large content, process in chunks to avoid token limits
         if (rawContent.Length > 15000)
         {
             Log.Debug($"ContentFormatter: Large content detected, using chunked processing");
-            return await FormatLargeContentAsync(rawContent, apiKey, onProgress, ct);
+            return await FormatLargeContentAsync(rawContent, onProgress, ct);
         }
 
         onProgress?.Invoke(1, 1);
-        var result = await FormatChunkAsync(rawContent, apiKey, ct);
+        var result = await FormatChunkAsync(rawContent, ct);
         Log.Info($"ContentFormatter: Formatting complete ({result.Length} chars output)");
         return result;
     }
@@ -149,19 +140,13 @@ TEXT TO FORMAT:
         if (string.IsNullOrWhiteSpace(chunk))
             return chunk;
 
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            throw new InvalidOperationException("OpenAI API key is missing.");
-        }
-
-        return await FormatChunkAsync(chunk, apiKey, ct);
+        return await FormatChunkAsync(chunk, ct);
     }
 
     /// <summary>
     /// Format large content by splitting into sections and processing each.
     /// </summary>
-    private async Task<string> FormatLargeContentAsync(string content, string apiKey, Action<int, int>? onProgress, CancellationToken ct)
+    private async Task<string> FormatLargeContentAsync(string content, Action<int, int>? onProgress, CancellationToken ct)
     {
         // Split by double newlines (paragraphs) and process in batches
         var paragraphs = content.Split(["\n\n", "\r\n\r\n"], StringSplitOptions.RemoveEmptyEntries);
@@ -215,7 +200,7 @@ TEXT TO FORMAT:
             onProgress?.Invoke(i + 1, totalChunks);
             
             Log.Debug($"ContentFormatter: Processing chunk {i + 1}/{totalChunks} ({chunks[i].Length} chars)");
-            var formatted = await FormatChunkWithRetryAsync(chunks[i], apiKey, ct);
+            var formatted = await FormatChunkWithRetryAsync(chunks[i], ct);
             formattedChunks.Add(formatted);
             
             // Add delay between chunks to avoid rate limiting
@@ -277,97 +262,44 @@ TEXT TO FORMAT:
     /// <summary>
     /// Format a chunk with retry logic for rate limiting.
     /// </summary>
-    private async Task<string> FormatChunkWithRetryAsync(string content, string apiKey, CancellationToken ct, int maxRetries = 3)
+    private async Task<string> FormatChunkWithRetryAsync(string content, CancellationToken ct, int maxRetries = 3)
     {
         // FormatChunkAsync returns original content on error as fallback
         // Retry logic is not needed since fallback is acceptable
-        return await FormatChunkAsync(content, apiKey, ct);
+        return await FormatChunkAsync(content, ct);
     }
 
     /// <summary>
     /// Format a single chunk of content.
     /// </summary>
-    private async Task<string> FormatChunkAsync(string content, string apiKey, CancellationToken ct)
+    private async Task<string> FormatChunkAsync(string content, CancellationToken ct)
     {
-        var payload = new
-        {
-            model = "gpt-4.1-mini",
-            input = FormattingPrompt + content,
-            instructions = "Format the text as markdown. Return only the formatted content, no explanations."
-        };
-
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
         try
         {
-            Log.Trace("ContentFormatter: Sending HTTP request...");
-            using var resp = await http.SendAsync(req, ct);
-            var statusCode = (int)resp.StatusCode;
-            var json = await resp.Content.ReadAsStringAsync(ct);
+            Log.Trace("ContentFormatter: Sending request via router...");
+            var messages = new[] { new ChatMessage("user", FormattingPrompt + content, FormattingPrompt + content) };
+            var reply = await router.GetReplyAsync(messages, "Format the text as markdown. Return only the formatted content, no explanations.", ct);
 
-            if (statusCode != 200)
+            var result = reply.Text;
+            if (string.IsNullOrWhiteSpace(result))
             {
-                Log.Error($"ContentFormatter: API error HTTP {statusCode} {resp.ReasonPhrase}");
-                Log.Debug($"ContentFormatter error body: {(json.Length > 500 ? json[..500] + "..." : json)}");
-                
-                // On failure, return original content with a warning
-                Log.Warn($"ContentFormatter: Returning original content due to API error {statusCode}");
+                Log.Warn("ContentFormatter: Empty response from LLM, returning original content");
                 return content;
             }
 
-            Log.Debug($"ContentFormatter: Response HTTP {statusCode} ({json.Length} chars)");
-            return ExtractText(json);
-        }
-        catch (HttpRequestException ex)
-        {
-            Log.Error($"ContentFormatter: Network error - {ex.Message} (Status: {ex.StatusCode})", ex);
-            return content; // Return original on network error
-        }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            Log.Error("ContentFormatter: Request timed out", ex);
-            return content; // Return original on timeout
+            Log.Debug($"ContentFormatter: Response received ({result.Length} chars)");
+            return result;
         }
         catch (TaskCanceledException)
         {
             Log.Debug("ContentFormatter: Request cancelled by user");
             throw;
         }
-    }
-
-    private static string ExtractText(string json)
-    {
-        try
+        catch (Exception ex)
         {
-            using var doc = JsonDocument.Parse(json);
-
-            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
-            {
-                return outText.GetString() ?? "";
-            }
-
-            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in output.EnumerateArray())
-                {
-                    if (item.TryGetProperty("content", out var contentArr) && contentArr.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var c in contentArr.EnumerateArray())
-                        {
-                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
-                            {
-                                return textProp.GetString() ?? "";
-                            }
-                        }
-                    }
-                }
-            }
+            Log.Error($"ContentFormatter: Error - {ex.Message}", ex);
+            return content; // Return original on error
         }
-        catch { }
-
-        return "";
     }
 
     /// <summary>
@@ -462,7 +394,7 @@ TEXT TO FORMAT:
         }
 
         // Bullet points
-        if (line.StartsWith("- ") || line.StartsWith("• ") || line.StartsWith("* "))
+        if (line.StartsWith("- ") || line.StartsWith("ï¿½ ") || line.StartsWith("* "))
         {
             content = line[2..].Trim();
             return true;

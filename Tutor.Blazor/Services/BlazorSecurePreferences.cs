@@ -3,7 +3,7 @@ using Tutor.Core.Services.Abstractions;
 
 namespace Tutor.Blazor.Services;
 
-public class BlazorSecurePreferences : ISecurePreferences
+public class BlazorSecurePreferences : ISecurePreferences, IDisposable
 {
     private readonly string _filePath;
     private Dictionary<string, string> _store = new();
@@ -45,7 +45,7 @@ public class BlazorSecurePreferences : ISecurePreferences
         try
         {
             _store.Remove(key);
-            _ = SaveAsync();
+            SaveSync();
         }
         finally
         {
@@ -63,8 +63,9 @@ public class BlazorSecurePreferences : ISecurePreferences
                 _store = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[BlazorSecurePreferences] Failed to load preferences: {ex.Message}");
             _store = new();
         }
     }
@@ -76,9 +77,27 @@ public class BlazorSecurePreferences : ISecurePreferences
             var json = JsonSerializer.Serialize(_store, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(_filePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail on save errors
+            System.Diagnostics.Debug.WriteLine($"[BlazorSecurePreferences] Failed to save preferences: {ex.Message}");
         }
+    }
+
+    private void SaveSync()
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(_store, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_filePath, json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BlazorSecurePreferences] Failed to save preferences: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        _lock.Dispose();
     }
 }

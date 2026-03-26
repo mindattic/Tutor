@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using Tutor.Core.Models;
 using Tutor.Core.Services.Logging;
@@ -16,8 +14,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class ConceptMergeService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
     private readonly EmbeddingService embeddingService;
     private readonly SimHashService simHashService;
     private readonly ConceptMapStorageService conceptMapStorage;
@@ -71,14 +68,12 @@ public sealed class ConceptMergeService
         """;
 
     public ConceptMergeService(
-        HttpClient http,
-        OpenAIOptions opt,
+        LlmServiceRouter router,
         EmbeddingService embeddingService,
         SimHashService simHashService,
         ConceptMapStorageService conceptMapStorage)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         this.embeddingService = embeddingService;
         this.simHashService = simHashService;
         this.conceptMapStorage = conceptMapStorage;
@@ -260,39 +255,11 @@ public sealed class ConceptMergeService
 
             try
             {
-                var apiKey = await opt.GetApiKeyAsync();
-                if (string.IsNullOrWhiteSpace(apiKey))
-                {
-                    Log.Warn("[ConceptMergeService] API key not configured");
-                    continue;
-                }
+                var messages = new[] { new ChatMessage("user", userPrompt, userPrompt) };
+                var reply = await router.GetReplyAsync(messages, SimilarityAnalysisPrompt, cancellationToken);
 
-                var request = new
-                {
-                    model = opt.Model,
-                    input = userPrompt,
-                    instructions = SimilarityAnalysisPrompt
-                };
-
-                using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                req.Content = new StringContent(
-                    JsonSerializer.Serialize(request),
-                    Encoding.UTF8,
-                    "application/json");
-
-                var response = await http.SendAsync(req, cancellationToken);
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var aiResults = ParseAIResponse(json, batch);
-                    results.AddRange(aiResults);
-                }
-                else
-                {
-                    Log.Warn($"[ConceptMergeService] AI analysis failed: {response.StatusCode}");
-                }
+                var aiResults = ParseAIResponse(reply.Text, batch);
+                results.AddRange(aiResults);
             }
             catch (Exception ex)
             {
@@ -568,34 +535,16 @@ public sealed class ConceptMergeService
             : $"{idB}|{idA}";
     }
 
-    private List<AISimilarityResult> ParseAIResponse(string json, SimilarConceptPair[] originalPairs)
+    private List<AISimilarityResult> ParseAIResponse(string responseText, SimilarConceptPair[] originalPairs)
     {
         var results = new List<AISimilarityResult>();
 
         try
         {
-            using var doc = JsonDocument.Parse(json);
-            string? responseText = null;
-
-            if (doc.RootElement.TryGetProperty("output_text", out var outText))
-            {
-                responseText = outText.GetString();
-            }
-            else if (doc.RootElement.TryGetProperty("choices", out var choices) &&
-                     choices.GetArrayLength() > 0)
-            {
-                var firstChoice = choices[0];
-                if (firstChoice.TryGetProperty("message", out var message) &&
-                    message.TryGetProperty("content", out var content))
-                {
-                    responseText = content.GetString();
-                }
-            }
-
             if (string.IsNullOrEmpty(responseText))
                 return results;
 
-            // Extract JSON from response
+            // Extract JSON from response text
             var jsonStart = responseText.IndexOf('{');
             var jsonEnd = responseText.LastIndexOf('}');
             if (jsonStart >= 0 && jsonEnd > jsonStart)

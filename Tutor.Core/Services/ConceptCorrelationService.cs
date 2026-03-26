@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Tutor.Core.Models;
@@ -16,8 +15,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class ConceptCorrelationService
 {
-    private readonly HttpClient http;
-    private readonly OpenAIOptions opt;
+    private readonly LlmServiceRouter router;
     private readonly EmbeddingService embeddingService;
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
@@ -64,14 +62,12 @@ public sealed class ConceptCorrelationService
         """;
 
     public ConceptCorrelationService(
-        HttpClient http,
-        OpenAIOptions opt,
+        LlmServiceRouter router,
         EmbeddingService embeddingService,
         LSHService lshService,
         SimHashService simHashService)
     {
-        this.http = http;
-        this.opt = opt;
+        this.router = router;
         this.embeddingService = embeddingService;
         this.lshService = lshService;
         this.simHashService = simHashService;
@@ -190,8 +186,7 @@ public sealed class ConceptCorrelationService
         if (pairs.Count == 0)
             return [];
 
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
+        if (!await router.IsConfiguredAsync())
             return BuildRelationshipsWithoutLlm(pairs, conceptLookup);
 
         // Prepare pairs for LLM analysis (batch for efficiency)
@@ -203,7 +198,7 @@ public sealed class ConceptCorrelationService
             ct.ThrowIfCancellationRequested();
 
             var batch = pairs.Skip(i).Take(batchSize).ToList();
-            var batchRelationships = await AnalyzeBatchAsync(batch, conceptLookup, apiKey, ct);
+            var batchRelationships = await AnalyzeBatchAsync(batch, conceptLookup, ct);
             relationships.AddRange(batchRelationships);
 
             // Rate limit between batches
@@ -278,7 +273,6 @@ public sealed class ConceptCorrelationService
     private async Task<List<ConceptRelationship>> AnalyzeBatchAsync(
         List<ConceptPairScore> batch,
         Dictionary<string, ConceptNode> conceptLookup,
-        string apiKey,
         CancellationToken ct)
     {
         var relationships = new List<ConceptRelationship>();
@@ -298,27 +292,10 @@ public sealed class ConceptCorrelationService
                 pairDescriptions.AppendLine();
             }
 
-            var payload = new
-            {
-                model = opt.Model,
-                input = pairDescriptions.ToString(),
-                instructions = PrerequisiteAnalysisPrompt
-            };
+            var messages = new[] { new ChatMessage("user", pairDescriptions.ToString(), pairDescriptions.ToString()) };
+            var reply = await router.GetReplyAsync(messages, PrerequisiteAnalysisPrompt, ct);
 
-            using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-            using var resp = await http.SendAsync(req, ct);
-            var json = await resp.Content.ReadAsStringAsync(ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                // Fall back to heuristic-based relationships
-                return BuildRelationshipsWithoutLlm(batch, conceptLookup);
-            }
-
-            var responseText = ExtractResponseText(json);
+            var responseText = reply.Text;
             var analyzed = ParsePrerequisiteAnalysis(responseText, batch, conceptLookup);
             relationships.AddRange(analyzed);
         }
@@ -329,35 +306,6 @@ public sealed class ConceptCorrelationService
         }
 
         return relationships;
-    }
-
-    private static string ExtractResponseText(string json)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-
-            if (doc.RootElement.TryGetProperty("output_text", out var outText) && outText.ValueKind == JsonValueKind.String)
-                return outText.GetString() ?? "";
-
-            if (doc.RootElement.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in output.EnumerateArray())
-                {
-                    if (item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var c in content.EnumerateArray())
-                        {
-                            if (c.TryGetProperty("text", out var textProp) && textProp.ValueKind == JsonValueKind.String)
-                                return textProp.GetString() ?? "";
-                        }
-                    }
-                }
-            }
-        }
-        catch { }
-
-        return json;
     }
 
     private static List<ConceptRelationship> ParsePrerequisiteAnalysis(
