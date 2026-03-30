@@ -5,4 +5,5 @@
     <Deploy Solution="Debug|*" />
   </Project>
   <Project Path="Tutor.Blazor\Tutor.Blazor.csproj" />
+  <Project Path="Tutor.Tests/Tutor.Tests.csproj" />
 </Solution>
