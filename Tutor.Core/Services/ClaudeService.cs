@@ -103,8 +103,18 @@ public sealed class ClaudeService : ILlmService, IDisposable
 
         if (!string.IsNullOrWhiteSpace(instructions))
         {
-            payload["system"] = instructions;
-            Log.Trace($"Claude: Using system instructions ({instructions.Length} chars)");
+            // Use structured content blocks with cache_control for prompt caching.
+            // Cached system prompts cost 90% less on cache hits after the initial write.
+            payload["system"] = new[]
+            {
+                new
+                {
+                    type = "text",
+                    text = instructions,
+                    cache_control = new { type = "ephemeral" }
+                }
+            };
+            Log.Trace($"Claude: Using system instructions ({instructions.Length} chars) with prompt caching");
         }
 
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
