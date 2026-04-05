@@ -31,6 +31,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -49,6 +50,7 @@
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.Extensions.Http": {
@@ -380,7 +382,8 @@
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net10.0-android36.0": {
+          "net10.0-android": {
+            "framework": "net10.0-android36.0",
             "targetAlias": "net10.0-android",
             "projectReferences": {
               "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
@@ -391,7 +394,8 @@
               }
             }
           },
-          "net10.0-ios26.2": {
+          "net10.0-ios": {
+            "framework": "net10.0-ios26.2",
             "targetAlias": "net10.0-ios",
             "projectReferences": {
               "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
@@ -402,7 +406,8 @@
               }
             }
           },
-          "net10.0-maccatalyst26.2": {
+          "net10.0-maccatalyst": {
+            "framework": "net10.0-maccatalyst26.2",
             "targetAlias": "net10.0-maccatalyst",
             "projectReferences": {
               "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
@@ -413,7 +418,8 @@
               }
             }
           },
-          "net10.0-windows10.0.19041": {
+          "net10.0-windows10.0.19041.0": {
+            "framework": "net10.0-windows10.0.19041",
             "targetAlias": "net10.0-windows10.0.19041.0",
             "projectReferences": {
               "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
@@ -438,7 +444,8 @@
         "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
-        "net10.0-android36.0": {
+        "net10.0-android": {
+          "framework": "net10.0-android36.0",
           "targetAlias": "net10.0-android",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
@@ -758,7 +765,8 @@
             "System.Xml.XPath.XDocument": "(,5.0.32767]"
           }
         },
-        "net10.0-ios26.2": {
+        "net10.0-ios": {
+          "framework": "net10.0-ios26.2",
           "targetAlias": "net10.0-ios",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
@@ -1078,7 +1086,8 @@
             "System.Xml.XPath.XDocument": "(,5.0.32767]"
           }
         },
-        "net10.0-maccatalyst26.2": {
+        "net10.0-maccatalyst": {
+          "framework": "net10.0-maccatalyst26.2",
           "targetAlias": "net10.0-maccatalyst",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
@@ -1399,7 +1408,8 @@
             "System.Xml.XPath.XDocument": "(,5.0.32767]"
           }
         },
-        "net10.0-windows10.0.19041": {
+        "net10.0-windows10.0.19041.0": {
+          "framework": "net10.0-windows10.0.19041",
           "targetAlias": "net10.0-windows10.0.19041.0",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebView.Maui": {
@@ -1762,6 +1772,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
               "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj": {
@@ -1784,6 +1795,7 @@
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.Components.Web": {
