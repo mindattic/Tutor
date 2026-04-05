@@ -12,11 +12,11 @@ public sealed class SettingsService
     private const string DateFormatKey = "DATE_FORMAT";
     private const string ParagraphSpacingKey = "PARAGRAPH_SPACING";
     
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
 
     public SettingsService(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     // Log level settings keys
@@ -45,7 +45,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(DateFormatKey);
+            var value = await securePreferences.GetAsync(DateFormatKey);
             var format = string.IsNullOrEmpty(value) ? "yyyy-MM-dd hh:mm:ss tt" : value;
             CurrentDateFormat = format;
             return format;
@@ -60,7 +60,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(DateFormatKey, format);
+            await securePreferences.SetAsync(DateFormatKey, format);
             CurrentDateFormat = format;
         }
         catch
@@ -74,7 +74,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(LogTraceKey);
+            var value = await securePreferences.GetAsync(LogTraceKey);
             return value == "true"; // Default false
         }
         catch { return false; }
@@ -84,7 +84,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(LogTraceKey, enabled.ToString().ToLower());
+            await securePreferences.SetAsync(LogTraceKey, enabled.ToString().ToLower());
             Log.Settings.LogTrace = enabled;
         }
         catch { }
@@ -94,7 +94,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(LogDebugKey);
+            var value = await securePreferences.GetAsync(LogDebugKey);
             return string.IsNullOrEmpty(value) || value == "true"; // Default true
         }
         catch { return true; }
@@ -104,7 +104,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(LogDebugKey, enabled.ToString().ToLower());
+            await securePreferences.SetAsync(LogDebugKey, enabled.ToString().ToLower());
             Log.Settings.LogDebug = enabled;
         }
         catch { }
@@ -114,7 +114,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(LogInfoKey);
+            var value = await securePreferences.GetAsync(LogInfoKey);
             return string.IsNullOrEmpty(value) || value == "true"; // Default true
         }
         catch { return true; }
@@ -124,7 +124,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(LogInfoKey, enabled.ToString().ToLower());
+            await securePreferences.SetAsync(LogInfoKey, enabled.ToString().ToLower());
             Log.Settings.LogInfo = enabled;
         }
         catch { }
@@ -134,7 +134,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(LogWarningKey);
+            var value = await securePreferences.GetAsync(LogWarningKey);
             return string.IsNullOrEmpty(value) || value == "true"; // Default true
         }
         catch { return true; }
@@ -144,7 +144,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(LogWarningKey, enabled.ToString().ToLower());
+            await securePreferences.SetAsync(LogWarningKey, enabled.ToString().ToLower());
             Log.Settings.LogWarning = enabled;
         }
         catch { }
@@ -154,7 +154,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(LogErrorKey);
+            var value = await securePreferences.GetAsync(LogErrorKey);
             return string.IsNullOrEmpty(value) || value == "true"; // Default true
         }
         catch { return true; }
@@ -164,7 +164,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(LogErrorKey, enabled.ToString().ToLower());
+            await securePreferences.SetAsync(LogErrorKey, enabled.ToString().ToLower());
             Log.Settings.LogError = enabled;
         }
         catch { }
@@ -174,7 +174,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(LogCriticalKey);
+            var value = await securePreferences.GetAsync(LogCriticalKey);
             return string.IsNullOrEmpty(value) || value == "true"; // Default true (always on)
         }
         catch { return true; }
@@ -184,7 +184,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(LogCriticalKey, enabled.ToString().ToLower());
+            await securePreferences.SetAsync(LogCriticalKey, enabled.ToString().ToLower());
             Log.Settings.LogCritical = enabled;
         }
         catch { }
@@ -212,7 +212,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(BorderRadiusKey);
+            var value = await securePreferences.GetAsync(BorderRadiusKey);
             return int.TryParse(value, out var radius) ? Math.Clamp(radius, 0, 10) : 6;
         }
         catch
@@ -225,7 +225,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(BorderRadiusKey, Math.Clamp(radius, 0, 10).ToString());
+            await securePreferences.SetAsync(BorderRadiusKey, Math.Clamp(radius, 0, 10).ToString());
         }
         catch
         {
@@ -238,7 +238,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(ParagraphSpacingKey);
+            var value = await securePreferences.GetAsync(ParagraphSpacingKey);
             return double.TryParse(value, out var spacing) ? Math.Clamp(spacing, 0.5, 2.0) : 1.0;
         }
         catch
@@ -251,7 +251,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(ParagraphSpacingKey, Math.Clamp(spacing, 0.5, 2.0).ToString("F1"));
+            await securePreferences.SetAsync(ParagraphSpacingKey, Math.Clamp(spacing, 0.5, 2.0).ToString("F1"));
         }
         catch
         {
@@ -264,7 +264,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(EnterToSendKey);
+            var value = await securePreferences.GetAsync(EnterToSendKey);
             return string.IsNullOrEmpty(value) || value == "true";
         }
         catch
@@ -277,7 +277,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(EnterToSendKey, value.ToString().ToLower());
+            await securePreferences.SetAsync(EnterToSendKey, value.ToString().ToLower());
         }
         catch
         {
@@ -290,7 +290,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(QuizQuestionCountKey);
+            var value = await securePreferences.GetAsync(QuizQuestionCountKey);
             return int.TryParse(value, out var count) ? count : 3;
         }
         catch
@@ -303,7 +303,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(QuizQuestionCountKey, count.ToString());
+            await securePreferences.SetAsync(QuizQuestionCountKey, count.ToString());
         }
         catch
         {
@@ -316,7 +316,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(GradingScaleKey);
+            var value = await securePreferences.GetAsync(GradingScaleKey);
             return Enum.TryParse<GradingScale>(value, out var scale) ? scale : GradingScale.Standard;
         }
         catch
@@ -329,7 +329,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(GradingScaleKey, scale.ToString());
+            await securePreferences.SetAsync(GradingScaleKey, scale.ToString());
         }
         catch
         {
@@ -402,7 +402,7 @@ public sealed class SettingsService
     {
         try
         {
-            var json = await _securePreferences.GetAsync(LessonStateKey);
+            var json = await securePreferences.GetAsync(LessonStateKey);
             if (string.IsNullOrEmpty(json)) return null;
             return JsonSerializer.Deserialize<LessonState>(json);
         }
@@ -418,12 +418,12 @@ public sealed class SettingsService
         {
             if (state == null)
             {
-                _securePreferences.Remove(LessonStateKey);
+                securePreferences.Remove(LessonStateKey);
             }
             else
             {
                 var json = JsonSerializer.Serialize(state);
-                await _securePreferences.SetAsync(LessonStateKey, json);
+                await securePreferences.SetAsync(LessonStateKey, json);
             }
         }
         catch
@@ -436,7 +436,7 @@ public sealed class SettingsService
     {
         try
         {
-            _securePreferences.Remove(LessonStateKey);
+            securePreferences.Remove(LessonStateKey);
         }
         catch
         {
@@ -456,7 +456,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(UserDisplayNameKey);
+            var value = await securePreferences.GetAsync(UserDisplayNameKey);
             return string.IsNullOrEmpty(value) ? "User" : value;
         }
         catch
@@ -469,7 +469,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(UserDisplayNameKey, name);
+            await securePreferences.SetAsync(UserDisplayNameKey, name);
         }
         catch { }
     }
@@ -478,7 +478,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(AssistantDisplayNameKey);
+            var value = await securePreferences.GetAsync(AssistantDisplayNameKey);
             return string.IsNullOrEmpty(value) ? "Assistant" : value;
         }
         catch
@@ -491,7 +491,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(AssistantDisplayNameKey, name);
+            await securePreferences.SetAsync(AssistantDisplayNameKey, name);
         }
         catch { }
     }
@@ -500,7 +500,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(UserAvatarIconKey);
+            var value = await securePreferences.GetAsync(UserAvatarIconKey);
             return string.IsNullOrEmpty(value) ? "bi-person-fill" : value;
         }
         catch
@@ -513,7 +513,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(UserAvatarIconKey, icon);
+            await securePreferences.SetAsync(UserAvatarIconKey, icon);
         }
         catch { }
     }
@@ -522,7 +522,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(AssistantAvatarIconKey);
+            var value = await securePreferences.GetAsync(AssistantAvatarIconKey);
             return string.IsNullOrEmpty(value) ? "bi-robot" : value;
         }
         catch
@@ -535,7 +535,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(AssistantAvatarIconKey, icon);
+            await securePreferences.SetAsync(AssistantAvatarIconKey, icon);
         }
         catch { }
     }
@@ -544,7 +544,7 @@ public sealed class SettingsService
     {
         try
         {
-            return await _securePreferences.GetAsync(UserCustomAvatarKey);
+            return await securePreferences.GetAsync(UserCustomAvatarKey);
         }
         catch
         {
@@ -558,11 +558,11 @@ public sealed class SettingsService
         {
             if (string.IsNullOrEmpty(dataUrl))
             {
-                _securePreferences.Remove(UserCustomAvatarKey);
+                securePreferences.Remove(UserCustomAvatarKey);
             }
             else
             {
-                await _securePreferences.SetAsync(UserCustomAvatarKey, dataUrl);
+                await securePreferences.SetAsync(UserCustomAvatarKey, dataUrl);
             }
         }
         catch { }
@@ -572,7 +572,7 @@ public sealed class SettingsService
     {
         try
         {
-            return await _securePreferences.GetAsync(AssistantCustomAvatarKey);
+            return await securePreferences.GetAsync(AssistantCustomAvatarKey);
         }
         catch
         {
@@ -586,11 +586,11 @@ public sealed class SettingsService
         {
             if (string.IsNullOrEmpty(dataUrl))
             {
-                _securePreferences.Remove(AssistantCustomAvatarKey);
+                securePreferences.Remove(AssistantCustomAvatarKey);
             }
             else
             {
-                await _securePreferences.SetAsync(AssistantCustomAvatarKey, dataUrl);
+                await securePreferences.SetAsync(AssistantCustomAvatarKey, dataUrl);
             }
         }
         catch { }
@@ -614,7 +614,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(OrphanLinkingMaxIterationsKey);
+            var value = await securePreferences.GetAsync(OrphanLinkingMaxIterationsKey);
             return int.TryParse(value, out var iterations) ? iterations : DefaultOrphanLinkingMaxIterations;
         }
         catch
@@ -627,7 +627,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(OrphanLinkingMaxIterationsKey, iterations.ToString());
+            await securePreferences.SetAsync(OrphanLinkingMaxIterationsKey, iterations.ToString());
         }
         catch { }
     }
@@ -636,7 +636,7 @@ public sealed class SettingsService
     {
         try
         {
-            var value = await _securePreferences.GetAsync(OrphanLinkingMinConfidenceKey);
+            var value = await securePreferences.GetAsync(OrphanLinkingMinConfidenceKey);
             return float.TryParse(value, out var confidence) ? confidence : DefaultOrphanLinkingMinConfidence;
         }
         catch
@@ -650,7 +650,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(OrphanLinkingMinConfidenceKey, confidence.ToString());
+            await securePreferences.SetAsync(OrphanLinkingMinConfidenceKey, confidence.ToString());
         }
         catch { }
     }
@@ -666,7 +666,7 @@ public sealed class SettingsService
     {
         try
         {
-            var val = await _securePreferences.GetAsync(ReadingTimeSecondsKey);
+            var val = await securePreferences.GetAsync(ReadingTimeSecondsKey);
             if (int.TryParse(val, out var seconds))
                 return seconds;
         }
@@ -681,7 +681,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(ReadingTimeSecondsKey, seconds.ToString());
+            await securePreferences.SetAsync(ReadingTimeSecondsKey, seconds.ToString());
         }
         catch { }
     }
@@ -693,7 +693,7 @@ public sealed class SettingsService
     {
         try
         {
-            var val = await _securePreferences.GetAsync(UseCalculatedReadingTimeKey);
+            var val = await securePreferences.GetAsync(UseCalculatedReadingTimeKey);
             if (bool.TryParse(val, out var use))
                 return use;
         }
@@ -708,7 +708,7 @@ public sealed class SettingsService
     {
         try
         {
-            await _securePreferences.SetAsync(UseCalculatedReadingTimeKey, use.ToString());
+            await securePreferences.SetAsync(UseCalculatedReadingTimeKey, use.ToString());
         }
         catch { }
     }

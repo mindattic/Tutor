@@ -13,7 +13,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public class UserStorageService
 {
-    private readonly IAppDataPathProvider _pathProvider;
+    private readonly IAppDataPathProvider pathProvider;
     private readonly string usersFolder;
     private readonly SemaphoreSlim fileLock = new(1, 1);
 
@@ -24,8 +24,8 @@ public class UserStorageService
 
     public UserStorageService(IAppDataPathProvider pathProvider)
     {
-        _pathProvider = pathProvider;
-        var appDataPath = _pathProvider.AppDataDirectory;
+        this.pathProvider = pathProvider;
+        var appDataPath = this.pathProvider.AppDataDirectory;
         usersFolder = Path.Combine(appDataPath, "Users");
         Directory.CreateDirectory(usersFolder);
     }

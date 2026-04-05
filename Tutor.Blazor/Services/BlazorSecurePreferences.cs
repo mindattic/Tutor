@@ -5,9 +5,9 @@ namespace Tutor.Blazor.Services;
 
 public class BlazorSecurePreferences : ISecurePreferences, IDisposable
 {
-    private readonly string _filePath;
-    private Dictionary<string, string> _store = new();
-    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly string filePath;
+    private Dictionary<string, string> store = new();
+    private readonly SemaphoreSlim @lock = new(1, 1);
 
     public BlazorSecurePreferences()
     {
@@ -15,41 +15,41 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Tutor", "Settings");
         Directory.CreateDirectory(dir);
-        _filePath = Path.Combine(dir, "secure-preferences.json");
+        filePath = Path.Combine(dir, "secure-preferences.json");
         Load();
     }
 
     public Task<string?> GetAsync(string key)
     {
-        _store.TryGetValue(key, out var value);
+        store.TryGetValue(key, out var value);
         return Task.FromResult(value);
     }
 
     public async Task SetAsync(string key, string value)
     {
-        await _lock.WaitAsync();
+        await @lock.WaitAsync();
         try
         {
-            _store[key] = value;
+            store[key] = value;
             await SaveAsync();
         }
         finally
         {
-            _lock.Release();
+            @lock.Release();
         }
     }
 
     public void Remove(string key)
     {
-        _lock.Wait();
+        @lock.Wait();
         try
         {
-            _store.Remove(key);
+            store.Remove(key);
             SaveSync();
         }
         finally
         {
-            _lock.Release();
+            @lock.Release();
         }
     }
 
@@ -57,16 +57,16 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     {
         try
         {
-            if (File.Exists(_filePath))
+            if (File.Exists(filePath))
             {
-                var json = File.ReadAllText(_filePath);
-                _store = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+                var json = File.ReadAllText(filePath);
+                store = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[BlazorSecurePreferences] Failed to load preferences: {ex.Message}");
-            _store = new();
+            store = new();
         }
     }
 
@@ -74,8 +74,8 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     {
         try
         {
-            var json = JsonSerializer.Serialize(_store, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(_filePath, json);
+            var json = JsonSerializer.Serialize(store, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(filePath, json);
         }
         catch (Exception ex)
         {
@@ -87,8 +87,8 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     {
         try
         {
-            var json = JsonSerializer.Serialize(_store, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_filePath, json);
+            var json = JsonSerializer.Serialize(store, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, json);
         }
         catch (Exception ex)
         {
@@ -98,6 +98,6 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
 
     public void Dispose()
     {
-        _lock.Dispose();
+        @lock.Dispose();
     }
 }

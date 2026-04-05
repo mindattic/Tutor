@@ -11,7 +11,7 @@ namespace Tutor.Core.Services;
 public sealed class KnowledgeGraphService
 {
     private const string GraphsDirectoryName = "KnowledgeGraphs";
-    private readonly IAppDataPathProvider _pathProvider;
+    private readonly IAppDataPathProvider pathProvider;
     private readonly string graphsDirectory;
 
     private readonly ConceptExtractionService extractionService;
@@ -37,9 +37,9 @@ public sealed class KnowledgeGraphService
         this.embeddingService = embeddingService;
         this.lshService = lshService;
         this.simHashService = simHashService;
-        _pathProvider = pathProvider;
+        this.pathProvider = pathProvider;
 
-        graphsDirectory = Path.Combine(_pathProvider.AppDataDirectory, GraphsDirectoryName);
+        graphsDirectory = Path.Combine(this.pathProvider.AppDataDirectory, GraphsDirectoryName);
         Directory.CreateDirectory(graphsDirectory);
     }
 

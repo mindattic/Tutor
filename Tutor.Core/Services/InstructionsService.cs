@@ -5,11 +5,11 @@ public sealed class InstructionsService
     private const string StorageKeyPrefix = "INSTRUCTION_";
     private const string CountKey = "INSTRUCTION_COUNT";
 
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
 
     public InstructionsService(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     // Hardcoded internal instructions for consistent, direct responses
@@ -35,12 +35,12 @@ public sealed class InstructionsService
         
         try
         {
-            var countStr = await _securePreferences.GetAsync(CountKey);
+            var countStr = await securePreferences.GetAsync(CountKey);
             var count = int.TryParse(countStr, out var c) ? c : 0;
 
             for (int i = 0; i < count; i++)
             {
-                var instruction = await _securePreferences.GetAsync($"{StorageKeyPrefix}{i}");
+                var instruction = await securePreferences.GetAsync($"{StorageKeyPrefix}{i}");
                 if (!string.IsNullOrWhiteSpace(instruction))
                 {
                     instructions.Add(instruction);

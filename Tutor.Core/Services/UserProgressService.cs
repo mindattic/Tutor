@@ -13,12 +13,12 @@ public sealed class UserProgressService
     private const string ProgressKeyPrefix = "USER_PROGRESS_";
     private const string DefaultUserId = "default";
 
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
     private readonly Dictionary<string, UserProgress> cachedProgress = [];
 
     public UserProgressService(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public sealed class UserProgressService
         try
         {
             var storageKey = GetStorageKey(courseId, userId);
-            var json = await _securePreferences.GetAsync(storageKey);
+            var json = await securePreferences.GetAsync(storageKey);
 
             if (!string.IsNullOrEmpty(json))
             {
@@ -82,7 +82,7 @@ public sealed class UserProgressService
         {
             var storageKey = GetStorageKey(progress.CourseId, progress.UserId);
             var json = JsonSerializer.Serialize(progress);
-            await _securePreferences.SetAsync(storageKey, json);
+            await securePreferences.SetAsync(storageKey, json);
             
             OnProgressUpdated?.Invoke(progress.CourseId);
         }
@@ -144,7 +144,7 @@ public sealed class UserProgressService
         try
         {
             var storageKey = GetStorageKey(courseId, userId);
-            _securePreferences.Remove(storageKey);
+            securePreferences.Remove(storageKey);
         }
         catch
         {

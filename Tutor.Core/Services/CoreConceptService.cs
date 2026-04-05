@@ -11,39 +11,39 @@ namespace Tutor.Core.Services;
 public class CoreConceptService
 {
     private const string ConceptsKeyPrefix = "CORE_CONCEPTS_";
-    private readonly ISecurePreferences _securePreferences;
-    private readonly List<CoreConcept> _concepts = new();
+    private readonly ISecurePreferences securePreferences;
+    private readonly List<CoreConcept> concepts = new();
     private string currentUserId = "default_user";
 
     public CoreConceptService(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     public event Action? OnConceptsChanged;
 
-    public IReadOnlyList<CoreConcept> GetConcepts() => _concepts.AsReadOnly();
+    public IReadOnlyList<CoreConcept> GetConcepts() => concepts.AsReadOnly();
 
     public async Task LoadForUserAsync(string userId)
     {
         currentUserId = string.IsNullOrEmpty(userId) ? "default_user" : userId;
         try
         {
-            var json = await _securePreferences.GetAsync(ConceptsKeyPrefix + currentUserId);
+            var json = await securePreferences.GetAsync(ConceptsKeyPrefix + currentUserId);
             if (string.IsNullOrEmpty(json))
             {
-                _concepts.Clear();
+                concepts.Clear();
                 return;
             }
 
             var list = JsonSerializer.Deserialize<List<CoreConcept>>(json);
-            _concepts.Clear();
+            concepts.Clear();
             if (list != null)
-                _concepts.AddRange(list);
+                concepts.AddRange(list);
         }
         catch
         {
-            _concepts.Clear();
+            concepts.Clear();
         }
 
         OnConceptsChanged?.Invoke();
@@ -53,8 +53,8 @@ public class CoreConceptService
     {
         try
         {
-            var json = JsonSerializer.Serialize(_concepts);
-            await _securePreferences.SetAsync(ConceptsKeyPrefix + currentUserId, json);
+            var json = JsonSerializer.Serialize(concepts);
+            await securePreferences.SetAsync(ConceptsKeyPrefix + currentUserId, json);
         }
         catch { }
     }
@@ -64,10 +64,10 @@ public class CoreConceptService
         if (string.IsNullOrWhiteSpace(term) || string.IsNullOrWhiteSpace(description))
             return false;
 
-        if (_concepts.Any(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase)))
+        if (concepts.Any(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase)))
             return false;
 
-        _concepts.Add(new CoreConcept
+        concepts.Add(new CoreConcept
         {
             Term = term.Trim(),
             Description = description.Trim(),
@@ -81,10 +81,10 @@ public class CoreConceptService
 
     public async Task<bool> UpdateConceptAsync(string term, string newDescription)
     {
-        var index = _concepts.FindIndex(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase));
+        var index = concepts.FindIndex(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase));
         if (index < 0) return false;
 
-        _concepts[index] = _concepts[index] with { Description = newDescription.Trim() };
+        concepts[index] = concepts[index] with { Description = newDescription.Trim() };
         await SaveForUserAsync();
         OnConceptsChanged?.Invoke();
         return true;
@@ -92,7 +92,7 @@ public class CoreConceptService
 
     public async Task<bool> RemoveConceptAsync(string term)
     {
-        var removed = _concepts.RemoveAll(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase)) > 0;
+        var removed = concepts.RemoveAll(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase)) > 0;
         if (removed)
         {
             await SaveForUserAsync();
@@ -103,16 +103,16 @@ public class CoreConceptService
 
     public CoreConcept? GetConcept(string term)
     {
-        return _concepts.FirstOrDefault(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase));
+        return concepts.FirstOrDefault(c => c.Term.Equals(term, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task ClearAllAsync()
     {
-        _concepts.Clear();
-        try { _securePreferences.Remove(ConceptsKeyPrefix + currentUserId); } catch { }
+        concepts.Clear();
+        try { securePreferences.Remove(ConceptsKeyPrefix + currentUserId); } catch { }
         OnConceptsChanged?.Invoke();
         await Task.CompletedTask;
     }
 
-    public int Count => _concepts.Count;
+    public int Count => concepts.Count;
 }

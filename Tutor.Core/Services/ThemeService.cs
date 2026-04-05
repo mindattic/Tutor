@@ -4,7 +4,7 @@ public sealed class ThemeService
 {
     private const string ThemeKey = "APP_THEME";
 
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
 
     public static readonly string[] AvailableThemes = ["Light", "Dark", "Summer", "Winter", "Autumn", "Spring"];
 
@@ -12,7 +12,7 @@ public sealed class ThemeService
 
     public ThemeService(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     public async Task InitializeAsync()
@@ -24,7 +24,7 @@ public sealed class ThemeService
     {
         try
         {
-            var theme = await _securePreferences.GetAsync(ThemeKey);
+            var theme = await securePreferences.GetAsync(ThemeKey);
             return string.IsNullOrEmpty(theme) ? "Light" : theme;
         }
         catch
@@ -40,7 +40,7 @@ public sealed class ThemeService
             
         try
         {
-            await _securePreferences.SetAsync(ThemeKey, theme);
+            await securePreferences.SetAsync(ThemeKey, theme);
             CurrentTheme = theme;
         }
         catch

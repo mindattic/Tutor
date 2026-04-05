@@ -366,6 +366,21 @@
                 .attr('stroke-opacity', 0.6)
                 .attr('stroke-width', 2);
 
+            // Compute edge count per node for StreetSamurai-style sizing
+            var edgeCounts = {};
+            links.forEach(function(l) {
+                var srcId = typeof l.source === 'object' ? l.source.id : l.source;
+                var tgtId = typeof l.target === 'object' ? l.target.id : l.target;
+                edgeCounts[srcId] = (edgeCounts[srcId] || 0) + 1;
+                edgeCounts[tgtId] = (edgeCounts[tgtId] || 0) + 1;
+            });
+            nodes.forEach(function(n) { n.edgeCount = edgeCounts[n.id] || 0; });
+
+            // StreetSamurai node radius formula
+            function nodeRadius(d) {
+                return Math.min(6 + (d.edgeCount || 0) * 0.8, 28);
+            }
+
             // Create nodes
             var nodeGroups = forceGraphG.append('g')
                 .attr('class', 'nodes')
@@ -381,20 +396,24 @@
             // Store reference to all node groups (not just enter selection)
             forceGraphNodes = forceGraphG.select('.nodes').selectAll('.node');
 
-            // Add circles to nodes
-            nodeGroups.append('circle')
-                .attr('r', 20)
+            // Add squares to nodes (StreetSamurai style)
+            nodeGroups.append('rect')
+                .attr('width', function(d) { return nodeRadius(d) * 2; })
+                .attr('height', function(d) { return nodeRadius(d) * 2; })
+                .attr('x', function(d) { return -nodeRadius(d); })
+                .attr('y', function(d) { return -nodeRadius(d); })
+                .attr('rx', 3).attr('ry', 3)
                 .attr('fill', function(d) { return color(d.group); })
-                .attr('stroke', '#fff')
-                .attr('stroke-width', 2);
+                .attr('stroke', '#222')
+                .attr('stroke-width', 1.5);
 
             // Add labels to nodes
             nodeGroups.append('text')
-                .attr('dy', 35)
+                .attr('dy', function(d) { return nodeRadius(d) + 15; })
                 .attr('text-anchor', 'middle')
                 .attr('class', 'node-label')
-                .text(function(d) { 
-                    return d.title.length > 15 ? d.title.substring(0, 15) + '...' : d.title; 
+                .text(function(d) {
+                    return d.title.length > 15 ? d.title.substring(0, 15) + '...' : d.title;
                 });
 
 
@@ -516,6 +535,25 @@
                 }
             }
             
+            // Add or remove pin icon on a node
+            function updatePinIcon(node, pinned) {
+                var nodeEl = d3.selectAll('.node').filter(function(d) { return d.id === node.id; });
+                nodeEl.select('.pin-icon').remove();
+                if (pinned) {
+                    var r = Math.min(6 + (node.edgeCount || 0) * 0.8, 28);
+                    nodeEl.append('text')
+                        .attr('class', 'pin-icon')
+                        .attr('x', r - 3)
+                        .attr('y', -r + 3)
+                        .attr('text-anchor', 'end')
+                        .attr('dominant-baseline', 'hanging')
+                        .attr('font-size', '10px')
+                        .attr('fill', '#fff')
+                        .attr('pointer-events', 'none')
+                        .text('\uD83D\uDCCC');
+                }
+            }
+
             // Toggle pin state for a node
             function toggleNodePin(node) {
                 var isPinned = pinnedNodes[node.id] != null;
@@ -532,6 +570,9 @@
                     node.fy = node.y;
                     console.log('[D3 Force Graph] Node pinned:', node.title, 'at', Math.round(node.x), Math.round(node.y));
                 }
+
+                // Update pin icon
+                updatePinIcon(node, !isPinned);
 
                 // Nudge simulation so layout updates
                 if (forceSimulation) {
@@ -571,13 +612,14 @@
                     var saved = localStorage.getItem('pinnedNodes');
                     if (saved) {
                         pinnedNodes = JSON.parse(saved);
-                        // Apply pinned positions to nodes
+                        // Apply pinned positions and pin icons to nodes
                         nodes.forEach(function(node) {
                             if (pinnedNodes[node.id]) {
                                 node.fx = pinnedNodes[node.id].x;
                                 node.fy = pinnedNodes[node.id].y;
                                 node.x = pinnedNodes[node.id].x;
                                 node.y = pinnedNodes[node.id].y;
+                                updatePinIcon(node, true);
                             }
                         });
                         console.log('[D3 Force Graph] Loaded', Object.keys(pinnedNodes).length, 'pinned nodes');
@@ -709,18 +751,18 @@
             // Cancel any pending highlight from previous selection
             cancelPendingHighlight();
             // Reset all nodes
-            d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
+            d3.selectAll('.node rect').attr('stroke', '#222').attr('stroke-width', 1.5);
             // Highlight the selected node
-            nodeElement.select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+            nodeElement.select('rect').attr('stroke', '#ffc107').attr('stroke-width', 4);
         }
 
         function highlightNode(nodeId) {
             if (!forceSimulation) return;
             // Cancel any pending highlight from previous selection
             cancelPendingHighlight();
-            d3.selectAll('.node circle').attr('stroke', '#fff').attr('stroke-width', 2);
+            d3.selectAll('.node rect').attr('stroke', '#222').attr('stroke-width', 1.5);
             d3.selectAll('.node').filter(function(d) { return d.id === nodeId; })
-                .select('circle').attr('stroke', '#ffc107').attr('stroke-width', 4);
+                .select('rect').attr('stroke', '#ffc107').attr('stroke-width', 4);
         }
 
         function panToNode(nodeId) {
@@ -1012,14 +1054,15 @@
             // Clear the pinnedNodes object
             pinnedNodes = {};
             
-            // Release all fixed positions
+            // Release all fixed positions and remove pin icons
             forceGraphNodes.each(function(d) {
                 if (d) {
                     d.fx = null;
                     d.fy = null;
                 }
             });
-            
+            d3.selectAll('.pin-icon').remove();
+
             // Clear localStorage
             try {
                 localStorage.removeItem('pinnedNodes');

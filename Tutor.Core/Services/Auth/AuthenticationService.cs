@@ -13,7 +13,7 @@ namespace Tutor.Core.Services;
 public sealed class AuthenticationService
 {
     private readonly IAuthController authController;
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
     private UserProfile? currentUser;
     private bool isInitialized;
     
@@ -32,7 +32,7 @@ public sealed class AuthenticationService
     public AuthenticationService(IAuthController authController, ISecurePreferences securePreferences)
     {
         this.authController = authController;
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
         Instance = this; // Set static instance for rare non-DI access
     }
 
@@ -62,7 +62,7 @@ public sealed class AuthenticationService
         // Check for persisted user session
         try
         {
-            var json = await _securePreferences.GetAsync("CURRENT_USER");
+            var json = await securePreferences.GetAsync("CURRENT_USER");
             if (!string.IsNullOrEmpty(json))
             {
                 var user = JsonSerializer.Deserialize<UserProfile>(json);
@@ -107,7 +107,7 @@ public sealed class AuthenticationService
             
             // Persist session
             var json = JsonSerializer.Serialize(currentUser);
-            await _securePreferences.SetAsync("CURRENT_USER", json);
+            await securePreferences.SetAsync("CURRENT_USER", json);
             
             OnUserLoggedIn?.Invoke(currentUser);
             OnAuthStateChanged?.Invoke();
@@ -129,7 +129,7 @@ public sealed class AuthenticationService
             
             // Persist session
             var json = JsonSerializer.Serialize(currentUser);
-            await _securePreferences.SetAsync("CURRENT_USER", json);
+            await securePreferences.SetAsync("CURRENT_USER", json);
             
             OnUserLoggedIn?.Invoke(currentUser);
             OnAuthStateChanged?.Invoke();
@@ -147,7 +147,7 @@ public sealed class AuthenticationService
         
         try
         {
-            _securePreferences.Remove("CURRENT_USER");
+            securePreferences.Remove("CURRENT_USER");
         }
         catch { }
         

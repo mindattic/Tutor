@@ -8,8 +8,8 @@ namespace Tutor.Core.Services.Logging;
 public sealed class LogStorageService
 {
     private const string LogFileName = "app-logs.json";
-    private readonly object _saveLock = new();
-    private bool _isInitialized;
+    private readonly object saveLock = new();
+    private bool isInitialized;
 
     /// <summary>
     /// Gets the current log file path (uses DataStorageSettings).
@@ -25,8 +25,8 @@ public sealed class LogStorageService
     /// </summary>
     public void Initialize()
     {
-        if (_isInitialized) return;
-        _isInitialized = true;
+        if (isInitialized) return;
+        isInitialized = true;
 
         // Load persisted logs
         LoadLogs();
@@ -125,7 +125,7 @@ public sealed class LogStorageService
 
             await Task.Run(() =>
             {
-                lock (_saveLock)
+                lock (saveLock)
                 {
                     File.WriteAllText(LogFilePath, json);
                 }
@@ -142,7 +142,7 @@ public sealed class LogStorageService
     /// </summary>
     public void ForceSave()
     {
-        lock (_saveLock)
+        lock (saveLock)
         {
             try
             {
@@ -176,7 +176,7 @@ public sealed class LogStorageService
     public void ClearPersistedLogs()
     {
         Log.Store.Clear();
-        lock (_saveLock)
+        lock (saveLock)
         {
             try
             {

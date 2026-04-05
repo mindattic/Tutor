@@ -87,7 +87,6 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\x88j4o7owe
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\6wf26tos1j-{0}-08mtdlppm0-08mtdlppm0.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\w0ndkest8f-{0}-ca434j9tb9-ca434j9tb9.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\2j9d51fijx-{0}-zutltbrm55-zutltbrm55.gz
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5k4epl2nsf-{0}-wkis841xt5-wkis841xt5.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\azt5cd4dlq-{0}-83wdbz3za5-83wdbz3za5.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5it8k5xq9a-{0}-83wdbz3za5-83wdbz3za5.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
@@ -107,3 +106,4 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\refint\Tutor.Shared.d
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Shared.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\ref\Tutor.Shared.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\p763vx3a23-{0}-2dx2jjw8nt-2dx2jjw8nt.gz
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5k4epl2nsf-{0}-va70tscr54-va70tscr54.gz

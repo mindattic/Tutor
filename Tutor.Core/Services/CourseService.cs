@@ -11,7 +11,7 @@ public sealed class CourseService
     private const string CoursesKey = "COURSES_DATA";
     private const string ActiveCourseKey = "ACTIVE_COURSE";
 
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
     private readonly ChunkingService chunkingService;
     private readonly EmbeddingService embeddingService;
     private readonly VectorStoreService vectorStoreService;
@@ -35,7 +35,7 @@ public sealed class CourseService
         SimHashService simHashService,
         ConceptMapCollectionService? conceptMapCollectionService = null)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;
         this.vectorStoreService = vectorStoreService;
@@ -55,7 +55,7 @@ public sealed class CourseService
 
         try
         {
-            var json = await _securePreferences.GetAsync(ResourcesKey);
+            var json = await securePreferences.GetAsync(ResourcesKey);
             if (string.IsNullOrEmpty(json))
             {
                 cachedResources = new List<CourseResource>();
@@ -282,7 +282,7 @@ public sealed class CourseService
     {
         cachedResources = resources;
         var json = JsonSerializer.Serialize(resources);
-        await _securePreferences.SetAsync(ResourcesKey, json);
+        await securePreferences.SetAsync(ResourcesKey, json);
     }
 
     /// <summary>
@@ -301,7 +301,7 @@ public sealed class CourseService
 
         try
         {
-            var json = await _securePreferences.GetAsync(CoursesKey);
+            var json = await securePreferences.GetAsync(CoursesKey);
             if (string.IsNullOrEmpty(json))
             {
                 cachedCourses = new List<Course>();
@@ -398,7 +398,7 @@ public sealed class CourseService
     {
         cachedCourses = courses;
         var json = JsonSerializer.Serialize(courses);
-        await _securePreferences.SetAsync(CoursesKey, json);
+        await securePreferences.SetAsync(CoursesKey, json);
     }
 
     // Course resource management
@@ -599,7 +599,7 @@ public sealed class CourseService
         }
         else
         {
-            await _securePreferences.SetAsync(ActiveCourseKey, courseId);
+            await securePreferences.SetAsync(ActiveCourseKey, courseId);
         }
     }
 
@@ -607,7 +607,7 @@ public sealed class CourseService
     {
         try
         {
-            return await _securePreferences.GetAsync(ActiveCourseKey);
+            return await securePreferences.GetAsync(ActiveCourseKey);
         }
         catch
         {
@@ -626,7 +626,7 @@ public sealed class CourseService
 
     public async Task ClearActiveCourseAsync()
     {
-        _securePreferences.Remove(ActiveCourseKey);
+        securePreferences.Remove(ActiveCourseKey);
         await Task.CompletedTask;
     }
 
@@ -644,7 +644,7 @@ public sealed class CourseService
 
             // Remove any stored progress key for this course for this user
             var progressKey = $"COURSE_PROGRESS_{userId}_{courseId}";
-            _securePreferences.Remove(progressKey);
+            securePreferences.Remove(progressKey);
         }
         catch { }
 

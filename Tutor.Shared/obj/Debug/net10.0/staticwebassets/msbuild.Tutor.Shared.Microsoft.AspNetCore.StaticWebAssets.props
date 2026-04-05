@@ -252,12 +252,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>wkis841xt5</Fingerprint>
-      <Integrity>8Mq9LBSt2uv3n96lINdvS/iIMlGja5RdFR//0Gxwx8I=</Integrity>
+      <Fingerprint>va70tscr54</Fingerprint>
+      <Integrity>CS4koUYrlufodgLl/2OGqsLQaIgrmKlo0FCmHTC9Dhs=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>53026</FileLength>
-      <LastWriteTime>Wed, 25 Mar 2026 01:41:30 GMT</LastWriteTime>
+      <FileLength>55187</FileLength>
+      <LastWriteTime>Sat, 04 Apr 2026 03:32:01 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\tutor-interop.js'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\Tutor.Shared.83wdbz3za5.bundle.scp.css'))">

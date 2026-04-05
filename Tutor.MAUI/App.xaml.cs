@@ -11,9 +11,9 @@ namespace Tutor.MAUI
     /// </summary>
     public partial class App : Application
     {
-        private readonly LogStorageService _logStorageService;
-        private readonly SettingsService _settingsService;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly LogStorageService logStorageService;
+        private readonly SettingsService settingsService;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// Initializes the application, loading persisted logs, log-level settings,
@@ -24,19 +24,19 @@ namespace Tutor.MAUI
             SettingsService settingsService,
             IServiceProvider serviceProvider)
         {
-            _logStorageService = logStorageService;
-            _settingsService = settingsService;
-            _serviceProvider = serviceProvider;
+            this.logStorageService = logStorageService;
+            this.settingsService = settingsService;
+            this.serviceProvider = serviceProvider;
             InitializeComponent();
 
             // Initialize logging system (loads persisted logs)
-            _logStorageService.Initialize();
+            this.logStorageService.Initialize();
 
             // Load log level settings
-            _ = _settingsService.LoadLogSettingsAsync();
+            _ = this.settingsService.LoadLogSettingsAsync();
 
             // Initialize background queue service (static singleton)
-            _ = BackgroundQueueService.InitializeAsync(_serviceProvider);
+            _ = BackgroundQueueService.InitializeAsync(this.serviceProvider);
         }
 
         /// <summary>Creates the application window with the main Blazor WebView page.</summary>

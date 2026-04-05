@@ -402,11 +402,11 @@ public sealed class OpenAIService : ILlmService, IDisposable
 /// </summary>
 public sealed class OpenAIOptions
 {
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
 
     public OpenAIOptions(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     // Valid OpenAI model options:
@@ -451,7 +451,7 @@ public sealed class OpenAIOptions
     {
         try
         {
-            return await _securePreferences.GetAsync("OPENAI_API_KEY");
+            return await securePreferences.GetAsync("OPENAI_API_KEY");
         }
         catch
         {
@@ -465,7 +465,7 @@ public sealed class OpenAIOptions
     /// </summary>
     public async Task SetApiKeyAsync(string apiKey)
     {
-        await _securePreferences.SetAsync("OPENAI_API_KEY", apiKey);
+        await securePreferences.SetAsync("OPENAI_API_KEY", apiKey);
     }
 
     /// <summary>
@@ -473,7 +473,7 @@ public sealed class OpenAIOptions
     /// </summary>
     public void ClearApiKey()
     {
-        _securePreferences.Remove("OPENAI_API_KEY");
+        securePreferences.Remove("OPENAI_API_KEY");
     }
 }
 

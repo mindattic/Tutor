@@ -52,9 +52,9 @@ public class NavNode
 /// </summary>
 public sealed class AppUiState
 {
-    private TopTab _activeTab = TopTab.Learn;
-    private List<NavNode> _sideNavNodes = [];
-    private string? _selectedNodeId;
+    private TopTab activeTab = TopTab.Learn;
+    private List<NavNode> sideNavNodes = [];
+    private string? selectedNodeId;
 
     /// <summary>
     /// Event fired when the active tab changes.
@@ -74,26 +74,26 @@ public sealed class AppUiState
     /// <summary>
     /// Gets the currently active top-level tab.
     /// </summary>
-    public TopTab ActiveTab => _activeTab;
+    public TopTab ActiveTab => activeTab;
 
     /// <summary>
     /// Gets the side navigation nodes for the current context.
     /// </summary>
-    public IReadOnlyList<NavNode> SideNavNodes => _sideNavNodes;
+    public IReadOnlyList<NavNode> SideNavNodes => sideNavNodes;
 
     /// <summary>
     /// Gets the currently selected node ID.
     /// </summary>
-    public string? SelectedNodeId => _selectedNodeId;
+    public string? SelectedNodeId => selectedNodeId;
 
     /// <summary>
     /// Sets the active top-level tab and notifies listeners.
     /// </summary>
     public void SetActiveTab(TopTab tab)
     {
-        if (_activeTab != tab)
+        if (activeTab != tab)
         {
-            _activeTab = tab;
+            activeTab = tab;
             OnTabChanged?.Invoke();
         }
     }
@@ -103,7 +103,7 @@ public sealed class AppUiState
     /// </summary>
     public void SetSideNavNodes(List<NavNode> nodes)
     {
-        _sideNavNodes = nodes;
+        sideNavNodes = nodes;
         OnSideNavChanged?.Invoke();
     }
 
@@ -112,21 +112,21 @@ public sealed class AppUiState
     /// </summary>
     public void SelectNode(string? nodeId)
     {
-        if (_selectedNodeId != nodeId)
+        if (selectedNodeId != nodeId)
         {
             // Clear previous selection
-            ClearSelection(_sideNavNodes);
+            ClearSelection(sideNavNodes);
 
-            _selectedNodeId = nodeId;
+            selectedNodeId = nodeId;
 
             // Set new selection
             if (nodeId != null)
             {
-                var node = FindNode(_sideNavNodes, nodeId);
+                var node = FindNode(sideNavNodes, nodeId);
                 if (node != null)
                 {
                     node.IsSelected = true;
-                    ExpandParents(_sideNavNodes, nodeId);
+                    ExpandParents(sideNavNodes, nodeId);
                 }
                 OnNodeSelected?.Invoke(node);
             }
@@ -144,7 +144,7 @@ public sealed class AppUiState
     /// </summary>
     public void ToggleNode(string nodeId)
     {
-        var node = FindNode(_sideNavNodes, nodeId);
+        var node = FindNode(sideNavNodes, nodeId);
         if (node != null)
         {
             node.IsExpanded = !node.IsExpanded;
@@ -157,7 +157,7 @@ public sealed class AppUiState
     /// </summary>
     public void ExpandToNode(string nodeId)
     {
-        ExpandParents(_sideNavNodes, nodeId);
+        ExpandParents(sideNavNodes, nodeId);
         OnSideNavChanged?.Invoke();
     }
 

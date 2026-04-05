@@ -16,7 +16,7 @@ namespace Tutor.Core.Services;
 public class LocalAuthController : IAuthController
 {
     private const string UsersFileName = "Users.json";
-    private readonly IAppDataPathProvider _pathProvider;
+    private readonly IAppDataPathProvider pathProvider;
     private readonly string usersFilePath;
     private UsersStore? cachedStore;
     private readonly SemaphoreSlim fileLock = new(1, 1);
@@ -29,8 +29,8 @@ public class LocalAuthController : IAuthController
 
     public LocalAuthController(IAppDataPathProvider pathProvider)
     {
-        _pathProvider = pathProvider;
-        var appDataPath = _pathProvider.AppDataDirectory;
+        this.pathProvider = pathProvider;
+        var appDataPath = pathProvider.AppDataDirectory;
         var usersFolder = Path.Combine(appDataPath, "Users");
         Directory.CreateDirectory(usersFolder);
         usersFilePath = Path.Combine(usersFolder, UsersFileName);

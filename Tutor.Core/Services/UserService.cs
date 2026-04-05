@@ -7,12 +7,12 @@ namespace Tutor.Core.Services;
 public class UserService
 {
     private const string UserKey = "ACTIVE_USER";
-    private readonly ISecurePreferences _securePreferences;
+    private readonly ISecurePreferences securePreferences;
     private User? currentUser;
 
     public UserService(ISecurePreferences securePreferences)
     {
-        _securePreferences = securePreferences;
+        this.securePreferences = securePreferences;
     }
 
     public async Task<User> GetCurrentUserAsync()
@@ -21,7 +21,7 @@ public class UserService
 
         try
         {
-            var json = await _securePreferences.GetAsync(UserKey);
+            var json = await securePreferences.GetAsync(UserKey);
             if (!string.IsNullOrEmpty(json))
             {
                 currentUser = JsonSerializer.Deserialize<User>(json);
@@ -40,6 +40,6 @@ public class UserService
     {
         currentUser = user;
         var json = JsonSerializer.Serialize(user);
-        await _securePreferences.SetAsync(UserKey, json);
+        await securePreferences.SetAsync(UserKey, json);
     }
 }

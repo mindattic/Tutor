@@ -9,8 +9,8 @@ namespace Tutor.Core.Services.Logging;
 /// </summary>
 public sealed class LogStore
 {
-    private readonly object _gate = new();
-    private readonly List<LogEntry> _entries = [];
+    private readonly object gate = new();
+    private readonly List<LogEntry> entries = [];
 
     /// <summary>
     /// Gets the log entries as a read-only list. Use EntryAdded event for updates.
@@ -19,9 +19,9 @@ public sealed class LogStore
     {
         get
         {
-            lock (_gate)
+            lock (gate)
             {
-                return _entries.ToList();
+                return entries.ToList();
             }
         }
     }
@@ -62,11 +62,11 @@ public sealed class LogStore
             LineNumber: lineNumber,
             Exception: exception);
 
-        lock (_gate)
+        lock (gate)
         {
-            _entries.Add(entry);
-            while (_entries.Count > MaxEntries)
-                _entries.RemoveAt(0);
+            entries.Add(entry);
+            while (entries.Count > MaxEntries)
+                entries.RemoveAt(0);
         }
 
         try
@@ -84,9 +84,9 @@ public sealed class LogStore
     /// </summary>
     public void Clear()
     {
-        lock (_gate)
+        lock (gate)
         {
-            _entries.Clear();
+            entries.Clear();
         }
 
         try
@@ -104,9 +104,9 @@ public sealed class LogStore
     /// </summary>
     public IReadOnlyList<LogEntry> GetFiltered(HashSet<LogSeverity> includedSeverities)
     {
-        lock (_gate)
+        lock (gate)
         {
-            return _entries
+            return entries
                 .Where(e => includedSeverities.Contains(e.Severity))
                 .OrderByDescending(e => e.TimestampUtc)
                 .ToList();
@@ -118,9 +118,9 @@ public sealed class LogStore
     /// </summary>
     public IReadOnlyList<LogEntry> GetAllDescending()
     {
-        lock (_gate)
+        lock (gate)
         {
-            return _entries.OrderByDescending(e => e.TimestampUtc).ToList();
+            return entries.OrderByDescending(e => e.TimestampUtc).ToList();
         }
     }
 
@@ -131,9 +131,9 @@ public sealed class LogStore
     {
         get
         {
-            lock (_gate)
+            lock (gate)
             {
-                return _entries.Count;
+                return entries.Count;
             }
         }
     }
@@ -143,14 +143,14 @@ public sealed class LogStore
     /// </summary>
     public void LoadEntries(IEnumerable<LogEntry> entries)
     {
-        lock (_gate)
+        lock (gate)
         {
-            _entries.Clear();
-            _entries.AddRange(entries);
-            
+            this.entries.Clear();
+            this.entries.AddRange(entries);
+
             // Enforce max entries
-            while (_entries.Count > MaxEntries)
-                _entries.RemoveAt(0);
+            while (this.entries.Count > MaxEntries)
+                this.entries.RemoveAt(0);
         }
     }
 }

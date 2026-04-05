@@ -12,7 +12,7 @@ namespace Tutor.Core.Services;
 public sealed class CourseStructureStorageService
 {
     private const string StructuresDirectoryName = "CourseStructures";
-    private readonly IAppDataPathProvider _pathProvider;
+    private readonly IAppDataPathProvider pathProvider;
     private readonly string storagePath;
 
     // In-memory cache of loaded structures
@@ -25,8 +25,8 @@ public sealed class CourseStructureStorageService
 
     public CourseStructureStorageService(IAppDataPathProvider pathProvider)
     {
-        _pathProvider = pathProvider;
-        storagePath = Path.Combine(_pathProvider.AppDataDirectory, StructuresDirectoryName);
+        this.pathProvider = pathProvider;
+        storagePath = Path.Combine(pathProvider.AppDataDirectory, StructuresDirectoryName);
         Directory.CreateDirectory(storagePath);
     }
 

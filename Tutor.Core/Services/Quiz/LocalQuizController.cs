@@ -10,7 +10,7 @@ namespace Tutor.Core.Services;
 /// </summary>
 public class LocalQuizController : IQuizController
 {
-    private readonly IAppDataPathProvider _pathProvider;
+    private readonly IAppDataPathProvider pathProvider;
     private readonly LlmServiceRouter openAI;
     private readonly CourseService courseService;
     private readonly ConceptMapStorageService conceptMapStorage;
@@ -31,9 +31,9 @@ public class LocalQuizController : IQuizController
         this.openAI = openAI;
         this.courseService = courseService;
         this.conceptMapStorage = conceptMapStorage;
-        _pathProvider = pathProvider;
+        this.pathProvider = pathProvider;
 
-        var appDataPath = _pathProvider.AppDataDirectory;
+        var appDataPath = pathProvider.AppDataDirectory;
         var quizFolder = Path.Combine(appDataPath, "Quizzes");
         Directory.CreateDirectory(quizFolder);
         quizResultsPath = quizFolder;
