@@ -6,7 +6,7 @@ namespace Tutor.Core.Services;
 
 /// <summary>
 /// Service for storing and searching content chunks with embeddings.
-/// Uses JSON file storage for simplicity (works across all MAUI platforms).
+/// Uses JSON file storage for simplicity.
 /// Supports LSH-based candidate generation and combined similarity scoring.
 /// </summary>
 public sealed class VectorStoreService
