@@ -41,7 +41,7 @@ public class DependencyInjectionTests
         services.AddSingleton<ClaudeService>();
         services.AddSingleton<DeepSeekService>();
         services.AddSingleton<GeminiService>();
-        services.AddHttpClient<EmbeddingService>(c => c.Timeout = TimeSpan.FromMinutes(2));
+        services.AddSingleton<EmbeddingService>();
 
         // LLM router
         services.AddSingleton<LlmServiceRouter>();

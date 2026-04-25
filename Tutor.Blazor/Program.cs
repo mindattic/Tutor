@@ -47,11 +47,8 @@ builder.Services.AddSingleton<GeminiService>();
 // LLM router - routes to the user's selected provider
 builder.Services.AddSingleton<LlmServiceRouter>();
 
-// Embedding service for RAG (with extended timeout)
-builder.Services.AddHttpClient<EmbeddingService>(client =>
-{
-    client.Timeout = TimeSpan.FromMinutes(2);
-});
+// Embedding service for RAG — wire transport delegated to LegionClient.
+builder.Services.AddSingleton<EmbeddingService>();
 
 // Content formatter service for auto-formatting imports
 builder.Services.AddSingleton<ContentFormatterService>();
