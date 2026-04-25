@@ -7,23 +7,23 @@
 <div class="concepts-tab-container">
     @if (string.IsNullOrEmpty(CourseId))
     {
-        <div class="concepts-empty-state">
-            <span class="bi bi-journal-x"></span>
+        <div class="concepts-empty-state" role="status">
+            <span class="bi bi-journal-x" aria-hidden="true"></span>
             <h4>No Course Selected</h4>
             <p>Select a course to view its concepts.</p>
         </div>
     }
     else if (isLoading)
     {
-        <div class="concepts-loading">
-            <div class="spinner"></div>
+        <div class="concepts-loading" role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
             <p>Loading concepts...</p>
         </div>
     }
     else if (concepts.Count == 0)
     {
-        <div class="concepts-empty-state">
-            <span class="bi bi-journal-text"></span>
+        <div class="concepts-empty-state" role="status">
+            <span class="bi bi-journal-text" aria-hidden="true"></span>
             <h4>No Concepts Available</h4>
             <p>Build concept maps for your course resources to see concepts here.</p>
         </div>
@@ -31,7 +31,7 @@
     else
     {
         @* Search and filter bar *@
-        <div class="concepts-toolbar">
+        <div class="concepts-toolbar" role="search" aria-label="Concept search and filters">
             <AutoCompleteInput TItem="Concept"
                                @bind-Value="searchQuery"
                                Placeholder="Search concepts..."
@@ -42,163 +42,187 @@
                                OnCleared="ClearSearch"
                                Class="concepts-search" />
             <div class="concepts-filter">
-                <select @bind="filterMode">
+                <label for="concepts-filter-mode" class="sr-only">Filter concepts</label>
+                <select id="concepts-filter-mode" @bind="filterMode">
                     <option value="all">All Concepts</option>
                     <option value="learned">Learned</option>
                     <option value="not-learned">Not Learned</option>
                 </select>
             </div>
-            <div class="concepts-stats">
+            <div class="concepts-stats" aria-live="polite" aria-atomic="true">
                 <span class="stat-item">
-                    <span class="bi bi-journal-text"></span>
-                    @filteredConcepts.Count() of @concepts.Count
+                    <span class="bi bi-journal-text" aria-hidden="true"></span>
+                    <span>@filteredConcepts.Count() of @concepts.Count</span>
                 </span>
                 @if (LearnedConcepts.Count > 0)
                 {
                     <span class="stat-item learned">
-                        <span class="bi bi-check-circle-fill"></span>
-                        @LearnedConcepts.Count learned
+                        <span class="bi bi-check-circle-fill" aria-hidden="true"></span>
+                        <span>@LearnedConcepts.Count learned</span>
                     </span>
                 }
             </div>
         </div>
 
         @* Concepts grid *@
-        <div class="concepts-grid">
+        <ul class="concepts-grid" style="list-style:none;padding:0;" aria-label="Concepts">
             @foreach (var concept in filteredConcepts)
             {
                 var isLearned = LearnedConcepts.Contains(concept.Title);
                 var isSelected = concept.Id == SelectedConceptId;
-                
-                <div class="concept-card @(isLearned ? "learned" : "") @(isSelected ? "selected" : "")"
-                     @onclick="() => SelectConcept(concept)">
-                    <div class="concept-card-header">
-                        <h5 class="concept-title">@concept.Title</h5>
-                        <div class="concept-badges">
-                            @if (isLearned)
-                            {
-                                <span class="badge learned" title="You've learned this concept">
-                                    <span class="bi bi-check-circle-fill"></span>
-                                </span>
-                            }
+
+                <li>
+                    <article class="concept-card @(isLearned ? "learned" : "") @(isSelected ? "selected" : "")"
+                             tabindex="0"
+                             role="button"
+                             aria-pressed="@isSelected.ToString().ToLowerInvariant()"
+                             aria-label="@($"{concept.Title}{(isLearned ? ", learned" : "")}")"
+                             @onclick="() => SelectConcept(concept)"
+                             @onkeydown="@(e => HandleConceptCardKey(e, concept))">
+                        <header class="concept-card-header">
+                            <h5 class="concept-title">@concept.Title</h5>
+                            <div class="concept-badges">
+                                @if (isLearned)
+                                {
+                                    <span class="badge learned" title="You've learned this concept" aria-label="Learned">
+                                        <span class="bi bi-check-circle-fill" aria-hidden="true"></span>
+                                    </span>
+                                }
+                            </div>
+                        </header>
+
+                        @if (!string.IsNullOrEmpty(concept.Summary))
+                        {
+                            <p class="concept-summary">@TruncateSummary(concept.Summary)</p>
+                        }
+
+                        @if (concept.Aliases.Count > 0)
+                        {
+                            <div class="concept-aliases">
+                                <span class="label">Also known as:</span>
+                                <span class="value">@string.Join(", ", concept.Aliases.Take(3))</span>
+                                @if (concept.Aliases.Count > 3)
+                                {
+                                    <span class="more" aria-label="@($"and {concept.Aliases.Count - 3} more")">+@(concept.Aliases.Count - 3)</span>
+                                }
+                            </div>
+                        }
+
+                        @if (concept.Tags.Count > 0)
+                        {
+                            <ul class="concept-tags" aria-label="Tags" style="list-style:none;padding:0;">
+                                @foreach (var tag in concept.Tags.Take(4))
+                                {
+                                    <li class="concept-tag">@tag</li>
+                                }
+                            </ul>
+                        }
+
+                        <div class="concept-actions">
+                            <button class="action-btn ask"
+                                    type="button"
+                                    @onclick="() => AskAboutConcept(concept)"
+                                    @onclick:stopPropagation="true"
+                                    title="Ask about this concept"
+                                    aria-label="@($"Ask about {concept.Title}")">
+                                <span class="bi bi-chat-dots" aria-hidden="true"></span>
+                                <span>Ask</span>
+                            </button>
+                            <button class="action-btn visualize"
+                                    type="button"
+                                    @onclick="() => VisualizeConcept(concept)"
+                                    @onclick:stopPropagation="true"
+                                    title="View in graph"
+                                    aria-label="@($"View {concept.Title} in graph")">
+                                <span class="bi bi-diagram-3" aria-hidden="true"></span>
+                                <span>Visualize</span>
+                            </button>
                         </div>
-                    </div>
-                    
-                    @if (!string.IsNullOrEmpty(concept.Summary))
-                    {
-                        <p class="concept-summary">@TruncateSummary(concept.Summary)</p>
-                    }
-                    
-                    @if (concept.Aliases.Count > 0)
-                    {
-                        <div class="concept-aliases">
-                            <span class="label">Also known as:</span>
-                            <span class="value">@string.Join(", ", concept.Aliases.Take(3))</span>
-                            @if (concept.Aliases.Count > 3)
-                            {
-                                <span class="more">+@(concept.Aliases.Count - 3)</span>
-                            }
-                        </div>
-                    }
-                    
-                    @if (concept.Tags.Count > 0)
-                    {
-                        <div class="concept-tags">
-                            @foreach (var tag in concept.Tags.Take(4))
-                            {
-                                <span class="concept-tag">@tag</span>
-                            }
-                        </div>
-                    }
-                    
-                    <div class="concept-actions">
-                        <button class="action-btn ask" @onclick="() => AskAboutConcept(concept)" @onclick:stopPropagation="true" title="Ask about this concept">
-                            <span class="bi bi-chat-dots"></span>
-                            <span>Ask</span>
-                        </button>
-                        <button class="action-btn visualize" @onclick="() => VisualizeConcept(concept)" @onclick:stopPropagation="true" title="View in graph">
-                            <span class="bi bi-diagram-3"></span>
-                            <span>Visualize</span>
-                        </button>
-                    </div>
-                </div>
+                    </article>
+                </li>
             }
-        </div>
+        </ul>
     }
 </div>
 
 @* Concept Detail Panel (shown when a concept is selected) *@
 @if (selectedConcept != null)
 {
-    <div class="concept-detail-overlay" @onclick="ClearSelection">
+    <div class="concept-detail-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="concept-detail-title"
+         @onclick="ClearSelection">
         <div class="concept-detail-panel" @onclick:stopPropagation="true">
-            <div class="detail-header">
-                <h4>@selectedConcept.Title</h4>
-                <button class="close-btn" @onclick="ClearSelection">
-                    <span class="bi bi-x-lg"></span>
+            <header class="detail-header">
+                <h4 id="concept-detail-title">@selectedConcept.Title</h4>
+                <button class="close-btn" type="button" aria-label="Close concept details" @onclick="ClearSelection">
+                    <span class="bi bi-x-lg" aria-hidden="true"></span>
                 </button>
-            </div>
-            
+            </header>
+
             <div class="detail-body">
                 @if (!string.IsNullOrEmpty(selectedConcept.Summary))
                 {
-                    <div class="detail-section">
-                        <h6>Summary</h6>
+                    <section class="detail-section" aria-labelledby="cd-summary">
+                        <h6 id="cd-summary">Summary</h6>
                         <p>@selectedConcept.Summary</p>
-                    </div>
+                    </section>
                 }
-                
+
                 @if (selectedConcept.Aliases.Count > 0)
                 {
-                    <div class="detail-section">
-                        <h6>Also Known As</h6>
-                        <div class="alias-list">
+                    <section class="detail-section" aria-labelledby="cd-aliases">
+                        <h6 id="cd-aliases">Also Known As</h6>
+                        <ul class="alias-list" style="list-style:none;padding:0;">
                             @foreach (var alias in selectedConcept.Aliases)
                             {
-                                <span class="alias-chip">@alias</span>
+                                <li class="alias-chip">@alias</li>
                             }
-                        </div>
-                    </div>
+                        </ul>
+                    </section>
                 }
-                
+
                 @if (selectedConcept.Tags.Count > 0)
                 {
-                    <div class="detail-section">
-                        <h6>Tags</h6>
-                        <div class="tag-list">
+                    <section class="detail-section" aria-labelledby="cd-tags">
+                        <h6 id="cd-tags">Tags</h6>
+                        <ul class="tag-list" style="list-style:none;padding:0;">
                             @foreach (var tag in selectedConcept.Tags)
                             {
-                                <span class="tag-chip">@tag</span>
+                                <li class="tag-chip">@tag</li>
                             }
-                        </div>
-                    </div>
+                        </ul>
+                    </section>
                 }
-                
+
                 @if (relatedConcepts.Count > 0)
                 {
-                    <div class="detail-section">
-                        <h6>Related Concepts</h6>
-                        <div class="related-list">
+                    <section class="detail-section" aria-labelledby="cd-related">
+                        <h6 id="cd-related">Related Concepts</h6>
+                        <ul class="related-list" style="list-style:none;padding:0;">
                             @foreach (var rel in relatedConcepts)
                             {
-                                <button class="related-btn" @onclick="() => SelectConceptById(rel.TargetConceptId)">
-                                    <span class="rel-type">@FormatRelationType(rel.RelationType)</span>
-                                    <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
-                                    <span class="bi bi-arrow-right"></span>
-                                </button>
+                                <li>
+                                    <button class="related-btn" type="button" @onclick="() => SelectConceptById(rel.TargetConceptId)">
+                                        <span class="rel-type">@FormatRelationType(rel.RelationType)</span>
+                                        <span class="rel-target">@GetConceptTitle(rel.TargetConceptId)</span>
+                                        <span class="bi bi-arrow-right" aria-hidden="true"></span>
+                                    </button>
+                                </li>
                             }
-                        </div>
-                    </div>
+                        </ul>
+                    </section>
                 }
             </div>
-            
+
             <div class="detail-actions">
-                <button class="action-btn primary" @onclick="() => AskAboutConcept(selectedConcept)">
-                    <span class="bi bi-chat-dots"></span>
+                <button class="action-btn primary" type="button" @onclick="() => AskAboutConcept(selectedConcept)">
+                    <span class="bi bi-chat-dots" aria-hidden="true"></span>
                     Ask About This
                 </button>
-                <button class="action-btn secondary" @onclick="() => VisualizeConcept(selectedConcept)">
-                    <span class="bi bi-diagram-3"></span>
+                <button class="action-btn secondary" type="button" @onclick="() => VisualizeConcept(selectedConcept)">
+                    <span class="bi bi-diagram-3" aria-hidden="true"></span>
                     Visualize
                 </button>
             </div>
@@ -328,6 +352,14 @@ protected override async Task OnParametersSetAsync()
         relatedConcepts = relationships
             .Where(r => r.SourceConceptId == concept.Id)
             .ToList();
+    }
+
+    private void HandleConceptCardKey(KeyboardEventArgs e, Concept concept)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Key == "Spacebar")
+        {
+            SelectConcept(concept);
+        }
     }
 
     private void SelectConceptById(string conceptId)

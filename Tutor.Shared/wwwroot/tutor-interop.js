@@ -29,16 +29,11 @@
                 element.focus();
             }
         }
-        function setupTabFocus(element) {
-            if (element) {
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Tab' && !e.shiftKey && document.activeElement !== element) {
-                        e.preventDefault();
-                        element.focus();
-                    }
-                });
-            }
-        }
+        // Intentionally a no-op. The previous implementation intercepted every
+        // Tab press and forced focus into a single element, which trapped
+        // keyboard / screen-reader users and broke the natural tab order.
+        // Kept as an exported symbol so existing callers don't fail.
+        function setupTabFocus(element) { /* no-op for ADA compliance */ }
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
         }

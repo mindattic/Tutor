@@ -10,50 +10,50 @@
 {
     <div class="home-page">
         <div class="welcome-container">
-            <div class="welcome-card">
-                <span class="bi bi-mortarboard-fill welcome-icon"></span>
-                <h1>Welcome to Tutor</h1>
+            <section class="welcome-card" aria-labelledby="welcome-heading">
+                <span class="bi bi-mortarboard-fill welcome-icon" aria-hidden="true"></span>
+                <h1 id="welcome-heading">Welcome to Tutor</h1>
                 <p class="welcome-subtitle">Your AI-Powered Learning Companion</p>
-                
+
                 @if (_loadingStats)
                 {
-                    <div class="stats-loading">
-                        <span class="spinner-small"></span>
+                    <div class="stats-loading" role="status" aria-live="polite">
+                        <span class="spinner-small" aria-hidden="true"></span>
                         <span>Loading your library...</span>
                     </div>
                 }
                 else
                 {
-                    <div class="home-stats">
+                    <dl class="home-stats" aria-label="Library summary">
                         <div class="stat-item">
-                            <span class="bi bi-journal-bookmark-fill stat-icon"></span>
+                            <span class="bi bi-journal-bookmark-fill stat-icon" aria-hidden="true"></span>
                             <div class="stat-content">
-                                <span class="stat-value">@_courseCount</span>
-                                <span class="stat-label">Courses</span>
+                                <dt class="stat-label">Courses</dt>
+                                <dd class="stat-value">@_courseCount</dd>
                             </div>
                         </div>
                         <div class="stat-item">
-                            <span class="bi bi-file-earmark-text-fill stat-icon"></span>
+                            <span class="bi bi-file-earmark-text-fill stat-icon" aria-hidden="true"></span>
                             <div class="stat-content">
-                                <span class="stat-value">@_resourceCount</span>
-                                <span class="stat-label">Resources</span>
+                                <dt class="stat-label">Resources</dt>
+                                <dd class="stat-value">@_resourceCount</dd>
                             </div>
                         </div>
                         <div class="stat-item">
-                            <span class="bi bi-diagram-3-fill stat-icon"></span>
+                            <span class="bi bi-diagram-3-fill stat-icon" aria-hidden="true"></span>
                             <div class="stat-content">
-                                <span class="stat-value">@FormatNumber(_conceptCount)</span>
-                                <span class="stat-label">Concepts</span>
+                                <dt class="stat-label">Concepts</dt>
+                                <dd class="stat-value">@FormatNumber(_conceptCount)</dd>
                             </div>
                         </div>
-                    </div>
+                    </dl>
                 }
-                
-                <button class="auth-btn primary" @onclick="GoToLearn">
-                    <span class="bi bi-book"></span>
+
+                <button class="auth-btn primary" type="button" @onclick="GoToLearn">
+                    <span class="bi bi-book" aria-hidden="true"></span>
                     <span>Start Learning</span>
                 </button>
-            </div>
+            </section>
         </div>
     </div>
 }
@@ -61,50 +61,73 @@ else
 {
     <div class="home-page">
         <div class="auth-container">
-            <div class="auth-card">
+            <section class="auth-card" aria-labelledby="login-heading">
                 <div class="auth-header">
-                    <span class="bi bi-mortarboard-fill auth-icon"></span>
-                    <h1>Welcome to Tutor</h1>
+                    <span class="bi bi-mortarboard-fill auth-icon" aria-hidden="true"></span>
+                    <h1 id="login-heading">Welcome to Tutor</h1>
                     <p class="auth-subtitle">Your AI-Powered Learning Companion</p>
                 </div>
 
-                <div class="auth-form">
-                    <h2>Login</h2>
-                    
-                    @if (!string.IsNullOrEmpty(_errorMessage))
-                    {
-                        <div class="auth-error">
-                            <span class="bi bi-exclamation-triangle"></span>
-                            @_errorMessage
-                        </div>
-                    }
+                <form class="auth-form" @onsubmit="LoginAsync" @onsubmit:preventDefault="true" aria-labelledby="login-form-heading">
+                    <h2 id="login-form-heading">Login</h2>
+
+                    <div class="auth-error-region" role="alert" aria-live="assertive" aria-atomic="true">
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            <div class="auth-error">
+                                <span class="bi bi-exclamation-triangle" aria-hidden="true"></span>
+                                @_errorMessage
+                            </div>
+                        }
+                    </div>
 
                     <div class="form-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" @bind="_username" @bind:event="oninput" 
-                               placeholder="Enter your username" disabled="@_processing" />
+                        <input type="text"
+                               id="username"
+                               name="username"
+                               autocomplete="username"
+                               required
+                               aria-required="true"
+                               aria-invalid="@(!string.IsNullOrEmpty(_errorMessage)).ToString().ToLowerInvariant()"
+                               @bind="_username"
+                               @bind:event="oninput"
+                               placeholder="Enter your username"
+                               disabled="@_processing" />
                     </div>
 
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" @bind="_password" @bind:event="oninput" 
-                               placeholder="Enter your password" disabled="@_processing" 
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               autocomplete="current-password"
+                               required
+                               aria-required="true"
+                               aria-invalid="@(!string.IsNullOrEmpty(_errorMessage)).ToString().ToLowerInvariant()"
+                               @bind="_password"
+                               @bind:event="oninput"
+                               placeholder="Enter your password"
+                               disabled="@_processing"
                                @onkeydown="HandleKeyDown" />
                     </div>
 
-                    <button class="auth-btn primary" @onclick="LoginAsync" disabled="@_processing">
+                    <button class="auth-btn primary"
+                            type="submit"
+                            disabled="@_processing"
+                            aria-busy="@_processing.ToString().ToLowerInvariant()">
                         @if (_processing)
                         {
-                            <span class="spinner-small"></span>
+                            <span class="spinner-small" aria-hidden="true"></span>
                         }
                         else
                         {
-                            <span class="bi bi-box-arrow-in-right"></span>
+                            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span>
                         }
-                        <span>Login</span>
+                        <span>@(_processing ? "Logging in..." : "Login")</span>
                     </button>
-                </div>
-            </div>
+                </form>
+            </section>
         </div>
     </div>
 }

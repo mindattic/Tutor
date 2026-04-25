@@ -1,11 +1,20 @@
 @using Tutor.Core.Services
 @typeparam TItem
 
-<div class="autocomplete-container @Class">
-    <span class="bi bi-search"></span>
+<div class="autocomplete-container @Class"
+     role="combobox"
+     aria-haspopup="listbox"
+     aria-expanded="@showDropdown.ToString().ToLowerInvariant()"
+     aria-owns="@listboxId">
+    <span class="bi bi-search" aria-hidden="true"></span>
     <input type="text"
            class="autocomplete-input"
            placeholder="@Placeholder"
+           aria-label="@Placeholder"
+           aria-autocomplete="list"
+           aria-controls="@listboxId"
+           aria-activedescendant="@GetActiveDescendantId()"
+           autocomplete="off"
            @bind="Value"
            @bind:event="oninput"
            @bind:after="OnInputChanged"
@@ -14,25 +23,36 @@
            @onblur="OnBlur" />
     @if (!string.IsNullOrEmpty(Value))
     {
-        <button class="autocomplete-clear-btn" @onclick="Clear" title="Clear">
-            <span class="bi bi-x-lg"></span>
+        <button class="autocomplete-clear-btn"
+                type="button"
+                aria-label="Clear search"
+                title="Clear"
+                @onclick="Clear">
+            <span class="bi bi-x-lg" aria-hidden="true"></span>
         </button>
     }
     @if (showDropdown && suggestions.Count > 0)
     {
-        <div class="autocomplete-dropdown">
+        <ul id="@listboxId"
+            class="autocomplete-dropdown"
+            role="listbox"
+            aria-label="Suggestions">
             @for (int i = 0; i < suggestions.Count; i++)
             {
                 var index = i;
                 var item = suggestions[i];
-                <button class="autocomplete-item @(selectedIndex == index ? "selected" : "")"
-                        @onmousedown="@(() => SelectItem(item))"
-                        @onmouseenter="@(() => selectedIndex = index)">
-                    <span class="bi @ItemIcon"></span>
+                var optionId = $"{listboxId}-option-{index}";
+                <li role="option"
+                    id="@optionId"
+                    aria-selected="@((selectedIndex == index).ToString().ToLowerInvariant())"
+                    class="autocomplete-item @(selectedIndex == index ? "selected" : "")"
+                    @onmousedown="@(() => SelectItem(item))"
+                    @onmouseenter="@(() => selectedIndex = index)">
+                    <span class="bi @ItemIcon" aria-hidden="true"></span>
                     <span class="suggestion-text">@ItemTextSelector(item)</span>
-                </button>
+                </li>
             }
-        </div>
+        </ul>
     }
 </div>
 
@@ -119,6 +139,13 @@
     private List<TItem> suggestions = [];
     private bool showDropdown;
     private int selectedIndex = -1;
+    private readonly string listboxId = $"autocomplete-list-{Guid.NewGuid():N}";
+
+    private string? GetActiveDescendantId()
+    {
+        if (!showDropdown || selectedIndex < 0 || selectedIndex >= suggestions.Count) return null;
+        return $"{listboxId}-option-{selectedIndex}";
+    }
 
     private async Task OnInputChanged()
     {

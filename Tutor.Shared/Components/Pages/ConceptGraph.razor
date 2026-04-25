@@ -6,37 +6,46 @@
 @inject CourseService CourseService
 
 <AuthGuard>
-<div class="page-title">Knowledge Bases</div>
+<h1 class="page-title">Knowledge Bases</h1>
 
 <div class="knowledge-graph-page">
     @if (isLoading)
     {
-        <div class="loading-state">
-            <div class="spinner"></div>
+        <div class="loading-state" role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
             <p>Loading...</p>
         </div>
     }
     else if (string.IsNullOrEmpty(activeCourseId))
     {
-        <div class="no-course-state">
-            <div class="empty-icon">
+        <section class="no-course-state" aria-labelledby="no-course-heading">
+            <div class="empty-icon" aria-hidden="true">
                 <span class="bi bi-book"></span>
             </div>
-            <h4>No Active Course</h4>
+            <h2 id="no-course-heading">No Active Course</h2>
             <p>Select an active course to view or build its knowledge graph.</p>
             <a href="courses" class="settings-btn primary">
-                <span class="bi bi-book-fill"></span> Go to Courses
+                <span class="bi bi-book-fill" aria-hidden="true"></span> Go to Courses
             </a>
-        </div>
+        </section>
     }
     else if (isBuilding)
     {
-        <div class="graph-building-progress">
+        <section class="graph-building-progress"
+                 role="status"
+                 aria-live="polite"
+                 aria-atomic="true"
+                 aria-labelledby="building-graph-title">
             <div class="building-header">
-                <span class="building-icon bi bi-diagram-3"></span>
-                <span class="building-title">Building Knowledge Graph</span>
+                <span class="building-icon bi bi-diagram-3" aria-hidden="true"></span>
+                <span id="building-graph-title" class="building-title">Building Knowledge Graph</span>
             </div>
-            <div class="progress-bar-container">
+            <div class="progress-bar-container"
+                 role="progressbar"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 aria-valuenow="@buildProgress.PercentComplete"
+                 aria-label="Knowledge graph build progress">
                 <div class="progress-bar" style="width: @(buildProgress.PercentComplete)%"></div>
             </div>
             <div class="building-status">
@@ -49,101 +58,127 @@
             <div class="building-step">
                 Step @buildProgress.CurrentStep of @buildProgress.TotalSteps
             </div>
-        </div>
+        </section>
     }
     else if (graph == null)
     {
-        <div class="empty-graph-state">
-            <div class="empty-icon">
+        <section class="empty-graph-state" aria-labelledby="no-kg-heading">
+            <div class="empty-icon" aria-hidden="true">
                 <span class="bi bi-diagram-3"></span>
             </div>
-            <h4>No Knowledge Graph</h4>
+            <h2 id="no-kg-heading">No Knowledge Graph</h2>
             <p>Build a knowledge graph from <strong>@activeCourse?.Name</strong> to see concepts organized hierarchically.</p>
             @if (resources.Count > 0)
             {
                 <p class="resource-count">@resources.Count resource(s) available for analysis</p>
-                <button class="settings-btn primary" @onclick="BuildGraph">
-                    <span class="bi bi-lightning-charge"></span> Build Knowledge Graph
+                <button class="settings-btn primary" type="button" @onclick="BuildGraph">
+                    <span class="bi bi-lightning-charge" aria-hidden="true"></span> Build Knowledge Graph
                 </button>
             }
             else
             {
                 <p class="hint">Add resources to your course first, then build the knowledge graph.</p>
                 <a href="courses" class="settings-btn">
-                    <span class="bi bi-plus-lg"></span> Add Resources
+                    <span class="bi bi-plus-lg" aria-hidden="true"></span> Add Resources
                 </a>
             }
-        </div>
+        </section>
     }
     else
     {
-        <div class="graph-header">
-            <div class="graph-title">
-                <span class="bi bi-diagram-3"></span>
+        <header class="graph-header">
+            <h2 class="graph-title">
+                <span class="bi bi-diagram-3" aria-hidden="true"></span>
                 <span>@activeCourse?.Name</span>
-            </div>
-            <div class="graph-stats">
-                <span class="stat">
-                    <span class="stat-value">@stats.TotalConcepts</span>
-                    <span class="stat-label">concepts</span>
-                </span>
-                <span class="stat">
-                    <span class="stat-value">@stats.TotalRelationships</span>
-                    <span class="stat-label">relationships</span>
-                </span>
-                <span class="stat">
-                    <span class="stat-value">@stats.MaxDepth</span>
-                    <span class="stat-label">depth</span>
-                </span>
-            </div>
-            <div class="graph-actions">
-                <button class="icon-btn" title="Refresh" @onclick="RefreshGraph">
-                    <span class="bi bi-arrow-clockwise"></span>
+            </h2>
+            <dl class="graph-stats" aria-label="Graph statistics">
+                <div class="stat">
+                    <dt class="stat-label">concepts</dt>
+                    <dd class="stat-value">@stats.TotalConcepts</dd>
+                </div>
+                <div class="stat">
+                    <dt class="stat-label">relationships</dt>
+                    <dd class="stat-value">@stats.TotalRelationships</dd>
+                </div>
+                <div class="stat">
+                    <dt class="stat-label">depth</dt>
+                    <dd class="stat-value">@stats.MaxDepth</dd>
+                </div>
+            </dl>
+            <div class="graph-actions" role="toolbar" aria-label="Graph actions">
+                <button class="icon-btn" type="button" title="Refresh" aria-label="Refresh graph" @onclick="RefreshGraph">
+                    <span class="bi bi-arrow-clockwise" aria-hidden="true"></span>
                 </button>
-                <button class="icon-btn" title="Rebuild Graph" @onclick="BuildGraph">
-                    <span class="bi bi-lightning-charge"></span>
+                <button class="icon-btn" type="button" title="Rebuild Graph" aria-label="Rebuild graph" @onclick="BuildGraph">
+                    <span class="bi bi-lightning-charge" aria-hidden="true"></span>
                 </button>
             </div>
-        </div>
+        </header>
 
         <div class="graph-toolbar">
-            <div class="view-toggle">
-                <button class="toggle-btn @(viewMode == "hierarchy" ? "active" : "")" @onclick="@(() => viewMode = "hierarchy")">
-                    <span class="bi bi-list-nested"></span> Hierarchy
+            <div class="view-toggle" role="tablist" aria-label="Graph view mode">
+                <button class="toggle-btn @(viewMode == "hierarchy" ? "active" : "")"
+                        type="button"
+                        role="tab"
+                        id="tab-hierarchy"
+                        aria-selected="@(viewMode == "hierarchy" ? "true" : "false")"
+                        aria-controls="graph-content"
+                        tabindex="@(viewMode == "hierarchy" ? "0" : "-1")"
+                        @onclick="@(() => viewMode = "hierarchy")">
+                    <span class="bi bi-list-nested" aria-hidden="true"></span> Hierarchy
                 </button>
-                <button class="toggle-btn @(viewMode == "path" ? "active" : "")" @onclick="@(() => viewMode = "path")">
-                    <span class="bi bi-signpost-split"></span> Learning Path
+                <button class="toggle-btn @(viewMode == "path" ? "active" : "")"
+                        type="button"
+                        role="tab"
+                        id="tab-path"
+                        aria-selected="@(viewMode == "path" ? "true" : "false")"
+                        aria-controls="graph-content"
+                        tabindex="@(viewMode == "path" ? "0" : "-1")"
+                        @onclick="@(() => viewMode = "path")">
+                    <span class="bi bi-signpost-split" aria-hidden="true"></span> Learning Path
                 </button>
-                <button class="toggle-btn @(viewMode == "search" ? "active" : "")" @onclick="@(() => viewMode = "search")">
-                    <span class="bi bi-search"></span> Search
+                <button class="toggle-btn @(viewMode == "search" ? "active" : "")"
+                        type="button"
+                        role="tab"
+                        id="tab-search"
+                        aria-selected="@(viewMode == "search" ? "true" : "false")"
+                        aria-controls="graph-content"
+                        tabindex="@(viewMode == "search" ? "0" : "-1")"
+                        @onclick="@(() => viewMode = "search")">
+                    <span class="bi bi-search" aria-hidden="true"></span> Search
                 </button>
             </div>
-            
+
             @if (viewMode == "path" || viewMode == "search")
             {
-                <div class="search-box">
-                    <input type="text" 
-                           class="settings-input" 
+                <div class="search-box" role="search">
+                    <label for="graph-search-input" class="sr-only">@(viewMode == "path" ? "Enter concept to explore" : "Search concepts")</label>
+                    <input id="graph-search-input"
+                           type="search"
+                           class="settings-input"
                            placeholder="@(viewMode == "path" ? "Enter concept to explore..." : "Search concepts...")"
                            @bind="searchQuery"
                            @bind:event="oninput"
                            @onkeyup="OnSearchKeyUp" />
                     @if (!string.IsNullOrEmpty(searchQuery))
                     {
-                        <button class="clear-btn" @onclick="ClearSearch">
-                            <span class="bi bi-x"></span>
+                        <button class="clear-btn" type="button" aria-label="Clear search" @onclick="ClearSearch">
+                            <span class="bi bi-x" aria-hidden="true"></span>
                         </button>
                     }
                 </div>
             }
         </div>
 
-        <div class="graph-content">
+        <div id="graph-content"
+             class="graph-content"
+             role="tabpanel"
+             aria-labelledby="@($"tab-{viewMode}")">
             @if (viewMode == "hierarchy")
             {
                 <div class="toc-view">
                     <div class="path-placeholder">
-                        <span class="bi bi-diagram-3"></span>
+                        <span class="bi bi-diagram-3" aria-hidden="true"></span>
                         <p>Hierarchy view is being updated</p>
                         <p class="hint">Use the Courses page to build a KnowledgeBase and CourseStructure for a structured view.</p>
                     </div>
@@ -152,7 +187,7 @@
             else if (viewMode == "path")
             {
                 <div class="path-placeholder">
-                    <span class="bi bi-signpost-split"></span>
+                    <span class="bi bi-signpost-split" aria-hidden="true"></span>
                     <p>Learning path view is being updated</p>
                     <p class="hint">Use the Learn page to access the new structured learning experience.</p>
                 </div>
@@ -161,28 +196,34 @@
             {
                 @if (searchResults.Count > 0)
                 {
-                    <div class="search-results">
+                    <div class="search-results" role="region" aria-live="polite" aria-label="Search results">
                         <p class="results-count">Found @searchResults.Count concepts</p>
-                        @foreach (var concept in searchResults)
-                        {
-                            <div class="concept-card @(selectedConceptId == concept.Id ? "selected" : "")"
-                                 @onclick="@(() => SelectConcept(concept.Id))">
-                                <div class="concept-term">@concept.Term</div>
-                                <div class="concept-description">@Truncate(concept.Description, 150)</div>
-                                <div class="concept-meta">
-                                    <span class="meta-item">Depth @concept.HierarchyDepth</span>
-                                    @if (concept.PrerequisiteIds.Count > 0)
-                                    {
-                                        <span class="meta-item">@concept.PrerequisiteIds.Count prereqs</span>
-                                    }
-                                </div>
-                            </div>
-                        }
+                        <ul class="concept-card-list" style="list-style:none;padding:0;">
+                            @foreach (var concept in searchResults)
+                            {
+                                <li>
+                                    <button class="concept-card @(selectedConceptId == concept.Id ? "selected" : "")"
+                                            type="button"
+                                            aria-pressed="@((selectedConceptId == concept.Id).ToString().ToLowerInvariant())"
+                                            @onclick="@(() => SelectConcept(concept.Id))">
+                                        <div class="concept-term">@concept.Term</div>
+                                        <div class="concept-description">@Truncate(concept.Description, 150)</div>
+                                        <div class="concept-meta">
+                                            <span class="meta-item">Depth @concept.HierarchyDepth</span>
+                                            @if (concept.PrerequisiteIds.Count > 0)
+                                            {
+                                                <span class="meta-item">@concept.PrerequisiteIds.Count prereqs</span>
+                                            }
+                                        </div>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
                     </div>
                 }
                 else if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    <div class="no-results">
+                    <div class="no-results" role="status" aria-live="polite">
                         <p>No concepts found matching "@searchQuery"</p>
                     </div>
                 }
@@ -192,13 +233,15 @@
         @* Concept Detail Panel *@
         @if (selectedConcept != null)
         {
-            <div class="concept-detail-panel">
-                <div class="detail-header">
-                    <h3>@selectedConcept.Term</h3>
-                    <button class="close-btn" @onclick="DeselectConcept">
-                        <span class="bi bi-x-lg"></span>
+            <aside class="concept-detail-panel"
+                   role="complementary"
+                   aria-labelledby="concept-detail-heading">
+                <header class="detail-header">
+                    <h3 id="concept-detail-heading">@selectedConcept.Term</h3>
+                    <button class="close-btn" type="button" aria-label="Close concept details" @onclick="DeselectConcept">
+                        <span class="bi bi-x-lg" aria-hidden="true"></span>
                     </button>
-                </div>
+                </header>
                 <div class="detail-body">
                     <div class="detail-section">
                         <p class="detail-description">@selectedConcept.Description</p>
@@ -207,13 +250,13 @@
                     @if (selectedConcept.Aliases.Count > 0)
                     {
                         <div class="detail-section">
-                            <label>Also known as</label>
+                            <h4>Also known as</h4>
                             <p>@string.Join(", ", selectedConcept.Aliases)</p>
                         </div>
                     }
 
                     <div class="detail-section">
-                        <label>Hierarchy</label>
+                        <h4>Hierarchy</h4>
                         <div class="hierarchy-info">
                             <span class="depth-badge">Depth @selectedConcept.HierarchyDepth</span>
                             @if (selectedConcept.IsFoundational)
@@ -230,43 +273,47 @@
                     @if (selectedPrerequisites.Count > 0)
                     {
                         <div class="detail-section">
-                            <label>Prerequisites (@selectedPrerequisites.Count)</label>
-                            <div class="related-concepts">
+                            <h4>Prerequisites (@selectedPrerequisites.Count)</h4>
+                            <ul class="related-concepts" style="list-style:none;padding:0;">
                                 @foreach (var prereq in selectedPrerequisites)
                                 {
-                                    <button class="concept-link" @onclick="@(() => SelectConcept(prereq.Id))">
-                                        <span class="bi bi-arrow-left"></span> @prereq.Term
-                                    </button>
+                                    <li>
+                                        <button class="concept-link" type="button" @onclick="@(() => SelectConcept(prereq.Id))">
+                                            <span class="bi bi-arrow-left" aria-hidden="true"></span> @prereq.Term
+                                        </button>
+                                    </li>
                                 }
-                            </div>
+                            </ul>
                         </div>
                     }
 
                     @if (selectedDependents.Count > 0)
                     {
                         <div class="detail-section">
-                            <label>Unlocks (@selectedDependents.Count)</label>
-                            <div class="related-concepts">
+                            <h4>Unlocks (@selectedDependents.Count)</h4>
+                            <ul class="related-concepts" style="list-style:none;padding:0;">
                                 @foreach (var dep in selectedDependents)
                                 {
-                                    <button class="concept-link" @onclick="@(() => SelectConcept(dep.Id))">
-                                        @dep.Term <span class="bi bi-arrow-right"></span>
-                                    </button>
+                                    <li>
+                                        <button class="concept-link" type="button" @onclick="@(() => SelectConcept(dep.Id))">
+                                            @dep.Term <span class="bi bi-arrow-right" aria-hidden="true"></span>
+                                        </button>
+                                    </li>
                                 }
-                            </div>
+                            </ul>
                         </div>
                     }
 
                     <div class="detail-actions">
-                        <button class="settings-btn" @onclick="ShowPathTo">
-                            <span class="bi bi-arrow-left"></span> Path To This
+                        <button class="settings-btn" type="button" @onclick="ShowPathTo">
+                            <span class="bi bi-arrow-left" aria-hidden="true"></span> Path To This
                         </button>
-                        <button class="settings-btn" @onclick="ShowPathFrom">
-                            Path From This <span class="bi bi-arrow-right"></span>
+                        <button class="settings-btn" type="button" @onclick="ShowPathFrom">
+                            Path From This <span class="bi bi-arrow-right" aria-hidden="true"></span>
                         </button>
                     </div>
                 </div>
-            </div>
+            </aside>
         }
     }
 </div>

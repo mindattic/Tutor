@@ -13,29 +13,30 @@
 @inject IFilePickerService FilePickerService
 @implements IDisposable
 
-<div class="resources-container">
+<section class="resources-container" aria-labelledby="course-management-heading">
+<h1 id="course-management-heading" class="sr-only">Course management</h1>
 @* Course Selector *@
     <div class="curriculum-selector">
         <div class="curriculum-dropdown-container">
-            <label>Active Course:</label>
+            <label for="active-course-select">Active Course:</label>
             <div class="curriculum-select-row">
-                <select class="curriculum-select" @bind="selectedCourseId" @bind:after="OnCourseChanged">
+                <select id="active-course-select" class="curriculum-select" @bind="selectedCourseId" @bind:after="OnCourseChanged">
                     <option value="">None (Standard ChatGPT)</option>
                     @foreach (var course in courses)
                     {
                         <option value="@course.Id">@course.Name (@course.ResourceIds.Count resources)</option>
                     }
                 </select>
-                <button class="icon-btn" title="New Course" @onclick="ShowNewCourseModal">
-                    <span class="icon-add"></span>
+                <button class="icon-btn" type="button" title="New Course" aria-label="Create new course" @onclick="ShowNewCourseModal">
+                    <span class="icon-add" aria-hidden="true"></span>
                 </button>
                 @if (!string.IsNullOrEmpty(selectedCourseId))
                 {
-                    <button class="icon-btn" title="Rename" @onclick="ShowRenameCourseModal">
-                        <span class="icon-edit"></span>
+                    <button class="icon-btn" type="button" title="Rename" aria-label="Rename course" @onclick="ShowRenameCourseModal">
+                        <span class="icon-edit" aria-hidden="true"></span>
                     </button>
-                    <button class="icon-btn danger" title="Delete Course" @onclick="ConfirmDeleteCourse">
-                        <span class="icon-delete"></span>
+                    <button class="icon-btn danger" type="button" title="Delete Course" aria-label="Delete course" @onclick="ConfirmDeleteCourse">
+                        <span class="icon-delete" aria-hidden="true"></span>
                     </button>
                 }
             </div>
@@ -197,22 +198,40 @@
     </div>
 
     @* Tabs for Library and Add Resource *@
-    <div class="tabs">
-        <button class="tab @(activeTab == "Library" ? "active" : "")" @onclick="@(() => activeTab = "Library")">
+    <div class="tabs" role="tablist" aria-label="Course management sections">
+        <button class="tab @(activeTab == "Library" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="course-tab-library"
+                aria-selected="@((activeTab == "Library").ToString().ToLowerInvariant())"
+                aria-controls="course-management-panel"
+                tabindex="@(activeTab == "Library" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Library")">
             Resource Library
             @if (!string.IsNullOrEmpty(selectedCourseId))
             {
                 var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
                 if (course != null)
                 {
-                    <span class="tab-badge">@course.ResourceIds.Count in course</span>
+                    <span class="tab-badge" aria-label="@($"{course.ResourceIds.Count} resources in course")">@course.ResourceIds.Count in course</span>
                 }
             }
         </button>
-        <button class="tab @(activeTab == "Add" ? "active" : "")" @onclick="@(() => activeTab = "Add")">Add Resource</button>
+        <button class="tab @(activeTab == "Add" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="course-tab-add"
+                aria-selected="@((activeTab == "Add").ToString().ToLowerInvariant())"
+                aria-controls="course-management-panel"
+                tabindex="@(activeTab == "Add" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Add")">Add Resource</button>
     </div>
 
-    <div class="tab-content">
+    <div id="course-management-panel"
+         class="tab-content"
+         role="tabpanel"
+         aria-labelledby="@($"course-tab-{activeTab.ToLowerInvariant()}")"
+         tabindex="0">
         @if (activeTab == "Library")
         {
             <div class="library-section">
@@ -258,14 +277,22 @@
                                     @if (!string.IsNullOrEmpty(selectedCourseId))
                                     {
                                         <div class="resource-checkbox">
-                                            <input type="checkbox" 
+                                            <input type="checkbox"
+                                                   id="@($"course-include-{item.Id}")"
                                                    checked="@isInCourse"
+                                                   aria-label="@($"Include {item.Title} in active course")"
                                                    @onchange="@(() => ToggleResourceInCourse(item.Id))" />
                                         </div>
                                     }
-                                    <div class="resource-info" @onclick="@(() => ToggleResourceExpanded(item.Id))">
+                                    <div class="resource-info"
+                                         tabindex="0"
+                                         role="button"
+                                         aria-expanded="@isExpanded.ToString().ToLowerInvariant()"
+                                         aria-label="@($"{item.Title}, expand details")"
+                                         @onclick="@(() => ToggleResourceExpanded(item.Id))"
+                                         @onkeydown="@(e => HandleResourceKey(e, item.Id))">
                                         <div class="resource-title">
-                                            <span class="expand-icon bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></span>
+                                            <span class="expand-icon bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right")" aria-hidden="true"></span>
                                             @item.Title
                                             @if (isInCourse)
                                             {
@@ -304,11 +331,11 @@
                                         </div>
                                     </div>
                                     <div class="resource-actions">
-                                        <button class="icon-btn" title="Edit" @onclick="@(() => EditResource(item))">
-                                            <span class="icon-edit"></span>
+                                        <button class="icon-btn" type="button" title="Edit" aria-label="@($"Edit {item.Title}")" @onclick="@(() => EditResource(item))">
+                                            <span class="icon-edit" aria-hidden="true"></span>
                                         </button>
-                                        <button class="icon-btn danger" title="Delete" @onclick="@(() => ConfirmDeleteResource(item))">
-                                            <span class="icon-delete"></span>
+                                        <button class="icon-btn danger" type="button" title="Delete" aria-label="@($"Delete {item.Title}")" @onclick="@(() => ConfirmDeleteResource(item))">
+                                            <span class="icon-delete" aria-hidden="true"></span>
                                         </button>
                                     </div>
                                 </div>
@@ -577,47 +604,55 @@
                 <h4>@(editingResource != null ? "Edit Resource" : "Add New Resource")</h4>
 
                 <div class="form-group">
-                    <label>Title *</label>
-                    <input type="text" class="settings-input" @bind="resourceTitle" placeholder="Resource title" />
+                    <label for="resource-title-input">Title <span aria-label="required">*</span></label>
+                    <input id="resource-title-input" type="text" class="settings-input" required aria-required="true" @bind="resourceTitle" placeholder="Resource title" />
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Author</label>
-                        <input type="text" class="settings-input" @bind="resourceAuthor" placeholder="Author name" />
+                        <label for="resource-author-input">Author</label>
+                        <input id="resource-author-input" type="text" class="settings-input" @bind="resourceAuthor" placeholder="Author name" />
                     </div>
                     <div class="form-group">
-                        <label>Year</label>
-                        <input type="text" class="settings-input" @bind="resourceYear" placeholder="2024" />
+                        <label for="resource-year-input">Year</label>
+                        <input id="resource-year-input" type="text" class="settings-input" @bind="resourceYear" placeholder="2024" inputmode="numeric" />
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Description</label>
-                    <textarea class="settings-input" @bind="resourceDescription" placeholder="Brief description of this resource" rows="2"></textarea>
+                    <label for="resource-description-input">Description</label>
+                    <textarea id="resource-description-input" class="settings-input" @bind="resourceDescription" placeholder="Brief description of this resource" rows="2"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label>Content Source</label>
-                    <div class="toggle-button-group">
-                        <button class="toggle-btn @(contentSource == "text" ? "active" : "")" @onclick="@(() => contentSource = "text")">
+                <fieldset class="form-group">
+                    <legend>Content Source</legend>
+                    <div class="toggle-button-group" role="radiogroup" aria-label="Content source">
+                        <button class="toggle-btn @(contentSource == "text" ? "active" : "")"
+                                type="button"
+                                role="radio"
+                                aria-checked="@((contentSource == "text").ToString().ToLowerInvariant())"
+                                @onclick="@(() => contentSource = "text")">
                             Paste Text
                         </button>
-                        <button class="toggle-btn @(contentSource == "file" ? "active" : "")" @onclick="@(() => contentSource = "file")">
+                        <button class="toggle-btn @(contentSource == "file" ? "active" : "")"
+                                type="button"
+                                role="radio"
+                                aria-checked="@((contentSource == "file").ToString().ToLowerInvariant())"
+                                @onclick="@(() => contentSource = "file")">
                             Upload File
                         </button>
                     </div>
-                </div>
+                </fieldset>
 
                 @if (contentSource == "file")
                 {
                     <div class="form-group">
-                        <label>Upload Document</label>
+                        <label id="upload-document-label">Upload Document</label>
                         <div class="file-upload-area">
-                            <button class="settings-btn" @onclick="PickFile">Choose File</button>
+                            <button class="settings-btn" type="button" aria-labelledby="upload-document-label" @onclick="PickFile">Choose File</button>
                             @if (!string.IsNullOrEmpty(uploadedFileName))
                             {
-                                <span class="file-name">@uploadedFileName</span>
+                                <span class="file-name" aria-live="polite">@uploadedFileName</span>
                             }
                             else
                             {
@@ -628,27 +663,30 @@
                 }
 
                 <div class="form-group">
-                    <label>Content *</label>
+                    <label for="resource-content-input">Content <span aria-label="required">*</span></label>
                     @if (contentSource == "file" && !string.IsNullOrEmpty(fullFileContent))
                     {
-                        <div class="content-preview">
+                        <div id="resource-content-input" class="content-preview" tabindex="0" aria-label="File content preview">
                             <div class="preview-text">@GetContentPreview()</div>
                             @if (fullFileContent.Length > 500)
                             {
                                 <div class="preview-truncated">... (truncated)</div>
                             }
                         </div>
-                        <div class="content-stats">@fullFileContent.Length.ToString("N0") characters total</div>
+                        <div class="content-stats" aria-live="polite">@fullFileContent.Length.ToString("N0") characters total</div>
                     }
                     else
                     {
-                        <textarea class="settings-input content-textarea" 
-                                  @bind="resourceContent" 
+                        <textarea id="resource-content-input"
+                                  class="settings-input content-textarea"
+                                  required
+                                  aria-required="true"
+                                  @bind="resourceContent"
                                   placeholder="Paste your educational content here..."
                                   rows="10"></textarea>
                         @if (!string.IsNullOrEmpty(resourceContent))
                         {
-                            <div class="content-stats">@resourceContent.Length.ToString("N0") characters</div>
+                            <div class="content-stats" aria-live="polite">@resourceContent.Length.ToString("N0") characters</div>
                         }
                     }
                 </div>
@@ -664,51 +702,58 @@
                 <div class="form-actions">
                     @if (editingResource != null)
                     {
-                        <button class="settings-btn" @onclick="CancelEdit">Cancel</button>
-                        <button class="settings-btn primary" @onclick="QueueResource">
+                        <button class="settings-btn" type="button" @onclick="CancelEdit">Cancel</button>
+                        <button class="settings-btn primary" type="button" @onclick="QueueResource">
                             Update Resource
                         </button>
                     }
                     else
                     {
-                        <button class="settings-btn primary" @onclick="QueueResource">
-                            <span class="bi bi-plus-lg"></span> Add Resource
+                        <button class="settings-btn primary" type="button" @onclick="QueueResource">
+                            <span class="bi bi-plus-lg" aria-hidden="true"></span> Add Resource
                         </button>
                     }
                 </div>
 
                 @if (!string.IsNullOrEmpty(statusMessage))
                 {
-                    <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "success")">
+                    <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "success")"
+                         role="@(statusMessage.StartsWith("Error") ? "alert" : "status")"
+                         aria-live="@(statusMessage.StartsWith("Error") ? "assertive" : "polite")"
+                         aria-atomic="true">
                         @statusMessage
                     </div>
                 }
             </div>
         }
     </div>
-</div>
+</section>
 
 @* New Course Modal *@
 @if (showNewCourseModal)
 {
-    <div class="modal-overlay" @onclick="CloseModals">
+    <div class="modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="new-course-title"
+         @onclick="CloseModals">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>Create New Course</span>
-                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+                <h2 id="new-course-title" style="margin:0;font-size:inherit;">Create New Course</h2>
+                <button class="close-btn" type="button" aria-label="Close" @onclick="CloseModals"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Course Name *</label>
-                    <input type="text" class="settings-input" @bind="newCourseName" placeholder="e.g., Grade 5 Science" />
+                    <label for="new-course-name">Course Name *</label>
+                    <input id="new-course-name" type="text" class="settings-input" required aria-required="true" @bind="newCourseName" placeholder="e.g., Grade 5 Science" />
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
-                    <textarea class="settings-input" @bind="newCourseDescription" placeholder="Brief description..." rows="2"></textarea>
+                    <label for="new-course-description">Description</label>
+                    <textarea id="new-course-description" class="settings-input" @bind="newCourseDescription" placeholder="Brief description..." rows="2"></textarea>
                 </div>
                 <div class="form-actions">
-                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn primary" @onclick="CreateCourse">Create</button>
+                    <button class="settings-btn" type="button" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn primary" type="button" @onclick="CreateCourse">Create</button>
                 </div>
             </div>
         </div>
@@ -718,20 +763,24 @@
 @* Rename Course Modal *@
 @if (showRenameCourseModal)
 {
-    <div class="modal-overlay" @onclick="CloseModals">
+    <div class="modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="rename-course-title"
+         @onclick="CloseModals">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>Rename Course</span>
-                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+                <h2 id="rename-course-title" style="margin:0;font-size:inherit;">Rename Course</h2>
+                <button class="close-btn" type="button" aria-label="Close" @onclick="CloseModals"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>New Name *</label>
-                    <input type="text" class="settings-input" @bind="renameCourseName" placeholder="Enter new name" />
+                    <label for="rename-course-name">New Name *</label>
+                    <input id="rename-course-name" type="text" class="settings-input" required aria-required="true" @bind="renameCourseName" placeholder="Enter new name" />
                 </div>
                 <div class="form-actions">
-                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn primary" @onclick="RenameCourse">Rename</button>
+                    <button class="settings-btn" type="button" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn primary" type="button" @onclick="RenameCourse">Rename</button>
                 </div>
             </div>
         </div>
@@ -741,17 +790,22 @@
 @* Delete Confirmation Modal *@
 @if (showDeleteConfirmModal)
 {
-    <div class="modal-overlay" @onclick="CloseModals">
+    <div class="modal-overlay"
+         role="alertdialog"
+         aria-modal="true"
+         aria-labelledby="delete-confirm-title"
+         aria-describedby="delete-confirm-message"
+         @onclick="CloseModals">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>@deleteConfirmTitle</span>
-                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+                <h2 id="delete-confirm-title" style="margin:0;font-size:inherit;">@deleteConfirmTitle</h2>
+                <button class="close-btn" type="button" aria-label="Close" @onclick="CloseModals"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body">
-                <p>@deleteConfirmMessage</p>
+                <p id="delete-confirm-message">@deleteConfirmMessage</p>
                 <div class="form-actions">
-                    <button class="settings-btn" @onclick="CloseModals">Cancel</button>
-                    <button class="settings-btn danger" @onclick="ExecuteDelete">Delete</button>
+                    <button class="settings-btn" type="button" @onclick="CloseModals">Cancel</button>
+                    <button class="settings-btn danger" type="button" @onclick="ExecuteDelete">Delete</button>
                 </div>
             </div>
         </div>
@@ -761,18 +815,22 @@
 @* Cancel Processing Confirmation Modal *@
 @if (showCancelConfirmModal)
 {
-    <div class="modal-overlay" @onclick="CloseModals">
+    <div class="modal-overlay"
+         role="alertdialog"
+         aria-modal="true"
+         aria-labelledby="cancel-task-title"
+         @onclick="CloseModals">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>Cancel Upload?</span>
-                <button class="close-btn" @onclick="CloseModals"><span class="bi bi-x-lg"></span></button>
+                <h2 id="cancel-task-title" style="margin:0;font-size:inherit;">Cancel Upload?</h2>
+                <button class="close-btn" type="button" aria-label="Close" @onclick="CloseModals"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to cancel processing "<strong>@cancelTaskTitle</strong>"?</p>
                 <p class="modal-hint">This will stop the upload and any progress will be lost.</p>
                 <div class="form-actions">
-                    <button class="settings-btn" @onclick="CloseModals">Continue Processing</button>
-                    <button class="settings-btn danger" @onclick="ExecuteCancelTask">Cancel Upload</button>
+                    <button class="settings-btn" type="button" @onclick="CloseModals">Continue Processing</button>
+                    <button class="settings-btn danger" type="button" @onclick="ExecuteCancelTask">Cancel Upload</button>
                 </div>
             </div>
         </div>
@@ -1618,6 +1676,14 @@ private string resourceContent = "";
             {
                 await LoadResourceKbDetails(resourceId);
             }
+        }
+    }
+
+    private async Task HandleResourceKey(KeyboardEventArgs e, string resourceId)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Key == "Spacebar")
+        {
+            await ToggleResourceExpanded(resourceId);
         }
     }
 

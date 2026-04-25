@@ -8,40 +8,64 @@
 <div class="learn-tabs-container">
     @* Tab Header *@
     <div class="learn-tabs-header">
-        <div class="learn-tabs-bar">
-            <button class="learn-tab @(activeTab == LearnTab.Chat ? "active" : "")" 
+        <div class="learn-tabs-bar" role="tablist" aria-label="Learning sections">
+            <button class="learn-tab @(activeTab == LearnTab.Chat ? "active" : "")"
+                    type="button"
+                    role="tab"
+                    id="learn-tab-chat"
+                    aria-selected="@((activeTab == LearnTab.Chat).ToString().ToLowerInvariant())"
+                    aria-controls="learn-panel-chat"
+                    tabindex="@(activeTab == LearnTab.Chat ? "0" : "-1")"
                     @onclick="() => SwitchTab(LearnTab.Chat)">
-                <span class="bi bi-chat-dots"></span>
+                <span class="bi bi-chat-dots" aria-hidden="true"></span>
                 <span class="tab-label">Chat</span>
             </button>
-            <button class="learn-tab @(activeTab == LearnTab.Quiz ? "active" : "")" 
+            <button class="learn-tab @(activeTab == LearnTab.Quiz ? "active" : "")"
+                    type="button"
+                    role="tab"
+                    id="learn-tab-quiz"
+                    aria-selected="@((activeTab == LearnTab.Quiz).ToString().ToLowerInvariant())"
+                    aria-controls="learn-panel-quiz"
+                    tabindex="@(activeTab == LearnTab.Quiz ? "0" : "-1")"
                     @onclick="() => SwitchTab(LearnTab.Quiz)">
-                <span class="bi bi-question-circle"></span>
+                <span class="bi bi-question-circle" aria-hidden="true"></span>
                 <span class="tab-label">Quiz</span>
                 @if (QuizService.HasActiveSession)
                 {
-                    <span class="tab-badge active">!</span>
+                    <span class="tab-badge active" aria-label="Active quiz in progress">!</span>
                 }
             </button>
-            <button class="learn-tab @(activeTab == LearnTab.Concepts ? "active" : "")" 
+            <button class="learn-tab @(activeTab == LearnTab.Concepts ? "active" : "")"
+                    type="button"
+                    role="tab"
+                    id="learn-tab-concepts"
+                    aria-selected="@((activeTab == LearnTab.Concepts).ToString().ToLowerInvariant())"
+                    aria-controls="learn-panel-concepts"
+                    tabindex="@(activeTab == LearnTab.Concepts ? "0" : "-1")"
                     @onclick="() => SwitchTab(LearnTab.Concepts)">
-                <span class="bi bi-journal-text"></span>
+                <span class="bi bi-journal-text" aria-hidden="true"></span>
                 <span class="tab-label">Concepts</span>
                 @if (conceptCount > 0)
                 {
-                    <span class="tab-badge">@conceptCount</span>
+                    <span class="tab-badge" aria-label="@conceptCount concepts">@conceptCount</span>
                 }
             </button>
-            <button class="learn-tab @(activeTab == LearnTab.Visualize ? "active" : "")" 
+            <button class="learn-tab @(activeTab == LearnTab.Visualize ? "active" : "")"
+                    type="button"
+                    role="tab"
+                    id="learn-tab-visualize"
+                    aria-selected="@((activeTab == LearnTab.Visualize).ToString().ToLowerInvariant())"
+                    aria-controls="learn-panel-visualize"
+                    tabindex="@(activeTab == LearnTab.Visualize ? "0" : "-1")"
                     @onclick="() => SwitchTab(LearnTab.Visualize)">
-                <span class="bi bi-diagram-3"></span>
+                <span class="bi bi-diagram-3" aria-hidden="true"></span>
                 <span class="tab-label">Visualize</span>
             </button>
         </div>
         @if (activeCourse != null)
         {
-            <div class="learn-tabs-course">
-                <span class="bi bi-book"></span>
+            <div class="learn-tabs-course" aria-label="Active course">
+                <span class="bi bi-book" aria-hidden="true"></span>
                 <span>@activeCourse.Name</span>
             </div>
         }
@@ -52,7 +76,7 @@
         @switch (activeTab)
         {
             case LearnTab.Chat:
-                <div class="tab-panel chat-panel">
+                <div id="learn-panel-chat" class="tab-panel chat-panel" role="tabpanel" aria-labelledby="learn-tab-chat" tabindex="0">
                     <Chat @ref="chatComponent"
                           StartTopic="@pendingChatTopic"
                           AutoStartLesson="@autoStartLesson"
@@ -64,7 +88,7 @@
                 break;
 
             case LearnTab.Quiz:
-                <div class="tab-panel quiz-panel">
+                <div id="learn-panel-quiz" class="tab-panel quiz-panel" role="tabpanel" aria-labelledby="learn-tab-quiz" tabindex="0">
                     <QuizTab CourseId="@activeCourse?.Id"
                              LearnedConcepts="@encounteredConcepts"
                              SectionId="@currentSection?.Id"
@@ -74,9 +98,9 @@
                              OnSectionQuizCompleted="HandleSectionQuizCompleted" />
                 </div>
                 break;
-                
+
             case LearnTab.Concepts:
-                <div class="tab-panel concepts-panel">
+                <div id="learn-panel-concepts" class="tab-panel concepts-panel" role="tabpanel" aria-labelledby="learn-tab-concepts" tabindex="0">
                     <ConceptsTab CourseId="@activeCourse?.Id"
                                  LearnedConcepts="@learnedConcepts"
                                  SelectedConceptId="@selectedConceptId"
@@ -84,9 +108,9 @@
                                  OnVisualizeConcept="HandleVisualizeConcept" />
                 </div>
                 break;
-                
+
             case LearnTab.Visualize:
-                <div class="tab-panel visualize-panel">
+                <div id="learn-panel-visualize" class="tab-panel visualize-panel" role="tabpanel" aria-labelledby="learn-tab-visualize" tabindex="0">
                     <ConceptMapCollectionGraph CourseId="@activeCourse?.Id"
                                                SelectedConceptId="@selectedConceptId"
                                                EmbeddedMode="true"

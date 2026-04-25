@@ -5,56 +5,66 @@
 @inject ConceptMapStorageService ConceptMapStorageService
 @implements IDisposable
 
-<div class="quiz-tab">
+<section class="quiz-tab" aria-labelledby="quiz-region-label">
+    <h2 id="quiz-region-label" class="sr-only">Quiz</h2>
     @if (string.IsNullOrEmpty(CourseId))
     {
-        <div class="quiz-empty">
-            <span class="bi bi-book"></span>
+        <div class="quiz-empty" role="status">
+            <span class="bi bi-book" aria-hidden="true"></span>
             <h3>No Course Selected</h3>
             <p>Please select a course to start a quiz.</p>
         </div>
     }
     else if (_loading)
     {
-        <div class="quiz-loading">
-            <span class="spinner"></span>
+        <div class="quiz-loading" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
             <p>Loading quiz...</p>
         </div>
     }
     else if (QuizService.HasActiveSession)
     {
         @* Active Quiz Session *@
-        <div class="quiz-active">
-            <div class="quiz-progress-bar">
+        <div class="quiz-active" aria-labelledby="quiz-active-heading">
+            <h3 id="quiz-active-heading" class="sr-only">Active quiz</h3>
+            <div class="quiz-progress-bar"
+                 role="progressbar"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 aria-valuenow="@((int)GetProgressPercentage())"
+                 aria-label="Quiz progress">
                 <div class="quiz-progress" style="width: @GetProgressPercentage()%"></div>
             </div>
-            <div class="quiz-header">
+            <div class="quiz-header" aria-live="polite" aria-atomic="true">
                 <span class="question-counter">Question @(QuizService.CurrentSession!.CurrentQuestionIndex + 1) of @QuizService.CurrentSession.Questions.Count</span>
             </div>
 
             @if (_currentQuestion != null)
             {
-                <div class="question-bubble">
-                    <span class="bi bi-question-circle"></span>
-                    <div class="question-text">@_currentQuestion.QuestionText</div>
+                <div class="question-bubble" role="group" aria-labelledby="quiz-question-text">
+                    <span class="bi bi-question-circle" aria-hidden="true"></span>
+                    <div id="quiz-question-text" class="question-text">@_currentQuestion.QuestionText</div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(_feedback))
                 {
-                    <div class="feedback-bubble @(_lastAnswerCorrect ? "correct" : "incorrect")">
-                        <span class="bi @(_lastAnswerCorrect ? "bi-check-circle" : "bi-x-circle")"></span>
-                        <div class="feedback-text">@_feedback</div>
+                    <div class="feedback-bubble @(_lastAnswerCorrect ? "correct" : "incorrect")"
+                         role="status"
+                         aria-live="assertive"
+                         aria-atomic="true">
+                        <span class="bi @(_lastAnswerCorrect ? "bi-check-circle" : "bi-x-circle")" aria-hidden="true"></span>
+                        <div class="feedback-text">@(_lastAnswerCorrect ? "Correct. " : "Incorrect. ")@_feedback</div>
                     </div>
-                    
+
                     @if (!string.IsNullOrEmpty(_currentQuestion.Explanation))
                     {
                         <div class="explanation-bubble">
-                            <span class="bi bi-lightbulb"></span>
+                            <span class="bi bi-lightbulb" aria-hidden="true"></span>
                             <div class="explanation-text">@_currentQuestion.Explanation</div>
                         </div>
                     }
 
-                    <button class="quiz-btn primary" @onclick="NextQuestion">
+                    <button class="quiz-btn primary" type="button" @onclick="NextQuestion">
                         @if (_quizComplete)
                         {
                             <span>View Results</span>
@@ -63,26 +73,33 @@
                         {
                             <span>Next Question</span>
                         }
-                        <span class="bi bi-arrow-right"></span>
+                        <span class="bi bi-arrow-right" aria-hidden="true"></span>
                     </button>
                 }
                 else
                 {
                     <div class="answer-section">
-                        <textarea @bind="_userAnswer" @bind:event="oninput"
+                        <label for="quiz-answer" class="sr-only">Your answer</label>
+                        <textarea id="quiz-answer"
+                                  @bind="_userAnswer"
+                                  @bind:event="oninput"
                                   placeholder="Type your answer here..."
                                   rows="3"
+                                  aria-describedby="quiz-question-text"
                                   disabled="@_submitting"></textarea>
-                        
-                        <button class="quiz-btn primary" @onclick="SubmitAnswer" 
-                                disabled="@(string.IsNullOrWhiteSpace(_userAnswer) || _submitting)">
+
+                        <button class="quiz-btn primary"
+                                type="button"
+                                @onclick="SubmitAnswer"
+                                disabled="@(string.IsNullOrWhiteSpace(_userAnswer) || _submitting)"
+                                aria-busy="@_submitting.ToString().ToLowerInvariant()">
                             @if (_submitting)
                             {
-                                <span class="spinner-small"></span>
+                                <span class="spinner-small" aria-hidden="true"></span>
                             }
                             else
                             {
-                                <span class="bi bi-send"></span>
+                                <span class="bi bi-send" aria-hidden="true"></span>
                             }
                             <span>Submit Answer</span>
                         </button>
@@ -94,89 +111,93 @@
     else if (_quizResult != null)
     {
         @* Quiz Results *@
-        <div class="quiz-results">
-            <div class="results-header @(_quizResult.Passed ? "passed" : "failed")">
-                <span class="bi @(_quizResult.Passed ? "bi-trophy" : "bi-emoji-frown")"></span>
-                <h2>@(_quizResult.Passed ? "Congratulations!" : "Keep Learning!")</h2>
-            </div>
-            
-            <div class="results-score">
-                <div class="score-circle @(_quizResult.Passed ? "passed" : "failed")">
+        <section class="quiz-results" role="region" aria-labelledby="quiz-results-heading">
+            <header class="results-header @(_quizResult.Passed ? "passed" : "failed")">
+                <span class="bi @(_quizResult.Passed ? "bi-trophy" : "bi-emoji-frown")" aria-hidden="true"></span>
+                <h2 id="quiz-results-heading">@(_quizResult.Passed ? "Congratulations!" : "Keep Learning!")</h2>
+            </header>
+
+            <div class="results-score" role="group" aria-label="Score summary">
+                <div class="score-circle @(_quizResult.Passed ? "passed" : "failed")" aria-hidden="true">
                     <span class="score-value">@(_quizResult.ScorePercentage.ToString("0"))%</span>
                 </div>
                 <div class="score-details">
-                    <p>@_quizResult.CorrectAnswers of @_quizResult.TotalQuestions correct</p>
-                    <p class="points">@_quizResult.EarnedPoints / @_quizResult.TotalPoints points</p>
+                    <p>Score: @(_quizResult.ScorePercentage.ToString("0"))%. @_quizResult.CorrectAnswers of @_quizResult.TotalQuestions correct.</p>
+                    <p class="points">@_quizResult.EarnedPoints of @_quizResult.TotalPoints points earned.</p>
                 </div>
             </div>
 
             <div class="results-actions">
-                <button class="quiz-btn secondary" @onclick="RetryQuiz">
-                    <span class="bi bi-arrow-repeat"></span>
+                <button class="quiz-btn secondary" type="button" @onclick="RetryQuiz">
+                    <span class="bi bi-arrow-repeat" aria-hidden="true"></span>
                     <span>Try Again</span>
                 </button>
-                <button class="quiz-btn primary" @onclick="BackToLesson">
-                    <span class="bi bi-book"></span>
+                <button class="quiz-btn primary" type="button" @onclick="BackToLesson">
+                    <span class="bi bi-book" aria-hidden="true"></span>
                     <span>Continue Learning</span>
                 </button>
             </div>
-        </div>
+        </section>
     }
     else
     {
         @* Quiz Start Screen *@
-        <div class="quiz-start">
-            <div class="quiz-start-header">
-                <span class="bi bi-question-circle"></span>
+        <section class="quiz-start" aria-labelledby="quiz-start-heading">
+            <header class="quiz-start-header">
+                <span class="bi bi-question-circle" aria-hidden="true"></span>
                 @if (_isSectionQuiz)
                 {
-                    <h2>Section Quiz</h2>
+                    <h2 id="quiz-start-heading">Section Quiz</h2>
                     <p>Complete this quiz to master: <strong>@SectionTitle</strong></p>
                 }
                 else
                 {
-                    <h2>Ready for a Quiz?</h2>
+                    <h2 id="quiz-start-heading">Ready for a Quiz?</h2>
                     <p>Test your knowledge based on what you've learned so far.</p>
                 }
-            </div>
+            </header>
 
             @if (_conceptIds.Count == 0 && LearnedConcepts.Count == 0)
             {
-                <div class="quiz-warning">
-                    <span class="bi bi-info-circle"></span>
+                <div class="quiz-warning" role="status">
+                    <span class="bi bi-info-circle" aria-hidden="true"></span>
                     <p>You haven't learned any concepts yet. Start a lesson first to unlock quizzes!</p>
                 </div>
-                
-                <button class="quiz-btn secondary" @onclick="BackToLesson">
-                    <span class="bi bi-book"></span>
+
+                <button class="quiz-btn secondary" type="button" @onclick="BackToLesson">
+                    <span class="bi bi-book" aria-hidden="true"></span>
                     <span>Go to Lessons</span>
                 </button>
             }
             else
             {
-                <div class="quiz-info">
-                    <div class="info-item">
-                        <span class="bi bi-journal-check"></span>
+                <ul class="quiz-info" aria-label="Quiz overview" style="list-style:none;padding:0;">
+                    <li class="info-item">
+                        <span class="bi bi-journal-check" aria-hidden="true"></span>
                         <span>@(_isSectionQuiz ? $"{_conceptIds.Count} concepts in section" : $"{LearnedConcepts.Count} concepts learned")</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="bi bi-list-ol"></span>
+                    </li>
+                    <li class="info-item">
+                        <span class="bi bi-list-ol" aria-hidden="true"></span>
                         <span>@GetQuestionCount() questions</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="bi bi-clock"></span>
+                    </li>
+                    <li class="info-item">
+                        <span class="bi bi-clock" aria-hidden="true"></span>
                         <span>~@GetEstimatedMinutes() minutes</span>
-                    </div>
-                </div>
+                    </li>
+                </ul>
 
-                <button class="quiz-btn primary large" @onclick="StartQuiz" disabled="@_starting">
+                <button class="quiz-btn primary large"
+                        type="button"
+                        @onclick="StartQuiz"
+                        disabled="@_starting"
+                        aria-busy="@_starting.ToString().ToLowerInvariant()">
                     @if (_starting)
                     {
-                        <span class="spinner-small"></span>
+                        <span class="spinner-small" aria-hidden="true"></span>
                     }
                     else
                     {
-                        <span class="bi bi-play-fill"></span>
+                        <span class="bi bi-play-fill" aria-hidden="true"></span>
                     }
                     <span>Start Quiz</span>
                 </button>
@@ -184,21 +205,24 @@
 
             @if (_quizHistory.Count > 0 && !_isSectionQuiz)
             {
-                <div class="quiz-history">
-                    <h3>Recent Quizzes</h3>
-                    @foreach (var result in _quizHistory.Take(3))
-                    {
-                        <div class="history-item @(result.Passed ? "passed" : "failed")">
-                            <span class="history-score">@(result.ScorePercentage.ToString("0"))%</span>
-                            <span class="history-date">@result.CompletedAt.ToString("MMM d, h:mm tt")</span>
-                            <span class="bi @(result.Passed ? "bi-check-circle" : "bi-x-circle")"></span>
-                        </div>
-                    }
-                </div>
+                <section class="quiz-history" aria-labelledby="quiz-history-heading">
+                    <h3 id="quiz-history-heading">Recent Quizzes</h3>
+                    <ul style="list-style:none;padding:0;">
+                        @foreach (var result in _quizHistory.Take(3))
+                        {
+                            <li class="history-item @(result.Passed ? "passed" : "failed")">
+                                <span class="history-score">@(result.ScorePercentage.ToString("0"))%</span>
+                                <span class="history-date">@result.CompletedAt.ToString("MMM d, h:mm tt")</span>
+                                <span class="bi @(result.Passed ? "bi-check-circle" : "bi-x-circle")"
+                                      aria-label="@(result.Passed ? "Passed" : "Failed")"></span>
+                            </li>
+                        }
+                    </ul>
+                </section>
             }
-        </div>
+        </section>
     }
-</div>
+</section>
 
 @code {
 [Parameter]

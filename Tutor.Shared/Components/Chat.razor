@@ -14,7 +14,7 @@
 @implements IDisposable
 
 @* Top header with course selector and mode info *@
-<div class="learn-header">
+<header class="learn-header" role="region" aria-label="Lesson controls">
     <div class="learn-header-left">
         <div class="course-selector">
             <label for="courseSelect">Course:</label>
@@ -33,19 +33,19 @@
             </select>
         </div>
     </div>
-    <div class="learn-header-center">
+    <div class="learn-header-center" aria-live="polite" aria-atomic="true">
         @if (isQuizMode)
         {
-            <div class="mode-badge quiz">
-                <span class="icon-quiz-white"></span>
+            <div class="mode-badge quiz" role="status">
+                <span class="icon-quiz-white" aria-hidden="true"></span>
                 <span>Quiz Mode</span>
                 <span class="mode-detail">Question @currentQuestionNumber of @totalQuestions</span>
             </div>
         }
         else if (isLessonMode && lessonTopics.Count > 0)
         {
-            <div class="mode-badge lesson">
-                <span class="icon-teach-white"></span>
+            <div class="mode-badge lesson" role="status">
+                <span class="icon-teach-white" aria-hidden="true"></span>
                 <span>Learning</span>
                 <span class="mode-progress">@GetLessonProgressText()</span>
             </div>
@@ -55,41 +55,49 @@
         @* Reading timer display *@
         @if (isLessonMode && hasStartedLearning && !isQuizMode && readingTimer != null && displayTimerSeconds > 0)
         {
-            <div class="reading-timer @(GetReadingProgress() >= 100 ? "complete" : "")" title="Reading time for this section">
-                <div class="reading-timer-progress" style="width: @GetReadingProgress()%"></div>
+            <div class="reading-timer @(GetReadingProgress() >= 100 ? "complete" : "")"
+                 title="Reading time for this section"
+                 role="timer"
+                 aria-label="@($"Reading timer: {GetReadingTimerDisplay()}, {(int)GetReadingProgress()} percent complete")">
+                <div class="reading-timer-progress" style="width: @GetReadingProgress()%" aria-hidden="true"></div>
                 <span class="reading-timer-text">
-                    <span class="bi @(GetReadingProgress() >= 100 ? "bi-check-circle" : "bi-clock")"></span>
+                    <span class="bi @(GetReadingProgress() >= 100 ? "bi-check-circle" : "bi-clock")" aria-hidden="true"></span>
                     @GetReadingTimerDisplay()
                 </span>
             </div>
         }
-        
+
         @if (isQuizMode)
         {
-            <button class="header-action-btn" @onclick="ConfirmRestartQuiz" title="Restart Quiz"><span class="bi bi-arrow-clockwise"></span></button>
-            <button class="header-action-btn danger" @onclick="ConfirmCancelQuiz" title="Cancel Quiz"><span class="bi bi-x-lg"></span></button>
+            <button class="header-action-btn" type="button" @onclick="ConfirmRestartQuiz" title="Restart Quiz" aria-label="Restart quiz"><span class="bi bi-arrow-clockwise" aria-hidden="true"></span></button>
+            <button class="header-action-btn danger" type="button" @onclick="ConfirmCancelQuiz" title="Cancel Quiz" aria-label="Cancel quiz"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
         }
         else if (isLessonMode)
         {
-            <button class="header-action-btn" @onclick="ConfirmRestartLesson" title="Restart Lesson"><span class="bi bi-arrow-clockwise"></span></button>
+            <button class="header-action-btn" type="button" @onclick="ConfirmRestartLesson" title="Restart Lesson" aria-label="Restart lesson"><span class="bi bi-arrow-clockwise" aria-hidden="true"></span></button>
         }
     </div>
-</div>
+</header>
 
 @* Confirmation modal (for restart and cancel) *@
 @if (showConfirmModal)
 {
-    <div class="modal-overlay" @onclick="CloseConfirmModal">
+    <div class="modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="confirm-modal-title"
+         aria-describedby="confirm-modal-message"
+         @onclick="CloseConfirmModal">
         <div class="modal-content small" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>@confirmModalTitle</span>
-                <button class="close-btn" @onclick="CloseConfirmModal"><span class="bi bi-x-lg"></span></button>
+                <h2 id="confirm-modal-title" style="margin:0;font-size:inherit;">@confirmModalTitle</h2>
+                <button class="close-btn" type="button" aria-label="Close" @onclick="CloseConfirmModal"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body">
-                <p>@confirmModalMessage</p>
+                <p id="confirm-modal-message">@confirmModalMessage</p>
                 <div class="modal-actions">
-                    <button class="settings-btn" @onclick="CloseConfirmModal">Cancel</button>
-                    <button class="settings-btn danger" @onclick="ExecuteConfirmedAction">@confirmModalActionText</button>
+                    <button class="settings-btn" type="button" @onclick="CloseConfirmModal">Cancel</button>
+                    <button class="settings-btn danger" type="button" @onclick="ExecuteConfirmedAction">@confirmModalActionText</button>
                 </div>
             </div>
         </div>
@@ -99,11 +107,15 @@
 @* Knowledge Base modal (Terminology) *@
 @if (showKnowledgeBase)
 {
-    <div class="modal-overlay" @onclick="CloseKnowledgeBase">
+    <div class="modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="kb-modal-title"
+         @onclick="CloseKnowledgeBase">
         <div class="modal-content kb-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span><span class="bi bi-journal-text"></span> Terminology</span>
-                <button class="close-btn" @onclick="CloseKnowledgeBase"><span class="bi bi-x-lg"></span></button>
+                <h2 id="kb-modal-title" style="margin:0;font-size:inherit;"><span class="bi bi-journal-text" aria-hidden="true"></span> Terminology</h2>
+                <button class="close-btn" type="button" aria-label="Close terminology" @onclick="CloseKnowledgeBase"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body kb-body">
                 @if (knowledgeBaseConcepts.Count == 0)
@@ -113,36 +125,41 @@
                 else
                 {
                     <p class="kb-instruction">All concepts from your knowledge base:</p>
-                    <div class="kb-concepts">
+                    <ul class="kb-concepts" style="list-style:none;padding:0;">
                         @foreach (var concept in knowledgeBaseConcepts.OrderBy(c => c.Title))
                         {
                             var isLearned = learnedConcepts.Contains(concept.Title);
-                            <div class="kb-concept @(isLearned ? "learned" : "")" @onclick="() => SelectConcept(concept)">
-                                <div class="kb-concept-header">
-                                    <span class="kb-concept-title">@concept.Title</span>
-                                    @if (isLearned)
-                                    {
-                                        <span class="kb-concept-status"><span class="bi bi-check-circle-fill"></span></span>
-                                    }
-                                </div>
-                                @if (!string.IsNullOrEmpty(concept.Summary))
-                                {
-                                    <div class="kb-concept-summary">@concept.Summary</div>
-                                }
-                                @if (concept.Tags.Count > 0)
-                                {
-                                    <div class="kb-concept-tags">
-                                        @foreach (var tag in concept.Tags.Take(3))
+                            <li>
+                                <button class="kb-concept @(isLearned ? "learned" : "")"
+                                        type="button"
+                                        aria-label="@($"{concept.Title}{(isLearned ? ", learned" : "")}")"
+                                        @onclick="() => SelectConcept(concept)">
+                                    <div class="kb-concept-header">
+                                        <span class="kb-concept-title">@concept.Title</span>
+                                        @if (isLearned)
                                         {
-                                            <span class="kb-tag">@tag</span>
+                                            <span class="kb-concept-status" aria-hidden="true"><span class="bi bi-check-circle-fill"></span></span>
                                         }
                                     </div>
-                                }
-                            </div>
+                                    @if (!string.IsNullOrEmpty(concept.Summary))
+                                    {
+                                        <div class="kb-concept-summary">@concept.Summary</div>
+                                    }
+                                    @if (concept.Tags.Count > 0)
+                                    {
+                                        <ul class="kb-concept-tags" style="list-style:none;padding:0;display:flex;gap:4px;flex-wrap:wrap;">
+                                            @foreach (var tag in concept.Tags.Take(3))
+                                            {
+                                                <li class="kb-tag">@tag</li>
+                                            }
+                                        </ul>
+                                    }
+                                </button>
+                            </li>
                         }
-                    </div>
+                    </ul>
                     <div class="kb-legend">
-                        <span><span class="legend-icon bi bi-check-circle-fill"></span> Learned</span>
+                        <span><span class="legend-icon bi bi-check-circle-fill" aria-hidden="true"></span> Learned</span>
                         <span class="kb-count">@knowledgeBaseConcepts.Count concepts total</span>
                     </div>
                 }
@@ -155,11 +172,15 @@
 @* Knowledge Base Explorer modal (Force diagram) *@
 @if (showKnowledgeBaseExplorer && activeCourse != null)
 {
-    <div class="modal-overlay" @onclick="CloseKnowledgeBaseExplorer">
+    <div class="modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="kb-explorer-title"
+         @onclick="CloseKnowledgeBaseExplorer">
         <div class="modal-content kb-explorer-modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span><span class="bi bi-diagram-3"></span> Concept Map Explorer</span>
-                <button class="close-btn" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg"></span></button>
+                <h2 id="kb-explorer-title" style="margin:0;font-size:inherit;"><span class="bi bi-diagram-3" aria-hidden="true"></span> Concept Map Explorer</h2>
+                <button class="close-btn" type="button" aria-label="Close concept map explorer" @onclick="CloseKnowledgeBaseExplorer"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body kb-explorer-body">
                 <ConceptMapCollectionGraph CourseId="@activeCourse.Id" OnTeachConcept="TeachConceptFromExplorer" />
@@ -172,11 +193,11 @@
     @* Left sidebar with Table of Contents *@
     @if (isLessonMode && lessonTopics.Count > 0 && !isQuizMode)
     {
-        <div class="toc-sidebar">
-            <div class="toc-sidebar-header">
-                <span class="bi bi-list-ul"></span> Contents
-            </div>
-            <div class="toc-sidebar-list">
+        <nav class="toc-sidebar" aria-labelledby="toc-sidebar-heading">
+            <h2 id="toc-sidebar-heading" class="toc-sidebar-header">
+                <span class="bi bi-list-ul" aria-hidden="true"></span> Contents
+            </h2>
+            <ol class="toc-sidebar-list" style="list-style:none;padding:0;">
                 @for (int i = 0; i < lessonTopics.Count; i++)
                 {
                     var index = i;
@@ -184,19 +205,26 @@
                     var isCurrentTopic = i == currentLessonIndex;
                     var isCompleted = learnedConcepts.Contains(topic);
                     var isVisited = visitedTopicIndices.Contains(i);
-                    
-                    <button class="toc-sidebar-item @(isCurrentTopic ? "current" : "") @(isCompleted ? "completed" : "") @(isVisited && !isCompleted ? "visited" : "")"
-                            @onclick="() => JumpToTopic(index)" disabled="@isSending">
-                        <span class="toc-sidebar-number">@(i + 1)</span>
-                        <span class="toc-sidebar-topic" title="@topic">@TruncateText(topic, 40)</span>
-                        @if (isCompleted)
-                        {
-                            <span class="toc-sidebar-status"><span class="bi bi-check-lg"></span></span>
-                        }
-                    </button>
+                    var statusLabel = isCompleted ? "completed" : (isVisited ? "visited" : "not started");
+
+                    <li>
+                        <button class="toc-sidebar-item @(isCurrentTopic ? "current" : "") @(isCompleted ? "completed" : "") @(isVisited && !isCompleted ? "visited" : "")"
+                                type="button"
+                                aria-current="@(isCurrentTopic ? "step" : null)"
+                                aria-label="@($"Topic {i + 1}: {topic}, {statusLabel}")"
+                                @onclick="() => JumpToTopic(index)"
+                                disabled="@isSending">
+                            <span class="toc-sidebar-number" aria-hidden="true">@(i + 1)</span>
+                            <span class="toc-sidebar-topic" title="@topic">@TruncateText(topic, 40)</span>
+                            @if (isCompleted)
+                            {
+                                <span class="toc-sidebar-status" aria-hidden="true"><span class="bi bi-check-lg"></span></span>
+                            }
+                        </button>
+                    </li>
                 }
-            </div>
-        </div>
+            </ol>
+        </nav>
     }
 
     @* Main chat area *@
@@ -204,20 +232,31 @@
         @* Sub-tab bar for side conversations *@
         @if (chatTabs.Count > 1)
         {
-            <div class="chat-tab-bar">
+            <div class="chat-tab-bar" role="tablist" aria-label="Chat conversations">
                 @for (int i = 0; i < chatTabs.Count; i++)
                 {
                     var idx = i;
                     var tab = chatTabs[i];
                     <button class="chat-tab-item @(idx == activeTabIndex ? "active" : "") @(!tab.IsCloseable ? "primary" : "")"
+                            type="button"
+                            role="tab"
+                            aria-selected="@((idx == activeTabIndex).ToString().ToLowerInvariant())"
+                            tabindex="@(idx == activeTabIndex ? "0" : "-1")"
                             @onclick="() => SwitchChatTab(idx)" disabled="@isSending"
-                            title="@tab.Title">
-                        <span class="bi @(tab.IsCloseable ? "bi-chat-right-quote" : "bi-book")"></span>
+                            title="@tab.Title"
+                            aria-label="@tab.Title">
+                        <span class="bi @(tab.IsCloseable ? "bi-chat-right-quote" : "bi-book")" aria-hidden="true"></span>
                         <span class="chat-tab-title">@TruncateText(tab.Title, 20)</span>
                         @if (tab.IsCloseable)
                         {
-                            <button class="chat-tab-close" @onclick:stopPropagation="true" @onclick="() => CloseChatTab(idx)" disabled="@isSending" title="Close tab">
-                                <span class="bi bi-x"></span>
+                            <button class="chat-tab-close"
+                                    type="button"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => CloseChatTab(idx)"
+                                    disabled="@isSending"
+                                    title="Close tab"
+                                    aria-label="@($"Close tab {tab.Title}")">
+                                <span class="bi bi-x" aria-hidden="true"></span>
                             </button>
                         }
                     </button>
@@ -225,7 +264,12 @@
             </div>
         }
 
-        <div class="chat-log" @ref="chatLogRef">
+        <div class="chat-log"
+             @ref="chatLogRef"
+             role="log"
+             aria-live="polite"
+             aria-relevant="additions text"
+             aria-label="Chat messages">
             @{
                 var messageIndex = 0;
                 var hiddenCount = GetHiddenMessageCount();
@@ -236,8 +280,11 @@
             @if (hiddenCount > 0 && !showAllMessages)
             {
                 <div class="hidden-messages-notice">
-                    <button class="expand-messages-btn" @onclick="() => showAllMessages = true">
-                        <span class="bi bi-chevron-up"></span>
+                    <button class="expand-messages-btn"
+                            type="button"
+                            aria-expanded="false"
+                            @onclick="() => showAllMessages = true">
+                        <span class="bi bi-chevron-up" aria-hidden="true"></span>
                         Show @hiddenCount older message@(hiddenCount == 1 ? "" : "s")
                     </button>
                 </div>
@@ -245,8 +292,11 @@
             @if (showAllMessages && messages.Count > RecentMessageCount)
             {
                 <div class="hidden-messages-notice">
-                    <button class="expand-messages-btn" @onclick="() => showAllMessages = false">
-                        <span class="bi bi-chevron-down"></span>
+                    <button class="expand-messages-btn"
+                            type="button"
+                            aria-expanded="true"
+                            @onclick="() => showAllMessages = false">
+                        <span class="bi bi-chevron-down" aria-hidden="true"></span>
                         Hide older messages
                     </button>
                 </div>
@@ -260,15 +310,15 @@
 
                 @if (isVisible)
                 {
-                    <div class="msg-wrapper @(m.Role)">
-                        <div class="msg-avatar @(m.Role)">
+                    <article class="msg-wrapper @(m.Role)" aria-label="@(m.Role == "user" ? userDisplayName : assistantDisplayName) message">
+                        <div class="msg-avatar @(m.Role)" aria-hidden="true">
                             @if (m.Role == "user" && !string.IsNullOrEmpty(userCustomAvatar))
                             {
-                                <img src="@userCustomAvatar" alt="@userDisplayName" />
+                                <img src="@userCustomAvatar" alt="" />
                             }
                             else if (m.Role == "assistant" && !string.IsNullOrEmpty(assistantCustomAvatar))
                             {
-                                <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                                <img src="@assistantCustomAvatar" alt="" />
                             }
                             else
                             {
@@ -278,40 +328,49 @@
                         <div class="msg @(m.Role)">
                             <div class="msg-header">
                                 <span class="role">@(m.Role == "user" ? userDisplayName : assistantDisplayName)</span>
-                                <button class="view-btn" @onclick="() => ShowModal(m.FullJson)">View</button>
+                                <button class="view-btn" type="button" aria-label="View raw response" @onclick="() => ShowModal(m.FullJson)">View</button>
                             </div>
                             <div class="content markdown-content">@((MarkupString)ParseMarkdown(m.VisibleText))</div>
 
                             @* Show navigation buttons in assistant messages during lesson mode (only on Lesson tab) *@
                         @if (m.Role == "assistant" && isLessonMode && lessonTopics.Count > 0 && !isQuizMode && !isSending && isLastAssistantMessage && activeTabIndex == 0)
                         {
-                            <div class="lesson-nav-bar">
-                                <button class="lesson-nav-btn previous" @onclick="PreviousLesson" disabled="@(currentLessonIndex <= 0 || !hasStartedLearning)" title="@GetPreviousTopicTitle()">
-                                    <span class="bi bi-chevron-left"></span>
+                            <nav class="lesson-nav-bar" aria-label="Lesson navigation">
+                                <button class="lesson-nav-btn previous"
+                                        type="button"
+                                        @onclick="PreviousLesson"
+                                        disabled="@(currentLessonIndex <= 0 || !hasStartedLearning)"
+                                        title="@GetPreviousTopicTitle()"
+                                        aria-label="@($"Previous topic: {GetPreviousTopicTitle()}")">
+                                    <span class="bi bi-chevron-left" aria-hidden="true"></span>
                                     <span class="lesson-nav-text">@GetPreviousTopicName()</span>
                                 </button>
-                                <button class="lesson-nav-btn continue" @onclick="ContinueLesson" title="@GetNextTopicTitle()">
+                                <button class="lesson-nav-btn continue"
+                                        type="button"
+                                        @onclick="ContinueLesson"
+                                        title="@GetNextTopicTitle()"
+                                        aria-label="@($"Next: {GetNextTopicTitle()}")">
                                     <span class="lesson-nav-text">@GetNextTopicName()</span>
-                                    <span class="bi bi-chevron-right"></span>
+                                    <span class="bi bi-chevron-right" aria-hidden="true"></span>
                                 </button>
-                            </div>
+                            </nav>
                         }
 
                         @* Suggestion area for follow-up questions *@
                         <div class="msg-suggestions"></div>
                     </div>
-                </div>
+                </article>
             }
             messageIndex++;
         }
 
         @if (isSending)
         {
-            <div class="msg-wrapper assistant">
-                <div class="msg-avatar assistant">
+            <article class="msg-wrapper assistant" aria-label="@assistantDisplayName is responding" aria-busy="true">
+                <div class="msg-avatar assistant" aria-hidden="true">
                     @if (!string.IsNullOrEmpty(assistantCustomAvatar))
                     {
-                        <img src="@assistantCustomAvatar" alt="@assistantDisplayName" />
+                        <img src="@assistantCustomAvatar" alt="" />
                     }
                     else
                     {
@@ -322,50 +381,66 @@
                     <div class="msg-header">
                         <span class="role">@assistantDisplayName</span>
                     </div>
-                    <div class="content thinking">
-                        <span class="thinking-dots">
+                    <div class="content thinking" aria-live="polite">
+                        <span class="sr-only">@assistantDisplayName is thinking...</span>
+                        <span class="thinking-dots" aria-hidden="true">
                             <span></span><span></span><span></span>
                         </span>
                     </div>
                 </div>
-            </div>
+            </article>
         }
     </div>
 
-    <div class="chat-input">
-        <textarea @ref="textareaRef"
+    <form class="chat-input"
+          role="region"
+          aria-label="Chat input"
+          @onsubmit="SendAsync"
+          @onsubmit:preventDefault="true">
+        <label for="chat-prompt-input" class="sr-only">Message</label>
+        <textarea id="chat-prompt-input"
+                  @ref="textareaRef"
                   @bind="prompt"
                   @bind:event="oninput"
                   @bind:after="AutoGrow"
                   rows="1"
                   disabled="@isSending"
+                  aria-label="Message"
                   placeholder="@placeholderText"></textarea>
 
         <div class="chat-actions-row">
             <div class="actions-spacer"></div>
             @if (isSending)
             {
-                <button class="action-btn cancel" @onclick="CancelRequest" title="Cancel">
-                    <span class="bi bi-stop-fill"></span>
+                <button class="action-btn cancel" type="button" @onclick="CancelRequest" title="Cancel" aria-label="Cancel sending">
+                    <span class="bi bi-stop-fill" aria-hidden="true"></span>
                     Cancel
                 </button>
             }
-            <button class="action-btn send" @onclick="SendAsync" disabled="@(isSending || string.IsNullOrWhiteSpace(prompt))" title="Send">
-                <span class="bi bi-send-fill"></span>
+            <button class="action-btn send"
+                    type="submit"
+                    disabled="@(isSending || string.IsNullOrWhiteSpace(prompt))"
+                    title="Send"
+                    aria-label="Send message">
+                <span class="bi bi-send-fill" aria-hidden="true"></span>
                 Send
             </button>
         </div>
-    </div>
+    </form>
 </div>
 </div>
 
 @if (showModal)
 {
-    <div class="modal-overlay" @onclick="CloseModal">
+    <div class="modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="full-response-title"
+         @onclick="CloseModal">
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <span>Full Response</span>
-                <button class="close-btn" @onclick="CloseModal"><span class="bi bi-x-lg"></span></button>
+                <h2 id="full-response-title" style="margin:0;font-size:inherit;">Full Response</h2>
+                <button class="close-btn" type="button" aria-label="Close" @onclick="CloseModal"><span class="bi bi-x-lg" aria-hidden="true"></span></button>
             </div>
             <div class="modal-body">
                 <pre>@modalContent</pre>
@@ -648,9 +723,9 @@ protected override async Task OnInitializedAsync()
 
             dotNetRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("setupTextareaEnterHandler", textareaRef, dotNetRef, enterToSend);
-            await JS.InvokeVoidAsync("setupTabFocus", textareaRef);
             await JS.InvokeVoidAsync("setupTermClickHandler", dotNetRef);
-            await FocusTextarea();
+            // No initial autofocus: leave focus on document body so keyboard / screen-reader
+            // users start at the top of the tab order and Tab through landmarks themselves.
         }
     }
 

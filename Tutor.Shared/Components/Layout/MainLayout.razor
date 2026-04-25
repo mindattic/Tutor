@@ -5,10 +5,11 @@
 @inject SettingsService SettingsService
 @inject IJSRuntime JS
 
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <div class="app-layout">
     <TopMenu />
-    
-    <main class="main-panel">
+
+    <main id="main-content" class="main-panel" tabindex="-1" role="main" aria-label="Main content">
         <article class="content">
             @Body
         </article>

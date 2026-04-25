@@ -19,28 +19,90 @@
 
 @if (!isLoaded)
 {
-    <p style="padding: 2rem; color: var(--text-secondary);">Loading settings...</p>
+    <p style="padding: 2rem; color: var(--text-secondary);" role="status" aria-live="polite">Loading settings...</p>
 }
 else
 {
-<div class="settings-page">
-<div class="tabs">
-        <button class="tab @(activeTab == "General" ? "active" : "")" @onclick="@(() => activeTab = "General")">General</button>
-        <button class="tab @(activeTab == "Appearance" ? "active" : "")" @onclick="@(() => activeTab = "Appearance")">Appearance</button>
-        <button class="tab @(activeTab == "Storage" ? "active" : "")" @onclick="@(() => activeTab = "Storage")">Storage</button>
-        <button class="tab @(activeTab == "Learning" ? "active" : "")" @onclick="@(() => activeTab = "Learning")">Learning</button>
-        <button class="tab @(activeTab == "Quiz" ? "active" : "")" @onclick="@(() => activeTab = "Quiz")">Quiz</button>
-        <button class="tab @(activeTab == "Credentials" ? "active" : "")" @onclick="@(() => activeTab = "Credentials")">Credentials</button>
-        <button class="tab @(activeTab == "Logs" ? "active" : "")" @onclick="@(() => activeTab = "Logs")">Logs</button>
-        <button class="tab @(activeTab == "About" ? "active" : "")" @onclick="@(() => activeTab = "About")">About</button>
+<section class="settings-page" aria-labelledby="settings-heading">
+<h1 id="settings-heading" class="sr-only">Settings</h1>
+<div class="tabs" role="tablist" aria-label="Settings sections">
+        <button class="tab @(activeTab == "General" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-general"
+                aria-selected="@((activeTab == "General").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "General" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "General")">General</button>
+        <button class="tab @(activeTab == "Appearance" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-appearance"
+                aria-selected="@((activeTab == "Appearance").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "Appearance" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Appearance")">Appearance</button>
+        <button class="tab @(activeTab == "Storage" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-storage"
+                aria-selected="@((activeTab == "Storage").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "Storage" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Storage")">Storage</button>
+        <button class="tab @(activeTab == "Learning" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-learning"
+                aria-selected="@((activeTab == "Learning").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "Learning" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Learning")">Learning</button>
+        <button class="tab @(activeTab == "Quiz" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-quiz"
+                aria-selected="@((activeTab == "Quiz").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "Quiz" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Quiz")">Quiz</button>
+        <button class="tab @(activeTab == "Credentials" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-credentials"
+                aria-selected="@((activeTab == "Credentials").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "Credentials" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Credentials")">Credentials</button>
+        <button class="tab @(activeTab == "Logs" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-logs"
+                aria-selected="@((activeTab == "Logs").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "Logs" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "Logs")">Logs</button>
+        <button class="tab @(activeTab == "About" ? "active" : "")"
+                type="button"
+                role="tab"
+                id="settings-tab-about"
+                aria-selected="@((activeTab == "About").ToString().ToLowerInvariant())"
+                aria-controls="settings-panel"
+                tabindex="@(activeTab == "About" ? "0" : "-1")"
+                @onclick="@(() => activeTab = "About")">About</button>
     </div>
 
-    <div class="tab-content">
+    <div id="settings-panel"
+         class="tab-content"
+         role="tabpanel"
+         aria-labelledby="@($"settings-tab-{activeTab.ToLowerInvariant()}")"
+         tabindex="0">
         @if (activeTab == "General")
         {
             <div class="settings-section">
                 <h4>Theme</h4>
-                <select class="theme-select" @bind="selectedTheme" @bind:after="SaveThemeAsync">
+                <label for="setting-theme" class="sr-only">Theme</label>
+                <select id="setting-theme" class="theme-select" @bind="selectedTheme" @bind:after="SaveThemeAsync">
                     @foreach (var theme in ThemeService.AvailableThemes)
                     {
                         <option value="@theme">@theme</option>
@@ -51,7 +113,8 @@ else
 
             <div class="settings-section">
                 <h4>Active AI Model</h4>
-                <select class="theme-select" @bind="selectedModel" @bind:after="SaveSelectedModelAsync">
+                <label for="setting-active-model" class="sr-only">Active AI model</label>
+                <select id="setting-active-model" class="theme-select" @bind="selectedModel" @bind:after="SaveSelectedModelAsync">
                     <option value="ChatGPT">ChatGPT (OpenAI)</option>
                     <option value="Claude">Claude (Anthropic)</option>
                     <option value="DeepSeek">DeepSeek</option>
@@ -74,10 +137,10 @@ else
             <div class="settings-section">
                 <h4>User Avatar</h4>
                 <div class="avatar-settings-row">
-                    <div class="avatar-preview user">
+                    <div class="avatar-preview user" aria-hidden="true">
                         @if (!string.IsNullOrEmpty(userCustomAvatar))
                         {
-                            <img src="@userCustomAvatar" alt="User" />
+                            <img src="@userCustomAvatar" alt="" />
                         }
                         else
                         {
@@ -86,12 +149,12 @@ else
                     </div>
                     <div class="avatar-controls">
                         <div class="avatar-name-row">
-                            <label>Display Name:</label>
-                            <input type="text" class="settings-input small" @bind="userDisplayName" @bind:after="SaveUserDisplayNameAsync" placeholder="User" />
+                            <label for="user-display-name">Display Name:</label>
+                            <input id="user-display-name" type="text" class="settings-input small" @bind="userDisplayName" @bind:after="SaveUserDisplayNameAsync" placeholder="User" />
                         </div>
                         <div class="avatar-icon-row">
-                            <label>Icon:</label>
-                            <select class="theme-select small" @bind="userAvatarIcon" @bind:after="SaveUserAvatarIconAsync">
+                            <label for="user-avatar-icon">Icon:</label>
+                            <select id="user-avatar-icon" class="theme-select small" @bind="userAvatarIcon" @bind:after="SaveUserAvatarIconAsync">
                                 @foreach (var icon in AvailableAvatarIcons)
                                 {
                                     <option value="@icon.Value">@icon.Name</option>
@@ -100,13 +163,13 @@ else
                         </div>
                         <div class="avatar-actions">
                             <label class="settings-btn upload-btn">
-                                <span class="bi bi-upload"></span> Upload Image
-                                <InputFile OnChange="OnUserAvatarUpload" accept="image/*" style="display: none;" />
+                                <span class="bi bi-upload" aria-hidden="true"></span> Upload Image
+                                <InputFile OnChange="OnUserAvatarUpload" accept="image/*" style="display: none;" aria-label="Upload user avatar image" />
                             </label>
                             @if (!string.IsNullOrEmpty(userCustomAvatar))
                             {
-                                <button class="settings-btn danger small" @onclick="ClearUserCustomAvatar">
-                                    <span class="bi bi-x"></span> Clear
+                                <button class="settings-btn danger small" type="button" @onclick="ClearUserCustomAvatar" aria-label="Clear user avatar image">
+                                    <span class="bi bi-x" aria-hidden="true"></span> Clear
                                 </button>
                             }
                         </div>
@@ -117,10 +180,10 @@ else
             <div class="settings-section">
                 <h4>Assistant Avatar</h4>
                 <div class="avatar-settings-row">
-                    <div class="avatar-preview assistant">
+                    <div class="avatar-preview assistant" aria-hidden="true">
                         @if (!string.IsNullOrEmpty(assistantCustomAvatar))
                         {
-                            <img src="@assistantCustomAvatar" alt="Assistant" />
+                            <img src="@assistantCustomAvatar" alt="" />
                         }
                         else
                         {
@@ -129,12 +192,12 @@ else
                     </div>
                     <div class="avatar-controls">
                         <div class="avatar-name-row">
-                            <label>Display Name:</label>
-                            <input type="text" class="settings-input small" @bind="assistantDisplayName" @bind:after="SaveAssistantDisplayNameAsync" placeholder="Assistant" />
+                            <label for="assistant-display-name">Display Name:</label>
+                            <input id="assistant-display-name" type="text" class="settings-input small" @bind="assistantDisplayName" @bind:after="SaveAssistantDisplayNameAsync" placeholder="Assistant" />
                         </div>
                         <div class="avatar-icon-row">
-                            <label>Icon:</label>
-                            <select class="theme-select small" @bind="assistantAvatarIcon" @bind:after="SaveAssistantAvatarIconAsync">
+                            <label for="assistant-avatar-icon">Icon:</label>
+                            <select id="assistant-avatar-icon" class="theme-select small" @bind="assistantAvatarIcon" @bind:after="SaveAssistantAvatarIconAsync">
                                 @foreach (var icon in AvailableAvatarIcons)
                                 {
                                     <option value="@icon.Value">@icon.Name</option>
@@ -143,13 +206,13 @@ else
                         </div>
                         <div class="avatar-actions">
                             <label class="settings-btn upload-btn">
-                                <span class="bi bi-upload"></span> Upload Image
-                                <InputFile OnChange="OnAssistantAvatarUpload" accept="image/*" style="display: none;" />
+                                <span class="bi bi-upload" aria-hidden="true"></span> Upload Image
+                                <InputFile OnChange="OnAssistantAvatarUpload" accept="image/*" style="display: none;" aria-label="Upload assistant avatar image" />
                             </label>
                             @if (!string.IsNullOrEmpty(assistantCustomAvatar))
                             {
-                                <button class="settings-btn danger small" @onclick="ClearAssistantCustomAvatar">
-                                    <span class="bi bi-x"></span> Clear
+                                <button class="settings-btn danger small" type="button" @onclick="ClearAssistantCustomAvatar" aria-label="Clear assistant avatar image">
+                                    <span class="bi bi-x" aria-hidden="true"></span> Clear
                                 </button>
                             }
                         </div>
@@ -158,26 +221,49 @@ else
             </div>
 
             <div class="settings-section">
-                <h4>Border Radius</h4>
+                <h4 id="border-radius-heading">Border Radius</h4>
                 <div class="slider-row">
-                    <input type="range" min="0" max="10" step="1" @bind="borderRadius" @bind:after="SaveBorderRadiusAsync" class="settings-slider" />
-                    <span class="slider-value">@(borderRadius)px</span>
+                    <label for="border-radius-slider" class="sr-only">Border radius in pixels</label>
+                    <input id="border-radius-slider"
+                           type="range"
+                           min="0" max="10" step="1"
+                           aria-labelledby="border-radius-heading"
+                           aria-valuemin="0"
+                           aria-valuemax="10"
+                           aria-valuenow="@borderRadius"
+                           aria-valuetext="@borderRadius pixels"
+                           @bind="borderRadius"
+                           @bind:after="SaveBorderRadiusAsync"
+                           class="settings-slider" />
+                    <span class="slider-value" aria-hidden="true">@(borderRadius)px</span>
                 </div>
                 <p>Adjust the corner roundness for buttons, inputs, and cards (0px = square, 10px = rounded).</p>
             </div>
 
             <div class="settings-section">
-                <h4>Paragraph Spacing</h4>
+                <h4 id="paragraph-spacing-heading">Paragraph Spacing</h4>
                 <div class="slider-row">
-                    <input type="range" min="0.5" max="2.0" step="0.1" @bind="paragraphSpacing" @bind:after="SaveParagraphSpacingAsync" class="settings-slider" />
-                    <span class="slider-value">@(paragraphSpacing.ToString("F1"))em</span>
+                    <label for="paragraph-spacing-slider" class="sr-only">Paragraph spacing in em</label>
+                    <input id="paragraph-spacing-slider"
+                           type="range"
+                           min="0.5" max="2.0" step="0.1"
+                           aria-labelledby="paragraph-spacing-heading"
+                           aria-valuemin="0.5"
+                           aria-valuemax="2.0"
+                           aria-valuenow="@paragraphSpacing"
+                           aria-valuetext="@(paragraphSpacing.ToString("F1")) em"
+                           @bind="paragraphSpacing"
+                           @bind:after="SaveParagraphSpacingAsync"
+                           class="settings-slider" />
+                    <span class="slider-value" aria-hidden="true">@(paragraphSpacing.ToString("F1"))em</span>
                 </div>
                 <p>Adjust the spacing between paragraphs in chat messages (0.5em = tight, 2.0em = loose).</p>
             </div>
 
             <div class="settings-section">
-                <h4>Date & Time Format</h4>
-                <select class="theme-select" @bind="dateFormat" @bind:after="SaveDateFormatAsync">
+                <h4>Date &amp; Time Format</h4>
+                <label for="date-format" class="sr-only">Date and time format</label>
+                <select id="date-format" class="theme-select" @bind="dateFormat" @bind:after="SaveDateFormatAsync">
                     <option value="yyyy-MM-dd hh:mm:ss tt">2024-01-15 06:30:45 PM (Default)</option>
                     <option value="yyyy-MM-dd HH:mm:ss">2024-01-15 18:30:45 (24-hour)</option>
                     <option value="MM/dd/yyyy hh:mm:ss tt">01/15/2024 06:30:45 PM (US)</option>
@@ -231,11 +317,12 @@ else
         else if (activeTab == "Storage")
         {
             <div class="settings-section">
-                <h4>Learning Resources Directory</h4>
+                <h4 id="resources-dir-heading">Learning Resources Directory</h4>
                 <div class="path-input-row">
-                    <input type="text" class="settings-input path-input" value="@learningResourcesPath" readonly />
-                    <button class="settings-btn" @onclick="OpenResourcesFolder" title="Open folder">
-                        <span class="bi bi-folder2-open"></span>
+                    <label for="resources-dir-path" class="sr-only">Learning resources directory path</label>
+                    <input id="resources-dir-path" type="text" class="settings-input path-input" value="@learningResourcesPath" readonly aria-readonly="true" />
+                    <button class="settings-btn" type="button" @onclick="OpenResourcesFolder" title="Open folder" aria-label="Open learning resources folder">
+                        <span class="bi bi-folder2-open" aria-hidden="true"></span>
                     </button>
                 </div>
                 <p>Learning resources are saved to this folder and can be checked into GitHub.</p>
@@ -252,8 +339,8 @@ else
                 </div>
             </div>
 
-            <div class="settings-section">
-                <h4>Storage Options</h4>
+            <fieldset class="settings-section">
+                <legend><h4 style="display:inline">Storage Options</h4></legend>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <input type="checkbox" id="saveFormatted" @bind="saveFormattedAsMarkdown" @bind:after="SaveStorageOptionsAsync" style="width: 18px; height: 18px;" />
                     <label for="saveFormatted">Save formatted resources as .md files</label>
@@ -263,14 +350,15 @@ else
                     <label for="preserveOriginal">Preserve original uploaded files</label>
                 </div>
                 <p>These options control how resources are saved to the file system.</p>
-            </div>
+            </fieldset>
 
             <div class="settings-section">
-                <h4>Concept Maps Directory</h4>
+                <h4 id="conceptmaps-dir-heading">Concept Maps Directory</h4>
                 <div class="path-input-row">
-                    <input type="text" class="settings-input path-input" value="@conceptMapsPath" readonly />
-                    <button class="settings-btn" @onclick="OpenConceptMapsFolder" title="Open folder">
-                        <span class="bi bi-folder2-open"></span>
+                    <label for="conceptmaps-dir-path" class="sr-only">Concept maps directory path</label>
+                    <input id="conceptmaps-dir-path" type="text" class="settings-input path-input" value="@conceptMapsPath" readonly aria-readonly="true" />
+                    <button class="settings-btn" type="button" @onclick="OpenConceptMapsFolder" title="Open folder" aria-label="Open concept maps folder">
+                        <span class="bi bi-folder2-open" aria-hidden="true"></span>
                     </button>
                 </div>
                 <p>Concept maps contain extracted concepts and relationships for courses.</p>
@@ -286,13 +374,14 @@ else
                 {
                     <div class="kb-list" style="margin-top: 15px;">
                         <table class="kb-table">
+                            <caption class="sr-only">Concept maps for this course</caption>
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Concepts</th>
-                                    <th>Relations</th>
-                                    <th>Status</th>
-                                    <th></th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Concepts</th>
+                                    <th scope="col">Relations</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col"><span class="sr-only">Actions</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -306,8 +395,8 @@ else
                                             <span class="kb-status @cm.Status.ToString().ToLower()">@cm.Status</span>
                                         </td>
                                         <td>
-                                            <button class="btn-icon-small danger" @onclick="() => DeleteConceptMapAsync(cm.Id)" title="Delete">
-                                                <span class="bi bi-trash"></span>
+                                            <button class="btn-icon-small danger" type="button" @onclick="() => DeleteConceptMapAsync(cm.Id)" title="Delete" aria-label="@($"Delete concept map {cm.Name}")">
+                                                <span class="bi bi-trash" aria-hidden="true"></span>
                                             </button>
                                         </td>
                                     </tr>
@@ -458,18 +547,20 @@ else
         else if (activeTab == "Credentials")
         {
             <div class="settings-section">
-                <h4>OpenAI (ChatGPT)</h4>
+                <h4 id="cred-openai-heading">OpenAI (ChatGPT)</h4>
                 <div class="credential-row">
                     <div class="credential-input-group">
-                        <label>API Key</label>
-                        <input type="password"
+                        <label for="openai-api-key">API Key</label>
+                        <input id="openai-api-key"
+                               type="password"
                                class="settings-input"
+                               autocomplete="off"
                                @bind="chatGptApiKey"
                                placeholder="sk-..." />
                     </div>
                     <div class="credential-actions">
-                        <button class="settings-btn small" @onclick="SaveChatGptKeyAsync" disabled="@isBusy">Save</button>
-                        <button class="settings-btn small" @onclick="ClearChatGptKeyAsync" disabled="@isBusy">Clear</button>
+                        <button class="settings-btn small" type="button" @onclick="SaveChatGptKeyAsync" disabled="@isBusy" aria-label="Save OpenAI API key">Save</button>
+                        <button class="settings-btn small" type="button" @onclick="ClearChatGptKeyAsync" disabled="@isBusy" aria-label="Clear OpenAI API key">Clear</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(chatGptKeyPreview))
@@ -477,30 +568,32 @@ else
                     <p class="key-preview">Stored: <code>@chatGptKeyPreview</code></p>
                 }
                 <div class="credential-model-row">
-                    <label>Model:</label>
-                    <select class="theme-select small" @bind="chatGptModel" @bind:after="SaveChatGptModelAsync">
+                    <label for="openai-model">Model:</label>
+                    <select id="openai-model" class="theme-select small" @bind="chatGptModel" @bind:after="SaveChatGptModelAsync">
                         <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
                         <option value="gpt-4.1">GPT-4.1</option>
                         <option value="gpt-4o">GPT-4o</option>
                         <option value="gpt-4o-mini">GPT-4o Mini</option>
                     </select>
                 </div>
-                <p class="credential-link">Get your key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></p>
+                <p class="credential-link">Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI Platform <span class="sr-only">(opens in a new tab)</span></a></p>
             </div>
 
             <div class="settings-section">
-                <h4>Anthropic (Claude)</h4>
+                <h4 id="cred-claude-heading">Anthropic (Claude)</h4>
                 <div class="credential-row">
                     <div class="credential-input-group">
-                        <label>API Key</label>
-                        <input type="password"
+                        <label for="claude-api-key">API Key</label>
+                        <input id="claude-api-key"
+                               type="password"
                                class="settings-input"
+                               autocomplete="off"
                                @bind="claudeApiKey"
                                placeholder="sk-ant-..." />
                     </div>
                     <div class="credential-actions">
-                        <button class="settings-btn small" @onclick="SaveClaudeKeyAsync" disabled="@isBusy">Save</button>
-                        <button class="settings-btn small" @onclick="ClearClaudeKeyAsync" disabled="@isBusy">Clear</button>
+                        <button class="settings-btn small" type="button" @onclick="SaveClaudeKeyAsync" disabled="@isBusy" aria-label="Save Claude API key">Save</button>
+                        <button class="settings-btn small" type="button" @onclick="ClearClaudeKeyAsync" disabled="@isBusy" aria-label="Clear Claude API key">Clear</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(claudeKeyPreview))
@@ -508,28 +601,30 @@ else
                     <p class="key-preview">Stored: <code>@claudeKeyPreview</code></p>
                 }
                 <div class="credential-model-row">
-                    <label>Model:</label>
-                    <select class="theme-select small" @bind="claudeModel" @bind:after="SaveClaudeModelAsync">
+                    <label for="claude-model">Model:</label>
+                    <select id="claude-model" class="theme-select small" @bind="claudeModel" @bind:after="SaveClaudeModelAsync">
                         <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
                         <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
                     </select>
                 </div>
-                <p class="credential-link">Get your key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a></p>
+                <p class="credential-link">Get your key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">Anthropic Console <span class="sr-only">(opens in a new tab)</span></a></p>
             </div>
 
             <div class="settings-section">
-                <h4>DeepSeek</h4>
+                <h4 id="cred-deepseek-heading">DeepSeek</h4>
                 <div class="credential-row">
                     <div class="credential-input-group">
-                        <label>API Key</label>
-                        <input type="password"
+                        <label for="deepseek-api-key">API Key</label>
+                        <input id="deepseek-api-key"
+                               type="password"
                                class="settings-input"
+                               autocomplete="off"
                                @bind="deepSeekApiKey"
                                placeholder="sk-..." />
                     </div>
                     <div class="credential-actions">
-                        <button class="settings-btn small" @onclick="SaveDeepSeekKeyAsync" disabled="@isBusy">Save</button>
-                        <button class="settings-btn small" @onclick="ClearDeepSeekKeyAsync" disabled="@isBusy">Clear</button>
+                        <button class="settings-btn small" type="button" @onclick="SaveDeepSeekKeyAsync" disabled="@isBusy" aria-label="Save DeepSeek API key">Save</button>
+                        <button class="settings-btn small" type="button" @onclick="ClearDeepSeekKeyAsync" disabled="@isBusy" aria-label="Clear DeepSeek API key">Clear</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(deepSeekKeyPreview))
@@ -537,28 +632,30 @@ else
                     <p class="key-preview">Stored: <code>@deepSeekKeyPreview</code></p>
                 }
                 <div class="credential-model-row">
-                    <label>Model:</label>
-                    <select class="theme-select small" @bind="deepSeekModel" @bind:after="SaveDeepSeekModelAsync">
+                    <label for="deepseek-model">Model:</label>
+                    <select id="deepseek-model" class="theme-select small" @bind="deepSeekModel" @bind:after="SaveDeepSeekModelAsync">
                         <option value="deepseek-chat">DeepSeek Chat (V3)</option>
                         <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
                     </select>
                 </div>
-                <p class="credential-link">Get your key from <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek Platform</a></p>
+                <p class="credential-link">Get your key from <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">DeepSeek Platform <span class="sr-only">(opens in a new tab)</span></a></p>
             </div>
 
             <div class="settings-section">
-                <h4>Google AI (Gemini)</h4>
+                <h4 id="cred-gemini-heading">Google AI (Gemini)</h4>
                 <div class="credential-row">
                     <div class="credential-input-group">
-                        <label>API Key</label>
-                        <input type="password"
+                        <label for="gemini-api-key">API Key</label>
+                        <input id="gemini-api-key"
+                               type="password"
                                class="settings-input"
+                               autocomplete="off"
                                @bind="geminiApiKey"
                                placeholder="AIza..." />
                     </div>
                     <div class="credential-actions">
-                        <button class="settings-btn small" @onclick="SaveGeminiKeyAsync" disabled="@isBusy">Save</button>
-                        <button class="settings-btn small" @onclick="ClearGeminiKeyAsync" disabled="@isBusy">Clear</button>
+                        <button class="settings-btn small" type="button" @onclick="SaveGeminiKeyAsync" disabled="@isBusy" aria-label="Save Gemini API key">Save</button>
+                        <button class="settings-btn small" type="button" @onclick="ClearGeminiKeyAsync" disabled="@isBusy" aria-label="Clear Gemini API key">Clear</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(geminiKeyPreview))
@@ -566,19 +663,22 @@ else
                     <p class="key-preview">Stored: <code>@geminiKeyPreview</code></p>
                 }
                 <div class="credential-model-row">
-                    <label>Model:</label>
-                    <select class="theme-select small" @bind="geminiModel" @bind:after="SaveGeminiModelAsync">
+                    <label for="gemini-model">Model:</label>
+                    <select id="gemini-model" class="theme-select small" @bind="geminiModel" @bind:after="SaveGeminiModelAsync">
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                         <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                     </select>
                 </div>
-                <p class="credential-link">Get your key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+                <p class="credential-link">Get your key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio <span class="sr-only">(opens in a new tab)</span></a></p>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(status))
             {
-                <div class="status-message @(status.Contains("Error") || status.Contains("failed") ? "error" : "success")">
+                <div class="status-message @(status.Contains("Error") || status.Contains("failed") ? "error" : "success")"
+                     role="@(status.Contains("Error") || status.Contains("failed") ? "alert" : "status")"
+                     aria-live="@(status.Contains("Error") || status.Contains("failed") ? "assertive" : "polite")"
+                     aria-atomic="true">
                     @status
                 </div>
             }
@@ -702,16 +802,16 @@ else
 
             <div class="settings-section">
                 <h4>Links</h4>
-                <p><a href="https://github.com/mindattic/Tutor" target="_blank">GitHub Repository</a></p>
+                <p><a href="https://github.com/mindattic/Tutor" target="_blank" rel="noopener noreferrer">GitHub Repository <span class="sr-only">(opens in a new tab)</span></a></p>
             </div>
         }
     </div>
 
     @if (!string.IsNullOrEmpty(status))
     {
-        <p style="color: var(--text-secondary); margin-top: 16px;">@status</p>
+        <p style="color: var(--text-secondary); margin-top: 16px;" role="status" aria-live="polite" aria-atomic="true">@status</p>
     }
-</div>
+</section>
 }
 
 </AuthGuard>

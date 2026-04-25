@@ -13,8 +13,8 @@
 @if (isLoading)
 {
     <div class="kb-graph-container">
-        <div class="loading-state">
-            <div class="spinner"></div>
+        <div class="loading-state" role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
             <p>Loading Concept Maps...</p>
         </div>
     </div>
@@ -22,8 +22,8 @@
 else if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="kb-graph-container">
-        <div class="empty-state">
-            <div class="empty-icon">
+        <div class="empty-state" role="alert">
+            <div class="empty-icon" aria-hidden="true">
                 <span class="bi bi-exclamation-circle"></span>
             </div>
             <h4>Concept Maps Not Found</h4>
@@ -34,8 +34,8 @@ else if (!string.IsNullOrEmpty(errorMessage))
 else if (concepts.Count == 0)
 {
     <div class="kb-graph-container">
-        <div class="empty-state">
-            <div class="empty-icon">
+        <div class="empty-state" role="status">
+            <div class="empty-icon" aria-hidden="true">
                 <span class="bi bi-diagram-3"></span>
             </div>
             <h4>No Concepts Found</h4>
@@ -45,10 +45,10 @@ else if (concepts.Count == 0)
 }
 else
 {
-<div class="kb-graph-container">
-<div class="kb-graph-header">
-    <h4>@graphTitle</h4>
-    <div class="kb-graph-stats">
+<section class="kb-graph-container" aria-labelledby="kb-graph-title">
+<header class="kb-graph-header">
+    <h2 id="kb-graph-title">@graphTitle</h2>
+    <div class="kb-graph-stats" aria-label="Graph statistics">
         <span class="stat">@(isFiltered ? $"{filteredNodeCount}/" : "")@concepts.Count concepts</span>
         <span class="stat">@relationships.Count relationships</span>
         @if (conceptMapCount > 1)
@@ -58,16 +58,16 @@ else
         @if (connectivityInfo != null && !connectivityInfo.IsFullyConnected)
         {
             <span class="stat warning" title="Click to view orphan details">
-                <span class="bi bi-exclamation-triangle"></span>
+                <span class="bi bi-exclamation-triangle" aria-hidden="true"></span>
                 @connectivityInfo.OrphanedConceptCount orphaned
             </span>
         }
     </div>
-</div>
+</header>
 
 
 @* Search and Depth Filter *@
-<div class="graph-filter-bar">
+<div class="graph-filter-bar" role="search" aria-label="Concept graph filters">
     <AutoCompleteInput TItem="Concept"
                        @bind-Value="searchQuery"
                        Placeholder="Search concepts (e.g., Horcrux)..."
@@ -79,8 +79,8 @@ else
                        OnCleared="OnSearchCleared"
                        Class="search-group" />
     <div class="depth-group">
-        <label>Depth:</label>
-        <select class="depth-select" @bind="filterDepth">
+        <label for="graph-filter-depth">Depth:</label>
+        <select id="graph-filter-depth" class="depth-select" @bind="filterDepth">
             <option value="1">1 level</option>
             <option value="2">2 levels</option>
             <option value="3">3 levels</option>
@@ -91,36 +91,47 @@ else
     </div>
     <div class="similarity-group" title="Filter by semantic similarity. 30% = minimum meaningful, 85% = strong match, 95% = near identical">
         <label class="show-all-checkbox">
-            <input type="checkbox" 
+            <input type="checkbox"
                    @bind="showAllConnections"
                    @bind:after="OnShowAllConnectionsChanged" />
             <span>All</span>
         </label>
-        <input type="range" 
-               class="similarity-slider" 
-               min="30" 
-               max="100" 
+        <label for="graph-similarity-slider" class="sr-only">Similarity threshold</label>
+        <input id="graph-similarity-slider"
+               type="range"
+               class="similarity-slider"
+               min="30"
+               max="100"
                step="5"
+               aria-valuemin="30"
+               aria-valuemax="100"
+               aria-valuenow="@similarityThreshold"
+               aria-valuetext="@FormatSimilarityLabel()"
                disabled="@showAllConnections"
                @bind="similarityThreshold"
                @bind:after="OnSimilarityChanged" />
-        <span class="similarity-value @GetSimilarityClass()">@FormatSimilarityLabel()</span>
+        <span class="similarity-value @GetSimilarityClass()" aria-hidden="true">@FormatSimilarityLabel()</span>
     </div>
-    <button class="btn-filter @(isSearching ? "searching" : "")" @onclick="ApplyFilter" disabled="@isSearching">
+    <button class="btn-filter @(isSearching ? "searching" : "")"
+            type="button"
+            @onclick="ApplyFilter"
+            disabled="@isSearching"
+            aria-busy="@isSearching.ToString().ToLowerInvariant()"
+            aria-label="Apply filters">
         @if (isSearching)
         {
-            <span class="spinner-small"></span>
+            <span class="spinner-small" aria-hidden="true"></span>
         }
         else
         {
-            <span class="bi bi-funnel"></span>
+            <span class="bi bi-funnel" aria-hidden="true"></span>
         }
         Go
     </button>
     @if (isFiltered || (!showAllConnections && similarityThreshold > 30))
     {
-        <button class="btn-reset-filter" @onclick="ResetFilter" title="Reset all filters and unpin all nodes">
-            <span class="bi bi-arrow-counterclockwise"></span>
+        <button class="btn-reset-filter" type="button" @onclick="ResetFilter" title="Reset all filters and unpin all nodes" aria-label="Reset filters">
+            <span class="bi bi-arrow-counterclockwise" aria-hidden="true"></span>
             Reset
         </button>
     }
@@ -128,39 +139,49 @@ else
 
 @if (isFiltered && !string.IsNullOrEmpty(filterResultMessage))
 {
-    <div class="filter-result-message @(filteredNodeCount == 0 ? "no-results" : "")">
-        <span class="bi @(filteredNodeCount == 0 ? "bi-info-circle" : "bi-check-circle")"></span>
+    <div class="filter-result-message @(filteredNodeCount == 0 ? "no-results" : "")"
+         role="status"
+         aria-live="polite">
+        <span class="bi @(filteredNodeCount == 0 ? "bi-info-circle" : "bi-check-circle")" aria-hidden="true"></span>
         @filterResultMessage
     </div>
 }
 
 @if (connectivityInfo != null && !connectivityInfo.IsFullyConnected)
 {
-    <div class="orphan-warning-banner">
+    <div class="orphan-warning-banner" role="region" aria-label="Disconnected concepts">
         <div class="orphan-info">
-            <span class="bi bi-diagram-2"></span>
+            <span class="bi bi-diagram-2" aria-hidden="true"></span>
             <span>
-                <strong>@connectivityInfo.OrphanedConceptCount concept(s)</strong> in 
+                <strong>@connectivityInfo.OrphanedConceptCount concept(s)</strong> in
                 <strong>@connectivityInfo.OrphanedComponentCount cluster(s)</strong> are disconnected from the main graph.
             </span>
         </div>
         <div class="orphan-actions">
             @if (isLinkingOrphans)
             {
-                <span class="linking-status">
-                    <span class="spinner-small"></span>
+                <span class="linking-status" role="status" aria-live="polite">
+                    <span class="spinner-small" aria-hidden="true"></span>
                     Analyzing connections...
                 </span>
             }
             else
             {
-                <button class="btn-link-orphans" @onclick="LinkOrphansAsync" title="Use AI to find missing connections">
-                    <span class="bi bi-link-45deg"></span>
+                <button class="btn-link-orphans"
+                        type="button"
+                        @onclick="LinkOrphansAsync"
+                        title="Use AI to find missing connections"
+                        aria-label="Auto-link orphan concepts">
+                    <span class="bi bi-link-45deg" aria-hidden="true"></span>
                     Auto-Link Orphans
                 </button>
             }
-            <button class="btn-show-orphans" @onclick="ToggleOrphanList">
-                <span class="bi @(showOrphanList ? "bi-chevron-up" : "bi-chevron-down")"></span>
+            <button class="btn-show-orphans"
+                    type="button"
+                    aria-expanded="@showOrphanList.ToString().ToLowerInvariant()"
+                    aria-controls="orphan-details-panel"
+                    @onclick="ToggleOrphanList">
+                <span class="bi @(showOrphanList ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></span>
                 @(showOrphanList ? "Hide" : "Show") Details
             </button>
         </div>
@@ -168,32 +189,39 @@ else
     
     @if (showOrphanList && connectivityInfo.OrphanedComponents.Count > 0)
     {
-        <div class="orphan-details-panel">
+        <div id="orphan-details-panel" class="orphan-details-panel" role="region" aria-label="Disconnected clusters">
             @foreach (var component in connectivityInfo.OrphanedComponents)
             {
                 <div class="orphan-component">
                     <div class="component-header">
-                        <span class="bi bi-diagram-3"></span>
+                        <span class="bi bi-diagram-3" aria-hidden="true"></span>
                         <span>Disconnected cluster (@component.Size concept@(component.Size > 1 ? "s" : ""))</span>
                     </div>
-                    <div class="component-concepts">
+                    <ul class="component-concepts" style="list-style:none;padding:0;display:flex;gap:4px;flex-wrap:wrap;">
                         @foreach (var concept in component.Concepts.Take(10))
                         {
-                            <button class="orphan-concept-btn" @onclick="@(async () => await SelectConceptByIdAsync(concept.Id))">
-                                @concept.Title
-                            </button>
+                            <li>
+                                <button class="orphan-concept-btn"
+                                        type="button"
+                                        aria-label="@($"Select concept {concept.Title}")"
+                                        @onclick="@(async () => await SelectConceptByIdAsync(concept.Id))">
+                                    @concept.Title
+                                </button>
+                            </li>
                         }
                         @if (component.Concepts.Count > 10)
                         {
-                            <span class="more-concepts">+@(component.Concepts.Count - 10) more</span>
+                            <li><span class="more-concepts">+@(component.Concepts.Count - 10) more</span></li>
                         }
-                    </div>
+                    </ul>
                 </div>
             }
             @if (!string.IsNullOrEmpty(linkingMessage))
             {
-                <div class="linking-message @(linkingSuccess ? "success" : "info")">
-                    <span class="bi @(linkingSuccess ? "bi-check-circle" : "bi-info-circle")"></span>
+                <div class="linking-message @(linkingSuccess ? "success" : "info")"
+                     role="status"
+                     aria-live="polite">
+                    <span class="bi @(linkingSuccess ? "bi-check-circle" : "bi-info-circle")" aria-hidden="true"></span>
                     @linkingMessage
                 </div>
             }
@@ -203,71 +231,86 @@ else
     
     <div class="kb-graph-content">
         <div class="kb-graph-wrapper">
-            <div id="kb-force-graph" class="force-graph-canvas" @ref="graphContainer"></div>
-            
+            <div id="kb-force-graph"
+                 class="force-graph-canvas"
+                 role="img"
+                 aria-label="@($"Force graph of {concepts.Count} concepts and {relationships.Count} relationships. Use the Concepts tab for a keyboard-accessible list.")"
+                 @ref="graphContainer"></div>
+
             @* Context Menu (right-click) *@
-            <div id="graph-context-menu" class="graph-context-menu" style="display: none;">
+            <div id="graph-context-menu" class="graph-context-menu" role="menu" aria-label="Node options" style="display: none;">
                 <div class="context-menu-header">
                     <span class="context-menu-title">Node Options</span>
                 </div>
                 <div class="context-menu-items">
-                    <button class="context-menu-item primary" data-action="expand">
-                        <span class="bi bi-share"></span>
+                    <button class="context-menu-item primary" type="button" role="menuitem" data-action="expand">
+                        <span class="bi bi-share" aria-hidden="true"></span>
                         <span>Show Neighbors</span>
                     </button>
-                    <button class="context-menu-item" data-action="focus">
-                        <span class="bi bi-bullseye"></span>
+                    <button class="context-menu-item" type="button" role="menuitem" data-action="focus">
+                        <span class="bi bi-bullseye" aria-hidden="true"></span>
                         <span>Center View</span>
                     </button>
-                    <button class="context-menu-item" data-action="isolate">
-                        <span class="bi bi-diagram-3"></span>
+                    <button class="context-menu-item" type="button" role="menuitem" data-action="isolate">
+                        <span class="bi bi-diagram-3" aria-hidden="true"></span>
                         <span>Isolate Subgraph</span>
                     </button>
-                    <div class="context-menu-divider"></div>
-                    <button class="context-menu-item" data-action="pin">
-                        <span class="bi bi-pin-angle"></span>
+                    <div class="context-menu-divider" role="separator"></div>
+                    <button class="context-menu-item" type="button" role="menuitem" data-action="pin">
+                        <span class="bi bi-pin-angle" aria-hidden="true"></span>
                         <span>Pin Position</span>
-                        <span class="shortcut">P</span>
+                        <span class="shortcut" aria-hidden="true">P</span>
                     </button>
-                    <button class="context-menu-item" data-action="hide">
-                        <span class="bi bi-eye-slash"></span>
+                    <button class="context-menu-item" type="button" role="menuitem" data-action="hide">
+                        <span class="bi bi-eye-slash" aria-hidden="true"></span>
                         <span>Hide Node</span>
                     </button>
-                    <div class="context-menu-divider"></div>
-                    <button class="context-menu-item" data-action="copy">
-                        <span class="bi bi-clipboard"></span>
+                    <div class="context-menu-divider" role="separator"></div>
+                    <button class="context-menu-item" type="button" role="menuitem" data-action="copy">
+                        <span class="bi bi-clipboard" aria-hidden="true"></span>
                         <span>Copy Name</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="concept-detail-panel @(selectedConcept == null ? "empty" : "") @panelDockPosition"
-             style="@GetPanelStyle()"
-             @ref="detailPanelRef">
+        <aside class="concept-detail-panel @(selectedConcept == null ? "empty" : "") @panelDockPosition"
+               style="@GetPanelStyle()"
+               aria-label="Concept details"
+               @ref="detailPanelRef">
             @* Dock buttons *@
             @if (selectedConcept != null)
             {
-                <div class="panel-dock-buttons">
-                    <button class="dock-btn @(panelDockPosition == "dock-top-right" ? "active" : "")" 
-                            @onclick="@(() => DockPanel("dock-top-right"))" title="Dock top-right">
-                        <span class="bi bi-arrow-up-right"></span>
+                <div class="panel-dock-buttons" role="toolbar" aria-label="Panel position">
+                    <button class="dock-btn @(panelDockPosition == "dock-top-right" ? "active" : "")"
+                            type="button"
+                            aria-pressed="@((panelDockPosition == "dock-top-right").ToString().ToLowerInvariant())"
+                            @onclick="@(() => DockPanel("dock-top-right"))" title="Dock top-right" aria-label="Dock panel top-right">
+                        <span class="bi bi-arrow-up-right" aria-hidden="true"></span>
                     </button>
-                    <button class="dock-btn @(panelDockPosition == "dock-bottom-right" ? "active" : "")" 
-                            @onclick="@(() => DockPanel("dock-bottom-right"))" title="Dock bottom-right">
-                        <span class="bi bi-arrow-down-right"></span>
+                    <button class="dock-btn @(panelDockPosition == "dock-bottom-right" ? "active" : "")"
+                            type="button"
+                            aria-pressed="@((panelDockPosition == "dock-bottom-right").ToString().ToLowerInvariant())"
+                            @onclick="@(() => DockPanel("dock-bottom-right"))" title="Dock bottom-right" aria-label="Dock panel bottom-right">
+                        <span class="bi bi-arrow-down-right" aria-hidden="true"></span>
                     </button>
-                    <button class="dock-btn @(panelDockPosition == "dock-bottom-left" ? "active" : "")" 
-                            @onclick="@(() => DockPanel("dock-bottom-left"))" title="Dock bottom-left">
-                        <span class="bi bi-arrow-down-left"></span>
+                    <button class="dock-btn @(panelDockPosition == "dock-bottom-left" ? "active" : "")"
+                            type="button"
+                            aria-pressed="@((panelDockPosition == "dock-bottom-left").ToString().ToLowerInvariant())"
+                            @onclick="@(() => DockPanel("dock-bottom-left"))" title="Dock bottom-left" aria-label="Dock panel bottom-left">
+                        <span class="bi bi-arrow-down-left" aria-hidden="true"></span>
                     </button>
-                    <button class="dock-btn @(panelDockPosition == "dock-top-left" ? "active" : "")" 
-                            @onclick="@(() => DockPanel("dock-top-left"))" title="Dock top-left">
-                        <span class="bi bi-arrow-up-left"></span>
+                    <button class="dock-btn @(panelDockPosition == "dock-top-left" ? "active" : "")"
+                            type="button"
+                            aria-pressed="@((panelDockPosition == "dock-top-left").ToString().ToLowerInvariant())"
+                            @onclick="@(() => DockPanel("dock-top-left"))" title="Dock top-left" aria-label="Dock panel top-left">
+                        <span class="bi bi-arrow-up-left" aria-hidden="true"></span>
                     </button>
-                    <button class="dock-btn @(panelDockPosition == "" ? "active" : "")" 
-                            @onclick="@(() => DockPanel(""))" title="Float (draggable)">
-                        <span class="bi bi-arrows-move"></span>
+                    <button class="dock-btn @(panelDockPosition == "" ? "active" : "")"
+                            type="button"
+                            aria-pressed="@((panelDockPosition == "").ToString().ToLowerInvariant())"
+                            @onclick="@(() => DockPanel(""))" title="Float (draggable)" aria-label="Float panel">
+                        <span class="bi bi-arrows-move" aria-hidden="true"></span>
                     </button>
                 </div>
             }
@@ -282,12 +325,12 @@ else
             
             @if (selectedConcept != null)
             {
-                <div class="concept-detail-header">
+                <header class="concept-detail-header">
                     <h5>@selectedConcept.Title</h5>
-                    <button class="close-btn small" @onclick="ClearSelection">
-                        <span class="bi bi-x-lg"></span>
+                    <button class="close-btn small" type="button" aria-label="Close concept details" @onclick="ClearSelection">
+                        <span class="bi bi-x-lg" aria-hidden="true"></span>
                     </button>
-                </div>
+                </header>
                 
                 <div class="concept-detail-body">
                     @if (!string.IsNullOrEmpty(selectedConcept.Summary))
@@ -350,40 +393,40 @@ else
                     <div class="concept-actions">
                         @if (EmbeddedMode)
                         {
-                            <button class="action-btn chat" @onclick="AskAboutSelectedConcept">
-                                <span class="bi bi-chat-dots"></span>
+                            <button class="action-btn chat" type="button" @onclick="AskAboutSelectedConcept">
+                                <span class="bi bi-chat-dots" aria-hidden="true"></span>
                                 Ask
                             </button>
-                            <button class="action-btn details" @onclick="ViewSelectedConceptDetails">
-                                <span class="bi bi-journal-text"></span>
+                            <button class="action-btn details" type="button" @onclick="ViewSelectedConceptDetails">
+                                <span class="bi bi-journal-text" aria-hidden="true"></span>
                                 Details
                             </button>
                         }
                         else
                         {
-                            <button class="teach-me-btn" @onclick="TeachSelectedConcept">
-                                <span class="bi bi-mortarboard"></span>
+                            <button class="teach-me-btn" type="button" @onclick="TeachSelectedConcept">
+                                <span class="bi bi-mortarboard" aria-hidden="true"></span>
                                 Teach Me
                             </button>
                         }
                     </div>
                 </div>
-                
+
                 @* Resize handle *@
-                <div class="panel-resize-handle" @onmousedown="StartPanelResize">
-                    <span class="bi bi-arrows-angle-expand"></span>
+                <div class="panel-resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize panel" @onmousedown="StartPanelResize">
+                    <span class="bi bi-arrows-angle-expand" aria-hidden="true"></span>
                 </div>
             }
             else
             {
-                <div class="empty-hint">
-                    <span class="bi bi-hand-index"></span>
+                <div class="empty-hint" role="status">
+                    <span class="bi bi-hand-index" aria-hidden="true"></span>
                     <span>Click on a concept node to view details</span>
                 </div>
             }
-        </div>
+        </aside>
     </div>
-</div>
+</section>
 }
 
 @code {

@@ -1,55 +1,67 @@
 @using Tutor.Core.Services
 @using Tutor.Core.Models
 
-<div class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "") @GetStatusClass()" 
-     style="--indent-level: @Level">
-    
-    <div class="side-nav-item-content" @onclick="() => OnNodeClick.InvokeAsync(Node)">
+<li class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "") @GetStatusClass()"
+    style="--indent-level: @Level"
+    role="treeitem"
+    aria-level="@(Level + 1)"
+    aria-selected="@Node.IsSelected.ToString().ToLowerInvariant()"
+    aria-expanded="@(Node.Children.Count > 0 ? Node.IsExpanded.ToString().ToLowerInvariant() : null)">
+
+    <div class="side-nav-item-content"
+         @onclick="() => OnNodeClick.InvokeAsync(Node)"
+         tabindex="0"
+         role="button"
+         aria-label="@GetItemAriaLabel()">
         @if (Node.Children.Count > 0)
         {
-            <button class="expand-btn" @onclick="HandleToggleClick" @onclick:stopPropagation="true">
-                <span class="bi @(Node.IsExpanded ? "bi-chevron-down" : "bi-chevron-right")"></span>
+            <button class="expand-btn"
+                    type="button"
+                    aria-label="@(Node.IsExpanded ? $"Collapse {Node.Title}" : $"Expand {Node.Title}")"
+                    @onclick="HandleToggleClick"
+                    @onclick:stopPropagation="true">
+                <span class="bi @(Node.IsExpanded ? "bi-chevron-down" : "bi-chevron-right")" aria-hidden="true"></span>
             </button>
         }
         else
         {
-            <span class="expand-spacer"></span>
+            <span class="expand-spacer" aria-hidden="true"></span>
         }
-        
+
         @* Status indicator *@
-        <span class="status-indicator @GetStatusClass()" title="@GetStatusTitle()">
-            <span class="bi @GetStatusIcon()"></span>
+        <span class="status-indicator @GetStatusClass()" title="@GetStatusTitle()" aria-label="Status: @GetStatusTitle()">
+            <span class="bi @GetStatusIcon()" aria-hidden="true"></span>
         </span>
-        
+
         @* Section number if available *@
         @if (!string.IsNullOrEmpty(Node.Number))
         {
-            <span class="side-nav-number">@Node.Number</span>
+            <span class="side-nav-number" aria-hidden="true">@Node.Number</span>
         }
         else if (!string.IsNullOrEmpty(Node.Icon))
         {
-            <span class="side-nav-icon bi @Node.Icon"></span>
+            <span class="side-nav-icon bi @Node.Icon" aria-hidden="true"></span>
         }
-        
+
         <span class="side-nav-title">@Node.Title</span>
-        
+
         @* Progress percentage for parent nodes *@
         @if (Node.Children.Count > 0 && Node.CompletionPercentage > 0)
         {
-            <span class="side-nav-progress">@Node.CompletionPercentage%</span>
+            <span class="side-nav-progress" aria-label="@Node.CompletionPercentage percent complete">@Node.CompletionPercentage%</span>
         }
     </div>
-    
+
     @if (Node.IsExpanded && Node.Children.Count > 0)
     {
-        <div class="side-nav-children">
+        <ul class="side-nav-children" role="group">
             @foreach (var child in Node.Children)
             {
                 <SideNavNode Node="@child" Level="@(Level + 1)" OnNodeClick="OnNodeClick" OnToggle="OnToggle" />
             }
-        </div>
+        </ul>
     }
-</div>
+</li>
 
 @code {
     [Parameter]
@@ -100,5 +112,19 @@
             SectionStatus.Visited => "Visited",
             _ => "Not Started"
         };
+    }
+
+    private string GetItemAriaLabel()
+    {
+        var label = Node.Title;
+        if (!string.IsNullOrEmpty(Node.Number))
+        {
+            label = $"{Node.Number} {label}";
+        }
+        if (Node.Children.Count > 0 && Node.CompletionPercentage > 0)
+        {
+            label += $", {Node.CompletionPercentage} percent complete";
+        }
+        return label;
     }
 }

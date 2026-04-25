@@ -3,33 +3,49 @@
 @inject ISecurePreferences SecurePreferences
 
 <AuthGuard>
-<h3 class="page-title">Instructions</h3>
-<p>Add instructions that will be sent with every prompt to control ChatGPT's behavior.</p>
+<section aria-labelledby="instructions-heading">
+    <h1 id="instructions-heading" class="page-title">Instructions</h1>
+    <p>Add instructions that will be sent with every prompt to control ChatGPT's behavior.</p>
 
-<div style="max-width: 720px;">
-    @for (int i = 0; i < instructions.Count; i++)
-    {
-        var index = i;
-        <div class="instruction-item">
-            <div class="instruction-header">
-                <span class="instruction-number">Instruction @(index + 1)</span>
-                <button class="delete-btn" @onclick="() => DeleteInstruction(index)" disabled="@isBusy">Delete</button>
-            </div>
-            <textarea @bind="instructions[index]" 
-                      @bind:event="oninput"
-                      rows="3" 
-                      placeholder="Enter instruction..."
-                      class="instruction-textarea"></textarea>
-            <button class="save-btn" @onclick="() => SaveInstruction(index)" disabled="@isBusy">Save</button>
+    <div style="max-width: 720px;">
+        @for (int i = 0; i < instructions.Count; i++)
+        {
+            var index = i;
+            var headerId = $"instruction-header-{index}";
+            var textareaId = $"instruction-text-{index}";
+            <article class="instruction-item" aria-labelledby="@headerId">
+                <div class="instruction-header">
+                    <span id="@headerId" class="instruction-number">Instruction @(index + 1)</span>
+                    <button class="delete-btn"
+                            type="button"
+                            @onclick="() => DeleteInstruction(index)"
+                            disabled="@isBusy"
+                            aria-label="Delete instruction @(index + 1)">Delete</button>
+                </div>
+                <label for="@textareaId" class="sr-only">Instruction @(index + 1) text</label>
+                <textarea id="@textareaId"
+                          @bind="instructions[index]"
+                          @bind:event="oninput"
+                          rows="3"
+                          placeholder="Enter instruction..."
+                          class="instruction-textarea"></textarea>
+                <button class="save-btn"
+                        type="button"
+                        @onclick="() => SaveInstruction(index)"
+                        disabled="@isBusy"
+                        aria-label="Save instruction @(index + 1)">Save</button>
+            </article>
+        }
+
+        <div class="add-section">
+            <button class="add-btn" type="button" @onclick="AddInstruction" disabled="@isBusy">
+                <span aria-hidden="true">+</span> Add Instruction
+            </button>
         </div>
-    }
 
-    <div class="add-section">
-        <button class="add-btn" @onclick="AddInstruction" disabled="@isBusy">+ Add Instruction</button>
+        <p class="status-message" role="status" aria-live="polite" aria-atomic="true">@status</p>
     </div>
-
-    <p class="status-message">@status</p>
-</div>
+</section>
 </AuthGuard>
 
 @code {

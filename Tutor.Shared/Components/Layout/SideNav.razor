@@ -2,24 +2,24 @@
 @inject AppUiState UiState
 @implements IDisposable
 
-<div class="side-nav">
+<nav class="side-nav" aria-label="Sidebar navigation">
     @if (Nodes.Count == 0)
     {
-        <div class="side-nav-empty">
-            <span class="bi bi-folder2-open"></span>
+        <div class="side-nav-empty" role="status">
+            <span class="bi bi-folder2-open" aria-hidden="true"></span>
             <span>No items to display</span>
         </div>
     }
     else
     {
-        <div class="side-nav-tree">
+        <ul class="side-nav-tree" role="tree" aria-label="Navigation tree">
             @foreach (var node in Nodes)
             {
                 <SideNavNode Node="@node" Level="0" OnNodeClick="HandleNodeClick" OnToggle="HandleToggle" />
             }
-        </div>
+        </ul>
     }
-</div>
+</nav>
 
 @code {
     [Parameter]

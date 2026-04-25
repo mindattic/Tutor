@@ -13,11 +13,11 @@
 {
     @if (RequiredRole.HasValue && !AuthService.HasRole(RequiredRole.Value))
     {
-        <div class="auth-guard-denied">
-            <span class="bi bi-shield-lock"></span>
-            <h2>Access Denied</h2>
+        <div class="auth-guard-denied" role="alert" aria-labelledby="access-denied-heading">
+            <span class="bi bi-shield-lock" aria-hidden="true"></span>
+            <h2 id="access-denied-heading">Access Denied</h2>
             <p>You don't have permission to access this page.</p>
-            <button class="back-btn" @onclick="GoHome">Go to Home</button>
+            <button class="back-btn" type="button" @onclick="GoHome">Go to Home</button>
         </div>
     }
     else
@@ -27,15 +27,15 @@
 }
 else if (_initialized)
 {
-    <div class="auth-guard-redirect">
-        <span class="spinner"></span>
+    <div class="auth-guard-redirect" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
         <p>Redirecting to login...</p>
     </div>
 }
 else
 {
-    <div class="auth-guard-loading">
-        <span class="spinner"></span>
+    <div class="auth-guard-loading" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
         <p>Loading...</p>
     </div>
 }

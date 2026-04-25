@@ -5,33 +5,33 @@
 @inject AuthenticationService AuthService
 @implements IDisposable
 
-<div class="top-menu">
+<header class="top-menu" role="banner">
     <div class="top-menu-brand">
-        <a href="" class="brand-link">
-            <span class="bi bi-mortarboard-fill"></span>
+        <a href="" class="brand-link" aria-label="Tutor home">
+            <span class="bi bi-mortarboard-fill" aria-hidden="true"></span>
             <span class="brand-text">Tutor</span>
         </a>
     </div>
-    
-    <nav class="top-menu-nav">
+
+    <nav class="top-menu-nav" aria-label="Primary">
         <NavLink class="top-nav-link" href="" Match="NavLinkMatch.All" @onclick="() => OnTabSelected(TopTab.Home)">
-            <span class="bi bi-house-fill"></span>
+            <span class="bi bi-house-fill" aria-hidden="true"></span>
             <span>Home</span>
         </NavLink>
         @if (AuthService.IsAuthenticated)
         {
             <NavLink class="top-nav-link" href="courses" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Courses)">
-                <span class="bi bi-book-fill"></span>
+                <span class="bi bi-book-fill" aria-hidden="true"></span>
                 <span>Courses</span>
             </NavLink>
             <NavLink class="top-nav-link" href="learn" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Learn)">
-                <span class="bi bi-mortarboard-fill"></span>
+                <span class="bi bi-mortarboard-fill" aria-hidden="true"></span>
                 <span>Learn</span>
             </NavLink>
             @if (AuthService.IsAdmin)
             {
                 <NavLink class="top-nav-link" href="settings" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Settings)">
-                    <span class="bi bi-gear-fill"></span>
+                    <span class="bi bi-gear-fill" aria-hidden="true"></span>
                     <span>Settings</span>
                 </NavLink>
             }
@@ -42,45 +42,52 @@
         @if (AuthService.IsAuthenticated)
         {
             <span class="profile-username">@userDisplayName</span>
-            <button class="profile-avatar" @onclick="ToggleProfileMenu" @onclick:stopPropagation="true">
+            <button class="profile-avatar"
+                    type="button"
+                    aria-label="Open user menu for @userDisplayName"
+                    aria-haspopup="menu"
+                    aria-expanded="@showProfileMenu.ToString().ToLowerInvariant()"
+                    aria-controls="profile-dropdown-menu"
+                    @onclick="ToggleProfileMenu"
+                    @onclick:stopPropagation="true">
                 @if (!string.IsNullOrEmpty(userCustomAvatar))
                 {
-                    <img src="@userCustomAvatar" alt="@userDisplayName" />
+                    <img src="@userCustomAvatar" alt="" />
                 }
                 else
                 {
-                    <span class="bi @userAvatarIcon"></span>
+                    <span class="bi @userAvatarIcon" aria-hidden="true"></span>
                 }
             </button>
             @if (showProfileMenu)
             {
-                <div class="profile-dropdown">
-                    <a href="profile" class="dropdown-item">
-                        <span class="bi bi-person"></span>
+                <div id="profile-dropdown-menu" class="profile-dropdown" role="menu" aria-label="User menu">
+                    <a href="profile" class="dropdown-item" role="menuitem">
+                        <span class="bi bi-person" aria-hidden="true"></span>
                         <span>My Profile</span>
                     </a>
-                    <a href="account" class="dropdown-item">
-                        <span class="bi bi-gear"></span>
+                    <a href="account" class="dropdown-item" role="menuitem">
+                        <span class="bi bi-gear" aria-hidden="true"></span>
                         <span>Account Settings</span>
                     </a>
-                    <a href="progress" class="dropdown-item">
-                        <span class="bi bi-bar-chart"></span>
+                    <a href="progress" class="dropdown-item" role="menuitem">
+                        <span class="bi bi-bar-chart" aria-hidden="true"></span>
                         <span>My Progress</span>
                     </a>
-                    <div class="dropdown-divider"></div>
-                    <a href="help" class="dropdown-item">
-                        <span class="bi bi-question-circle"></span>
+                    <div class="dropdown-divider" role="separator"></div>
+                    <a href="help" class="dropdown-item" role="menuitem">
+                        <span class="bi bi-question-circle" aria-hidden="true"></span>
                         <span>Help</span>
                     </a>
-                    <button class="dropdown-item" @onclick="HandleLogout">
-                        <span class="bi bi-box-arrow-right"></span>
+                    <button class="dropdown-item" type="button" role="menuitem" @onclick="HandleLogout">
+                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
                         <span>Log Out</span>
                     </button>
                 </div>
             }
         }
     </div>
-</div>
+</header>
 
 @code {
     private bool showProfileMenu = false;
