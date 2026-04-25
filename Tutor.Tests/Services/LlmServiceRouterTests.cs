@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MindAttic.Legion;
 using Tutor.Core.Models;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
@@ -6,16 +7,36 @@ using Tutor.Tests.Fakes;
 
 namespace Tutor.Tests.Services;
 
-public class LlmServiceRouterTests
+public class LlmServiceRouterTests : IDisposable
 {
+    private readonly string sandbox;
+    private readonly string? prevCredsEnv;
+
+    public LlmServiceRouterTests()
+    {
+        // Sandbox the shared credential store away from %APPDATA% so this machine's
+        // real keys don't leak into tests via the LegionClient fallback path.
+        sandbox = Path.Combine(Path.GetTempPath(), "tutor-router-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(sandbox);
+        prevCredsEnv = Environment.GetEnvironmentVariable("MINDATTIC_LLM_CREDENTIALS");
+        Environment.SetEnvironmentVariable("MINDATTIC_LLM_CREDENTIALS", sandbox);
+    }
+
+    public void Dispose()
+    {
+        Environment.SetEnvironmentVariable("MINDATTIC_LLM_CREDENTIALS", prevCredsEnv);
+        try { Directory.Delete(sandbox, recursive: true); } catch { }
+    }
+
     private static (LlmServiceRouter Router, FakeSecurePreferences Prefs) CreateRouter()
     {
         var prefs = new FakeSecurePreferences();
         var services = new ServiceCollection();
         services.AddSingleton<ISecurePreferences>(prefs);
         services.AddSingleton(sp => new OpenAIOptions(sp.GetRequiredService<ISecurePreferences>()) { Model = "gpt-4.1-mini" });
-        services.AddHttpClient<OpenAIService>(c => c.Timeout = TimeSpan.FromSeconds(5));
-        services.AddHttpClient<ClaudeService>(c => c.Timeout = TimeSpan.FromSeconds(5));
+        services.AddLegionClient();
+        services.AddSingleton<OpenAIService>();
+        services.AddSingleton<ClaudeService>();
         services.AddHttpClient<DeepSeekService>(c => c.Timeout = TimeSpan.FromSeconds(5));
         services.AddHttpClient<GeminiService>(c => c.Timeout = TimeSpan.FromSeconds(5));
         var sp = services.BuildServiceProvider();

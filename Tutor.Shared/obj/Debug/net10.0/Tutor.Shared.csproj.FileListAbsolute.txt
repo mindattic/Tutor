@@ -107,3 +107,5 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Shared.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\ref\Tutor.Shared.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\p763vx3a23-{0}-2dx2jjw8nt-2dx2jjw8nt.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5k4epl2nsf-{0}-va70tscr54-va70tscr54.gz
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Legion.dll
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Legion.pdb

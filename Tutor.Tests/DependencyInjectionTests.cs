@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MindAttic.Legion;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
@@ -32,9 +33,12 @@ public class DependencyInjectionTests
             return new OpenAIOptions(prefs) { Model = "gpt-4.1-mini" };
         });
 
+        // MindAttic.Legion — universal LLM client (used by OpenAIService + ClaudeService)
+        services.AddLegionClient();
+
         // HTTP-based services — register with HttpClient factory
-        services.AddHttpClient<OpenAIService>(c => c.Timeout = TimeSpan.FromMinutes(5));
-        services.AddHttpClient<ClaudeService>(c => c.Timeout = TimeSpan.FromMinutes(5));
+        services.AddSingleton<OpenAIService>();
+        services.AddSingleton<ClaudeService>();
         services.AddHttpClient<DeepSeekService>(c => c.Timeout = TimeSpan.FromMinutes(5));
         services.AddHttpClient<GeminiService>(c => c.Timeout = TimeSpan.FromMinutes(5));
         services.AddHttpClient<EmbeddingService>(c => c.Timeout = TimeSpan.FromMinutes(2));

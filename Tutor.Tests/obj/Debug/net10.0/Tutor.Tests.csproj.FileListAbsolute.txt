@@ -111,3 +111,5 @@ D:\Projects\MindAttic\Tutor\Tutor.Tests\obj\Debug\net10.0\refint\Tutor.Tests.dll
 D:\Projects\MindAttic\Tutor\Tutor.Tests\obj\Debug\net10.0\Tutor.Tests.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Tests\obj\Debug\net10.0\Tutor.Tests.genruntimeconfig.cache
 D:\Projects\MindAttic\Tutor\Tutor.Tests\obj\Debug\net10.0\ref\Tutor.Tests.dll
+D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\MindAttic.Legion.dll
+D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\MindAttic.Legion.pdb

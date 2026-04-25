@@ -15,7 +15,18 @@
           "Tutor.Blazor.dll": {}
         }
       },
+      "MindAttic.Legion/2.0.0": {
+        "runtime": {
+          "MindAttic.Legion.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
+          }
+        }
+      },
       "Tutor.Core/1.0.0": {
+        "dependencies": {
+          "MindAttic.Legion": "2.0.0"
+        },
         "runtime": {
           "Tutor.Core.dll": {
             "assemblyVersion": "1.0.0.0",
@@ -38,6 +49,11 @@
   },
   "libraries": {
     "Tutor.Blazor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MindAttic.Legion/2.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

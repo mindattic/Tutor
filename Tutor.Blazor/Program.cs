@@ -1,3 +1,4 @@
+using MindAttic.Legion;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
@@ -9,6 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Shared cross-MindAttic LLM credential store (%APPDATA%/MindAttic/LLM/).
+// First stop for every LLM API key — a rotation here propagates to every
+// MindAttic app that reads from the same folder.
+builder.Services.AddSingleton<LlmCredentialStore>();
+
+// MindAttic.Legion — universal LLM-call client. Owns endpoints, auth headers,
+// retry/backoff, and circuit breaker for every supported provider. Tutor's
+// per-provider services (Claude, OpenAI, …) delegate the wire transport here.
+builder.Services.AddLegionClient();
 
 // Platform abstractions
 builder.Services.AddSingleton<ISecurePreferences, BlazorSecurePreferences>();
@@ -22,17 +33,11 @@ builder.Services.AddSingleton(sp =>
     return new OpenAIOptions(prefs) { Model = "gpt-4.1-mini" };
 });
 
-// HttpClient + OpenAI service (with extended timeout for AI calls)
-builder.Services.AddHttpClient<OpenAIService>(client =>
-{
-    client.Timeout = TimeSpan.FromMinutes(5);
-});
-
-// Claude service (Anthropic)
-builder.Services.AddHttpClient<ClaudeService>(client =>
-{
-    client.Timeout = TimeSpan.FromMinutes(5);
-});
+// OpenAI + Claude services delegate transport to LegionClient — they no longer
+// own an HttpClient. Register them as singletons so the conversation history
+// (held by OpenAIService) survives across requests.
+builder.Services.AddSingleton<OpenAIService>();
+builder.Services.AddSingleton<ClaudeService>();
 
 // DeepSeek service
 builder.Services.AddHttpClient<DeepSeekService>(client =>
