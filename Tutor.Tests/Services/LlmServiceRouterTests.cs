@@ -37,8 +37,8 @@ public class LlmServiceRouterTests : IDisposable
         services.AddLegionClient();
         services.AddSingleton<OpenAIService>();
         services.AddSingleton<ClaudeService>();
-        services.AddHttpClient<DeepSeekService>(c => c.Timeout = TimeSpan.FromSeconds(5));
-        services.AddHttpClient<GeminiService>(c => c.Timeout = TimeSpan.FromSeconds(5));
+        services.AddSingleton<DeepSeekService>();
+        services.AddSingleton<GeminiService>();
         var sp = services.BuildServiceProvider();
         var router = new LlmServiceRouter(prefs, sp);
         return (router, prefs);

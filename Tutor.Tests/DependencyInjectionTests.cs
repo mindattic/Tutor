@@ -39,8 +39,8 @@ public class DependencyInjectionTests
         // HTTP-based services — register with HttpClient factory
         services.AddSingleton<OpenAIService>();
         services.AddSingleton<ClaudeService>();
-        services.AddHttpClient<DeepSeekService>(c => c.Timeout = TimeSpan.FromMinutes(5));
-        services.AddHttpClient<GeminiService>(c => c.Timeout = TimeSpan.FromMinutes(5));
+        services.AddSingleton<DeepSeekService>();
+        services.AddSingleton<GeminiService>();
         services.AddHttpClient<EmbeddingService>(c => c.Timeout = TimeSpan.FromMinutes(2));
 
         // LLM router

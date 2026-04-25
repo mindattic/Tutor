@@ -39,17 +39,10 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton<OpenAIService>();
 builder.Services.AddSingleton<ClaudeService>();
 
-// DeepSeek service
-builder.Services.AddHttpClient<DeepSeekService>(client =>
-{
-    client.Timeout = TimeSpan.FromMinutes(5);
-});
-
-// Gemini service (Google AI)
-builder.Services.AddHttpClient<GeminiService>(client =>
-{
-    client.Timeout = TimeSpan.FromMinutes(5);
-});
+// DeepSeek + Gemini services delegate transport to LegionClient — they no longer
+// own an HttpClient. Singletons so any in-class state survives across requests.
+builder.Services.AddSingleton<DeepSeekService>();
+builder.Services.AddSingleton<GeminiService>();
 
 // LLM router - routes to the user's selected provider
 builder.Services.AddSingleton<LlmServiceRouter>();
