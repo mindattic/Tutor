@@ -89,13 +89,27 @@ public sealed class EmbeddingService
             else
                 Log.Debug($"EmbeddingService: Processing {batch.Count} texts");
 
-            var batchEmbeddings = await legion.EmbedAsync(
-                providerId: "openai",
-                apiKey: apiKey!,
-                model: EmbeddingModel,
-                inputs: batch,
-                dimensions: EmbeddingDimensions,
-                ct: ct);
+            IReadOnlyList<float[]> batchEmbeddings;
+            try
+            {
+                batchEmbeddings = await legion.EmbedAsync(
+                    providerId: "openai",
+                    apiKey: apiKey!,
+                    model: EmbeddingModel,
+                    inputs: batch,
+                    dimensions: EmbeddingDimensions,
+                    ct: ct);
+            }
+            catch (CircuitBreakerOpenException ex)
+            {
+                Log.Warn($"[Tutor] EmbeddingService: Legion circuit breaker open for openai - {ex.Message}");
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
+                Log.Error($"[Tutor] EmbeddingService: Legion embed call failed (status={ex.StatusCode}) - {ex.Message}", ex);
+                throw;
+            }
             allEmbeddings.AddRange(batchEmbeddings);
 
             // Inter-batch pacing for very large documents.
