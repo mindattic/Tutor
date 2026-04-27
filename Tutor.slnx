@@ -2,5 +2,6 @@
   <Project Path="Tutor.Core\Tutor.Core.csproj" />
   <Project Path="Tutor.Shared\Tutor.Shared.csproj" />
   <Project Path="Tutor.Blazor\Tutor.Blazor.csproj" />
+  <Project Path="Tutor.Cli\Tutor.Cli.csproj" />
   <Project Path="Tutor.Tests/Tutor.Tests.csproj" />
 </Solution>
