@@ -82,3 +82,16 @@ D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\Tutor.Blazor.genrunti
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\ref\Tutor.Blazor.dll
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Legion.dll
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Legion.pdb
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\AngleSharp.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\DocumentFormat.OpenXml.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\DocumentFormat.OpenXml.Framework.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.Core.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.DocumentLayoutAnalysis.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.Fonts.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.Package.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.Tokenization.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.Tokens.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\UglyToad.PdfPig.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\SmartReader.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\System.IO.Packaging.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\VersOne.Epub.dll

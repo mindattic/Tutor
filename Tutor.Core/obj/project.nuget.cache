@@ -1,9 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "7Tm1nxjf3dg=",
+  "dgSpecHash": "zO7bhjT4TCE=",
   "success": true,
   "projectFilePath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Core\\Tutor.Core.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\ryand\\.nuget\\packages\\anglesharp\\1.4.0\\anglesharp.1.4.0.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\documentformat.openxml\\3.5.1\\documentformat.openxml.3.5.1.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\documentformat.openxml.framework\\3.5.1\\documentformat.openxml.framework.3.5.1.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.configuration\\10.0.5\\microsoft.extensions.configuration.10.0.5.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\10.0.5\\microsoft.extensions.configuration.abstractions.10.0.5.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.configuration.binder\\10.0.5\\microsoft.extensions.configuration.binder.10.0.5.nupkg.sha512",
@@ -16,7 +19,11 @@
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.5\\microsoft.extensions.logging.abstractions.10.0.5.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.options\\10.0.5\\microsoft.extensions.options.10.0.5.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\10.0.5\\microsoft.extensions.options.configurationextensions.10.0.5.nupkg.sha512",
-    "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.5\\microsoft.extensions.primitives.10.0.5.nupkg.sha512"
+    "C:\\Users\\ryand\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.5\\microsoft.extensions.primitives.10.0.5.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\pdfpig\\0.1.14\\pdfpig.0.1.14.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\smartreader\\0.11.0\\smartreader.0.11.0.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\system.io.packaging\\10.0.2\\system.io.packaging.10.0.2.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\versone.epub\\3.3.6\\versone.epub.3.3.6.nupkg.sha512"
   ],
   "logs": []
 }

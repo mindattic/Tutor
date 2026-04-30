@@ -97,9 +97,12 @@ services.AddSingleton<ParserRegistry>();
 services.AddHttpClient<GutenbergFetcher>();
 services.AddSingleton<BookImportPipeline>();
 services.AddSingleton<CourseExporter>();
+services.AddSingleton<BundleImporter>();
 services.AddSingleton<ImportGutenbergCommand>();
+services.AddSingleton<GutenbergTop10Command>();
 services.AddSingleton<ImportFileCommand>();
 services.AddSingleton<ExportCommand>();
+services.AddSingleton<ImportBundleCommand>();
 services.AddSingleton<ListCommand>();
 services.AddSingleton<FetchOnlyCommand>();
 services.AddSingleton<DeleteCommand>();
@@ -115,8 +118,10 @@ try
     return verb switch
     {
         "gutenberg"     => await provider.GetRequiredService<ImportGutenbergCommand>().RunAsync(rest),
+        "gutenberg-top10" => await provider.GetRequiredService<GutenbergTop10Command>().RunAsync(rest),
         "import"        => await provider.GetRequiredService<ImportFileCommand>().RunAsync(rest),
         "export"        => await provider.GetRequiredService<ExportCommand>().RunAsync(rest),
+        "import-bundle" => await provider.GetRequiredService<ImportBundleCommand>().RunAsync(rest),
         "list"          => await provider.GetRequiredService<ListCommand>().RunAsync(rest),
         "delete"        => await provider.GetRequiredService<DeleteCommand>().RunAsync(rest),
         "fetch"         => await provider.GetRequiredService<FetchOnlyCommand>().RunAsync(rest),
@@ -138,18 +143,35 @@ static int PrintHelp()
         tutor — MindAttic Tutor CLI
 
         USAGE
-          tutor gutenberg <book-id> [--course "Name"] [--description "..."]
+          tutor gutenberg <book-id> [--course "Name"] [--description "..."] [--allow-duplicate]
               Download a book from Project Gutenberg by ID and import it as a new course.
               Example: tutor gutenberg 2701 --course "Moby Dick"
 
-          tutor import <path-to-file> --course "Name" [--description "..."] [--author "..."] [--title "..."]
+          tutor gutenberg-top10 [--dry-run] [--allow-duplicate]
+              Drive the curated top-10 (Moby Dick, Pride and Prejudice, Frankenstein,
+              Sherlock Holmes, Alice, Dorian Gray, Tom Sawyer, Treasure Island,
+              Gulliver's Travels, Dracula) sequentially. Skips books whose course name
+              already exists, so re-running after a partial failure resumes naturally.
+              Long-running: ~2 hours per book and meaningful API spend.
+
+          tutor import <path-to-file> --course "Name" [--description "..."] [--author "..."] [--title "..."] [--allow-duplicate]
               Import a local file as a new course. The parser is picked from the
               file extension. Phase A formats: .txt .md .html .htm .epub .pdf .docx
-              Phase B formats (when added): .doc .mobi .azw .azw3 .rtf
+              Phase B formats: .doc .mobi .azw .azw3 .rtf .odt (require Calibre/LibreOffice)
+
+          NOTE: by default a duplicate-name course is rejected. Use --allow-duplicate
+          when you intentionally want a second copy (e.g. a different printing of
+          the same book — Bible translations, pre/post-edit Stephen King, etc.).
 
           tutor export <course-id> <output.tutorcourse>
               Export a course (resources, concept map, structure, embeddings) to a single
               shareable bundle.
+
+          tutor import-bundle <file.tutorcourse> [--course "Override Name"] [--allow-duplicate]
+              Restore a course from a .tutorcourse bundle. All IDs are rewritten so a
+              re-import never collides with the existing data — you'll get a brand-new
+              course. Skips the LLM pipeline entirely (the embeddings ride along in the
+              bundle), so it's typically <1s regardless of book size.
 
           tutor list
               List all courses on this machine.

@@ -913,9 +913,29 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
+            "AngleSharp": {
+              "target": "Package",
+              "version": "[1.4.0, )"
+            },
+            "DocumentFormat.OpenXml": {
+              "target": "Package",
+              "version": "[3.5.1, )"
+            },
             "Microsoft.Extensions.Http": {
               "target": "Package",
               "version": "[10.0.5, )"
+            },
+            "PdfPig": {
+              "target": "Package",
+              "version": "[0.1.14, )"
+            },
+            "SmartReader": {
+              "target": "Package",
+              "version": "[0.11.0, )"
+            },
+            "VersOne.Epub": {
+              "target": "Package",
+              "version": "[3.3.6, )"
             }
           },
           "imports": [

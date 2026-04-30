@@ -19,7 +19,7 @@ public sealed class ImportGutenbergCommand
         var (positionals, options) = Args.Parse(args);
         if (positionals.Count == 0)
         {
-            Console.Error.WriteLine("Usage: tutor gutenberg <book-id> [--course \"Name\"] [--description \"...\"]");
+            Console.Error.WriteLine("Usage: tutor gutenberg <book-id> [--course \"Name\"] [--description \"...\"] [--author \"...\"] [--allow-duplicate]");
             return 64;
         }
 
@@ -48,7 +48,8 @@ public sealed class ImportGutenbergCommand
             Author: author,
             ResourceDescription: $"Project Gutenberg eBook #{bookId}",
             FileName: $"pg{bookId}.txt",
-            Content: content);
+            Content: content,
+            AllowDuplicate: options.ContainsKey("allow-duplicate"));
 
         var result = await pipeline.ImportAsync(request, ct);
         Console.WriteLine();

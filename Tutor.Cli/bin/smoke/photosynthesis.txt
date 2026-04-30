@@ -1,0 +1,37 @@
+An Introduction to Photosynthesis
+
+Photosynthesis is the process by which green plants, algae, and some bacteria convert light energy into chemical energy stored in sugar molecules. It is the foundation of nearly every food chain on Earth and is responsible for producing most of the oxygen in our atmosphere.
+
+Where Photosynthesis Happens
+
+In plants, photosynthesis takes place primarily in the leaves, inside organelles called chloroplasts. Chloroplasts contain a green pigment called chlorophyll, which absorbs light most strongly in the red and blue parts of the visible spectrum and reflects green light, which is why most plants appear green to our eyes.
+
+Each chloroplast is bounded by a double membrane and contains stacks of disc-shaped structures called thylakoids. The thylakoids are organized into stacks called grana, and the fluid surrounding them is called the stroma. The light-dependent reactions occur inside the thylakoid membranes, while the light-independent reactions, also known as the Calvin cycle, take place in the stroma.
+
+The Two Stages of Photosynthesis
+
+Photosynthesis is traditionally divided into two stages: the light-dependent reactions and the light-independent reactions.
+
+The light-dependent reactions require sunlight. When chlorophyll absorbs photons of light, it excites electrons to a higher energy state. These energized electrons travel down an electron transport chain embedded in the thylakoid membrane. As they move, the energy released is used to pump hydrogen ions across the membrane, building up a concentration gradient. The flow of these ions back through an enzyme called ATP synthase produces ATP, the energy currency of the cell. Meanwhile, water molecules are split, releasing oxygen as a byproduct and providing replacement electrons to chlorophyll.
+
+The light-independent reactions, or Calvin cycle, do not require light directly. They use the ATP and a related molecule called NADPH produced in the light-dependent reactions to fix carbon dioxide from the atmosphere into organic molecules. The cycle begins when carbon dioxide combines with a five-carbon sugar called RuBP, producing an unstable six-carbon compound that immediately splits into two three-carbon molecules. Through a series of enzyme-catalyzed steps, these molecules are reduced and rearranged to produce glucose and to regenerate RuBP so the cycle can continue.
+
+The Overall Equation
+
+The simplified overall equation for photosynthesis is: six molecules of carbon dioxide plus six molecules of water, in the presence of light energy, yield one molecule of glucose plus six molecules of oxygen. This equation captures the essential transformation but hides the dozens of individual chemical steps involved.
+
+Why Photosynthesis Matters
+
+Photosynthesis matters for several interconnected reasons. First, it captures the sun's energy and stores it in chemical bonds, providing the energy that flows through nearly every ecosystem. Herbivores eat plants, carnivores eat herbivores, and decomposers recycle the remains, but the original source of nearly all that energy is the sun, captured by photosynthesis.
+
+Second, photosynthesis produces oxygen as a byproduct. The early atmosphere of Earth contained almost no free oxygen. Over hundreds of millions of years, photosynthesizing organisms transformed the atmosphere, making it possible for aerobic life forms, including humans, to exist.
+
+Third, photosynthesis removes carbon dioxide from the atmosphere. Because carbon dioxide is a greenhouse gas, photosynthesis plays a major role in regulating Earth's climate. Forests, grasslands, and ocean phytoplankton together absorb a significant fraction of the carbon dioxide humans emit each year.
+
+Variations on the Theme
+
+Not all photosynthesis is the same. Most plants use a pathway called C3 photosynthesis, but plants in hot, dry environments often use alternative pathways called C4 and CAM photosynthesis. These adaptations help the plant minimize water loss and avoid a wasteful process called photorespiration, in which the enzyme RuBisCO accidentally fixes oxygen instead of carbon dioxide.
+
+C4 plants, including corn and sugarcane, concentrate carbon dioxide near RuBisCO using a special anatomical arrangement called Kranz anatomy. CAM plants, like cacti and pineapples, open their stomata only at night, store carbon dioxide as an organic acid, and then release it during the day for the Calvin cycle.
+
+Understanding photosynthesis connects fundamental chemistry, cellular biology, ecology, and even climate science. It is one of the most important processes for life on Earth, and a useful starting point for thinking about how energy and matter flow through the natural world.

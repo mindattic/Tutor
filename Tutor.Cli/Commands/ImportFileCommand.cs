@@ -24,7 +24,7 @@ public sealed class ImportFileCommand
         if (positionals.Count == 0)
         {
             Console.Error.WriteLine(
-                "Usage: tutor import <path-to-file> --course \"Name\" [--description \"...\"] [--author \"...\"] [--title \"...\"]");
+                "Usage: tutor import <path-to-file> --course \"Name\" [--description \"...\"] [--author \"...\"] [--title \"...\"] [--allow-duplicate]");
             Console.Error.WriteLine($"Supported formats: {string.Join(", ", parsers.SupportedExtensions.OrderBy(s => s))}");
             return 64;
         }
@@ -79,7 +79,8 @@ public sealed class ImportFileCommand
             Author: author,
             ResourceDescription: "",
             FileName: Path.GetFileName(path),
-            Content: extracted.PlainText);
+            Content: extracted.PlainText,
+            AllowDuplicate: options.ContainsKey("allow-duplicate"));
 
         var result = await pipeline.ImportAsync(request, ct);
         Console.WriteLine();

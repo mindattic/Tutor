@@ -26,11 +26,17 @@ builder.Services.AddSingleton<ISecurePreferences, BlazorSecurePreferences>();
 builder.Services.AddSingleton<IAppDataPathProvider, BlazorAppDataPathProvider>();
 builder.Services.AddSingleton<IFilePickerService, BlazorFilePickerService>();
 
-// Register OpenAI configuration and service
+// Register OpenAI configuration and service. MaxTokens is raised from the
+// 2000-token default because ConceptMapService.ExtractConceptsAsync asks the
+// model to emit a full JSON document of every concept in a chunk. On dense
+// content (e.g. a full book) the response truncates around the default cap
+// and produces unparseable output — surfaced upstream as the misleading
+// "no concepts extracted" error. gpt-4.1-mini supports up to 16,384 output
+// tokens; we leave a small buffer.
 builder.Services.AddSingleton(sp =>
 {
     var prefs = sp.GetRequiredService<ISecurePreferences>();
-    return new OpenAIOptions(prefs) { Model = "gpt-4.1-mini" };
+    return new OpenAIOptions(prefs) { Model = "gpt-4.1-mini", MaxTokens = 16000 };
 });
 
 // OpenAI + Claude services delegate transport to LegionClient — they no longer

@@ -41,6 +41,23 @@ public sealed class BookImportPipeline
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
+        // Duplicate-name guard. Phase 1: case-insensitive exact match on course
+        // name. Phase 2 (TODO): also compare a SimHash of the first ~50KB of
+        // content against existing resources to catch "same book, different
+        // filename" while still allowing distinct printings (e.g. The Gunslinger
+        // 1982 vs 2003) whose openings diverge.
+        if (!req.AllowDuplicate)
+        {
+            var existing = (await courseService.GetAllCoursesAsync())
+                .FirstOrDefault(c => string.Equals(c.Name, req.CourseName, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                throw new InvalidOperationException(
+                    $"A course named '{req.CourseName}' already exists (id: {existing.Id}). " +
+                    "Pass --allow-duplicate to import anyway, or rename the new course with --course \"...\".");
+            }
+        }
+
         Console.WriteLine();
         Console.WriteLine($"[1/7] Creating course '{req.CourseName}'");
         var course = await courseService.CreateCourseAsync(req.CourseName, req.CourseDescription);
@@ -145,7 +162,8 @@ public sealed record BookImportRequest(
     string Author,
     string ResourceDescription,
     string FileName,
-    string Content);
+    string Content,
+    bool AllowDuplicate = false);
 
 public sealed record ImportResult(
     Course Course,

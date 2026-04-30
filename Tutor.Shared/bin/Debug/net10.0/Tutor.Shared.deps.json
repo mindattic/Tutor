@@ -15,6 +15,36 @@
           "Tutor.Shared.dll": {}
         }
       },
+      "AngleSharp/1.4.0": {
+        "runtime": {
+          "lib/net10.0/AngleSharp.dll": {
+            "assemblyVersion": "1.4.0.0",
+            "fileVersion": "1.4.0.0"
+          }
+        }
+      },
+      "DocumentFormat.OpenXml/3.5.1": {
+        "dependencies": {
+          "DocumentFormat.OpenXml.Framework": "3.5.1"
+        },
+        "runtime": {
+          "lib/net10.0/DocumentFormat.OpenXml.dll": {
+            "assemblyVersion": "3.5.1.0",
+            "fileVersion": "3.5.1.0"
+          }
+        }
+      },
+      "DocumentFormat.OpenXml.Framework/3.5.1": {
+        "dependencies": {
+          "System.IO.Packaging": "10.0.2"
+        },
+        "runtime": {
+          "lib/net10.0/DocumentFormat.OpenXml.Framework.dll": {
+            "assemblyVersion": "3.5.1.0",
+            "fileVersion": "3.5.1.0"
+          }
+        }
+      },
       "Microsoft.AspNetCore.Authorization/10.0.0-preview.3.25172.1": {
         "dependencies": {
           "Microsoft.AspNetCore.Metadata": "10.0.0-preview.3.25172.1",
@@ -236,6 +266,65 @@
           }
         }
       },
+      "PdfPig/0.1.14": {
+        "runtime": {
+          "lib/net8.0/UglyToad.PdfPig.Core.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Fonts.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Package.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokenization.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokens.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.dll": {
+            "assemblyVersion": "0.1.14.0",
+            "fileVersion": "0.1.14.0"
+          }
+        }
+      },
+      "SmartReader/0.11.0": {
+        "dependencies": {
+          "AngleSharp": "1.4.0"
+        },
+        "runtime": {
+          "lib/netstandard2.1/SmartReader.dll": {
+            "assemblyVersion": "0.11.0.0",
+            "fileVersion": "0.11.0.0"
+          }
+        }
+      },
+      "System.IO.Packaging/10.0.2": {
+        "runtime": {
+          "lib/net10.0/System.IO.Packaging.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.225.61305"
+          }
+        }
+      },
+      "VersOne.Epub/3.3.6": {
+        "runtime": {
+          "lib/netstandard2.0/VersOne.Epub.dll": {
+            "assemblyVersion": "3.3.6.0",
+            "fileVersion": "3.3.6.0"
+          }
+        }
+      },
       "MindAttic.Legion/2.0.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
@@ -251,8 +340,13 @@
       },
       "Tutor.Core/1.0.0": {
         "dependencies": {
+          "AngleSharp": "1.4.0",
+          "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.Extensions.Http": "10.0.5",
-          "MindAttic.Legion": "2.0.0"
+          "MindAttic.Legion": "2.0.0",
+          "PdfPig": "0.1.14",
+          "SmartReader": "0.11.0",
+          "VersOne.Epub": "3.3.6"
         },
         "runtime": {
           "Tutor.Core.dll": {
@@ -268,6 +362,27 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "AngleSharp/1.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6ph8mpaQx0KL0COYRt0kI8MB9gSp1PtKijKMhJU//+aVFgKAJLKDesG/+26JSaVCOrHNgPf12wpfoyRcMYOeXg==",
+      "path": "anglesharp/1.4.0",
+      "hashPath": "anglesharp.1.4.0.nupkg.sha512"
+    },
+    "DocumentFormat.OpenXml/3.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zxdOf5VVCe/uNklbRhj8dVBzQGj3DoqkUuqOp9cAZVuN8mNYDjof1lvSQA2OQNr8Ptc9d7pbA7Azq/ReaI3FpA==",
+      "path": "documentformat.openxml/3.5.1",
+      "hashPath": "documentformat.openxml.3.5.1.nupkg.sha512"
+    },
+    "DocumentFormat.OpenXml.Framework/3.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-U5txtc3ORno73xQx9Lf2gWzfaSZnZwKHfLkTAslhlew9lxe5XbUiCt0dY1fHeAf8yRqszUAe5i/+xLC9R/Xfsw==",
+      "path": "documentformat.openxml.framework/3.5.1",
+      "hashPath": "documentformat.openxml.framework.3.5.1.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Authorization/10.0.0-preview.3.25172.1": {
       "type": "package",
@@ -401,6 +516,34 @@
       "sha512": "sha512-aSB0j7mSno9nnf0s28xIfzc50J690KATHGkmPq/VRnrHrjZcOnhwrWFkAtyeb8a9KwXIjKZXDWxhMZseaS/omg==",
       "path": "microsoft.jsinterop/10.0.0-preview.3.25172.1",
       "hashPath": "microsoft.jsinterop.10.0.0-preview.3.25172.1.nupkg.sha512"
+    },
+    "PdfPig/0.1.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-V2Anq0Yvyn3bGGG8WCQxqEAshG0KHIehB0QOotCz14vTkEk1PR3ErPOSmbnEsyOewhdF3G5XpQHywK2L50Xu+A==",
+      "path": "pdfpig/0.1.14",
+      "hashPath": "pdfpig.0.1.14.nupkg.sha512"
+    },
+    "SmartReader/0.11.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-DSn2HErPhhaf+IIyFFQNAyPS1Z4Dv3EYLQlgHwdDlpDxolvB8RCDvTiQZGP3yg9tLMTT2eA9RIN7DbZLbiamhg==",
+      "path": "smartreader/0.11.0",
+      "hashPath": "smartreader.0.11.0.nupkg.sha512"
+    },
+    "System.IO.Packaging/10.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-JTpM4z0wpoIHHDvlCU27HsXo+zVnpWib94HXQpzzr+jc/P9NYf4w353AK4MXyGq/grm1mbLi7eXsOsDU8sGmNg==",
+      "path": "system.io.packaging/10.0.2",
+      "hashPath": "system.io.packaging.10.0.2.nupkg.sha512"
+    },
+    "VersOne.Epub/3.3.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-X7b7Zvw5lLCRYDdDjqWldkZMZ/+rIvSWHAZjRxdq0fCL8+vv4W/OBiSIL0x8fTv2mlPNWGJcL48BIyIfpw2GBg==",
+      "path": "versone.epub/3.3.6",
+      "hashPath": "versone.epub.3.3.6.nupkg.sha512"
     },
     "MindAttic.Legion/2.0.0": {
       "type": "project",
