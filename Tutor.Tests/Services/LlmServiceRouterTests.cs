@@ -90,4 +90,5 @@ public class LlmServiceRouterTests : IDisposable
         var configured = await router.IsConfiguredAsync();
         Assert.False(configured); // No API key
     }
+
 }

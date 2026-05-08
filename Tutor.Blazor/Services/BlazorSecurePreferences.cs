@@ -23,22 +23,24 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     private Dictionary<string, string> store = new();
     private readonly SemaphoreSlim @lock = new(1, 1);
 
-    // Tutor's ISecurePreferences keys → (provider, field) in the shared store.
+    // Tutor's ISecurePreferences keys → (provider, isApiKey) in the shared store.
     // Provider IDs follow the MindAttic cross-app convention (claude/openai/gemini/deepseek).
-    private static readonly Dictionary<string, (string Provider, Field Field)> LlmKeyMap = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, (string Provider, bool IsApiKey)> LlmKeyMap = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["OPENAI_API_KEY"]   = ("openai",   Field.ApiKey),
-        ["CHATGPT_MODEL"]    = ("openai",   Field.Model),
-        ["CLAUDE_API_KEY"]   = ("claude",   Field.ApiKey),
-        ["CLAUDE_MODEL"]     = ("claude",   Field.Model),
-        ["GEMINI_API_KEY"]   = ("gemini",   Field.ApiKey),
-        ["GEMINI_MODEL"]     = ("gemini",   Field.Model),
-        ["DEEPSEEK_API_KEY"] = ("deepseek", Field.ApiKey),
-        ["DEEPSEEK_MODEL"]   = ("deepseek", Field.Model),
+        ["OPENAI_API_KEY"]    = ("openai",   true),
+        ["CHATGPT_MODEL"]     = ("openai",   false),
+        ["CLAUDE_API_KEY"]    = ("claude",   true),
+        ["CLAUDE_MODEL"]      = ("claude",   false),
+        ["GEMINI_API_KEY"]    = ("gemini",   true),
+        ["GEMINI_MODEL"]      = ("gemini",   false),
+        ["DEEPSEEK_API_KEY"]  = ("deepseek", true),
+        ["DEEPSEEK_MODEL"]    = ("deepseek", false),
     };
 
-    private enum Field { ApiKey, Model }
-
+    /// <summary>
+    /// Loads any existing local preferences from disk; the LLM credential store is
+    /// consulted lazily when keys are read or written.
+    /// </summary>
     public BlazorSecurePreferences(LlmCredentialStore credentialStore)
     {
         this.credentialStore = credentialStore;
@@ -50,11 +52,16 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         Load();
     }
 
+    /// <summary>
+    /// Reads a preference. LLM-mapped keys try the shared MindAttic credential store
+    /// first and fall back to the legacy local JSON; legacy hits are auto-migrated up
+    /// into the shared store on first access.
+    /// </summary>
     public async Task<string?> GetAsync(string key)
     {
         if (LlmKeyMap.TryGetValue(key, out var map))
         {
-            var fromStore = ReadFromStore(map.Provider, map.Field);
+            var fromStore = ReadFromStore(map.Provider, map.IsApiKey);
             if (!string.IsNullOrEmpty(fromStore)) return fromStore;
 
             // Fallback to legacy local store; migrate up if found.
@@ -63,8 +70,8 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
                 await @lock.WaitAsync();
                 try
                 {
-                    if (!credentialStore.Exists(map.Provider) || string.IsNullOrEmpty(ReadFromStore(map.Provider, map.Field)))
-                        WriteToStore(map.Provider, map.Field, legacy);
+                    if (!credentialStore.Exists(map.Provider) || string.IsNullOrEmpty(ReadFromStore(map.Provider, map.IsApiKey)))
+                        WriteToStore(map.Provider, map.IsApiKey, legacy);
                 }
                 finally { @lock.Release(); }
                 return legacy;
@@ -76,6 +83,10 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         return value;
     }
 
+    /// <summary>
+    /// Writes a preference to both the shared MindAttic credential store (for mapped
+    /// LLM keys) and the local JSON mirror so legacy readers stay consistent.
+    /// </summary>
     public async Task SetAsync(string key, string value)
     {
         await @lock.WaitAsync();
@@ -83,7 +94,7 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         {
             if (LlmKeyMap.TryGetValue(key, out var map))
             {
-                WriteToStore(map.Provider, map.Field, value);
+                WriteToStore(map.Provider, map.IsApiKey, value);
             }
 
             // Always mirror to local JSON so legacy readers still see consistent state.
@@ -96,6 +107,10 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
+    /// <summary>
+    /// Removes a preference. For mapped LLM keys this also clears the corresponding
+    /// field in the shared credential store.
+    /// </summary>
     public void Remove(string key)
     {
         @lock.Wait();
@@ -103,7 +118,7 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         {
             if (LlmKeyMap.TryGetValue(key, out var map))
             {
-                WriteToStore(map.Provider, map.Field, "");
+                WriteToStore(map.Provider, map.IsApiKey, "");
             }
 
             store.Remove(key);
@@ -115,13 +130,11 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    private string? ReadFromStore(string provider, Field field)
+    private string? ReadFromStore(string provider, bool isApiKey)
     {
         try
         {
-            var value = field == Field.ApiKey
-                ? credentialStore.GetApiKey(provider)
-                : credentialStore.GetModel(provider);
+            var value = isApiKey ? credentialStore.GetApiKey(provider) : credentialStore.GetModel(provider);
             return string.IsNullOrEmpty(value) ? null : value;
         }
         catch
@@ -130,14 +143,12 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    private void WriteToStore(string provider, Field field, string value)
+    private void WriteToStore(string provider, bool isApiKey, string value)
     {
         try
         {
-            if (field == Field.ApiKey)
-                credentialStore.SetApiKey(provider, value);
-            else
-                credentialStore.SetModel(provider, value);
+            if (isApiKey) credentialStore.SetApiKey(provider, value);
+            else          credentialStore.SetModel(provider, value);
         }
         catch (Exception ex)
         {
@@ -188,6 +199,7 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         @lock.Dispose();

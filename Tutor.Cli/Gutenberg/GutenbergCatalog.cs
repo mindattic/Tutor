@@ -1,11 +1,14 @@
 namespace Tutor.Cli.Gutenberg;
 
-// Curated top-10 Project Gutenberg works queued for batch import.
-// First milestone is Moby Dick (id 2701) end-to-end. Once that flow is proven,
-// `tutor gutenberg-top10` (TODO) should iterate this list with throttling
-// between books to keep API spend predictable.
+/// <summary>
+/// Curated top-10 Project Gutenberg works queued for batch import. First milestone
+/// is Moby Dick (id 2701) end-to-end. Once that flow is proven, the
+/// <c>tutor gutenberg-top10</c> command iterates this list with throttling between
+/// books to keep API spend predictable.
+/// </summary>
 public static class GutenbergCatalog
 {
+    /// <summary>The fixed list of books driven by <c>tutor gutenberg-top10</c>.</summary>
     public static readonly IReadOnlyList<GutenbergBook> Top10 = new[]
     {
         new GutenbergBook(2701, "Moby Dick; Or, The Whale", "Herman Melville"),
@@ -21,4 +24,8 @@ public static class GutenbergCatalog
     };
 }
 
+/// <summary>
+/// One entry in <see cref="GutenbergCatalog.Top10"/>. <paramref name="Id"/> is the
+/// Project Gutenberg numeric identifier used to fetch the canonical UTF-8 plaintext.
+/// </summary>
 public sealed record GutenbergBook(int Id, string Title, string Author);

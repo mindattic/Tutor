@@ -2,6 +2,12 @@ using Tutor.Cli.Export;
 
 namespace Tutor.Cli.Commands;
 
+/// <summary>
+/// <c>tutor import-bundle &lt;file.tutorcourse&gt; [--course "Override Name"] [--allow-duplicate]</c>
+/// — restores a course from a .tutorcourse bundle. Skips the LLM pipeline entirely
+/// because the embeddings ride along in the bundle, so it's typically &lt;1s regardless
+/// of book size.
+/// </summary>
 public sealed class ImportBundleCommand
 {
     private readonly BundleImporter importer;
@@ -11,6 +17,7 @@ public sealed class ImportBundleCommand
         this.importer = importer;
     }
 
+    /// <summary>Returns 0 on success, 64 on usage errors.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, options) = Args.Parse(args);

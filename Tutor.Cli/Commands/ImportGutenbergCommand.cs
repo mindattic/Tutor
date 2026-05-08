@@ -3,6 +3,12 @@ using Tutor.Cli.Pipeline;
 
 namespace Tutor.Cli.Commands;
 
+/// <summary>
+/// <c>tutor gutenberg &lt;book-id&gt; [--course "Name"] [--description ...] [--author ...] [--allow-duplicate]</c>
+/// — downloads a single Project Gutenberg book by ID and runs it end-to-end through the
+/// <see cref="BookImportPipeline"/>. Title and author default to the
+/// <see cref="GutenbergCatalog"/> entry when one exists.
+/// </summary>
 public sealed class ImportGutenbergCommand
 {
     private readonly GutenbergFetcher fetcher;
@@ -14,6 +20,7 @@ public sealed class ImportGutenbergCommand
         this.pipeline = pipeline;
     }
 
+    /// <summary>Returns 0 on success, 64 on usage errors.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, options) = Args.Parse(args);

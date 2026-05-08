@@ -5,11 +5,13 @@ using Tutor.Core.Services;
 
 namespace Tutor.Cli.Export;
 
-// Inverse of CourseExporter. Reads a .tutorcourse zip, rewrites every ID with a
-// fresh GUID (so importing the same bundle twice yields two distinct courses
-// instead of overwriting), then persists the course/resources/conceptMaps/
-// structure/chunks via the same Tutor.Core services the live app uses. The
-// expensive embeddings ride along in chunks.json so re-imports are near-instant.
+/// <summary>
+/// Inverse of <see cref="CourseExporter"/>. Reads a .tutorcourse zip, rewrites every
+/// ID with a fresh GUID (so importing the same bundle twice yields two distinct
+/// courses instead of overwriting), then persists the course/resources/conceptMaps/
+/// structure/chunks via the same Tutor.Core services the live app uses. The
+/// expensive embeddings ride along in chunks.json so re-imports are near-instant.
+/// </summary>
 public sealed class BundleImporter
 {
     private readonly CourseService courseService;
@@ -34,6 +36,12 @@ public sealed class BundleImporter
         this.vectorStore = vectorStore;
     }
 
+    /// <summary>
+    /// Reads <paramref name="bundlePath"/>, rewrites the IDs, and persists the
+    /// imported course. Pass <paramref name="overrideCourseName"/> to rename on
+    /// import; set <paramref name="allowDuplicate"/> when intentionally re-importing
+    /// a name that already exists.
+    /// </summary>
     public async Task<ImportBundleResult> ImportAsync(
         string bundlePath,
         string? overrideCourseName,
@@ -210,6 +218,11 @@ public sealed class BundleImporter
     }
 }
 
+/// <summary>
+/// Summary returned by <see cref="BundleImporter.ImportAsync"/> describing the
+/// rebuilt course, the number of entities restored, and whether a course structure
+/// rode along.
+/// </summary>
 public sealed record ImportBundleResult(
     Course Course,
     int ResourceCount,

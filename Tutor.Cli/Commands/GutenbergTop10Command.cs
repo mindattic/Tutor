@@ -4,15 +4,16 @@ using Tutor.Core.Services;
 
 namespace Tutor.Cli.Commands;
 
-// Drives the curated GutenbergCatalog.Top10 list through the import pipeline
-// sequentially. Each book gets its own course (per the "never silently combine
-// books" directive). Books whose course name already exists are skipped unless
-// --allow-duplicate is set, so re-running the command after a partial failure
-// resumes from where it stopped without paying for already-imported books.
-//
-// This is a long-running command — Moby Dick alone took ~2 hours; the full
-// top-10 will take many hours and meaningful API spend. Use --dry-run to
-// preview which books would be imported.
+/// <summary>
+/// <c>tutor gutenberg-top10 [--dry-run] [--allow-duplicate]</c> — drives the curated
+/// <see cref="GutenbergCatalog.Top10"/> list through <see cref="BookImportPipeline"/>
+/// sequentially. Each book gets its own course; existing course names are skipped
+/// unless <c>--allow-duplicate</c> is set, so re-running after a partial failure
+/// resumes naturally without paying for already-imported books.
+/// <para/>
+/// Long-running — Moby Dick alone took ~2 hours; the full top-10 takes many hours
+/// and meaningful API spend. Use <c>--dry-run</c> to preview the plan.
+/// </summary>
 public sealed class GutenbergTop10Command
 {
     private readonly GutenbergFetcher fetcher;
@@ -29,6 +30,7 @@ public sealed class GutenbergTop10Command
         this.courseService = courseService;
     }
 
+    /// <summary>Returns 0 on success or full dry-run; 1 if any book failed to import.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (_, options) = Args.Parse(args);

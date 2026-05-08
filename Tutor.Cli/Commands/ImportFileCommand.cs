@@ -3,10 +3,13 @@ using Tutor.Core.Parsers;
 
 namespace Tutor.Cli.Commands;
 
-// Routes any supported file format (.txt/.md/.html/.htm/.epub/.pdf/.docx and
-// later .doc/.mobi/.rtf) through ParserRegistry → ExtractedBook →
-// BookImportPipeline. Format-specific concerns live in the parsers; this
-// command stays format-agnostic.
+/// <summary>
+/// <c>tutor import &lt;path&gt; --course "Name" [--description ...] [--author ...] [--title ...] [--allow-duplicate]</c>
+/// — routes any supported file format (.txt/.md/.html/.htm/.epub/.pdf/.docx and later
+/// .doc/.mobi/.rtf) through <see cref="ParserRegistry"/> → <c>ExtractedBook</c> →
+/// <see cref="BookImportPipeline"/>. Format-specific concerns live in the parsers;
+/// this command stays format-agnostic.
+/// </summary>
 public sealed class ImportFileCommand
 {
     private readonly BookImportPipeline pipeline;
@@ -18,6 +21,7 @@ public sealed class ImportFileCommand
         this.parsers = parsers;
     }
 
+    /// <summary>Returns 0 on success, 64 on usage errors, 65 for unsupported extensions or empty extracts, 66 if the file is missing.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, options) = Args.Parse(args);

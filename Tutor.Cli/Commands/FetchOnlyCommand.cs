@@ -2,8 +2,11 @@ using Tutor.Cli.Gutenberg;
 
 namespace Tutor.Cli.Commands;
 
-// Diagnostic command: fetch + strip only, no LLM pipeline. Useful for verifying
-// network access and the header/footer stripper without spending API credit.
+/// <summary>
+/// <c>tutor fetch &lt;book-id&gt;</c> — diagnostic command that downloads and strips
+/// a Project Gutenberg book without invoking the LLM pipeline. Useful for verifying
+/// network access and the header/footer stripper without spending API credit.
+/// </summary>
 public sealed class FetchOnlyCommand
 {
     private readonly GutenbergFetcher fetcher;
@@ -13,6 +16,7 @@ public sealed class FetchOnlyCommand
         this.fetcher = fetcher;
     }
 
+    /// <summary>Returns 0 on success, 64 on usage errors.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, _) = Args.Parse(args);

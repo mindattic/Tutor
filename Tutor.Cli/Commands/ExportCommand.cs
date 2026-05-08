@@ -2,6 +2,10 @@ using Tutor.Cli.Export;
 
 namespace Tutor.Cli.Commands;
 
+/// <summary>
+/// <c>tutor export &lt;course-id&gt; &lt;output.tutorcourse&gt;</c> — pack a course
+/// (resources, concept map, structure, embeddings) into a single shareable bundle.
+/// </summary>
 public sealed class ExportCommand
 {
     private readonly CourseExporter exporter;
@@ -11,6 +15,11 @@ public sealed class ExportCommand
         this.exporter = exporter;
     }
 
+    /// <summary>
+    /// Parses the command's positional arguments, runs the export, and prints a
+    /// human-readable summary. Returns a process exit code (0 on success, 64 for
+    /// usage errors).
+    /// </summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, _) = Args.Parse(args);

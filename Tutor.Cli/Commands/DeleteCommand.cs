@@ -2,10 +2,12 @@ using Tutor.Core.Services;
 
 namespace Tutor.Cli.Commands;
 
-// CourseService.DeleteCourseAsync only removes the row from COURSES_DATA — it
-// leaves resources, embeddings, concept maps, structures, and the per-course
-// ConceptMapCollection file dangling. This command cascades the cleanup so a
-// deleted course doesn't bloat the local data store.
+/// <summary>
+/// <c>tutor delete &lt;course-id&gt; [--dry-run]</c> — cascades the cleanup that
+/// <see cref="CourseService.DeleteCourseAsync"/> alone misses (resources, embeddings,
+/// concept maps, structures, per-course ConceptMapCollection file) so a deleted
+/// course doesn't bloat the local data store.
+/// </summary>
 public sealed class DeleteCommand
 {
     private readonly CourseService courseService;
@@ -25,6 +27,9 @@ public sealed class DeleteCommand
         this.vectorStore = vectorStore;
     }
 
+    /// <summary>
+    /// Returns 0 on success / dry-run, 1 if the course is not found, 64 on usage errors.
+    /// </summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, options) = Args.Parse(args);

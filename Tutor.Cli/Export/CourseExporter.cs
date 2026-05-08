@@ -4,6 +4,11 @@ using Tutor.Core.Services;
 
 namespace Tutor.Cli.Export;
 
+/// <summary>
+/// Packs a course (resources, concept maps, structure, and vector-store chunks)
+/// into a single shareable .tutorcourse zip bundle. Embeddings ride along so
+/// matching imports skip the LLM pipeline entirely.
+/// </summary>
 public sealed class CourseExporter
 {
     private readonly CourseService courseService;
@@ -25,6 +30,11 @@ public sealed class CourseExporter
         this.vectorStore = vectorStore;
     }
 
+    /// <summary>
+    /// Writes a .tutorcourse bundle for <paramref name="courseId"/> to
+    /// <paramref name="outputPath"/>, overwriting any existing file. Returns the
+    /// manifest describing what was written. Throws if the course is not found.
+    /// </summary>
     public async Task<BundleManifest> ExportAsync(string courseId, string outputPath, CancellationToken ct = default)
     {
         var course = await courseService.GetCourseAsync(courseId)

@@ -3,15 +3,19 @@ using Tutor.Core.Services;
 
 namespace Tutor.Cli.Pipeline;
 
-// Synchronous orchestration mirroring ResourceProcessingService.ProcessResourceAsync,
-// but with stdout progress instead of UI events. Stages:
-//   1. Create Course
-//   2. Save raw resource (also persists original to disk for GitHub sync)
-//   3. Add resource to course → embeds raw content into the vector store
-//   4. Format content with AI → updates FormattedContent
-//   5. Build per-resource ConceptMap → links to resource
-//   6. Rebuild course ConceptMapCollection
-//   7. Generate CourseStructure (lessons → topics → sections → content)
+/// <summary>
+/// Synchronous orchestration mirroring <c>ResourceProcessingService.ProcessResourceAsync</c>,
+/// but with stdout progress instead of UI events. Stages:
+/// <list type="number">
+///   <item><description>Create Course</description></item>
+///   <item><description>Save raw resource (also persists original to disk for GitHub sync)</description></item>
+///   <item><description>Add resource to course → embeds raw content into the vector store</description></item>
+///   <item><description>Format content with AI → updates FormattedContent</description></item>
+///   <item><description>Build per-resource ConceptMap → links to resource</description></item>
+///   <item><description>Rebuild course ConceptMapCollection</description></item>
+///   <item><description>Generate CourseStructure (lessons → topics → sections → content)</description></item>
+/// </list>
+/// </summary>
 public sealed class BookImportPipeline
 {
     private readonly CourseService courseService;
@@ -37,6 +41,11 @@ public sealed class BookImportPipeline
         this.settingsService = settingsService;
     }
 
+    /// <summary>
+    /// Runs all seven stages, printing progress to stdout. Throws
+    /// <see cref="InvalidOperationException"/> when a course of the same name already
+    /// exists and <see cref="BookImportRequest.AllowDuplicate"/> is false.
+    /// </summary>
     public async Task<ImportResult> ImportAsync(BookImportRequest req, CancellationToken ct = default)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -155,6 +164,10 @@ public sealed class BookImportPipeline
     }
 }
 
+/// <summary>
+/// Inputs for <see cref="BookImportPipeline.ImportAsync"/>. <paramref name="AllowDuplicate"/>
+/// suppresses the same-name guard for cases like distinct printings of the same book.
+/// </summary>
 public sealed record BookImportRequest(
     string CourseName,
     string CourseDescription,
@@ -165,6 +178,10 @@ public sealed record BookImportRequest(
     string Content,
     bool AllowDuplicate = false);
 
+/// <summary>
+/// Output of <see cref="BookImportPipeline.ImportAsync"/> — the persisted course,
+/// resource, concept map, and structure plus the total wall-clock duration.
+/// </summary>
 public sealed record ImportResult(
     Course Course,
     CourseResource Resource,

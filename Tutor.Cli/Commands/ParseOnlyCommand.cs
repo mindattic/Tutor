@@ -2,8 +2,11 @@ using Tutor.Core.Parsers;
 
 namespace Tutor.Cli.Commands;
 
-// Diagnostic: run a parser against a file and print the extracted preview
-// without calling any LLM. Used to validate parser additions cheaply.
+/// <summary>
+/// <c>tutor parse &lt;path-to-file&gt;</c> — diagnostic command that runs a parser
+/// against a file and prints the extracted preview without calling any LLM. Used
+/// to validate parser additions cheaply.
+/// </summary>
 public sealed class ParseOnlyCommand
 {
     private readonly ParserRegistry parsers;
@@ -13,6 +16,7 @@ public sealed class ParseOnlyCommand
         this.parsers = parsers;
     }
 
+    /// <summary>Returns 0 on success, 64 on usage errors, 65 for unsupported extensions, 66 if the file is missing.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, _) = Args.Parse(args);
