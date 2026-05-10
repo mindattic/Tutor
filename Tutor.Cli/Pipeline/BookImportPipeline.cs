@@ -14,6 +14,7 @@ namespace Tutor.Cli.Pipeline;
 ///   <item><description>Build per-resource ConceptMap → links to resource</description></item>
 ///   <item><description>Rebuild course ConceptMapCollection</description></item>
 ///   <item><description>Generate CourseStructure (lessons → topics → sections → content)</description></item>
+///   <item><description>Pre-generate section quizzes (baked into the structure so re-imports skip the LLM)</description></item>
 /// </list>
 /// </summary>
 public sealed class BookImportPipeline
@@ -23,6 +24,8 @@ public sealed class BookImportPipeline
     private readonly ConceptMapService conceptMapService;
     private readonly ConceptMapStorageService conceptMapStorageService;
     private readonly CourseStructureService courseStructureService;
+    private readonly CourseStructureStorageService courseStructureStorageService;
+    private readonly QuizGenerationService quizGenerationService;
     private readonly SettingsService settingsService;
 
     public BookImportPipeline(
@@ -31,6 +34,8 @@ public sealed class BookImportPipeline
         ConceptMapService conceptMapService,
         ConceptMapStorageService conceptMapStorageService,
         CourseStructureService courseStructureService,
+        CourseStructureStorageService courseStructureStorageService,
+        QuizGenerationService quizGenerationService,
         SettingsService settingsService)
     {
         this.courseService = courseService;
@@ -38,6 +43,8 @@ public sealed class BookImportPipeline
         this.conceptMapService = conceptMapService;
         this.conceptMapStorageService = conceptMapStorageService;
         this.courseStructureService = courseStructureService;
+        this.courseStructureStorageService = courseStructureStorageService;
+        this.quizGenerationService = quizGenerationService;
         this.settingsService = settingsService;
     }
 
@@ -68,10 +75,10 @@ public sealed class BookImportPipeline
         }
 
         Console.WriteLine();
-        Console.WriteLine($"[1/7] Creating course '{req.CourseName}'");
+        Console.WriteLine($"[1/8] Creating course '{req.CourseName}'");
         var course = await courseService.CreateCourseAsync(req.CourseName, req.CourseDescription);
 
-        Console.WriteLine($"[2/7] Saving resource '{req.ResourceTitle}' ({req.Content.Length:N0} chars)");
+        Console.WriteLine($"[2/8] Saving resource '{req.ResourceTitle}' ({req.Content.Length:N0} chars)");
         var resource = new CourseResource
         {
             Title = req.ResourceTitle,
@@ -84,10 +91,10 @@ public sealed class BookImportPipeline
         var resourceId = await courseService.SaveResourceCoreAsync(resource);
         resource.Id = resourceId;
 
-        Console.WriteLine("[3/7] Adding resource to course (chunk + embed for RAG)");
+        Console.WriteLine("[3/8] Adding resource to course (chunk + embed for RAG)");
         await courseService.AddResourceToCourseAsync(course.Id, resourceId);
 
-        Console.WriteLine("[4/7] Formatting content with AI (this is the slow stage)");
+        Console.WriteLine("[4/8] Formatting content with AI (this is the slow stage)");
         try
         {
             var formatted = await formatterService.FormatContentAsync(
@@ -103,7 +110,7 @@ public sealed class BookImportPipeline
             Console.WriteLine($"      WARN: formatting failed — {ex.Message} (continuing with raw content)");
         }
 
-        Console.WriteLine("[5/7] Building ConceptMap (extract concepts + relationships)");
+        Console.WriteLine("[5/8] Building ConceptMap (extract concepts + relationships)");
         var globalMaxIters = await settingsService.GetOrphanLinkingMaxIterationsAsync();
         var globalMinConf  = await settingsService.GetOrphanLinkingMinConfidenceAsync();
         var maxIters = resource.GetEffectiveMaxIterations(globalMaxIters);
@@ -129,10 +136,10 @@ public sealed class BookImportPipeline
 
         Console.WriteLine($"      ConceptMap: {conceptMap.Concepts.Count} concepts, {conceptMap.Relations.Count} relations");
 
-        Console.WriteLine("[6/7] Rebuilding course ConceptMap collection");
+        Console.WriteLine("[6/8] Rebuilding course ConceptMap collection");
         await courseService.RebuildCourseConceptMapCollectionAsync(course, ct);
 
-        Console.WriteLine("[7/7] Generating course structure (lessons → topics → sections → content)");
+        Console.WriteLine("[7/8] Generating course structure (lessons → topics → sections → content)");
         void OnStructureProgress(CourseStructureProgress p) =>
             Console.WriteLine($"      [{p.Progress,3}%] {p.Message}");
         courseStructureService.OnProgressChanged += OnStructureProgress;
@@ -149,6 +156,33 @@ public sealed class BookImportPipeline
         course.CourseStructureId = structure.Id;
         course.UpdatedAt = DateTime.UtcNow;
         await courseService.SaveCourseAsync(course);
+
+        Console.WriteLine("[8/8] Pre-generating section quizzes (baked into the bundle)");
+        var quizSections = structure.Lessons
+            .SelectMany(l => l.GetAllSectionsFlattened())
+            .Where(s => s.HasQuiz)
+            .ToList();
+        var quizCount = 0;
+        var totalQuizzes = quizSections.Count;
+        foreach (var section in quizSections)
+        {
+            ct.ThrowIfCancellationRequested();
+            quizCount++;
+            // Sections without ConceptIds can't be quizzed — the LLM has nothing
+            // to ground on. Skip silently rather than emit empty quizzes.
+            if (section.ConceptIds.Count == 0) continue;
+
+            var questions = await quizGenerationService.GenerateAsync(
+                course.ConceptMapCollectionId!,
+                section.ConceptIds,
+                new List<string> { section.Id },
+                Math.Max(1, section.QuizQuestionCount),
+                ct);
+
+            section.PreGeneratedQuestions = questions;
+            Console.WriteLine($"      [{quizCount}/{totalQuizzes}] {section.Number} {section.Title} → {questions.Count} questions");
+        }
+        await courseStructureStorageService.SaveAsync(structure, ct);
 
         stopwatch.Stop();
         Console.WriteLine();

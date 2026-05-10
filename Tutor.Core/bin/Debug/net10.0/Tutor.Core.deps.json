@@ -11,9 +11,11 @@
           "AngleSharp": "1.4.0",
           "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.Extensions.Http": "10.0.5",
-          "MindAttic.Legion": "2.0.0",
+          "MindAttic.Legion": "2.2.0",
+          "MindAttic.Vault": "0.2.0",
           "PdfPig": "0.1.14",
           "SmartReader": "0.11.0",
+          "Tesseract": "5.2.0",
           "VersOne.Epub": "3.3.6"
         },
         "runtime": {
@@ -204,6 +206,36 @@
           }
         }
       },
+      "MindAttic.Legion/2.2.0": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Http": "10.0.5",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "MindAttic.Vault": "0.2.0"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Legion.dll": {
+            "assemblyVersion": "2.2.0.0",
+            "fileVersion": "2.2.0.0"
+          }
+        }
+      },
+      "MindAttic.Vault/0.2.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "10.0.5",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.5",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Options": "10.0.5"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Vault.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.0.0"
+          }
+        }
+      },
       "PdfPig/0.1.14": {
         "runtime": {
           "lib/net8.0/UglyToad.PdfPig.Core.dll": {
@@ -255,24 +287,19 @@
           }
         }
       },
+      "Tesseract/5.2.0": {
+        "runtime": {
+          "lib/netstandard2.0/Tesseract.dll": {
+            "assemblyVersion": "5.2.0.0",
+            "fileVersion": "5.2.0.0"
+          }
+        }
+      },
       "VersOne.Epub/3.3.6": {
         "runtime": {
           "lib/netstandard2.0/VersOne.Epub.dll": {
             "assemblyVersion": "3.3.6.0",
             "fileVersion": "3.3.6.0"
-          }
-        }
-      },
-      "MindAttic.Legion/2.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
-          "Microsoft.Extensions.Http": "10.0.5",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.5"
-        },
-        "runtime": {
-          "MindAttic.Legion.dll": {
-            "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.0.0.0"
           }
         }
       }
@@ -396,6 +423,20 @@
       "path": "microsoft.extensions.primitives/10.0.5",
       "hashPath": "microsoft.extensions.primitives.10.0.5.nupkg.sha512"
     },
+    "MindAttic.Legion/2.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rMNYKwCFWBbS5P4S3iqZVNLxbfG9rNLF7Pqj6x3EMENY5fb/haAfNv4L4XqVUT+bFOaJClRDmEx1reecdkYCkA==",
+      "path": "mindattic.legion/2.2.0",
+      "hashPath": "mindattic.legion.2.2.0.nupkg.sha512"
+    },
+    "MindAttic.Vault/0.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PZOWGCFTsaa6eISFpyWzH4QEvin4w4bzX+obJ4bkNEWvdXZstyFnxrz419BUm3V6mHfv/w6Ay6lF3/7HU9PJXQ==",
+      "path": "mindattic.vault/0.2.0",
+      "hashPath": "mindattic.vault.0.2.0.nupkg.sha512"
+    },
     "PdfPig/0.1.14": {
       "type": "package",
       "serviceable": true,
@@ -417,17 +458,19 @@
       "path": "system.io.packaging/10.0.2",
       "hashPath": "system.io.packaging.10.0.2.nupkg.sha512"
     },
+    "Tesseract/5.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-YB7feJlrTWSXtK8+WaCcseGSPK/1r2d2FWeKGyndlrPwYClrzTlCoHD4/oQEUjKafmpkWlhTZZ7pxiRJYZgj6w==",
+      "path": "tesseract/5.2.0",
+      "hashPath": "tesseract.5.2.0.nupkg.sha512"
+    },
     "VersOne.Epub/3.3.6": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-X7b7Zvw5lLCRYDdDjqWldkZMZ/+rIvSWHAZjRxdq0fCL8+vv4W/OBiSIL0x8fTv2mlPNWGJcL48BIyIfpw2GBg==",
       "path": "versone.epub/3.3.6",
       "hashPath": "versone.epub.3.3.6.nupkg.sha512"
-    },
-    "MindAttic.Legion/2.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
     }
   }
 }

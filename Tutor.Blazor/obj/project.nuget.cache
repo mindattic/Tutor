@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "fqBPmHLI7+I=",
+  "dgSpecHash": "SJpxwP+uR28=",
   "success": true,
   "projectFilePath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Blazor\\Tutor.Blazor.csproj",
   "expectedPackageFiles": [
@@ -8,9 +8,12 @@
     "C:\\Users\\ryand\\.nuget\\packages\\documentformat.openxml\\3.5.1\\documentformat.openxml.3.5.1.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\documentformat.openxml.framework\\3.5.1\\documentformat.openxml.framework.3.5.1.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.5\\microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\mindattic.legion\\2.2.0\\mindattic.legion.2.2.0.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\mindattic.vault\\0.2.0\\mindattic.vault.0.2.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\pdfpig\\0.1.14\\pdfpig.0.1.14.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\smartreader\\0.11.0\\smartreader.0.11.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\system.io.packaging\\10.0.2\\system.io.packaging.10.0.2.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\tesseract\\5.2.0\\tesseract.5.2.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\versone.epub\\3.3.6\\versone.epub.3.3.6.nupkg.sha512"
   ],
   "logs": []

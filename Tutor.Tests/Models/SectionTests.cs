@@ -17,6 +17,29 @@ public class SectionTests
         Assert.Equal(3, section.QuizQuestionCount);
         Assert.Equal(70, section.QuizPassingScore);
         Assert.Equal(2, section.EstimatedReadingMinutes);
+        Assert.Empty(section.PreGeneratedQuestions);
+    }
+
+    [Fact]
+    public void PreGeneratedQuestions_RoundTripsThroughJson()
+    {
+        var section = new Section
+        {
+            HasQuiz = true,
+            PreGeneratedQuestions =
+            {
+                new QuizQuestion { QuestionText = "Q1", CorrectAnswer = "A1", Difficulty = 2 },
+                new QuizQuestion { QuestionText = "Q2", CorrectAnswer = "A2", Difficulty = 1 }
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(section);
+        var restored = System.Text.Json.JsonSerializer.Deserialize<Section>(json)!;
+
+        Assert.Equal(2, restored.PreGeneratedQuestions.Count);
+        Assert.Equal("Q1", restored.PreGeneratedQuestions[0].QuestionText);
+        Assert.Equal("A1", restored.PreGeneratedQuestions[0].CorrectAnswer);
+        Assert.Equal(2, restored.PreGeneratedQuestions[0].Difficulty);
     }
 
     [Fact]

@@ -35,7 +35,13 @@ public static class BackgroundQueueService
     // Task handlers
     private static readonly ConcurrentDictionary<BackgroundTaskType, IBackgroundTaskHandler> handlers = new();
 
-    // Events for UI updates
+    // Events for UI updates. Custom accessors must lock — unlike compiler-generated
+    // field-like events, the explicit add/remove here have no implicit Interlocked
+    // protection, so concurrent subscribe/unsubscribe could otherwise tear the delegate.
+    private static readonly object eventLock = new();
+
+    // Guards mutations and iterations of state.Items (a List<T>, not thread-safe).
+    private static readonly object itemsLock = new();
     private static event Action<BackgroundQueueItem>? statusChangedEvent;
     private static event Action<BackgroundQueueItem>? taskCompletedEvent;
     private static event Action<BackgroundQueueItem, string>? taskErrorEvent;
@@ -46,8 +52,8 @@ public static class BackgroundQueueService
     /// </summary>
     public static event Action<BackgroundQueueItem>? OnStatusChanged
     {
-        add => statusChangedEvent += value;
-        remove => statusChangedEvent -= value;
+        add { lock (eventLock) statusChangedEvent += value; }
+        remove { lock (eventLock) statusChangedEvent -= value; }
     }
 
     /// <summary>
@@ -55,8 +61,8 @@ public static class BackgroundQueueService
     /// </summary>
     public static event Action<BackgroundQueueItem>? OnTaskCompleted
     {
-        add => taskCompletedEvent += value;
-        remove => taskCompletedEvent -= value;
+        add { lock (eventLock) taskCompletedEvent += value; }
+        remove { lock (eventLock) taskCompletedEvent -= value; }
     }
 
     /// <summary>
@@ -64,8 +70,8 @@ public static class BackgroundQueueService
     /// </summary>
     public static event Action<BackgroundQueueItem, string>? OnTaskError
     {
-        add => taskErrorEvent += value;
-        remove => taskErrorEvent -= value;
+        add { lock (eventLock) taskErrorEvent += value; }
+        remove { lock (eventLock) taskErrorEvent -= value; }
     }
 
     /// <summary>
@@ -73,8 +79,8 @@ public static class BackgroundQueueService
     /// </summary>
     public static event Action<int>? OnQueueCountChanged
     {
-        add => queueCountChangedEvent += value;
-        remove => queueCountChangedEvent -= value;
+        add { lock (eventLock) queueCountChangedEvent += value; }
+        remove { lock (eventLock) queueCountChangedEvent -= value; }
     }
 
     /// <summary>
@@ -180,7 +186,7 @@ public static class BackgroundQueueService
         item.CreatedAt = DateTime.UtcNow;
         item.UpdatedAt = DateTime.UtcNow;
 
-        state.Items.Add(item);
+        lock (itemsLock) state.Items.Add(item);
         itemLookup[item.Id] = item;
 
         // Signal the processing loop
@@ -300,7 +306,7 @@ public static class BackgroundQueueService
     /// </summary>
     public static IReadOnlyList<BackgroundQueueItem> GetAllTasks()
     {
-        return state.Items.OrderByDescending(i => i.CreatedAt).ToList();
+        lock (itemsLock) return state.Items.OrderByDescending(i => i.CreatedAt).ToList();
     }
 
     /// <summary>
@@ -390,14 +396,17 @@ public static class BackgroundQueueService
     /// </summary>
     public static void ClearHistory()
     {
-        state.Items.RemoveAll(i => i.Status == BackgroundTaskStatus.Completed || 
-                                   i.Status == BackgroundTaskStatus.Cancelled);
-        
-        // Rebuild lookup
-        itemLookup.Clear();
-        foreach (var item in state.Items)
+        lock (itemsLock)
         {
-            itemLookup[item.Id] = item;
+            state.Items.RemoveAll(i => i.Status == BackgroundTaskStatus.Completed ||
+                                       i.Status == BackgroundTaskStatus.Cancelled);
+
+            // Rebuild lookup
+            itemLookup.Clear();
+            foreach (var item in state.Items)
+            {
+                itemLookup[item.Id] = item;
+            }
         }
 
         NotifyQueueCountChanged();

@@ -70,6 +70,7 @@ builder.Services.AddSingleton<GeminiService>();
 
 // LLM router - routes to the user's selected provider
 builder.Services.AddSingleton<LlmServiceRouter>();
+builder.Services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
 
 // Embedding service for RAG — wire transport delegated to LegionClient.
 builder.Services.AddSingleton<EmbeddingService>();
@@ -187,6 +188,7 @@ builder.Services.AddSingleton<INewsController>(sp =>
 builder.Services.AddSingleton<NewsService>();
 
 // Quiz services
+builder.Services.AddSingleton<QuizGenerationService>();
 builder.Services.AddSingleton<IQuizController, LocalQuizController>();
 builder.Services.AddSingleton<QuizService>();
 

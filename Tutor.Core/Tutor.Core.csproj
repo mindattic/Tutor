@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="MindAttic.Legion" Version="2.2.0" />
         <PackageReference Include="MindAttic.Vault" Version="0.2.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
 
@@ -21,6 +22,11 @@
         <PackageReference Include="SmartReader" Version="0.11.0" />
         <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
 
+        <!-- OCR fallback for image-only / scanned PDFs. Tesseract wraps the
+             native libtesseract; PdfBookParser feeds it page images extracted
+             via PdfPig. eng.traineddata is fetched at build time below. -->
+        <PackageReference Include="Tesseract" Version="5.2.0" />
+
         <!-- Phase B: .doc / .rtf / .odt all shell out to LibreOffice's headless
              converter. NPOI 2.8 stopped shipping HWPF for legacy .doc, so it
              can't help us here. .mobi/.azw/.azw3 shell out to Calibre's
@@ -28,8 +34,30 @@
 
     </ItemGroup>
 
+    <!-- Tesseract English language data. The Tesseract NuGet ships native libs
+         but not traineddata, so we fetch eng.traineddata from the tessdata_fast
+         repo into Tutor.Core/tessdata/ on first build. The downloaded file is
+         copied alongside the assembly so the OCR service finds it via
+         AppContext.BaseDirectory at runtime. -->
+    <Target Name="DownloadTessdata" BeforeTargets="BeforeBuild">
+        <PropertyGroup>
+            <TessdataDir>$(MSBuildThisFileDirectory)tessdata</TessdataDir>
+            <TessdataFile>$(TessdataDir)\eng.traineddata</TessdataFile>
+            <TessdataUrl>https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata</TessdataUrl>
+        </PropertyGroup>
+        <MakeDir Directories="$(TessdataDir)" Condition="!Exists('$(TessdataDir)')" />
+        <DownloadFile
+            SourceUrl="$(TessdataUrl)"
+            DestinationFolder="$(TessdataDir)"
+            Condition="!Exists('$(TessdataFile)')"
+            SkipUnchangedFiles="true" />
+    </Target>
+
     <ItemGroup>
-        <ProjectReference Include="..\..\MindAttic.Legion\MindAttic.Legion\MindAttic.Legion.csproj" />
+        <Content Include="tessdata\eng.traineddata" Condition="Exists('tessdata\eng.traineddata')">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>tessdata\eng.traineddata</Link>
+        </Content>
     </ItemGroup>
 
 </Project>

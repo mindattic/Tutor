@@ -52,9 +52,15 @@ public class Section
     
     /// <summary>Whether this section has a quiz</summary>
     public bool HasQuiz { get; set; }
-    
+
     /// <summary>Number of quiz questions for this section (if HasQuiz)</summary>
     public int QuizQuestionCount { get; set; } = 3;
+
+    /// <summary>
+    /// Quiz questions pre-generated at import time and bundled with the course.
+    /// When non-empty, runtime quiz starts use these directly and skip the LLM.
+    /// </summary>
+    public List<QuizQuestion> PreGeneratedQuestions { get; set; } = [];
     
     /// <summary>Minimum passing score percentage for the section quiz</summary>
     public int QuizPassingScore { get; set; } = 70;

@@ -15,8 +15,21 @@ namespace Tutor.Core.Services;
 /// </summary>
 public sealed class ConceptMapStorageService
 {
-    // In-memory cache of loaded concept maps (keyed by ConceptMap ID)
+    // In-memory cache of loaded concept maps (keyed by ConceptMap ID).
+    // Soft-bounded: drops the oldest-by-UpdatedAt once the cap is exceeded so a
+    // long-running session with many maps doesn't grow memory unboundedly.
+    private const int CacheCapacity = 64;
     private readonly Dictionary<string, ConceptMap> cache = [];
+
+    private void StoreInCache(ConceptMap map)
+    {
+        cache[map.Id] = map;
+        if (cache.Count <= CacheCapacity) return;
+
+        // Evict the least-recently-updated entry. Linear scan is fine at this size.
+        var oldest = cache.Values.OrderBy(m => m.UpdatedAt).First();
+        cache.Remove(oldest.Id);
+    }
 
     /// <summary>
     /// Event fired when a concept map is saved.
@@ -67,20 +80,24 @@ public sealed class ConceptMapStorageService
 
         try
         {
-            // Write to temp file first, then move (atomic operation)
+            // Write to temp file first, then atomically swap. File.Replace performs
+            // the rename + backup as a single atomic operation; the previous two-step
+            // File.Move sequence had a crash window that could leave no main file.
             var tempPath = filePath + ".tmp";
             await File.WriteAllTextAsync(tempPath, json, ct);
-            
-            // Replace existing file atomically
+
             if (File.Exists(filePath))
             {
                 var backupPath = filePath + ".bak";
-                File.Move(filePath, backupPath, overwrite: true);
+                File.Replace(tempPath, filePath, backupPath);
             }
-            File.Move(tempPath, filePath, overwrite: true);
+            else
+            {
+                File.Move(tempPath, filePath);
+            }
 
             // Update cache
-            cache[conceptMap.Id] = conceptMap;
+            StoreInCache(conceptMap);
             Log.Debug($"ConceptMapStorage: ConceptMap '{conceptMap.Name}' saved successfully ({json.Length} bytes)");
 
             // Also save a human-readable markdown export
@@ -123,7 +140,7 @@ public sealed class ConceptMapStorageService
             
             if (conceptMap != null)
             {
-                cache[conceptMap.Id] = conceptMap;
+                StoreInCache(conceptMap);
                 Log.Debug($"ConceptMapStorage: Loaded ConceptMap '{conceptMap.Name}' ({conceptMap.Concepts.Count} concepts)");
             }
             
@@ -155,7 +172,7 @@ public sealed class ConceptMapStorageService
                 
                 if (conceptMap != null)
                 {
-                    cache[conceptMap.Id] = conceptMap;
+                    StoreInCache(conceptMap);
                     result.Add(conceptMap);
                 }
             }

@@ -1,4 +1,5 @@
 using System.Text;
+using Tutor.Core.Services.Ocr;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
@@ -6,13 +7,27 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 namespace Tutor.Core.Parsers;
 
 // PDF text extraction via PdfPig. PdfPig is pure-managed and Apache 2.0 — iText
-// is more capable but AGPL, so we stay on PdfPig. Scanned-image PDFs will yield
-// little/no text — that's a documented non-goal (no OCR in scope).
+// is more capable but AGPL, so we stay on PdfPig. Pages that yield little or
+// no extractable text (scanned image-only PDFs, or hybrid books with embedded
+// scans) get OCR'd via the injected IPdfOcrService. The default DI registration
+// is TesseractPdfOcrService; tests can substitute NoOpPdfOcrService.
 public sealed class PdfBookParser : IBookParser
 {
+    // Below this character count we assume the page is image-heavy and OCR it.
+    // 50 chars catches "page 47" headers/footers without false-positiving on a
+    // page of normal body text.
+    private const int OcrThresholdChars = 50;
+
+    private readonly IPdfOcrService ocr;
+
+    public PdfBookParser(IPdfOcrService ocr)
+    {
+        this.ocr = ocr;
+    }
+
     public IReadOnlyCollection<string> SupportedExtensions { get; } = new[] { ".pdf" };
 
-    public Task<ExtractedBook> ParseAsync(Stream input, string fileName, CancellationToken ct = default)
+    public async Task<ExtractedBook> ParseAsync(Stream input, string fileName, CancellationToken ct = default)
     {
         // PdfPig requires a seekable stream. Buffer if the source isn't.
         Stream pdfStream = input.CanSeek ? input : BufferToMemory(input);
@@ -21,6 +36,8 @@ public sealed class PdfBookParser : IBookParser
         var warnings = new List<string>();
         string title = Path.GetFileNameWithoutExtension(fileName);
         string author = "";
+        var ocrPagesAttempted = 0;
+        var ocrPagesSucceeded = 0;
 
         using (var doc = PdfDocument.Open(pdfStream))
         {
@@ -59,6 +76,19 @@ public sealed class PdfBookParser : IBookParser
                     pageText = page.Text ?? "";
                 }
 
+                // Page is text-light: try OCR on each embedded image. Fall back
+                // to whatever sparse text we did get if OCR is unavailable.
+                if (pageText.Trim().Length < OcrThresholdChars && ocr.IsAvailable)
+                {
+                    ocrPagesAttempted++;
+                    var ocrText = await TryOcrPageAsync(page, ct);
+                    if (!string.IsNullOrWhiteSpace(ocrText))
+                    {
+                        ocrPagesSucceeded++;
+                        pageText = ocrText;
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(pageText))
                 {
                     sb.AppendLine(pageText);
@@ -68,18 +98,68 @@ public sealed class PdfBookParser : IBookParser
 
             if (sb.Length == 0)
             {
-                warnings.Add("No extractable text found. The PDF may be image-only (scanned) — OCR is not supported.");
+                if (!ocr.IsAvailable)
+                    warnings.Add("No extractable text found and OCR is not available. The PDF may be image-only (scanned) — install Tesseract trained data to enable OCR.");
+                else
+                    warnings.Add("No extractable text found and OCR returned nothing.");
+            }
+            else if (ocrPagesAttempted > 0)
+            {
+                warnings.Add($"OCR'd {ocrPagesSucceeded}/{ocrPagesAttempted} text-light pages.");
             }
         }
 
         if (pdfStream != input) pdfStream.Dispose();
 
-        return Task.FromResult(new ExtractedBook(
+        return new ExtractedBook(
             PlainText: sb.ToString().Trim(),
             Title: title,
             Author: author,
             SourceFormat: "pdf",
-            Warnings: warnings));
+            Warnings: warnings);
+    }
+
+    private async Task<string> TryOcrPageAsync(Page page, CancellationToken ct)
+    {
+        // PdfPig exposes embedded images via page.GetImages(). For scanned books
+        // there's typically a single full-page image; for hybrid PDFs we OCR
+        // every image and concatenate (whitespace-joined) so figure captions,
+        // diagrams, and the body text all contribute.
+        IEnumerable<IPdfImage> images;
+        try { images = page.GetImages(); }
+        catch { return ""; }
+
+        var combined = new StringBuilder();
+        foreach (var image in images)
+        {
+            ct.ThrowIfCancellationRequested();
+            byte[]? bytes = null;
+            try
+            {
+                if (image.TryGetPng(out var png) && png != null && png.Length > 0)
+                {
+                    bytes = png;
+                }
+                else
+                {
+                    // RawBytes is a Span<byte> and can't cross the await below;
+                    // copy via RawMemory before the OCR call. Tesseract's Pix
+                    // loader auto-detects JPEG/PNG/etc. via Leptonica magic bytes.
+                    var raw = image.RawMemory.ToArray();
+                    if (raw.Length > 0) bytes = raw;
+                }
+            }
+            catch { /* unsupported encoding — skip */ }
+
+            if (bytes == null || bytes.Length == 0) continue;
+
+            var text = await ocr.OcrImageAsync(bytes, ct);
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                combined.AppendLine(text);
+            }
+        }
+        return combined.ToString().Trim();
     }
 
     private static MemoryStream BufferToMemory(Stream s)

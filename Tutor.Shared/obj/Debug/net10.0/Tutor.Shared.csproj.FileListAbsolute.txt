@@ -106,7 +106,10 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\refint\Tutor.Shared.d
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\Tutor.Shared.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\ref\Tutor.Shared.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\p763vx3a23-{0}-2dx2jjw8nt-2dx2jjw8nt.gz
-D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Legion.dll
-D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Legion.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\xzxf7nmlsl-{0}-zrug4mmda1-zrug4mmda1.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5k4epl2nsf-{0}-7zwmjiqlpi-7zwmjiqlpi.gz
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\tessdata\eng.traineddata
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x86\leptonica-1.82.0.dll
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x86\tesseract50.dll
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x64\leptonica-1.82.0.dll
+D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x64\tesseract50.dll

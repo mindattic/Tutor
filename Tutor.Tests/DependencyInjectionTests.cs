@@ -43,8 +43,10 @@ public class DependencyInjectionTests
         services.AddSingleton<GeminiService>();
         services.AddSingleton<EmbeddingService>();
 
-        // LLM router
+        // LLM router (register both the concrete type and the ILlmService alias
+        // that QuizGenerationService and other interface-typed consumers expect)
         services.AddSingleton<LlmServiceRouter>();
+        services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
 
         // Core services (same registration order as MauiProgram)
         services.AddSingleton<ContentFormatterService>();
@@ -96,6 +98,7 @@ public class DependencyInjectionTests
         services.AddSingleton<NewsService>();
 
         // Quiz
+        services.AddSingleton<QuizGenerationService>();
         services.AddSingleton<IQuizController, LocalQuizController>();
         services.AddSingleton<QuizService>();
 

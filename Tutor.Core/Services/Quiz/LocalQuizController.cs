@@ -5,8 +5,10 @@ using Tutor.Core.Services.Abstractions;
 namespace Tutor.Core.Services;
 
 /// <summary>
-/// Local quiz controller that uses OpenAI to generate questions
-/// and evaluates answers.
+/// Local quiz controller. Picks pre-generated questions off the course structure
+/// when available (the import pipeline bakes them in), and falls back to live
+/// LLM generation via <see cref="QuizGenerationService"/> otherwise. Evaluates
+/// student answers via the LLM router.
 /// </summary>
 public class LocalQuizController : IQuizController
 {
@@ -14,6 +16,8 @@ public class LocalQuizController : IQuizController
     private readonly LlmServiceRouter openAI;
     private readonly CourseService courseService;
     private readonly ConceptMapStorageService conceptMapStorage;
+    private readonly CourseStructureStorageService structureStorage;
+    private readonly QuizGenerationService quizGenerator;
     private readonly string quizResultsPath;
     private readonly SemaphoreSlim fileLock = new(1, 1);
 
@@ -26,11 +30,15 @@ public class LocalQuizController : IQuizController
         LlmServiceRouter openAI,
         CourseService courseService,
         ConceptMapStorageService conceptMapStorage,
+        CourseStructureStorageService structureStorage,
+        QuizGenerationService quizGenerator,
         IAppDataPathProvider pathProvider)
     {
         this.openAI = openAI;
         this.courseService = courseService;
         this.conceptMapStorage = conceptMapStorage;
+        this.structureStorage = structureStorage;
+        this.quizGenerator = quizGenerator;
         this.pathProvider = pathProvider;
 
         var appDataPath = pathProvider.AppDataDirectory;
@@ -59,88 +67,41 @@ public class LocalQuizController : IQuizController
         List<string> conceptIds,
         int questionCount = 5)
     {
-        var questions = new List<QuizQuestion>();
-        
-        // Get concept details for context
         var course = await courseService.GetCourseAsync(courseId);
         if (course == null || string.IsNullOrEmpty(course.ConceptMapCollectionId))
-            return questions;
+            return new();
 
-        var conceptMap = await conceptMapStorage.LoadAsync(course.ConceptMapCollectionId);
-        if (conceptMap == null)
-            return questions;
+        // Pre-generated questions live on the section. The import pipeline bakes
+        // them in for every section with HasQuiz=true, and they ride along in the
+        // .tutorcourse bundle, so re-imports never have to spend LLM tokens.
+        var preGenerated = await TryLoadPreGeneratedAsync(course, sectionIds, questionCount);
+        if (preGenerated.Count > 0)
+            return preGenerated;
 
-        var relevantConcepts = conceptMap.Concepts
-            .Where(c => conceptIds.Contains(c.Id))
-            .ToList();
+        return await quizGenerator.GenerateAsync(
+            course.ConceptMapCollectionId, conceptIds, sectionIds, questionCount);
+    }
 
-        if (relevantConcepts.Count == 0)
-            return questions;
+    private async Task<List<QuizQuestion>> TryLoadPreGeneratedAsync(
+        Course course, List<string> sectionIds, int questionCount)
+    {
+        if (sectionIds.Count == 0 || string.IsNullOrEmpty(course.CourseStructureId))
+            return new();
 
-        // Build context for question generation
-        var conceptContext = string.Join("\n\n", relevantConcepts.Select(c => 
-            $"**{c.Title}**\n{c.Summary}\n{c.Content}"));
+        var structure = await structureStorage.LoadByCourseIdAsync(course.Id);
+        if (structure == null) return new();
 
-        var prompt = $@"Generate {questionCount} quiz questions based on the following learning material.
-
-LEARNING MATERIAL:
-{conceptContext}
-
-
-INSTRUCTIONS:
-- Create short-answer questions that test understanding of key concepts
-- Questions should require 1-3 sentence answers
-- Include a mix of recall, understanding, and application questions
-- Make questions specific and unambiguous
-- Provide the correct answer for each question
-
-OUTPUT FORMAT (JSON array):
-[
-  {{
-    ""questionText"": ""What is..."",
-    ""correctAnswer"": ""The answer is..."",
-    ""explanation"": ""This is correct because..."",
-    ""difficulty"": 1
-  }}
-]
-
-Generate exactly {questionCount} questions:";
-
-        try
+        var hits = new List<QuizQuestion>();
+        foreach (var sid in sectionIds)
         {
-            var response = await GetAiResponseAsync(prompt, 
-                "You are a quiz generator. Generate questions in valid JSON format only.");
-
-            // Parse the response
-            var jsonStart = response.IndexOf('[');
-            var jsonEnd = response.LastIndexOf(']');
-            if (jsonStart >= 0 && jsonEnd > jsonStart)
-            {
-                var json = response.Substring(jsonStart, jsonEnd - jsonStart + 1);
-                var parsedQuestions = JsonSerializer.Deserialize<List<QuizQuestionDto>>(json);
-                
-                if (parsedQuestions != null)
-                {
-                    questions = parsedQuestions.Select((q, i) => new QuizQuestion
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        QuestionText = q.QuestionText ?? "",
-                        CorrectAnswer = q.CorrectAnswer ?? "",
-                        Explanation = q.Explanation,
-                        Difficulty = q.Difficulty,
-                        Points = q.Difficulty,
-                        RelatedSectionIds = sectionIds,
-                        RelatedConceptIds = conceptIds
-                    }).ToList();
-                }
-            }
-        }
-        catch
-        {
-            // Return empty list on error
+            var section = structure.FindSection(sid);
+            if (section == null || section.PreGeneratedQuestions.Count == 0) continue;
+            hits.AddRange(section.PreGeneratedQuestions);
         }
 
-        return questions;
+        // Deterministic order, then trim to the requested count. Fewer is fine —
+        // the quiz UI handles short sets — but never return more than asked.
+        return hits.Take(questionCount).ToList();
     }
 
     public async Task<(bool isCorrect, string? feedback)> EvaluateAnswerAsync(
@@ -241,14 +202,6 @@ Respond with a JSON object:
     private string GetUserQuizResultsPath(string userId)
     {
         return Path.Combine(quizResultsPath, $"QuizResults-{userId}.json");
-    }
-
-    private class QuizQuestionDto
-    {
-        public string? QuestionText { get; set; }
-        public string? CorrectAnswer { get; set; }
-        public string? Explanation { get; set; }
-        public int Difficulty { get; set; } = 1;
     }
 
     private class EvaluationResult

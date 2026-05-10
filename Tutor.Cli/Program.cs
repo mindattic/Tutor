@@ -9,6 +9,7 @@ using Tutor.Core.Parsers;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
+using Tutor.Core.Services.Ocr;
 
 // Forward Tutor.Core's Log.* output to stderr so the CLI shows progress and
 // failures live. Trace is gated by the --verbose flag below.
@@ -52,6 +53,7 @@ services.AddSingleton<ClaudeService>();
 services.AddSingleton<DeepSeekService>();
 services.AddSingleton<GeminiService>();
 services.AddSingleton<LlmServiceRouter>();
+services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
 
 // Pipeline services — must mirror Blazor wiring so the CLI produces courses
 // that the Blazor UI can read without translation.
@@ -79,6 +81,13 @@ services.AddSingleton<CourseConceptMapService>();
 services.AddSingleton<SectionContentService>();
 services.AddSingleton<CourseStructureService>();
 services.AddSingleton<UserProgressService>();
+services.AddSingleton<QuizGenerationService>();
+
+// OCR for scanned PDFs. Tesseract loads tessdata/eng.traineddata next to the
+// assembly (the Tutor.Core build target downloads it on first build) and goes
+// silent if it can't find native libs or trained data — so a CLI run never
+// crashes on a missing dependency, it just falls back to text-only extraction.
+services.AddSingleton<IPdfOcrService, TesseractPdfOcrService>();
 
 // Book parsers. ParserRegistry picks them up via IEnumerable<IBookParser>.
 // Phase A — pure-managed (NuGet-based):

@@ -459,6 +459,36 @@
           }
         }
       },
+      "MindAttic.Legion/2.2.0": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Http": "10.0.5",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "MindAttic.Vault": "0.2.0"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Legion.dll": {
+            "assemblyVersion": "2.2.0.0",
+            "fileVersion": "2.2.0.0"
+          }
+        }
+      },
+      "MindAttic.Vault/0.2.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "10.0.5",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.5",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Options": "10.0.5"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Vault.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.0.0"
+          }
+        }
+      },
       "Newtonsoft.Json/13.0.3": {
         "runtime": {
           "lib/net6.0/Newtonsoft.Json.dll": {
@@ -515,6 +545,14 @@
           "lib/net10.0/System.IO.Packaging.dll": {
             "assemblyVersion": "10.0.0.0",
             "fileVersion": "10.0.225.61305"
+          }
+        }
+      },
+      "Tesseract/5.2.0": {
+        "runtime": {
+          "lib/netstandard2.0/Tesseract.dll": {
+            "assemblyVersion": "5.2.0.0",
+            "fileVersion": "5.2.0.0"
           }
         }
       },
@@ -576,27 +614,16 @@
           }
         }
       },
-      "MindAttic.Legion/2.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
-          "Microsoft.Extensions.Http": "10.0.5",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.5"
-        },
-        "runtime": {
-          "MindAttic.Legion.dll": {
-            "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.0.0.0"
-          }
-        }
-      },
       "Tutor.Core/1.0.0": {
         "dependencies": {
           "AngleSharp": "1.4.0",
           "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.Extensions.Http": "10.0.5",
-          "MindAttic.Legion": "2.0.0",
+          "MindAttic.Legion": "2.2.0",
+          "MindAttic.Vault": "0.2.0",
           "PdfPig": "0.1.14",
           "SmartReader": "0.11.0",
+          "Tesseract": "5.2.0",
           "VersOne.Epub": "3.3.6"
         },
         "runtime": {
@@ -754,6 +781,20 @@
       "path": "microsoft.testplatform.testhost/17.14.1",
       "hashPath": "microsoft.testplatform.testhost.17.14.1.nupkg.sha512"
     },
+    "MindAttic.Legion/2.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rMNYKwCFWBbS5P4S3iqZVNLxbfG9rNLF7Pqj6x3EMENY5fb/haAfNv4L4XqVUT+bFOaJClRDmEx1reecdkYCkA==",
+      "path": "mindattic.legion/2.2.0",
+      "hashPath": "mindattic.legion.2.2.0.nupkg.sha512"
+    },
+    "MindAttic.Vault/0.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PZOWGCFTsaa6eISFpyWzH4QEvin4w4bzX+obJ4bkNEWvdXZstyFnxrz419BUm3V6mHfv/w6Ay6lF3/7HU9PJXQ==",
+      "path": "mindattic.vault/0.2.0",
+      "hashPath": "mindattic.vault.0.2.0.nupkg.sha512"
+    },
     "Newtonsoft.Json/13.0.3": {
       "type": "package",
       "serviceable": true,
@@ -781,6 +822,13 @@
       "sha512": "sha512-JTpM4z0wpoIHHDvlCU27HsXo+zVnpWib94HXQpzzr+jc/P9NYf4w353AK4MXyGq/grm1mbLi7eXsOsDU8sGmNg==",
       "path": "system.io.packaging/10.0.2",
       "hashPath": "system.io.packaging.10.0.2.nupkg.sha512"
+    },
+    "Tesseract/5.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-YB7feJlrTWSXtK8+WaCcseGSPK/1r2d2FWeKGyndlrPwYClrzTlCoHD4/oQEUjKafmpkWlhTZZ7pxiRJYZgj6w==",
+      "path": "tesseract/5.2.0",
+      "hashPath": "tesseract.5.2.0.nupkg.sha512"
     },
     "VersOne.Epub/3.3.6": {
       "type": "package",
@@ -830,11 +878,6 @@
       "sha512": "sha512-yMb6vMESlSrE3Wfj7V6cjQ3S4TXdXpRqYeNEI3zsX31uTsGMJjEw6oD5F5u1cHnMptjhEECnmZSsPxB6ChZHDQ==",
       "path": "xunit.extensibility.execution/2.9.3",
       "hashPath": "xunit.extensibility.execution.2.9.3.nupkg.sha512"
-    },
-    "MindAttic.Legion/2.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
     },
     "Tutor.Core/1.0.0": {
       "type": "project",

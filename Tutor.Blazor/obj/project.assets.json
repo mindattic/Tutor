@@ -57,6 +57,27 @@
           "buildMultiTargeting/Microsoft.AspNetCore.App.Internal.Assets.targets": {}
         }
       },
+      "MindAttic.Legion/2.2.0": {
+        "type": "package",
+        "dependencies": {
+          "MindAttic.Vault": "0.2.0"
+        },
+        "compile": {
+          "lib/net10.0/MindAttic.Legion.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Legion.dll": {}
+        }
+      },
+      "MindAttic.Vault/0.2.0": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/MindAttic.Vault.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Vault.dll": {}
+        }
+      },
       "PdfPig/0.1.14": {
         "type": "package",
         "compile": {
@@ -138,6 +159,22 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
+      "Tesseract/5.2.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Tesseract.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Tesseract.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
       "VersOne.Epub/3.3.6": {
         "type": "package",
         "compile": {
@@ -151,25 +188,17 @@
           }
         }
       },
-      "MindAttic.Legion/2.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v10.0",
-        "compile": {
-          "bin/placeholder/MindAttic.Legion.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/MindAttic.Legion.dll": {}
-        }
-      },
       "Tutor.Core/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
         "dependencies": {
           "AngleSharp": "1.4.0",
           "DocumentFormat.OpenXml": "3.5.1",
-          "MindAttic.Legion": "2.0.0",
+          "MindAttic.Legion": "2.2.0",
+          "MindAttic.Vault": "0.2.0",
           "PdfPig": "0.1.14",
           "SmartReader": "0.11.0",
+          "Tesseract": "5.2.0",
           "VersOne.Epub": "3.3.6"
         },
         "compile": {
@@ -291,6 +320,33 @@
         "buildTransitive/Microsoft.AspNetCore.App.Internal.Assets.targets",
         "microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512",
         "microsoft.aspnetcore.app.internal.assets.nuspec"
+      ]
+    },
+    "MindAttic.Legion/2.2.0": {
+      "sha512": "rMNYKwCFWBbS5P4S3iqZVNLxbfG9rNLF7Pqj6x3EMENY5fb/haAfNv4L4XqVUT+bFOaJClRDmEx1reecdkYCkA==",
+      "type": "package",
+      "path": "mindattic.legion/2.2.0",
+      "files": [
+        ".nupkg.metadata",
+        "LICENSE",
+        "README.md",
+        "lib/net10.0/MindAttic.Legion.dll",
+        "mindattic.legion.2.2.0.nupkg.sha512",
+        "mindattic.legion.nuspec"
+      ]
+    },
+    "MindAttic.Vault/0.2.0": {
+      "sha512": "PZOWGCFTsaa6eISFpyWzH4QEvin4w4bzX+obJ4bkNEWvdXZstyFnxrz419BUm3V6mHfv/w6Ay6lF3/7HU9PJXQ==",
+      "type": "package",
+      "path": "mindattic.vault/0.2.0",
+      "files": [
+        ".nupkg.metadata",
+        "LICENSE",
+        "README.md",
+        "lib/net10.0/MindAttic.Vault.dll",
+        "lib/net9.0/MindAttic.Vault.dll",
+        "mindattic.vault.0.2.0.nupkg.sha512",
+        "mindattic.vault.nuspec"
       ]
     },
     "PdfPig/0.1.14": {
@@ -456,6 +512,26 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "Tesseract/5.2.0": {
+      "sha512": "YB7feJlrTWSXtK8+WaCcseGSPK/1r2d2FWeKGyndlrPwYClrzTlCoHD4/oQEUjKafmpkWlhTZZ7pxiRJYZgj6w==",
+      "type": "package",
+      "path": "tesseract/5.2.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/Tesseract.targets",
+        "lib/net47/Tesseract.dll",
+        "lib/net48/Tesseract.dll",
+        "lib/netstandard2.0/Tesseract.dll",
+        "lib/netstandard2.0/Tesseract.xml",
+        "tesseract.5.2.0.nupkg.sha512",
+        "tesseract.nuspec",
+        "x64/leptonica-1.82.0.dll",
+        "x64/tesseract50.dll",
+        "x86/leptonica-1.82.0.dll",
+        "x86/tesseract50.dll"
+      ]
+    },
     "VersOne.Epub/3.3.6": {
       "sha512": "X7b7Zvw5lLCRYDdDjqWldkZMZ/+rIvSWHAZjRxdq0fCL8+vv4W/OBiSIL0x8fTv2mlPNWGJcL48BIyIfpw2GBg==",
       "type": "package",
@@ -472,11 +548,6 @@
         "versone.epub.3.3.6.nupkg.sha512",
         "versone.epub.nuspec"
       ]
-    },
-    "MindAttic.Legion/2.0.0": {
-      "type": "project",
-      "path": "../../MindAttic.Legion/MindAttic.Legion/MindAttic.Legion.csproj",
-      "msbuildProject": "../../MindAttic.Legion/MindAttic.Legion/MindAttic.Legion.csproj"
     },
     "Tutor.Core/1.0.0": {
       "type": "project",
@@ -513,6 +584,7 @@
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
+        "D:\\Projects\\MindAttic\\Tutor\\NuGet.Config",
         "C:\\Users\\ryand\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
@@ -521,6 +593,7 @@
         "net10.0"
       ],
       "sources": {
+        "C:\\LocalNuGet": {},
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
