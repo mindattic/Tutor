@@ -1,4 +1,6 @@
 using MindAttic.Legion;
+using MindAttic.Vault.Configuration;
+using MindAttic.Vault.DependencyInjection;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
@@ -8,13 +10,29 @@ using Tutor.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cloud-native configuration chain. Layered so existing dev workflows keep working:
+//   AddJsonFile (already added by WebApplicationBuilder for appsettings.json).
+//   AddMindAtticVaultFiles surfaces %APPDATA%\MindAttic\LLM\providers.json on dev machines.
+//   AddUserSecrets<Program> reads this project's User Secrets, pinned to the shared
+//     family id (mindattic-vault-shared) so any MindAttic app sharing that id sees
+//     the same dev secrets.
+//   AddEnvironmentVariables (already present) picks up App Service Application Settings
+//     and Azure Key Vault references in production.
+builder.Configuration
+    .AddMindAtticVaultFiles()
+    .AddUserSecrets<Program>(optional: true);
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Shared cross-MindAttic LLM credential store (%APPDATA%/MindAttic/LLM/).
-// First stop for every LLM API key — a rotation here propagates to every
-// MindAttic app that reads from the same folder.
+// Tutor's local Tutor.Core.Services.LlmCredentialStore is the existing per-app
+// credential reader. MindAttic.Vault adds a cloud-native overlay alongside it —
+// future code can inject MindAttic.Vault.Credentials.LlmCredentialResolver to
+// read from IConfiguration first. The Tutor-local store is left in place so
+// existing services keep compiling without churn; it can be retired in a
+// follow-up cleanup PR.
 builder.Services.AddSingleton<LlmCredentialStore>();
+builder.Services.AddMindAtticVault(builder.Configuration);
 
 // MindAttic.Legion — universal LLM-call client. Owns endpoints, auth headers,
 // retry/backoff, and circuit breaker for every supported provider. Tutor's
