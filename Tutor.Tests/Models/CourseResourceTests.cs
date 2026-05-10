@@ -4,20 +4,20 @@ namespace Tutor.Tests.Models;
 
 public class CourseResourceTests
 {
-    [Fact]
+    [Test]
     public void Defaults_AreSensible()
     {
         var r = new CourseResource();
 
-        Assert.True(Guid.TryParse(r.Id, out _));
-        Assert.Equal(ResourceType.Text, r.Type);
-        Assert.False(r.IsProcessed);
-        Assert.False(r.HasConceptMap);
-        Assert.Equal(ConceptMapStatus.NotStarted, r.ConceptMapStatus);
-        Assert.Null(r.FormattedContent);
+        Assert.That(Guid.TryParse(r.Id, out _), Is.True);
+        Assert.That(r.Type, Is.EqualTo(ResourceType.Text));
+        Assert.That(r.IsProcessed, Is.False);
+        Assert.That(r.HasConceptMap, Is.False);
+        Assert.That(r.ConceptMapStatus, Is.EqualTo(ConceptMapStatus.NotStarted));
+        Assert.That(r.FormattedContent, Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void GetEffectiveContent_PrefersFormatted()
     {
         var r = new CourseResource
@@ -26,17 +26,17 @@ public class CourseResourceTests
             FormattedContent = "formatted"
         };
 
-        Assert.Equal("formatted", r.GetEffectiveContent());
+        Assert.That(r.GetEffectiveContent(), Is.EqualTo("formatted"));
     }
 
-    [Fact]
+    [Test]
     public void GetEffectiveContent_FallsBackToRaw()
     {
         var r = new CourseResource { Content = "raw" };
-        Assert.Equal("raw", r.GetEffectiveContent());
+        Assert.That(r.GetEffectiveContent(), Is.EqualTo("raw"));
     }
 
-    [Fact]
+    [Test]
     public void HasConceptMap_RequiresIdAndReadyStatus()
     {
         var r = new CourseResource
@@ -44,40 +44,40 @@ public class CourseResourceTests
             ConceptMapId = "cm-1",
             ConceptMapStatus = ConceptMapStatus.ExtractingConcepts
         };
-        Assert.False(r.HasConceptMap);
+        Assert.That(r.HasConceptMap, Is.False);
 
         r.ConceptMapStatus = ConceptMapStatus.Ready;
-        Assert.True(r.HasConceptMap);
+        Assert.That(r.HasConceptMap, Is.True);
 
         r.ConceptMapId = null;
-        Assert.False(r.HasConceptMap);
+        Assert.That(r.HasConceptMap, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void GetEffectiveMaxIterations_OverrideTakesPrecedence()
     {
         var r = new CourseResource { OrphanLinkingMaxIterations = 5 };
-        Assert.Equal(5, r.GetEffectiveMaxIterations(globalDefault: 10));
+        Assert.That(r.GetEffectiveMaxIterations(globalDefault: 10), Is.EqualTo(5));
     }
 
-    [Fact]
+    [Test]
     public void GetEffectiveMaxIterations_FallsBackToGlobal()
     {
         var r = new CourseResource { OrphanLinkingMaxIterations = null };
-        Assert.Equal(10, r.GetEffectiveMaxIterations(globalDefault: 10));
+        Assert.That(r.GetEffectiveMaxIterations(globalDefault: 10), Is.EqualTo(10));
     }
 
-    [Fact]
+    [Test]
     public void GetEffectiveMinConfidence_OverrideTakesPrecedence()
     {
         var r = new CourseResource { OrphanLinkingMinConfidence = 0.42f };
-        Assert.Equal(0.42f, r.GetEffectiveMinConfidence(globalDefault: 0.7f));
+        Assert.That(r.GetEffectiveMinConfidence(globalDefault: 0.7f), Is.EqualTo(0.42f));
     }
 
-    [Fact]
+    [Test]
     public void GetEffectiveMinConfidence_FallsBackToGlobal()
     {
         var r = new CourseResource { OrphanLinkingMinConfidence = null };
-        Assert.Equal(0.7f, r.GetEffectiveMinConfidence(globalDefault: 0.7f));
+        Assert.That(r.GetEffectiveMinConfidence(globalDefault: 0.7f), Is.EqualTo(0.7f));
     }
 }

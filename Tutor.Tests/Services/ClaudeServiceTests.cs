@@ -11,14 +11,15 @@ namespace Tutor.Tests.Services;
 /// and not exercised here. The shared Legion credential store is sandboxed so
 /// IsConfiguredAsync can't accidentally pick up a real machine-local key.
 /// </summary>
-public class ClaudeServiceTests : IDisposable
+public class ClaudeServiceTests
 {
-    private readonly string sandbox;
-    private readonly string? prevCredsEnv;
-    private readonly ServiceProvider sp;
-    private readonly LegionClient legion;
+    private string sandbox = string.Empty;
+    private string? prevCredsEnv;
+    private ServiceProvider sp = null!;
+    private LegionClient legion = null!;
 
-    public ClaudeServiceTests()
+    [SetUp]
+    public void SetUp()
     {
         sandbox = Path.Combine(Path.GetTempPath(), "tutor-claude-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(sandbox);
@@ -31,37 +32,38 @@ public class ClaudeServiceTests : IDisposable
         legion = sp.GetRequiredService<LegionClient>();
     }
 
-    public void Dispose()
+    [TearDown]
+    public void TearDown()
     {
         sp.Dispose();
         Environment.SetEnvironmentVariable("MINDATTIC_LLM_CREDENTIALS", prevCredsEnv);
         try { Directory.Delete(sandbox, recursive: true); } catch { }
     }
 
-    [Fact]
+    [Test]
     public void ProviderName_IsClaude()
     {
         var prefs = new FakeSecurePreferences();
         var svc = new ClaudeService(legion, prefs);
-        Assert.Equal("Claude", svc.ProviderName);
+        Assert.That(svc.ProviderName, Is.EqualTo("Claude"));
     }
 
-    [Fact]
+    [Test]
     public async Task IsConfiguredAsync_NoKey_False()
     {
         var prefs = new FakeSecurePreferences();
         var svc = new ClaudeService(legion, prefs);
-        Assert.False(await svc.IsConfiguredAsync());
+        Assert.That(await svc.IsConfiguredAsync(), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task IsConfiguredAsync_PrefsKey_True()
     {
         var prefs = new FakeSecurePreferences();
         await prefs.SetAsync("CLAUDE_API_KEY", "sk-ant-test");
         var svc = new ClaudeService(legion, prefs);
 
-        Assert.True(await svc.IsConfiguredAsync());
+        Assert.That(await svc.IsConfiguredAsync(), Is.True);
     }
 
 }

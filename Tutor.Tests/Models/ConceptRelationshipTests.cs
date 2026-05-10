@@ -4,7 +4,7 @@ namespace Tutor.Tests.Models;
 
 public class ConceptRelationshipTests
 {
-    [Fact]
+    [Test]
     public void ComputeCombinedScore_DefaultWeights()
     {
         var rel = new ConceptRelationship
@@ -16,11 +16,11 @@ public class ConceptRelationshipTests
         };
 
         var score = rel.ComputeCombinedScore();
-        Assert.InRange(score, 0f, 1f);
-        Assert.True(score > 0.5f, "High similarity should yield high score");
+        Assert.That(score, Is.InRange(0f, 1f));
+        Assert.That(score > 0.5f, Is.True, "High similarity should yield high score");
     }
 
-    [Fact]
+    [Test]
     public void ComputeCombinedScore_ZeroInputs_ReturnsZeroish()
     {
         var rel = new ConceptRelationship
@@ -32,10 +32,10 @@ public class ConceptRelationshipTests
         };
 
         var score = rel.ComputeCombinedScore();
-        Assert.InRange(score, 0f, 0.15f);
+        Assert.That(score, Is.InRange(0f, 0.15f));
     }
 
-    [Fact]
+    [Test]
     public void ComputeCombinedScore_CustomWeights()
     {
         var rel = new ConceptRelationship
@@ -50,46 +50,45 @@ public class ConceptRelationshipTests
         var scoreDistanceHeavy = rel.ComputeCombinedScore(semanticWeight: 0.1f, distanceWeight: 0.8f, coOccurrenceWeight: 0.1f);
 
         // Both should be high since all inputs are maximal
-        Assert.True(scoreSemanticHeavy > 0.8f);
-        Assert.True(scoreDistanceHeavy > 0.8f);
+        Assert.That(scoreSemanticHeavy > 0.8f, Is.True);
+        Assert.That(scoreDistanceHeavy > 0.8f, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void DefaultRelationType_IsPrerequisite()
     {
         var rel = new ConceptRelationship();
-        Assert.Equal(ConceptRelationType.Prerequisite, rel.RelationType);
+        Assert.That(rel.RelationType, Is.EqualTo(ConceptRelationType.Prerequisite));
     }
 
-    [Theory]
-    [InlineData(ConceptRelationType.Prerequisite)]
-    [InlineData(ConceptRelationType.Related)]
-    [InlineData(ConceptRelationType.Instance)]
-    [InlineData(ConceptRelationType.PartOf)]
-    [InlineData(ConceptRelationType.Specialization)]
-    [InlineData(ConceptRelationType.CoOccurs)]
-    [InlineData(ConceptRelationType.Contains)]
-    [InlineData(ConceptRelationType.InstanceOf)]
-    [InlineData(ConceptRelationType.SimilarTo)]
-    [InlineData(ConceptRelationType.ContrastsWith)]
+    [TestCase(ConceptRelationType.Prerequisite)]
+    [TestCase(ConceptRelationType.Related)]
+    [TestCase(ConceptRelationType.Instance)]
+    [TestCase(ConceptRelationType.PartOf)]
+    [TestCase(ConceptRelationType.Specialization)]
+    [TestCase(ConceptRelationType.CoOccurs)]
+    [TestCase(ConceptRelationType.Contains)]
+    [TestCase(ConceptRelationType.InstanceOf)]
+    [TestCase(ConceptRelationType.SimilarTo)]
+    [TestCase(ConceptRelationType.ContrastsWith)]
     public void AllRelationTypes_AreValid(ConceptRelationType type)
     {
         var rel = new ConceptRelationship { RelationType = type };
-        Assert.Equal(type, rel.RelationType);
+        Assert.That(rel.RelationType, Is.EqualTo(type));
     }
 
-    [Fact]
+    [Test]
     public void AllRelationTypes_Count_Is10()
     {
         var values = Enum.GetValues<ConceptRelationType>();
-        Assert.Equal(10, values.Length);
+        Assert.That(values.Length, Is.EqualTo(10));
     }
 
-    [Fact]
+    [Test]
     public void EvidenceCollections_DefaultEmpty()
     {
         var rel = new ConceptRelationship();
-        Assert.Empty(rel.EvidenceResourceIds);
-        Assert.Empty(rel.EvidenceChunkIds);
+        Assert.That(rel.EvidenceResourceIds, Is.Empty);
+        Assert.That(rel.EvidenceChunkIds, Is.Empty);
     }
 }

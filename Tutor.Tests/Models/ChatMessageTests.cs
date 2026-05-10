@@ -4,40 +4,40 @@ namespace Tutor.Tests.Models;
 
 public class ChatMessageTests
 {
-    [Fact]
+    [Test]
     public void VisibleText_ReturnsDisplayText_WhenSet()
     {
         var msg = new ChatMessage("user", "raw text", "{}", DisplayText: "pretty text");
-        Assert.Equal("pretty text", msg.VisibleText);
+        Assert.That(msg.VisibleText, Is.EqualTo("pretty text"));
     }
 
-    [Fact]
+    [Test]
     public void VisibleText_FallsBackToText_WhenDisplayTextNull()
     {
         var msg = new ChatMessage("assistant", "response text", "{}");
-        Assert.Equal("response text", msg.VisibleText);
+        Assert.That(msg.VisibleText, Is.EqualTo("response text"));
     }
 
-    [Fact]
+    [Test]
     public void Record_Equality_Works()
     {
         var a = new ChatMessage("user", "hello", "{}", null, false);
         var b = new ChatMessage("user", "hello", "{}", null, false);
-        Assert.Equal(a, b);
+        Assert.That(b, Is.EqualTo(a));
     }
 
-    [Fact]
+    [Test]
     public void Record_Inequality_Works()
     {
         var a = new ChatMessage("user", "hello", "{}");
         var b = new ChatMessage("user", "goodbye", "{}");
-        Assert.NotEqual(a, b);
+        Assert.That(b, Is.Not.EqualTo(a));
     }
 
-    [Fact]
+    [Test]
     public void IsExploration_DefaultFalse()
     {
         var msg = new ChatMessage("user", "text", "{}");
-        Assert.False(msg.IsExploration);
+        Assert.That(msg.IsExploration, Is.False);
     }
 }

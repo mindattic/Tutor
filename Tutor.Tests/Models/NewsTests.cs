@@ -4,24 +4,24 @@ namespace Tutor.Tests.Models;
 
 public class NewsTests
 {
-    [Fact]
+    [Test]
     public void NewsHeadline_Defaults()
     {
         var h = new NewsHeadline();
-        Assert.True(Guid.TryParse(h.Id, out _));
-        Assert.Equal("", h.Title);
-        Assert.Null(h.Description);
-        Assert.Null(h.Url);
-        Assert.Null(h.PublishedAt);
+        Assert.That(Guid.TryParse(h.Id, out _), Is.True);
+        Assert.That(h.Title, Is.EqualTo(""));
+        Assert.That(h.Description, Is.Null);
+        Assert.That(h.Url, Is.Null);
+        Assert.That(h.PublishedAt, Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void NewsFeed_Defaults()
     {
         var f = new NewsFeed();
-        Assert.NotNull(f.Headlines);
-        Assert.Empty(f.Headlines);
-        Assert.Null(f.Error);
-        Assert.True(f.FetchedAt > DateTime.MinValue);
+        Assert.That(f.Headlines, Is.Not.Null);
+        Assert.That(f.Headlines, Is.Empty);
+        Assert.That(f.Error, Is.Null);
+        Assert.That(f.FetchedAt > DateTime.MinValue, Is.True);
     }
 }

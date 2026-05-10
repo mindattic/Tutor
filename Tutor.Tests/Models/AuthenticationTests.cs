@@ -4,89 +4,87 @@ namespace Tutor.Tests.Models;
 
 public class AuthenticationTests
 {
-    [Fact]
+    [Test]
     public void UserProfile_DefaultRole_IsStudent()
     {
         var profile = new UserProfile();
-        Assert.Single(profile.Roles);
-        Assert.Equal(UserRole.Student, profile.Roles[0]);
+        Assert.That(profile.Roles, Has.Count.EqualTo(1));
+        Assert.That(profile.Roles[0], Is.EqualTo(UserRole.Student));
     }
 
-    [Fact]
+    [Test]
     public void UserProfile_HasRole_ChecksCorrectly()
     {
         var profile = new UserProfile { Roles = [UserRole.Student, UserRole.Admin] };
-        Assert.True(profile.HasRole(UserRole.Admin));
-        Assert.True(profile.HasRole(UserRole.Student));
+        Assert.That(profile.HasRole(UserRole.Admin), Is.True);
+        Assert.That(profile.HasRole(UserRole.Student), Is.True);
     }
 
-    [Fact]
+    [Test]
     public void UserProfile_IsAdmin_TrueForAdminRole()
     {
         var admin = new UserProfile { Roles = [UserRole.Admin] };
-        Assert.True(admin.IsAdmin);
+        Assert.That(admin.IsAdmin, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void UserProfile_IsAdmin_FalseForStudentOnly()
     {
         var student = new UserProfile();
-        Assert.False(student.IsAdmin);
+        Assert.That(student.IsAdmin, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void AuthResult_Succeeded_SetsProperties()
     {
         var user = new UserProfile { Username = "alice" };
         var result = AuthResult.Succeeded(user);
-        Assert.True(result.Success);
-        Assert.NotNull(result.User);
-        Assert.Equal("alice", result.User.Username);
-        Assert.Null(result.ErrorMessage);
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.User, Is.Not.Null);
+        Assert.That(result.User!.Username, Is.EqualTo("alice"));
+        Assert.That(result.ErrorMessage, Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void AuthResult_Failed_SetsErrorMessage()
     {
         var result = AuthResult.Failed("bad password");
-        Assert.False(result.Success);
-        Assert.Null(result.User);
-        Assert.Equal("bad password", result.ErrorMessage);
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.User, Is.Null);
+        Assert.That(result.ErrorMessage, Is.EqualTo("bad password"));
     }
 
-    [Fact]
+    [Test]
     public void UserCredentials_DefaultValues()
     {
         var creds = new UserCredentials();
-        Assert.Equal("", creds.Username);
-        Assert.Equal("", creds.PasswordHash);
-        Assert.Null(creds.LastLoginAt);
+        Assert.That(creds.Username, Is.EqualTo(""));
+        Assert.That(creds.PasswordHash, Is.EqualTo(""));
+        Assert.That(creds.LastLoginAt, Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void UsersStore_DefaultValues()
     {
         var store = new UsersStore();
-        Assert.Empty(store.Credentials);
-        Assert.Empty(store.Profiles);
-        Assert.Null(store.LastLoggedInUsername);
+        Assert.That(store.Credentials, Is.Empty);
+        Assert.That(store.Profiles, Is.Empty);
+        Assert.That(store.LastLoggedInUsername, Is.Null);
     }
 
-    [Theory]
-    [InlineData(UserRole.Student)]
-    [InlineData(UserRole.Admin)]
+    [TestCase(UserRole.Student)]
+    [TestCase(UserRole.Admin)]
     public void UserRole_Enum_ValidValues(UserRole role)
     {
-        Assert.True(Enum.IsDefined(role));
+        Assert.That(Enum.IsDefined(role), Is.True);
     }
 
-    [Theory]
-    [InlineData(SectionStatus.NotStarted)]
-    [InlineData(SectionStatus.Visited)]
-    [InlineData(SectionStatus.Read)]
-    [InlineData(SectionStatus.Complete)]
+    [TestCase(SectionStatus.NotStarted)]
+    [TestCase(SectionStatus.Visited)]
+    [TestCase(SectionStatus.Read)]
+    [TestCase(SectionStatus.Complete)]
     public void SectionStatus_Enum_ValidValues(SectionStatus status)
     {
-        Assert.True(Enum.IsDefined(status));
+        Assert.That(Enum.IsDefined(status), Is.True);
     }
 }

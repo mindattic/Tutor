@@ -4,41 +4,41 @@ namespace Tutor.Tests.Models;
 
 public class ConceptTests
 {
-    [Fact]
+    [Test]
     public void NewConcept_HasUniqueId()
     {
         var a = new Concept();
         var b = new Concept();
-        Assert.NotEqual(a.Id, b.Id);
+        Assert.That(b.Id, Is.Not.EqualTo(a.Id));
     }
 
-    [Fact]
+    [Test]
     public void DefaultConfidenceScore_IsOne()
     {
         var c = new Concept();
-        Assert.Equal(1.0f, c.ConfidenceScore);
+        Assert.That(c.ConfidenceScore, Is.EqualTo(1.0f));
     }
 
-    [Fact]
+    [Test]
     public void DefaultCollections_AreEmpty()
     {
         var c = new Concept();
-        Assert.Empty(c.Aliases);
-        Assert.Empty(c.Tags);
-        Assert.Empty(c.PrerequisiteIds);
-        Assert.Empty(c.RelatedIds);
-        Assert.Empty(c.SourceResourceIds);
+        Assert.That(c.Aliases, Is.Empty);
+        Assert.That(c.Tags, Is.Empty);
+        Assert.That(c.PrerequisiteIds, Is.Empty);
+        Assert.That(c.RelatedIds, Is.Empty);
+        Assert.That(c.SourceResourceIds, Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void IsDynamicallyExpanded_DefaultFalse()
     {
         var c = new Concept();
-        Assert.False(c.IsDynamicallyExpanded);
-        Assert.Null(c.ExpansionQuery);
+        Assert.That(c.IsDynamicallyExpanded, Is.False);
+        Assert.That(c.ExpansionQuery, Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void Properties_CanBeSet()
     {
         var c = new Concept
@@ -55,10 +55,10 @@ public class ConceptTests
             SourceExcerpt = "Plants use sunlight..."
         };
 
-        Assert.Equal("Photosynthesis", c.Title);
-        Assert.Equal("Plants convert light to energy", c.Summary);
-        Assert.Equal(0.95f, c.ConfidenceScore);
-        Assert.True(c.IsDynamicallyExpanded);
-        Assert.NotNull(c.SourceExcerpt);
+        Assert.That(c.Title, Is.EqualTo("Photosynthesis"));
+        Assert.That(c.Summary, Is.EqualTo("Plants convert light to energy"));
+        Assert.That(c.ConfidenceScore, Is.EqualTo(0.95f));
+        Assert.That(c.IsDynamicallyExpanded, Is.True);
+        Assert.That(c.SourceExcerpt, Is.Not.Null);
     }
 }

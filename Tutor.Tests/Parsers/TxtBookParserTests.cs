@@ -7,17 +7,17 @@ public class TxtBookParserTests
 {
     private readonly TxtBookParser sut = new();
 
-    [Fact]
+    [Test]
     public void SupportedExtensions_IncludesCommonTextExtensions()
     {
-        Assert.Contains(".txt", sut.SupportedExtensions);
-        Assert.Contains(".md", sut.SupportedExtensions);
-        Assert.Contains(".markdown", sut.SupportedExtensions);
-        Assert.Contains(".text", sut.SupportedExtensions);
-        Assert.Contains(".log", sut.SupportedExtensions);
+        Assert.That(sut.SupportedExtensions, Does.Contain(".txt"));
+        Assert.That(sut.SupportedExtensions, Does.Contain(".md"));
+        Assert.That(sut.SupportedExtensions, Does.Contain(".markdown"));
+        Assert.That(sut.SupportedExtensions, Does.Contain(".text"));
+        Assert.That(sut.SupportedExtensions, Does.Contain(".log"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_ReturnsTextContent()
     {
         var content = "Hello, world!\nThis is a plain text book.";
@@ -25,30 +25,30 @@ public class TxtBookParserTests
 
         var book = await sut.ParseAsync(stream, "sample.txt");
 
-        Assert.Equal(content, book.PlainText);
+        Assert.That(book.PlainText, Is.EqualTo(content));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_TitleIsFileNameWithoutExtension()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("body"));
 
         var book = await sut.ParseAsync(stream, "MyBook.txt");
 
-        Assert.Equal("MyBook", book.Title);
+        Assert.That(book.Title, Is.EqualTo("MyBook"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_SourceFormatIsExtensionLowercase()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("body"));
 
         var book = await sut.ParseAsync(stream, "Notes.MD");
 
-        Assert.Equal("md", book.SourceFormat);
+        Assert.That(book.SourceFormat, Is.EqualTo("md"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_HandlesUtf8Bom()
     {
         var bytes = new List<byte> { 0xEF, 0xBB, 0xBF };
@@ -57,27 +57,28 @@ public class TxtBookParserTests
 
         var book = await sut.ParseAsync(stream, "bom.txt");
 
-        Assert.Equal("café", book.PlainText);
+        Assert.That(book.PlainText, Is.EqualTo("café"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_EmptyStream_ReturnsEmptyText()
     {
         using var stream = new MemoryStream();
 
         var book = await sut.ParseAsync(stream, "empty.txt");
 
-        Assert.Equal("", book.PlainText);
+        Assert.That(book.PlainText, Is.EqualTo(""));
     }
 
-    [Fact]
-    public async Task ParseAsync_RespectsCancellation()
+    [Test]
+    public void ParseAsync_RespectsCancellation()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("anything"));
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+        // Assert.CatchAsync matches T or any derived type — equivalent to xUnit's ThrowsAnyAsync.
+        Assert.CatchAsync<OperationCanceledException>(
             () => sut.ParseAsync(stream, "x.txt", cts.Token));
     }
 }

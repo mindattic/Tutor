@@ -4,7 +4,7 @@ namespace Tutor.Tests.Models;
 
 public class QuizTests
 {
-    [Fact]
+    [Test]
     public void QuizResult_ScorePercentage_CalculatesCorrectly()
     {
         var result = new QuizResult
@@ -12,31 +12,31 @@ public class QuizTests
             TotalQuestions = 10,
             CorrectAnswers = 7
         };
-        Assert.Equal(70.0, result.ScorePercentage);
+        Assert.That(result.ScorePercentage, Is.EqualTo(70.0));
     }
 
-    [Fact]
+    [Test]
     public void QuizResult_ScorePercentage_ZeroQuestions_ReturnsZero()
     {
         var result = new QuizResult { TotalQuestions = 0 };
-        Assert.Equal(0.0, result.ScorePercentage);
+        Assert.That(result.ScorePercentage, Is.EqualTo(0.0));
     }
 
-    [Fact]
+    [Test]
     public void QuizResult_Passed_AtThreshold()
     {
         var result = new QuizResult { TotalQuestions = 10, CorrectAnswers = 7 };
-        Assert.True(result.Passed);
+        Assert.That(result.Passed, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void QuizResult_NotPassed_BelowThreshold()
     {
         var result = new QuizResult { TotalQuestions = 10, CorrectAnswers = 6 };
-        Assert.False(result.Passed);
+        Assert.That(result.Passed, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void QuizSession_CurrentQuestion_ReturnsCorrectQuestion()
     {
         var q1 = new QuizQuestion { Id = "q1", QuestionText = "What is 2+2?" };
@@ -47,10 +47,10 @@ public class QuizTests
             CurrentQuestionIndex = 0
         };
 
-        Assert.Equal("q1", session.CurrentQuestion?.Id);
+        Assert.That(session.CurrentQuestion?.Id, Is.EqualTo("q1"));
     }
 
-    [Fact]
+    [Test]
     public void QuizSession_CurrentQuestion_NullWhenComplete()
     {
         var session = new QuizSession
@@ -59,10 +59,10 @@ public class QuizTests
             CurrentQuestionIndex = 1
         };
 
-        Assert.Null(session.CurrentQuestion);
+        Assert.That(session.CurrentQuestion, Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void QuizSession_IsComplete_TrueWhenAllAnswered()
     {
         var session = new QuizSession
@@ -70,10 +70,10 @@ public class QuizTests
             Questions = [new QuizQuestion(), new QuizQuestion()],
             CurrentQuestionIndex = 2
         };
-        Assert.True(session.IsComplete);
+        Assert.That(session.IsComplete, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void QuizSession_IsComplete_FalseWhenInProgress()
     {
         var session = new QuizSession
@@ -81,10 +81,10 @@ public class QuizTests
             Questions = [new QuizQuestion(), new QuizQuestion()],
             CurrentQuestionIndex = 1
         };
-        Assert.False(session.IsComplete);
+        Assert.That(session.IsComplete, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void QuizSession_ToResult_ConvertsCorrectly()
     {
         var q1 = new QuizQuestion { Id = "q1", Points = 10 };
@@ -102,21 +102,21 @@ public class QuizTests
         };
 
         var result = session.ToResult();
-        Assert.Equal("user1", result.UserId);
-        Assert.Equal("course1", result.CourseId);
-        Assert.Equal(2, result.TotalQuestions);
-        Assert.Equal(1, result.CorrectAnswers);
-        Assert.Equal(15, result.TotalPoints);
-        Assert.Equal(10, result.EarnedPoints);
+        Assert.That(result.UserId, Is.EqualTo("user1"));
+        Assert.That(result.CourseId, Is.EqualTo("course1"));
+        Assert.That(result.TotalQuestions, Is.EqualTo(2));
+        Assert.That(result.CorrectAnswers, Is.EqualTo(1));
+        Assert.That(result.TotalPoints, Is.EqualTo(15));
+        Assert.That(result.EarnedPoints, Is.EqualTo(10));
     }
 
-    [Fact]
+    [Test]
     public void QuizQuestion_DefaultValues()
     {
         var q = new QuizQuestion();
-        Assert.Equal(1, q.Difficulty);
-        Assert.Equal(1, q.Points);
-        Assert.Empty(q.RelatedSectionIds);
-        Assert.Empty(q.RelatedConceptIds);
+        Assert.That(q.Difficulty, Is.EqualTo(1));
+        Assert.That(q.Points, Is.EqualTo(1));
+        Assert.That(q.RelatedSectionIds, Is.Empty);
+        Assert.That(q.RelatedConceptIds, Is.Empty);
     }
 }

@@ -9,12 +9,13 @@ namespace Tutor.Tests.Services;
 /// relies on to bake quizzes into the .tutorcourse bundle. Uses a temp data
 /// directory + FakeLlmService so no real LLM call is made.
 /// </summary>
-public class QuizGenerationServiceTests : IDisposable
+public class QuizGenerationServiceTests
 {
-    private readonly string sandbox;
-    private readonly string? prevKnowledgeBasesPath;
+    private string sandbox = string.Empty;
+    private string? prevKnowledgeBasesPath;
 
-    public QuizGenerationServiceTests()
+    [SetUp]
+    public void SetUp()
     {
         sandbox = Path.Combine(Path.GetTempPath(), "tutor-quizgen-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(sandbox);
@@ -22,13 +23,14 @@ public class QuizGenerationServiceTests : IDisposable
         DataStorageSettings.KnowledgeBasesPath = sandbox;
     }
 
-    public void Dispose()
+    [TearDown]
+    public void TearDown()
     {
         DataStorageSettings.KnowledgeBasesPath = prevKnowledgeBasesPath;
         try { Directory.Delete(sandbox, recursive: true); } catch { }
     }
 
-    [Fact]
+    [Test]
     public async Task GenerateAsync_ReturnsQuestions_ForValidLlmResponse()
     {
         var (service, llm, mapId, conceptIds) = await SetupAsync();
@@ -53,16 +55,16 @@ public class QuizGenerationServiceTests : IDisposable
         var sectionIds = new List<string> { "section-1" };
         var questions = await service.GenerateAsync(mapId, conceptIds, sectionIds, questionCount: 2);
 
-        Assert.Equal(2, questions.Count);
-        Assert.Equal("What is photosynthesis?", questions[0].QuestionText);
-        Assert.Equal(2, questions[0].Difficulty);
-        Assert.Equal(2, questions[0].Points);
-        Assert.Equal(sectionIds, questions[0].RelatedSectionIds);
-        Assert.Equal(conceptIds, questions[0].RelatedConceptIds);
-        Assert.Equal(1, llm.CallCount);
+        Assert.That(questions, Has.Count.EqualTo(2));
+        Assert.That(questions[0].QuestionText, Is.EqualTo("What is photosynthesis?"));
+        Assert.That(questions[0].Difficulty, Is.EqualTo(2));
+        Assert.That(questions[0].Points, Is.EqualTo(2));
+        Assert.That(questions[0].RelatedSectionIds, Is.EqualTo(sectionIds));
+        Assert.That(questions[0].RelatedConceptIds, Is.EqualTo(conceptIds));
+        Assert.That(llm.CallCount, Is.EqualTo(1));
     }
 
-    [Fact]
+    [Test]
     public async Task GenerateAsync_ReturnsEmpty_WhenLlmRepliesWithGarbage()
     {
         var (service, llm, mapId, conceptIds) = await SetupAsync();
@@ -70,23 +72,23 @@ public class QuizGenerationServiceTests : IDisposable
 
         var questions = await service.GenerateAsync(mapId, conceptIds, new List<string>(), 5);
 
-        Assert.Empty(questions);
-        Assert.Equal(1, llm.CallCount);
+        Assert.That(questions, Is.Empty);
+        Assert.That(llm.CallCount, Is.EqualTo(1));
     }
 
-    [Fact]
+    [Test]
     public async Task GenerateAsync_ReturnsEmpty_WhenNoConceptIds()
     {
         var (service, llm, mapId, _) = await SetupAsync();
 
         var questions = await service.GenerateAsync(mapId, new List<string>(), new List<string>(), 5);
 
-        Assert.Empty(questions);
+        Assert.That(questions, Is.Empty);
         // Short-circuits before hitting the LLM.
-        Assert.Equal(0, llm.CallCount);
+        Assert.That(llm.CallCount, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task GenerateAsync_ReturnsEmpty_WhenConceptMapMissing()
     {
         var llm = new FakeLlmService();
@@ -96,22 +98,22 @@ public class QuizGenerationServiceTests : IDisposable
         var questions = await service.GenerateAsync(
             "nonexistent-id", new List<string> { "c1" }, new List<string>(), 5);
 
-        Assert.Empty(questions);
-        Assert.Equal(0, llm.CallCount);
+        Assert.That(questions, Is.Empty);
+        Assert.That(llm.CallCount, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task GenerateAsync_ReturnsEmpty_WhenZeroQuestionsRequested()
     {
         var (service, llm, mapId, conceptIds) = await SetupAsync();
 
         var questions = await service.GenerateAsync(mapId, conceptIds, new List<string>(), 0);
 
-        Assert.Empty(questions);
-        Assert.Equal(0, llm.CallCount);
+        Assert.That(questions, Is.Empty);
+        Assert.That(llm.CallCount, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task GenerateAsync_ToleratesPreambleAroundJsonArray()
     {
         var (service, llm, mapId, conceptIds) = await SetupAsync();
@@ -132,8 +134,8 @@ public class QuizGenerationServiceTests : IDisposable
 
         var questions = await service.GenerateAsync(mapId, conceptIds, new List<string>(), 1);
 
-        Assert.Single(questions);
-        Assert.Equal("Define energy.", questions[0].QuestionText);
+        Assert.That(questions, Has.Count.EqualTo(1));
+        Assert.That(questions[0].QuestionText, Is.EqualTo("Define energy."));
     }
 
     private async Task<(QuizGenerationService Service, FakeLlmService Llm, string MapId, List<string> ConceptIds)> SetupAsync()

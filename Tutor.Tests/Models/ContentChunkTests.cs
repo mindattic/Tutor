@@ -4,35 +4,35 @@ namespace Tutor.Tests.Models;
 
 public class ContentChunkTests
 {
-    [Fact]
+    [Test]
     public void Defaults_AreSensible()
     {
         var chunk = new ContentChunk();
 
-        Assert.False(string.IsNullOrWhiteSpace(chunk.Id));
-        Assert.True(Guid.TryParse(chunk.Id, out _));
-        Assert.Equal("", chunk.ResourceId);
-        Assert.Equal("", chunk.CurriculumId);
-        Assert.Equal(0, chunk.ChunkIndex);
-        Assert.Equal("", chunk.Content);
-        Assert.NotNull(chunk.Embedding);
-        Assert.Empty(chunk.Embedding);
-        Assert.NotNull(chunk.SemanticSignature);
-        Assert.Empty(chunk.SemanticSignature);
-        Assert.Equal(0UL, chunk.LexicalSignature);
-        Assert.Equal("", chunk.SourceTitle);
-        Assert.True(chunk.CreatedAt > DateTime.MinValue);
+        Assert.That(string.IsNullOrWhiteSpace(chunk.Id), Is.False);
+        Assert.That(Guid.TryParse(chunk.Id, out _), Is.True);
+        Assert.That(chunk.ResourceId, Is.EqualTo(""));
+        Assert.That(chunk.CurriculumId, Is.EqualTo(""));
+        Assert.That(chunk.ChunkIndex, Is.EqualTo(0));
+        Assert.That(chunk.Content, Is.EqualTo(""));
+        Assert.That(chunk.Embedding, Is.Not.Null);
+        Assert.That(chunk.Embedding, Is.Empty);
+        Assert.That(chunk.SemanticSignature, Is.Not.Null);
+        Assert.That(chunk.SemanticSignature, Is.Empty);
+        Assert.That(chunk.LexicalSignature, Is.EqualTo(0UL));
+        Assert.That(chunk.SourceTitle, Is.EqualTo(""));
+        Assert.That(chunk.CreatedAt > DateTime.MinValue, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void Id_IsUniquePerInstance()
     {
         var a = new ContentChunk();
         var b = new ContentChunk();
-        Assert.NotEqual(a.Id, b.Id);
+        Assert.That(b.Id, Is.Not.EqualTo(a.Id));
     }
 
-    [Fact]
+    [Test]
     public void Properties_AreMutable()
     {
         var chunk = new ContentChunk
@@ -48,11 +48,11 @@ public class ContentChunkTests
             SourceTitle = "Title"
         };
 
-        Assert.Equal("fixed-id", chunk.Id);
-        Assert.Equal("r1", chunk.ResourceId);
-        Assert.Equal(7, chunk.ChunkIndex);
-        Assert.Equal(2, chunk.Embedding.Length);
-        Assert.Equal(3, chunk.SemanticSignature.Length);
-        Assert.Equal(0xDEADBEEFUL, chunk.LexicalSignature);
+        Assert.That(chunk.Id, Is.EqualTo("fixed-id"));
+        Assert.That(chunk.ResourceId, Is.EqualTo("r1"));
+        Assert.That(chunk.ChunkIndex, Is.EqualTo(7));
+        Assert.That(chunk.Embedding.Length, Is.EqualTo(2));
+        Assert.That(chunk.SemanticSignature.Length, Is.EqualTo(3));
+        Assert.That(chunk.LexicalSignature, Is.EqualTo(0xDEADBEEFUL));
     }
 }

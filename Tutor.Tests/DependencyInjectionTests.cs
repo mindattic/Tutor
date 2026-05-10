@@ -109,118 +109,116 @@ public class DependencyInjectionTests
         });
     }
 
-    [Fact]
+    [Test]
     public void Container_BuildsWithoutErrors()
     {
         using var sp = BuildTestContainer();
-        Assert.NotNull(sp);
+        Assert.That(sp, Is.Not.Null);
     }
 
-    [Theory]
-    [InlineData(typeof(ISecurePreferences))]
-    [InlineData(typeof(IAppDataPathProvider))]
-    [InlineData(typeof(IFilePickerService))]
-    [InlineData(typeof(IAuthController))]
-    [InlineData(typeof(INewsController))]
-    [InlineData(typeof(IQuizController))]
+    [TestCase(typeof(ISecurePreferences))]
+    [TestCase(typeof(IAppDataPathProvider))]
+    [TestCase(typeof(IFilePickerService))]
+    [TestCase(typeof(IAuthController))]
+    [TestCase(typeof(INewsController))]
+    [TestCase(typeof(IQuizController))]
     public void Interfaces_ResolveToImplementations(Type serviceType)
     {
         using var sp = BuildTestContainer();
         var instance = sp.GetRequiredService(serviceType);
-        Assert.NotNull(instance);
+        Assert.That(instance, Is.Not.Null);
     }
 
-    [Theory]
-    [InlineData(typeof(OpenAIService))]
-    [InlineData(typeof(ClaudeService))]
-    [InlineData(typeof(DeepSeekService))]
-    [InlineData(typeof(GeminiService))]
-    [InlineData(typeof(LlmServiceRouter))]
-    [InlineData(typeof(EmbeddingService))]
-    [InlineData(typeof(ContentFormatterService))]
-    [InlineData(typeof(ChunkingService))]
-    [InlineData(typeof(LSHService))]
-    [InlineData(typeof(SimHashService))]
-    [InlineData(typeof(VectorStoreService))]
-    [InlineData(typeof(InstructionsService))]
-    [InlineData(typeof(SettingsService))]
-    [InlineData(typeof(ThemeService))]
-    [InlineData(typeof(AppUiState))]
-    [InlineData(typeof(SideNavService))]
-    [InlineData(typeof(FileResourceService))]
-    [InlineData(typeof(CourseService))]
-    [InlineData(typeof(CoreConceptService))]
-    [InlineData(typeof(ConceptAutoCompleteService))]
-    [InlineData(typeof(ConceptExtractionService))]
-    [InlineData(typeof(ConceptCorrelationService))]
-    [InlineData(typeof(KnowledgeGraphService))]
-    [InlineData(typeof(UserProgressService))]
-    [InlineData(typeof(ConceptMapStorageService))]
-    [InlineData(typeof(ConceptMapCollectionService))]
-    [InlineData(typeof(CourseStructureStorageService))]
-    [InlineData(typeof(ConceptMapService))]
-    [InlineData(typeof(OrphanConceptLinkerService))]
-    [InlineData(typeof(DynamicConceptExpansionService))]
-    [InlineData(typeof(ConceptMergeService))]
-    [InlineData(typeof(CourseConceptMapService))]
-    [InlineData(typeof(SectionContentService))]
-    [InlineData(typeof(CourseStructureService))]
-    [InlineData(typeof(ResourceProcessingService))]
-    [InlineData(typeof(KnowledgeGraphBuildService))]
-    [InlineData(typeof(LogStorageService))]
-    [InlineData(typeof(BackgroundQueueStorageService))]
-    [InlineData(typeof(ResourceUploadTaskHandler))]
-    [InlineData(typeof(ResourceFormatTaskHandler))]
-    [InlineData(typeof(ConceptMapBuildTaskHandler))]
-    [InlineData(typeof(AuthenticationService))]
-    [InlineData(typeof(UserStorageService))]
-    [InlineData(typeof(NewsService))]
-    [InlineData(typeof(QuizService))]
+    [TestCase(typeof(OpenAIService))]
+    [TestCase(typeof(ClaudeService))]
+    [TestCase(typeof(DeepSeekService))]
+    [TestCase(typeof(GeminiService))]
+    [TestCase(typeof(LlmServiceRouter))]
+    [TestCase(typeof(EmbeddingService))]
+    [TestCase(typeof(ContentFormatterService))]
+    [TestCase(typeof(ChunkingService))]
+    [TestCase(typeof(LSHService))]
+    [TestCase(typeof(SimHashService))]
+    [TestCase(typeof(VectorStoreService))]
+    [TestCase(typeof(InstructionsService))]
+    [TestCase(typeof(SettingsService))]
+    [TestCase(typeof(ThemeService))]
+    [TestCase(typeof(AppUiState))]
+    [TestCase(typeof(SideNavService))]
+    [TestCase(typeof(FileResourceService))]
+    [TestCase(typeof(CourseService))]
+    [TestCase(typeof(CoreConceptService))]
+    [TestCase(typeof(ConceptAutoCompleteService))]
+    [TestCase(typeof(ConceptExtractionService))]
+    [TestCase(typeof(ConceptCorrelationService))]
+    [TestCase(typeof(KnowledgeGraphService))]
+    [TestCase(typeof(UserProgressService))]
+    [TestCase(typeof(ConceptMapStorageService))]
+    [TestCase(typeof(ConceptMapCollectionService))]
+    [TestCase(typeof(CourseStructureStorageService))]
+    [TestCase(typeof(ConceptMapService))]
+    [TestCase(typeof(OrphanConceptLinkerService))]
+    [TestCase(typeof(DynamicConceptExpansionService))]
+    [TestCase(typeof(ConceptMergeService))]
+    [TestCase(typeof(CourseConceptMapService))]
+    [TestCase(typeof(SectionContentService))]
+    [TestCase(typeof(CourseStructureService))]
+    [TestCase(typeof(ResourceProcessingService))]
+    [TestCase(typeof(KnowledgeGraphBuildService))]
+    [TestCase(typeof(LogStorageService))]
+    [TestCase(typeof(BackgroundQueueStorageService))]
+    [TestCase(typeof(ResourceUploadTaskHandler))]
+    [TestCase(typeof(ResourceFormatTaskHandler))]
+    [TestCase(typeof(ConceptMapBuildTaskHandler))]
+    [TestCase(typeof(AuthenticationService))]
+    [TestCase(typeof(UserStorageService))]
+    [TestCase(typeof(NewsService))]
+    [TestCase(typeof(QuizService))]
     public void ConcreteService_Resolves(Type serviceType)
     {
         using var sp = BuildTestContainer();
         var instance = sp.GetRequiredService(serviceType);
-        Assert.NotNull(instance);
+        Assert.That(instance, Is.Not.Null);
     }
 
-    [Fact]
+    [Test]
     public void Singletons_ReturnSameInstance()
     {
         using var sp = BuildTestContainer();
         var a = sp.GetRequiredService<SettingsService>();
         var b = sp.GetRequiredService<SettingsService>();
-        Assert.Same(a, b);
+        Assert.That(b, Is.SameAs(a));
     }
 
-    [Fact]
+    [Test]
     public void LlmServiceRouter_ImplementsILlmService()
     {
         using var sp = BuildTestContainer();
         var router = sp.GetRequiredService<LlmServiceRouter>();
-        Assert.IsAssignableFrom<ILlmService>(router);
+        Assert.That(router, Is.AssignableTo<ILlmService>());
     }
 
-    [Fact]
+    [Test]
     public void AuthController_IsLocalAuthController()
     {
         using var sp = BuildTestContainer();
         var controller = sp.GetRequiredService<IAuthController>();
-        Assert.IsType<LocalAuthController>(controller);
+        Assert.That(controller, Is.InstanceOf<LocalAuthController>());
     }
 
-    [Fact]
+    [Test]
     public void QuizController_IsLocalQuizController()
     {
         using var sp = BuildTestContainer();
         var controller = sp.GetRequiredService<IQuizController>();
-        Assert.IsType<LocalQuizController>(controller);
+        Assert.That(controller, Is.InstanceOf<LocalQuizController>());
     }
 
-    [Fact]
+    [Test]
     public void NewsController_IsOpenNewsApiController()
     {
         using var sp = BuildTestContainer();
         var controller = sp.GetRequiredService<INewsController>();
-        Assert.IsType<OpenNewsApiController>(controller);
+        Assert.That(controller, Is.InstanceOf<OpenNewsApiController>());
     }
 }

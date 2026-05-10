@@ -4,23 +4,23 @@ namespace Tutor.Tests.Models;
 
 public class SectionTests
 {
-    [Fact]
+    [Test]
     public void Defaults_AreSensible()
     {
         var section = new Section();
-        Assert.True(Guid.TryParse(section.Id, out _));
-        Assert.Empty(section.Children);
-        Assert.Empty(section.ConceptIds);
-        Assert.Empty(section.LearningObjectives);
-        Assert.Empty(section.KeyTerms);
-        Assert.False(section.HasQuiz);
-        Assert.Equal(3, section.QuizQuestionCount);
-        Assert.Equal(70, section.QuizPassingScore);
-        Assert.Equal(2, section.EstimatedReadingMinutes);
-        Assert.Empty(section.PreGeneratedQuestions);
+        Assert.That(Guid.TryParse(section.Id, out _), Is.True);
+        Assert.That(section.Children, Is.Empty);
+        Assert.That(section.ConceptIds, Is.Empty);
+        Assert.That(section.LearningObjectives, Is.Empty);
+        Assert.That(section.KeyTerms, Is.Empty);
+        Assert.That(section.HasQuiz, Is.False);
+        Assert.That(section.QuizQuestionCount, Is.EqualTo(3));
+        Assert.That(section.QuizPassingScore, Is.EqualTo(70));
+        Assert.That(section.EstimatedReadingMinutes, Is.EqualTo(2));
+        Assert.That(section.PreGeneratedQuestions, Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void PreGeneratedQuestions_RoundTripsThroughJson()
     {
         var section = new Section
@@ -36,13 +36,13 @@ public class SectionTests
         var json = System.Text.Json.JsonSerializer.Serialize(section);
         var restored = System.Text.Json.JsonSerializer.Deserialize<Section>(json)!;
 
-        Assert.Equal(2, restored.PreGeneratedQuestions.Count);
-        Assert.Equal("Q1", restored.PreGeneratedQuestions[0].QuestionText);
-        Assert.Equal("A1", restored.PreGeneratedQuestions[0].CorrectAnswer);
-        Assert.Equal(2, restored.PreGeneratedQuestions[0].Difficulty);
+        Assert.That(restored.PreGeneratedQuestions, Has.Count.EqualTo(2));
+        Assert.That(restored.PreGeneratedQuestions[0].QuestionText, Is.EqualTo("Q1"));
+        Assert.That(restored.PreGeneratedQuestions[0].CorrectAnswer, Is.EqualTo("A1"));
+        Assert.That(restored.PreGeneratedQuestions[0].Difficulty, Is.EqualTo(2));
     }
 
-    [Fact]
+    [Test]
     public void GetAllConceptIds_IncludesDescendants()
     {
         var section = new Section
@@ -61,10 +61,10 @@ public class SectionTests
 
         var ids = section.GetAllConceptIds().ToList();
 
-        Assert.Equal(new[] { "c1", "c2", "c3", "c4", "c5" }, ids);
+        Assert.That(ids, Is.EqualTo(new[] { "c1", "c2", "c3", "c4", "c5" }));
     }
 
-    [Fact]
+    [Test]
     public void GetLeafSectionCount_OnlyCountsLeaves()
     {
         var section = new Section
@@ -77,23 +77,23 @@ public class SectionTests
             }
         };
 
-        Assert.Equal(4, section.GetLeafSectionCount());
+        Assert.That(section.GetLeafSectionCount(), Is.EqualTo(4));
     }
 
-    [Fact]
+    [Test]
     public void FindSection_FindsSelfAndDescendants()
     {
         var deep = new Section();
         var middle = new Section { Children = { deep } };
         var root = new Section { Children = { middle } };
 
-        Assert.Same(root, root.FindSection(root.Id));
-        Assert.Same(middle, root.FindSection(middle.Id));
-        Assert.Same(deep, root.FindSection(deep.Id));
-        Assert.Null(root.FindSection("nope"));
+        Assert.That(root.FindSection(root.Id), Is.SameAs(root));
+        Assert.That(root.FindSection(middle.Id), Is.SameAs(middle));
+        Assert.That(root.FindSection(deep.Id), Is.SameAs(deep));
+        Assert.That(root.FindSection("nope"), Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void GetSectionsWithQuizzes_FlattensQuizSections()
     {
         var section = new Section
@@ -106,10 +106,10 @@ public class SectionTests
             }
         };
 
-        Assert.Equal(3, section.GetSectionsWithQuizzes().Count());
+        Assert.That(section.GetSectionsWithQuizzes().Count(), Is.EqualTo(3));
     }
 
-    [Fact]
+    [Test]
     public void CalculateTotalReadingMinutes_SumsThroughTree()
     {
         var section = new Section
@@ -126,6 +126,6 @@ public class SectionTests
             }
         };
 
-        Assert.Equal(17, section.CalculateTotalReadingMinutes());
+        Assert.That(section.CalculateTotalReadingMinutes(), Is.EqualTo(17));
     }
 }

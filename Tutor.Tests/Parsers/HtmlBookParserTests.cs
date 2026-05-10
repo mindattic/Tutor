@@ -7,15 +7,15 @@ public class HtmlBookParserTests
 {
     private readonly HtmlBookParser sut = new();
 
-    [Fact]
+    [Test]
     public void SupportedExtensions_IncludesHtmlVariants()
     {
-        Assert.Contains(".html", sut.SupportedExtensions);
-        Assert.Contains(".htm", sut.SupportedExtensions);
-        Assert.Contains(".xhtml", sut.SupportedExtensions);
+        Assert.That(sut.SupportedExtensions, Does.Contain(".html"));
+        Assert.That(sut.SupportedExtensions, Does.Contain(".htm"));
+        Assert.That(sut.SupportedExtensions, Does.Contain(".xhtml"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_ExtractsBodyText()
     {
         const string html = """
@@ -28,11 +28,11 @@ public class HtmlBookParserTests
 
         var book = await sut.ParseAsync(stream, "page.html");
 
-        Assert.Contains("quick brown fox", book.PlainText);
-        Assert.Equal("html", book.SourceFormat);
+        Assert.That(book.PlainText, Does.Contain("quick brown fox"));
+        Assert.That(book.SourceFormat, Is.EqualTo("html"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_StripsScriptAndStyle_OnFallbackPath()
     {
         // Tiny page without enough content for SmartReader to claim "readable" —
@@ -45,12 +45,12 @@ public class HtmlBookParserTests
 
         var book = await sut.ParseAsync(stream, "tiny.html");
 
-        Assert.DoesNotContain("alert", book.PlainText);
-        Assert.DoesNotContain("color:red", book.PlainText);
-        Assert.Contains("Visible content", book.PlainText);
+        Assert.That(book.PlainText, Does.Not.Contain("alert"));
+        Assert.That(book.PlainText, Does.Not.Contain("color:red"));
+        Assert.That(book.PlainText, Does.Contain("Visible content"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_FallsBackToWholePageWhenNotReadable_AndAddsWarning()
     {
         // SmartReader needs substantial content; an essentially-empty body falls
@@ -60,12 +60,12 @@ public class HtmlBookParserTests
 
         var book = await sut.ParseAsync(stream, "stub.html");
 
-        Assert.NotEmpty(book.Warnings);
-        Assert.Contains(book.Warnings, w =>
-            w.Contains("SmartReader", StringComparison.OrdinalIgnoreCase));
+        Assert.That(book.Warnings, Is.Not.Empty);
+        Assert.That(book.Warnings, Has.Some.Matches<string>(w =>
+            w.Contains("SmartReader", StringComparison.OrdinalIgnoreCase)));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_DefaultsTitleFromFileName()
     {
         const string html = "<html><body><span>x</span></body></html>";
@@ -75,6 +75,6 @@ public class HtmlBookParserTests
 
         // Title may be overridden by SmartReader on a readable article, but for
         // this stub it should fall through to the file-name default.
-        Assert.Equal("ChapterOne", book.Title);
+        Assert.That(book.Title, Is.EqualTo("ChapterOne"));
     }
 }

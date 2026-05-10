@@ -14,14 +14,15 @@ namespace Tutor.Tests.Services;
 /// %APPDATA% so a real key on the developer machine can't make
 /// IsConfiguredAsync return a misleading true.
 /// </summary>
-public class OpenAIServiceTests : IDisposable
+public class OpenAIServiceTests
 {
-    private readonly string sandbox;
-    private readonly string? prevCredsEnv;
-    private readonly ServiceProvider sp;
-    private readonly LegionClient legion;
+    private string sandbox = string.Empty;
+    private string? prevCredsEnv;
+    private ServiceProvider sp = null!;
+    private LegionClient legion = null!;
 
-    public OpenAIServiceTests()
+    [SetUp]
+    public void SetUp()
     {
         sandbox = Path.Combine(Path.GetTempPath(), "tutor-openai-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(sandbox);
@@ -34,7 +35,8 @@ public class OpenAIServiceTests : IDisposable
         legion = sp.GetRequiredService<LegionClient>();
     }
 
-    public void Dispose()
+    [TearDown]
+    public void TearDown()
     {
         sp.Dispose();
         Environment.SetEnvironmentVariable("MINDATTIC_LLM_CREDENTIALS", prevCredsEnv);
@@ -49,79 +51,79 @@ public class OpenAIServiceTests : IDisposable
         return (svc, prefs, opt);
     }
 
-    [Fact]
+    [Test]
     public void ProviderName_IsChatGPT()
     {
         var (svc, _, _) = Build();
-        Assert.Equal("ChatGPT", svc.ProviderName);
+        Assert.That(svc.ProviderName, Is.EqualTo("ChatGPT"));
     }
 
-    [Fact]
+    [Test]
     public async Task IsConfiguredAsync_NoKeyAnywhere_False()
     {
         var (svc, _, _) = Build();
-        Assert.False(await svc.IsConfiguredAsync());
+        Assert.That(await svc.IsConfiguredAsync(), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task IsConfiguredAsync_PrefsKeySet_True()
     {
         var (svc, prefs, _) = Build();
         await prefs.SetAsync("OPENAI_API_KEY", "sk-test");
 
-        Assert.True(await svc.IsConfiguredAsync());
+        Assert.That(await svc.IsConfiguredAsync(), Is.True);
     }
 
-    [Fact]
-    public async Task AskAsync_Empty_ThrowsArgumentException()
+    [Test]
+    public void AskAsync_Empty_ThrowsArgumentException()
     {
         var (svc, _, _) = Build();
-        await Assert.ThrowsAsync<ArgumentException>(() => svc.AskAsync(""));
-        await Assert.ThrowsAsync<ArgumentException>(() => svc.AskAsync("   "));
+        Assert.ThrowsAsync<ArgumentException>(() => svc.AskAsync(""));
+        Assert.ThrowsAsync<ArgumentException>(() => svc.AskAsync("   "));
     }
 
-    [Fact]
-    public async Task AskWithInstructionsAsync_Empty_ThrowsArgumentException()
+    [Test]
+    public void AskWithInstructionsAsync_Empty_ThrowsArgumentException()
     {
         var (svc, _, _) = Build();
-        await Assert.ThrowsAsync<ArgumentException>(
+        Assert.ThrowsAsync<ArgumentException>(
             () => svc.AskWithInstructionsAsync("", "system"));
     }
 
-    [Fact]
+    [Test]
     public void History_StartsEmpty()
     {
         var (svc, _, _) = Build();
-        Assert.Empty(svc.GetHistory());
+        Assert.That(svc.GetHistory(), Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void ClearHistory_DoesNotThrowOnEmpty()
     {
         var (svc, _, _) = Build();
         svc.ClearHistory();
-        Assert.Empty(svc.GetHistory());
+        Assert.That(svc.GetHistory(), Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task Options_GetApiKeyAsync_ReadsFromPrefs()
     {
         var (_, prefs, opt) = Build();
         await prefs.SetAsync("OPENAI_API_KEY", "abc");
 
-        Assert.Equal("abc", await opt.GetApiKeyAsync());
+        Assert.That(await opt.GetApiKeyAsync(), Is.EqualTo("abc"));
     }
 
-    [Fact]
+    [Test]
     public async Task Options_SetApiKeyAsync_WritesToPrefs()
     {
         var (_, prefs, opt) = Build();
         await opt.SetApiKeyAsync("xyz");
 
-        Assert.Equal("xyz", await prefs.GetAsync("OPENAI_API_KEY"));
+        Assert.That(await prefs.GetAsync("OPENAI_API_KEY"), Is.EqualTo("xyz"));
     }
 
-    [Fact]
+    [Test]
     public async Task Options_ClearApiKey_RemovesFromPrefs()
     {
         var (_, prefs, opt) = Build();
@@ -129,35 +131,35 @@ public class OpenAIServiceTests : IDisposable
 
         opt.ClearApiKey();
 
-        Assert.False(prefs.ContainsKey("OPENAI_API_KEY"));
+        Assert.That(prefs.ContainsKey("OPENAI_API_KEY"), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task Options_GetModelAsync_StoredOverridesDefault()
     {
         var (_, prefs, opt) = Build();
         opt.Model = "default-model";
         await prefs.SetAsync("CHATGPT_MODEL", "stored-model");
 
-        Assert.Equal("stored-model", await opt.GetModelAsync());
+        Assert.That(await opt.GetModelAsync(), Is.EqualTo("stored-model"));
     }
 
-    [Fact]
+    [Test]
     public async Task Options_GetModelAsync_NoStored_FallsBackToDefault()
     {
         var (_, _, opt) = Build();
         opt.Model = "fallback-model";
 
-        Assert.Equal("fallback-model", await opt.GetModelAsync());
+        Assert.That(await opt.GetModelAsync(), Is.EqualTo("fallback-model"));
     }
 
-    [Fact]
+    [Test]
     public void Options_Defaults_AreReasonable()
     {
         var opt = new OpenAIOptions(new FakeSecurePreferences());
 
-        Assert.False(string.IsNullOrWhiteSpace(opt.Model));
-        Assert.InRange(opt.Temperature, 0.0, 2.0);
-        Assert.True(opt.MaxTokens > 0);
+        Assert.That(string.IsNullOrWhiteSpace(opt.Model), Is.False);
+        Assert.That(opt.Temperature, Is.InRange(0.0, 2.0));
+        Assert.That(opt.MaxTokens > 0, Is.True);
     }
 }

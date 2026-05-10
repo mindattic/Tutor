@@ -5,7 +5,7 @@ namespace Tutor.Tests.Services;
 
 public class CoreConceptServiceTests
 {
-    [Fact]
+    [Test]
     public async Task AddConceptAsync_AddsAndPersists()
     {
         var prefs = new FakeSecurePreferences();
@@ -14,12 +14,12 @@ public class CoreConceptServiceTests
 
         var added = await sut.AddConceptAsync("Photosynthesis", "Plants make food from light");
 
-        Assert.True(added);
-        Assert.Equal(1, sut.Count);
-        Assert.NotNull(sut.GetConcept("photosynthesis"));
+        Assert.That(added, Is.True);
+        Assert.That(sut.Count, Is.EqualTo(1));
+        Assert.That(sut.GetConcept("photosynthesis"), Is.Not.Null);
     }
 
-    [Fact]
+    [Test]
     public async Task AddConceptAsync_DuplicateTermRejected()
     {
         var prefs = new FakeSecurePreferences();
@@ -29,21 +29,21 @@ public class CoreConceptServiceTests
         await sut.AddConceptAsync("Term", "first");
         var second = await sut.AddConceptAsync("term", "duplicate, different case");
 
-        Assert.False(second);
-        Assert.Equal(1, sut.Count);
+        Assert.That(second, Is.False);
+        Assert.That(sut.Count, Is.EqualTo(1));
     }
 
-    [Fact]
+    [Test]
     public async Task AddConceptAsync_BlankInputRejected()
     {
         var sut = new CoreConceptService(new FakeSecurePreferences());
 
-        Assert.False(await sut.AddConceptAsync("", "desc"));
-        Assert.False(await sut.AddConceptAsync("term", "  "));
-        Assert.Equal(0, sut.Count);
+        Assert.That(await sut.AddConceptAsync("", "desc"), Is.False);
+        Assert.That(await sut.AddConceptAsync("term", "  "), Is.False);
+        Assert.That(sut.Count, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateConceptAsync_UpdatesDescription()
     {
         var sut = new CoreConceptService(new FakeSecurePreferences());
@@ -52,30 +52,30 @@ public class CoreConceptServiceTests
 
         var ok = await sut.UpdateConceptAsync("Term", "new");
 
-        Assert.True(ok);
-        Assert.Equal("new", sut.GetConcept("term")!.Description);
+        Assert.That(ok, Is.True);
+        Assert.That(sut.GetConcept("term")!.Description, Is.EqualTo("new"));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateConceptAsync_UnknownTermReturnsFalse()
     {
         var sut = new CoreConceptService(new FakeSecurePreferences());
-        Assert.False(await sut.UpdateConceptAsync("missing", "x"));
+        Assert.That(await sut.UpdateConceptAsync("missing", "x"), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task RemoveConceptAsync_RemovesByCaseInsensitiveTerm()
     {
         var sut = new CoreConceptService(new FakeSecurePreferences());
         await sut.LoadForUserAsync("alice");
         await sut.AddConceptAsync("Term", "desc");
 
-        Assert.True(await sut.RemoveConceptAsync("TERM"));
-        Assert.Equal(0, sut.Count);
-        Assert.False(await sut.RemoveConceptAsync("TERM"));
+        Assert.That(await sut.RemoveConceptAsync("TERM"), Is.True);
+        Assert.That(sut.Count, Is.EqualTo(0));
+        Assert.That(await sut.RemoveConceptAsync("TERM"), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task LoadForUserAsync_PerUserIsolation()
     {
         var prefs = new FakeSecurePreferences();
@@ -85,16 +85,16 @@ public class CoreConceptServiceTests
         await sut.AddConceptAsync("AliceConcept", "for alice");
 
         await sut.LoadForUserAsync("bob");
-        Assert.Equal(0, sut.Count);
+        Assert.That(sut.Count, Is.EqualTo(0));
 
         await sut.AddConceptAsync("BobConcept", "for bob");
         await sut.LoadForUserAsync("alice");
-        Assert.Equal(1, sut.Count);
-        Assert.NotNull(sut.GetConcept("aliceconcept"));
-        Assert.Null(sut.GetConcept("bobconcept"));
+        Assert.That(sut.Count, Is.EqualTo(1));
+        Assert.That(sut.GetConcept("aliceconcept"), Is.Not.Null);
+        Assert.That(sut.GetConcept("bobconcept"), Is.Null);
     }
 
-    [Fact]
+    [Test]
     public async Task ClearAllAsync_EmptiesList()
     {
         var sut = new CoreConceptService(new FakeSecurePreferences());
@@ -104,10 +104,10 @@ public class CoreConceptServiceTests
 
         await sut.ClearAllAsync();
 
-        Assert.Equal(0, sut.Count);
+        Assert.That(sut.Count, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task OnConceptsChanged_FiresOnMutations()
     {
         // LoadForUserAsync skips raising the event when there's no stored data
@@ -123,6 +123,6 @@ public class CoreConceptServiceTests
         await sut.RemoveConceptAsync("a");
         await sut.ClearAllAsync();
 
-        Assert.Equal(4, fires);
+        Assert.That(fires, Is.EqualTo(4));
     }
 }

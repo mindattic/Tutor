@@ -5,24 +5,24 @@ namespace Tutor.Tests.Services;
 
 public class ThemeServiceTests
 {
-    [Fact]
+    [Test]
     public void Constructor_DoesNotThrow()
     {
         var prefs = new FakeSecurePreferences();
         var sut = new ThemeService(prefs);
-        Assert.NotNull(sut);
+        Assert.That(sut, Is.Not.Null);
     }
 
-    [Fact]
+    [Test]
     public async Task GetThemeAsync_DefaultIsNotEmpty()
     {
         var prefs = new FakeSecurePreferences();
         var sut = new ThemeService(prefs);
         var theme = await sut.GetThemeAsync();
-        Assert.False(string.IsNullOrEmpty(theme));
+        Assert.That(string.IsNullOrEmpty(theme), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task SetAndGet_Theme_Roundtrips()
     {
         var prefs = new FakeSecurePreferences();
@@ -30,6 +30,6 @@ public class ThemeServiceTests
 
         await sut.SetThemeAsync("Summer");
         var result = await sut.GetThemeAsync();
-        Assert.Equal("Summer", result);
+        Assert.That(result, Is.EqualTo("Summer"));
     }
 }

@@ -39,143 +39,143 @@ public class ConceptMapTests
         };
     }
 
-    [Fact]
+    [Test]
     public void GetConcept_ById_ReturnsConcept()
     {
         var map = CreateSampleMap();
         var c = map.GetConcept("c2");
-        Assert.NotNull(c);
-        Assert.Equal("Multiplication", c.Title);
+        Assert.That(c, Is.Not.Null);
+        Assert.That(c!.Title, Is.EqualTo("Multiplication"));
     }
 
-    [Fact]
+    [Test]
     public void GetConcept_UnknownId_ReturnsNull()
     {
         var map = CreateSampleMap();
-        Assert.Null(map.GetConcept("unknown"));
+        Assert.That(map.GetConcept("unknown"), Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void GetConceptByTitle_CaseInsensitive()
     {
         var map = CreateSampleMap();
         var c = map.GetConceptByTitle("addition");
-        Assert.NotNull(c);
-        Assert.Equal("c1", c.Id);
+        Assert.That(c, Is.Not.Null);
+        Assert.That(c!.Id, Is.EqualTo("c1"));
     }
 
-    [Fact]
+    [Test]
     public void TotalConcepts_And_TotalRelations()
     {
         var map = CreateSampleMap();
-        Assert.Equal(4, map.TotalConcepts);
-        Assert.Equal(2, map.TotalRelations);
+        Assert.That(map.TotalConcepts, Is.EqualTo(4));
+        Assert.That(map.TotalRelations, Is.EqualTo(2));
     }
 
-    [Fact]
+    [Test]
     public void GetPrerequisites_ReturnsCorrectConcepts()
     {
         var map = CreateSampleMap();
         var prereqs = map.GetPrerequisites("c2").ToList();
-        Assert.Single(prereqs);
-        Assert.Equal("c1", prereqs[0].Id);
+        Assert.That(prereqs, Has.Count.EqualTo(1));
+        Assert.That(prereqs[0].Id, Is.EqualTo("c1"));
     }
 
-    [Fact]
+    [Test]
     public void GetDependents_ReturnsCorrectConcepts()
     {
         var map = CreateSampleMap();
         var deps = map.GetDependents("c1").ToList();
-        Assert.Single(deps);
-        Assert.Equal("c2", deps[0].Id);
+        Assert.That(deps, Has.Count.EqualTo(1));
+        Assert.That(deps[0].Id, Is.EqualTo("c2"));
     }
 
-    [Fact]
+    [Test]
     public void GetRelatedConcepts_ExcludesPrerequisites()
     {
         var map = CreateSampleMap();
         var related = map.GetRelatedConcepts("c2").ToList();
-        Assert.Contains(related, c => c.Id == "c3");
+        Assert.That(related, Has.Some.Matches<Concept>(c => c.Id == "c3"));
     }
 
-    [Fact]
+    [Test]
     public void GetConceptsByComplexity_OrdersFoundationalFirst()
     {
         var map = CreateSampleMap();
         var ordered = map.GetConceptsByComplexity().ToList();
-        Assert.Equal("c1", ordered[0].Id);
-        Assert.Equal("c2", ordered[1].Id);
-        Assert.Equal("c3", ordered[2].Id);
+        Assert.That(ordered[0].Id, Is.EqualTo("c1"));
+        Assert.That(ordered[1].Id, Is.EqualTo("c2"));
+        Assert.That(ordered[2].Id, Is.EqualTo("c3"));
     }
 
-    [Fact]
+    [Test]
     public void GetConceptsByComplexity_IncludesConceptsNotInOrder()
     {
         var map = CreateSampleMap();
         var ordered = map.GetConceptsByComplexity().ToList();
-        Assert.Equal(4, ordered.Count);
-        Assert.Contains(ordered, c => c.Id == "c4");
+        Assert.That(ordered, Has.Count.EqualTo(4));
+        Assert.That(ordered, Has.Some.Matches<Concept>(c => c.Id == "c4"));
     }
 
-    [Fact]
+    [Test]
     public void GetConceptsAtLevel_FiltersCorrectly()
     {
         var map = CreateSampleMap();
         var level0 = map.GetConceptsAtLevel(0).ToList();
-        Assert.Single(level0);
-        Assert.Equal("c1", level0[0].Id);
+        Assert.That(level0, Has.Count.EqualTo(1));
+        Assert.That(level0[0].Id, Is.EqualTo("c1"));
     }
 
-    [Fact]
+    [Test]
     public void MaxComplexityLevel_ReturnsHighest()
     {
         var map = CreateSampleMap();
-        Assert.Equal(2, map.MaxComplexityLevel);
+        Assert.That(map.MaxComplexityLevel, Is.EqualTo(2));
     }
 
-    [Fact]
+    [Test]
     public void MaxComplexityLevel_EmptyOrder_ReturnsZero()
     {
         var map = new ConceptMap();
-        Assert.Equal(0, map.MaxComplexityLevel);
+        Assert.That(map.MaxComplexityLevel, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public void FindConnectedComponents_IdentifiesOrphan()
     {
         var map = CreateSampleMap();
         var components = map.FindConnectedComponents();
-        Assert.Equal(2, components.Count);
-        Assert.Equal(3, components[0].Size); // main cluster
-        Assert.Equal(1, components[1].Size); // orphan c4
+        Assert.That(components, Has.Count.EqualTo(2));
+        Assert.That(components[0].Size, Is.EqualTo(3)); // main cluster
+        Assert.That(components[1].Size, Is.EqualTo(1)); // orphan c4
     }
 
-    [Fact]
+    [Test]
     public void GetMainComponent_ReturnsLargest()
     {
         var map = CreateSampleMap();
         var main = map.GetMainComponent();
-        Assert.NotNull(main);
-        Assert.Equal(3, main.Size);
+        Assert.That(main, Is.Not.Null);
+        Assert.That(main!.Size, Is.EqualTo(3));
     }
 
-    [Fact]
+    [Test]
     public void GetOrphanedComponents_ReturnsNonMain()
     {
         var map = CreateSampleMap();
         var orphans = map.GetOrphanedComponents();
-        Assert.Single(orphans);
-        Assert.Contains("c4", orphans[0].ConceptIds);
+        Assert.That(orphans, Has.Count.EqualTo(1));
+        Assert.That(orphans[0].ConceptIds, Does.Contain("c4"));
     }
 
-    [Fact]
+    [Test]
     public void HasOrphanedConcepts_TrueWhenMultipleComponents()
     {
         var map = CreateSampleMap();
-        Assert.True(map.HasOrphanedConcepts);
+        Assert.That(map.HasOrphanedConcepts, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void HasOrphanedConcepts_FalseWhenFullyConnected()
     {
         var map = CreateSampleMap();
@@ -186,57 +186,57 @@ public class ConceptMapTests
             TargetConceptId = "c4",
             RelationType = ConceptRelationType.Related
         });
-        Assert.False(map.HasOrphanedConcepts);
+        Assert.That(map.HasOrphanedConcepts, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void OrphanedConceptCount_CorrectCount()
     {
         var map = CreateSampleMap();
-        Assert.Equal(1, map.OrphanedConceptCount);
+        Assert.That(map.OrphanedConceptCount, Is.EqualTo(1));
     }
 
-    [Fact]
+    [Test]
     public void GetConnectivityInfo_PopulatesAllFields()
     {
         var map = CreateSampleMap();
         var info = map.GetConnectivityInfo();
-        Assert.Equal(2, info.TotalComponents);
-        Assert.Equal(3, info.MainComponentSize);
-        Assert.Equal(1, info.OrphanedComponentCount);
-        Assert.Equal(1, info.OrphanedConceptCount);
-        Assert.False(info.IsFullyConnected);
+        Assert.That(info.TotalComponents, Is.EqualTo(2));
+        Assert.That(info.MainComponentSize, Is.EqualTo(3));
+        Assert.That(info.OrphanedComponentCount, Is.EqualTo(1));
+        Assert.That(info.OrphanedConceptCount, Is.EqualTo(1));
+        Assert.That(info.IsFullyConnected, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void GetComplexity_ReturnsCorrectInfo()
     {
         var map = CreateSampleMap();
         var complexity = map.GetComplexity("c2");
-        Assert.NotNull(complexity);
-        Assert.Equal(1, complexity.Level);
-        Assert.Equal(1, complexity.PrerequisiteCount);
+        Assert.That(complexity, Is.Not.Null);
+        Assert.That(complexity!.Level, Is.EqualTo(1));
+        Assert.That(complexity.PrerequisiteCount, Is.EqualTo(1));
     }
 
-    [Fact]
+    [Test]
     public void EmptyMap_FindConnectedComponents_ReturnsEmpty()
     {
         var map = new ConceptMap();
         var components = map.FindConnectedComponents();
-        Assert.Empty(components);
+        Assert.That(components, Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void Status_DefaultsToNotStarted()
     {
         var map = new ConceptMap();
-        Assert.Equal(ConceptMapStatus.NotStarted, map.Status);
+        Assert.That(map.Status, Is.EqualTo(ConceptMapStatus.NotStarted));
     }
 
-    [Fact]
+    [Test]
     public void Version_DefaultsToOne()
     {
         var map = new ConceptMap();
-        Assert.Equal(1, map.Version);
+        Assert.That(map.Version, Is.EqualTo(1));
     }
 }

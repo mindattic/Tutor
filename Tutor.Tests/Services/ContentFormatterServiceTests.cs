@@ -28,60 +28,60 @@ public class ContentFormatterServiceTests
         return new ContentFormatterService(router);
     }
 
-    [Fact]
+    [Test]
     public void QuickFormat_NullOrEmpty_ReturnsInput()
     {
-        Assert.Null(ContentFormatterService.QuickFormat(null!));
-        Assert.Equal("", ContentFormatterService.QuickFormat(""));
-        Assert.Equal("   ", ContentFormatterService.QuickFormat("   "));
+        Assert.That(ContentFormatterService.QuickFormat(null!), Is.Null);
+        Assert.That(ContentFormatterService.QuickFormat(""), Is.EqualTo(""));
+        Assert.That(ContentFormatterService.QuickFormat("   "), Is.EqualTo("   "));
     }
 
-    [Fact]
+    [Test]
     public void QuickFormat_DetectsAllCapsHeader()
     {
         var output = ContentFormatterService.QuickFormat("INTRODUCTION\n\nFirst paragraph.");
-        Assert.Contains("## Introduction", output);
-        Assert.Contains("First paragraph.", output);
+        Assert.That(output, Does.Contain("## Introduction"));
+        Assert.That(output, Does.Contain("First paragraph."));
     }
 
-    [Fact]
+    [Test]
     public void QuickFormat_DetectsColonHeader()
     {
         var output = ContentFormatterService.QuickFormat("Overview:\nSome body text.");
-        Assert.Contains("## Overview", output);
+        Assert.That(output, Does.Contain("## Overview"));
     }
 
-    [Fact]
+    [Test]
     public void QuickFormat_DetectsChapterPrefix()
     {
         var output = ContentFormatterService.QuickFormat("Chapter 1\nFirst sentence.");
-        Assert.Contains("## Chapter 1", output);
+        Assert.That(output, Does.Contain("## Chapter 1"));
     }
 
-    [Fact]
+    [Test]
     public void QuickFormat_NumberedListBecomesBullets()
     {
         var output = ContentFormatterService.QuickFormat("1. First\n2. Second");
-        Assert.Contains("- First", output);
-        Assert.Contains("- Second", output);
+        Assert.That(output, Does.Contain("- First"));
+        Assert.That(output, Does.Contain("- Second"));
     }
 
-    [Fact]
+    [Test]
     public void QuickFormat_DashListPassthrough()
     {
         var output = ContentFormatterService.QuickFormat("- already bulleted");
-        Assert.Contains("- already bulleted", output);
+        Assert.That(output, Does.Contain("- already bulleted"));
     }
 
-    [Fact]
+    [Test]
     public void SplitIntoChunks_EmptyContent_ReturnsEmpty()
     {
         var sut = CreateService();
-        Assert.Empty(sut.SplitIntoChunks(""));
-        Assert.Empty(sut.SplitIntoChunks("   "));
+        Assert.That(sut.SplitIntoChunks(""), Is.Empty);
+        Assert.That(sut.SplitIntoChunks("   "), Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void SplitIntoChunks_SmallContent_ReturnsSingleChunk()
     {
         var sut = CreateService();
@@ -89,11 +89,11 @@ public class ContentFormatterServiceTests
 
         var chunks = sut.SplitIntoChunks(content, maxChunkSize: 100);
 
-        Assert.Single(chunks);
-        Assert.Equal(content, chunks[0]);
+        Assert.That(chunks, Has.Count.EqualTo(1));
+        Assert.That(chunks[0], Is.EqualTo(content));
     }
 
-    [Fact]
+    [Test]
     public void SplitIntoChunks_LargeContent_SplitsByParagraphs()
     {
         var sut = CreateService();
@@ -104,14 +104,14 @@ public class ContentFormatterServiceTests
 
         var chunks = sut.SplitIntoChunks(content, maxChunkSize: 600);
 
-        Assert.True(chunks.Count > 1);
+        Assert.That(chunks.Count > 1, Is.True);
     }
 
-    [Fact]
+    [Test]
     public async Task FormatContentAsync_BlankInput_ReturnedUnchanged()
     {
         var sut = CreateService();
-        Assert.Equal("", await sut.FormatContentAsync(""));
-        Assert.Equal("   ", await sut.FormatContentAsync("   "));
+        Assert.That(await sut.FormatContentAsync(""), Is.EqualTo(""));
+        Assert.That(await sut.FormatContentAsync("   "), Is.EqualTo("   "));
     }
 }

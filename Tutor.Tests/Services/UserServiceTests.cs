@@ -7,7 +7,7 @@ namespace Tutor.Tests.Services;
 
 public class UserServiceTests
 {
-    [Fact]
+    [Test]
     public async Task GetCurrentUserAsync_NoStoredUser_CreatesAndPersistsDefault()
     {
         var prefs = new FakeSecurePreferences();
@@ -15,12 +15,12 @@ public class UserServiceTests
 
         var user = await sut.GetCurrentUserAsync();
 
-        Assert.Equal("default_user", user.Id);
-        Assert.Equal("Default User", user.Name);
-        Assert.True(prefs.ContainsKey("ACTIVE_USER"));
+        Assert.That(user.Id, Is.EqualTo("default_user"));
+        Assert.That(user.Name, Is.EqualTo("Default User"));
+        Assert.That(prefs.ContainsKey("ACTIVE_USER"), Is.True);
     }
 
-    [Fact]
+    [Test]
     public async Task GetCurrentUserAsync_CachesUserAcrossCalls()
     {
         var prefs = new FakeSecurePreferences();
@@ -29,10 +29,10 @@ public class UserServiceTests
         var first = await sut.GetCurrentUserAsync();
         var second = await sut.GetCurrentUserAsync();
 
-        Assert.Same(first, second);
+        Assert.That(second, Is.SameAs(first));
     }
 
-    [Fact]
+    [Test]
     public async Task SaveCurrentUserAsync_PersistsAsJson()
     {
         var prefs = new FakeSecurePreferences();
@@ -42,15 +42,15 @@ public class UserServiceTests
         await sut.SaveCurrentUserAsync(user);
 
         var json = await prefs.GetAsync("ACTIVE_USER");
-        Assert.NotNull(json);
+        Assert.That(json, Is.Not.Null);
         var parsed = JsonSerializer.Deserialize<User>(json!);
-        Assert.NotNull(parsed);
-        Assert.Equal("u1", parsed!.Id);
-        Assert.Equal("Alice", parsed.Name);
-        Assert.Equal("a@example.com", parsed.Email);
+        Assert.That(parsed, Is.Not.Null);
+        Assert.That(parsed!.Id, Is.EqualTo("u1"));
+        Assert.That(parsed.Name, Is.EqualTo("Alice"));
+        Assert.That(parsed.Email, Is.EqualTo("a@example.com"));
     }
 
-    [Fact]
+    [Test]
     public async Task GetCurrentUserAsync_ReadsExistingJsonFromStore()
     {
         var prefs = new FakeSecurePreferences();
@@ -60,11 +60,11 @@ public class UserServiceTests
 
         var user = await sut.GetCurrentUserAsync();
 
-        Assert.Equal("u42", user.Id);
-        Assert.Equal("Stored", user.Name);
+        Assert.That(user.Id, Is.EqualTo("u42"));
+        Assert.That(user.Name, Is.EqualTo("Stored"));
     }
 
-    [Fact]
+    [Test]
     public async Task GetCurrentUserAsync_CorruptJson_FallsBackToDefault()
     {
         var prefs = new FakeSecurePreferences();
@@ -73,6 +73,6 @@ public class UserServiceTests
 
         var user = await sut.GetCurrentUserAsync();
 
-        Assert.Equal("default_user", user.Id);
+        Assert.That(user.Id, Is.EqualTo("default_user"));
     }
 }

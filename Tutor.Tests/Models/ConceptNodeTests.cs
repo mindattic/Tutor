@@ -4,29 +4,29 @@ namespace Tutor.Tests.Models;
 
 public class ConceptNodeTests
 {
-    [Fact]
+    [Test]
     public void NewNode_HasUniqueId()
     {
         var a = new ConceptNode();
         var b = new ConceptNode();
-        Assert.NotEqual(a.Id, b.Id);
+        Assert.That(b.Id, Is.Not.EqualTo(a.Id));
     }
 
-    [Fact]
+    [Test]
     public void DefaultCollections_AreEmpty()
     {
         var node = new ConceptNode();
-        Assert.Empty(node.Aliases);
-        Assert.Empty(node.PrerequisiteIds);
-        Assert.Empty(node.DependentIds);
-        Assert.Empty(node.Embedding);
-        Assert.Empty(node.SemanticSignature);
-        Assert.Empty(node.SourceResourceIds);
-        Assert.Empty(node.RelevantChunkIds);
-        Assert.Empty(node.Tags);
+        Assert.That(node.Aliases, Is.Empty);
+        Assert.That(node.PrerequisiteIds, Is.Empty);
+        Assert.That(node.DependentIds, Is.Empty);
+        Assert.That(node.Embedding, Is.Empty);
+        Assert.That(node.SemanticSignature, Is.Empty);
+        Assert.That(node.SourceResourceIds, Is.Empty);
+        Assert.That(node.RelevantChunkIds, Is.Empty);
+        Assert.That(node.Tags, Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void Properties_CanBeSet()
     {
         var node = new ConceptNode
@@ -38,77 +38,77 @@ public class ConceptNodeTests
             PrerequisiteIds = ["n-pos", "n-time"],
             DependentIds = ["n-accel"]
         };
-        Assert.Equal("Velocity", node.Term);
-        Assert.Equal(2, node.HierarchyDepth);
-        Assert.Equal(2, node.PrerequisiteIds.Count);
-        Assert.Single(node.DependentIds);
+        Assert.That(node.Term, Is.EqualTo("Velocity"));
+        Assert.That(node.HierarchyDepth, Is.EqualTo(2));
+        Assert.That(node.PrerequisiteIds, Has.Count.EqualTo(2));
+        Assert.That(node.DependentIds, Has.Count.EqualTo(1));
     }
 
-    [Fact]
+    [Test]
     public void IsFoundational_TrueWhenNoPrerequisites()
     {
         var node = new ConceptNode();
-        Assert.True(node.IsFoundational);
+        Assert.That(node.IsFoundational, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void IsFoundational_FalseWhenHasPrerequisites()
     {
         var node = new ConceptNode { PrerequisiteIds = ["other"] };
-        Assert.False(node.IsFoundational);
+        Assert.That(node.IsFoundational, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void IsLeaf_TrueWhenNoDependents()
     {
         var node = new ConceptNode();
-        Assert.True(node.IsLeaf);
+        Assert.That(node.IsLeaf, Is.True);
     }
 
-    [Fact]
+    [Test]
     public void IsLeaf_FalseWhenHasDependents()
     {
         var node = new ConceptNode { DependentIds = ["dep1"] };
-        Assert.False(node.IsLeaf);
+        Assert.That(node.IsLeaf, Is.False);
     }
 
-    [Fact]
+    [Test]
     public void GetEmbeddingText_IncludesTerm()
     {
         var node = new ConceptNode { Term = "Force" };
-        Assert.Contains("Force", node.GetEmbeddingText());
+        Assert.That(node.GetEmbeddingText(), Does.Contain("Force"));
     }
 
-    [Fact]
+    [Test]
     public void GetEmbeddingText_IncludesDescription()
     {
         var node = new ConceptNode { Term = "Force", Description = "Push or pull" };
         var text = node.GetEmbeddingText();
-        Assert.Contains("Force", text);
-        Assert.Contains("Push or pull", text);
+        Assert.That(text, Does.Contain("Force"));
+        Assert.That(text, Does.Contain("Push or pull"));
     }
 
-    [Fact]
+    [Test]
     public void GetEmbeddingText_IncludesAliases()
     {
         var node = new ConceptNode { Term = "Force", Aliases = ["F", "net force"] };
         var text = node.GetEmbeddingText();
-        Assert.Contains("Also known as", text);
-        Assert.Contains("net force", text);
+        Assert.That(text, Does.Contain("Also known as"));
+        Assert.That(text, Does.Contain("net force"));
     }
 
-    [Fact]
+    [Test]
     public void DefaultConfidenceScore_IsOne()
     {
         var node = new ConceptNode();
-        Assert.Equal(1.0f, node.ConfidenceScore);
+        Assert.That(node.ConfidenceScore, Is.EqualTo(1.0f));
     }
 
-    [Fact]
+    [Test]
     public void Embedding_CanBeAssigned()
     {
         var node = new ConceptNode();
         node.Embedding = [0.1f, 0.2f, 0.3f];
-        Assert.Equal(3, node.Embedding.Length);
+        Assert.That(node.Embedding.Length, Is.EqualTo(3));
     }
 }

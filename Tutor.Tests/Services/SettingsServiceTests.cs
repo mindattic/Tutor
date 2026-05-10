@@ -5,24 +5,24 @@ namespace Tutor.Tests.Services;
 
 public class SettingsServiceTests
 {
-    [Fact]
+    [Test]
     public void Constructor_AcceptsSecurePreferences()
     {
         var prefs = new FakeSecurePreferences();
         var sut = new SettingsService(prefs);
-        Assert.NotNull(sut);
+        Assert.That(sut, Is.Not.Null);
     }
 
-    [Fact]
+    [Test]
     public async Task GetEnterToSendAsync_DefaultsToTrue()
     {
         var prefs = new FakeSecurePreferences();
         var sut = new SettingsService(prefs);
         var value = await sut.GetEnterToSendAsync();
-        Assert.True(value);
+        Assert.That(value, Is.True);
     }
 
-    [Fact]
+    [Test]
     public async Task SetAndGet_EnterToSend_Roundtrips()
     {
         var prefs = new FakeSecurePreferences();
@@ -30,6 +30,6 @@ public class SettingsServiceTests
 
         await sut.SetEnterToSendAsync(false);
         var result = await sut.GetEnterToSendAsync();
-        Assert.False(result);
+        Assert.That(result, Is.False);
     }
 }

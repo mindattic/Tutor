@@ -4,19 +4,19 @@ namespace Tutor.Tests.Models;
 
 public class LessonTests
 {
-    [Fact]
+    [Test]
     public void Defaults_AreSensible()
     {
         var lesson = new Lesson();
-        Assert.True(Guid.TryParse(lesson.Id, out _));
-        Assert.Empty(lesson.Topics);
-        Assert.Empty(lesson.Sections);
-        Assert.Empty(lesson.Tags);
-        Assert.Equal(0, lesson.Order);
-        Assert.Equal(0, lesson.EstimatedMinutes);
+        Assert.That(Guid.TryParse(lesson.Id, out _), Is.True);
+        Assert.That(lesson.Topics, Is.Empty);
+        Assert.That(lesson.Sections, Is.Empty);
+        Assert.That(lesson.Tags, Is.Empty);
+        Assert.That(lesson.Order, Is.EqualTo(0));
+        Assert.That(lesson.EstimatedMinutes, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public void TopicCount_TotalConceptCount_AggregateAcrossTopics()
     {
         var lesson = new Lesson
@@ -28,11 +28,11 @@ public class LessonTests
             }
         };
 
-        Assert.Equal(2, lesson.TopicCount);
-        Assert.Equal(3, lesson.TotalConceptCount);
+        Assert.That(lesson.TopicCount, Is.EqualTo(2));
+        Assert.That(lesson.TotalConceptCount, Is.EqualTo(3));
     }
 
-    [Fact]
+    [Test]
     public void GetAllConceptIds_PreservesTopicOrder()
     {
         var lesson = new Lesson
@@ -44,10 +44,10 @@ public class LessonTests
             }
         };
 
-        Assert.Equal(new[] { "a1", "b1", "b2" }, lesson.GetAllConceptIds().ToArray());
+        Assert.That(lesson.GetAllConceptIds().ToArray(), Is.EqualTo(new[] { "a1", "b1", "b2" }));
     }
 
-    [Fact]
+    [Test]
     public void GetTotalSectionCount_CountsNestedSections()
     {
         var lesson = new Lesson
@@ -63,22 +63,22 @@ public class LessonTests
             }
         };
 
-        Assert.Equal(4, lesson.GetTotalSectionCount());
+        Assert.That(lesson.GetTotalSectionCount(), Is.EqualTo(4));
     }
 
-    [Fact]
+    [Test]
     public void FindSection_ReturnsNestedSectionById()
     {
         var nested = new Section { Title = "deep" };
         var parent = new Section { Title = "shallow", Children = { nested } };
         var lesson = new Lesson { Sections = { parent } };
 
-        Assert.Same(nested, lesson.FindSection(nested.Id));
-        Assert.Same(parent, lesson.FindSection(parent.Id));
-        Assert.Null(lesson.FindSection("does-not-exist"));
+        Assert.That(lesson.FindSection(nested.Id), Is.SameAs(nested));
+        Assert.That(lesson.FindSection(parent.Id), Is.SameAs(parent));
+        Assert.That(lesson.FindSection("does-not-exist"), Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void GetAllSectionsFlattened_VisitsParentBeforeChildren_AndOrders()
     {
         var lesson = new Lesson
@@ -100,10 +100,10 @@ public class LessonTests
         };
 
         var titles = lesson.GetAllSectionsFlattened().Select(s => s.Title).ToArray();
-        Assert.Equal(new[] { "first", "first.a", "first.b", "second" }, titles);
+        Assert.That(titles, Is.EqualTo(new[] { "first", "first.a", "first.b", "second" }));
     }
 
-    [Fact]
+    [Test]
     public void GenerateSectionNumbers_AssignsHierarchicalIds()
     {
         var lesson = new Lesson
@@ -125,11 +125,11 @@ public class LessonTests
 
         lesson.GenerateSectionNumbers(lessonNumber: 3);
 
-        Assert.Equal("3a", lesson.Sections[0].Number);
-        Assert.Equal("3b", lesson.Sections[1].Number);
-        Assert.Equal("3a-i", lesson.Sections[0].Children[0].Number);
-        Assert.Equal("3a-ii", lesson.Sections[0].Children[1].Number);
-        Assert.Equal(0, lesson.Sections[0].Depth);
-        Assert.Equal(1, lesson.Sections[0].Children[0].Depth);
+        Assert.That(lesson.Sections[0].Number, Is.EqualTo("3a"));
+        Assert.That(lesson.Sections[1].Number, Is.EqualTo("3b"));
+        Assert.That(lesson.Sections[0].Children[0].Number, Is.EqualTo("3a-i"));
+        Assert.That(lesson.Sections[0].Children[1].Number, Is.EqualTo("3a-ii"));
+        Assert.That(lesson.Sections[0].Depth, Is.EqualTo(0));
+        Assert.That(lesson.Sections[0].Children[0].Depth, Is.EqualTo(1));
     }
 }

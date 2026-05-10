@@ -8,55 +8,55 @@ public class ParserRegistryTests
     private static ParserRegistry CreateDefault()
         => new(new IBookParser[] { new TxtBookParser(), new HtmlBookParser() });
 
-    [Fact]
+    [Test]
     public void CanHandle_KnownExtension_True()
     {
         var registry = CreateDefault();
-        Assert.True(registry.CanHandle("book.txt"));
-        Assert.True(registry.CanHandle("page.html"));
+        Assert.That(registry.CanHandle("book.txt"), Is.True);
+        Assert.That(registry.CanHandle("page.html"), Is.True);
     }
 
-    [Fact]
+    [Test]
     public void CanHandle_UnknownExtension_False()
     {
         var registry = CreateDefault();
-        Assert.False(registry.CanHandle("book.docx"));
-        Assert.False(registry.CanHandle("noext"));
+        Assert.That(registry.CanHandle("book.docx"), Is.False);
+        Assert.That(registry.CanHandle("noext"), Is.False);
     }
 
-    [Fact]
+    [Test]
     public void CanHandle_IsCaseInsensitive()
     {
         var registry = CreateDefault();
-        Assert.True(registry.CanHandle("BOOK.TXT"));
-        Assert.True(registry.CanHandle("Page.HTML"));
+        Assert.That(registry.CanHandle("BOOK.TXT"), Is.True);
+        Assert.That(registry.CanHandle("Page.HTML"), Is.True);
     }
 
-    [Fact]
+    [Test]
     public void Resolve_ReturnsCorrectParser()
     {
         var registry = CreateDefault();
-        Assert.IsType<TxtBookParser>(registry.Resolve("a.md"));
-        Assert.IsType<HtmlBookParser>(registry.Resolve("b.HTM"));
+        Assert.That(registry.Resolve("a.md"), Is.InstanceOf<TxtBookParser>());
+        Assert.That(registry.Resolve("b.HTM"), Is.InstanceOf<HtmlBookParser>());
     }
 
-    [Fact]
+    [Test]
     public void Resolve_UnknownExtension_ReturnsNull()
     {
         var registry = CreateDefault();
-        Assert.Null(registry.Resolve("a.docx"));
+        Assert.That(registry.Resolve("a.docx"), Is.Null);
     }
 
-    [Fact]
+    [Test]
     public void SupportedExtensions_AggregatesAllParsers()
     {
         var registry = CreateDefault();
-        Assert.Contains(".txt", registry.SupportedExtensions);
-        Assert.Contains(".md", registry.SupportedExtensions);
-        Assert.Contains(".html", registry.SupportedExtensions);
+        Assert.That(registry.SupportedExtensions, Does.Contain(".txt"));
+        Assert.That(registry.SupportedExtensions, Does.Contain(".md"));
+        Assert.That(registry.SupportedExtensions, Does.Contain(".html"));
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_FromFile_RoundTripsTextContent()
     {
         var registry = CreateDefault();
@@ -65,7 +65,7 @@ public class ParserRegistryTests
         {
             await File.WriteAllTextAsync(path, "hello-from-disk", Encoding.UTF8);
             var book = await registry.ParseAsync(path);
-            Assert.Equal("hello-from-disk", book.PlainText);
+            Assert.That(book.PlainText, Is.EqualTo("hello-from-disk"));
         }
         finally
         {
@@ -73,7 +73,7 @@ public class ParserRegistryTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task ParseAsync_UnknownExtension_ThrowsNotSupported()
     {
         var registry = CreateDefault();
@@ -81,7 +81,7 @@ public class ParserRegistryTests
         try
         {
             await File.WriteAllTextAsync(path, "n/a");
-            await Assert.ThrowsAsync<NotSupportedException>(
+            Assert.ThrowsAsync<NotSupportedException>(
                 () => registry.ParseAsync(path));
         }
         finally
@@ -90,14 +90,14 @@ public class ParserRegistryTests
         }
     }
 
-    [Fact]
+    [Test]
     public void LastRegisteredParser_WinsForOverlappingExtension()
     {
         var first = new StubParser(new[] { ".x" }, "first");
         var second = new StubParser(new[] { ".x" }, "second");
         var registry = new ParserRegistry(new IBookParser[] { first, second });
 
-        Assert.Same(second, registry.Resolve("a.x"));
+        Assert.That(registry.Resolve("a.x"), Is.SameAs(second));
     }
 
     private sealed class StubParser : IBookParser

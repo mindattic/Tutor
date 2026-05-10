@@ -4,38 +4,38 @@ namespace Tutor.Tests.Services;
 
 public class StoragePathsTests
 {
-    [Fact]
+    [Test]
     public void SettingsDirectory_IsRootedUnderLocalAppData()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-        Assert.StartsWith(localAppData, StoragePaths.SettingsDirectory);
-        Assert.Contains("Tutor", StoragePaths.SettingsDirectory);
-        Assert.EndsWith("Settings", StoragePaths.SettingsDirectory);
+        Assert.That(StoragePaths.SettingsDirectory, Does.StartWith(localAppData));
+        Assert.That(StoragePaths.SettingsDirectory, Does.Contain("Tutor"));
+        Assert.That(StoragePaths.SettingsDirectory, Does.EndWith("Settings"));
     }
 
-    [Fact]
+    [Test]
     public void StorageSettingsPath_LivesInSettingsDirectory()
     {
-        Assert.Equal(StoragePaths.SettingsDirectory,
-            Path.GetDirectoryName(StoragePaths.StorageSettingsPath));
-        Assert.Equal("storage.settings.json",
-            Path.GetFileName(StoragePaths.StorageSettingsPath));
+        Assert.That(Path.GetDirectoryName(StoragePaths.StorageSettingsPath),
+            Is.EqualTo(StoragePaths.SettingsDirectory));
+        Assert.That(Path.GetFileName(StoragePaths.StorageSettingsPath),
+            Is.EqualTo("storage.settings.json"));
     }
 
-    [Fact]
+    [Test]
     public void VectorStorePath_LivesInSettingsDirectory()
     {
-        Assert.Equal(StoragePaths.SettingsDirectory,
-            Path.GetDirectoryName(StoragePaths.VectorStorePath));
-        Assert.Equal("content_chunks.json",
-            Path.GetFileName(StoragePaths.VectorStorePath));
+        Assert.That(Path.GetDirectoryName(StoragePaths.VectorStorePath),
+            Is.EqualTo(StoragePaths.SettingsDirectory));
+        Assert.That(Path.GetFileName(StoragePaths.VectorStorePath),
+            Is.EqualTo("content_chunks.json"));
     }
 
-    [Fact]
+    [Test]
     public void DefaultLearningResourcesDirectory_EndsWithLearningResources()
     {
         var full = Path.GetFullPath(StoragePaths.DefaultLearningResourcesDirectory);
-        Assert.EndsWith("LearningResources", full);
+        Assert.That(full, Does.EndWith("LearningResources"));
     }
 }

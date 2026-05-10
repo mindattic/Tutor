@@ -5,17 +5,17 @@ namespace Tutor.Tests.Models;
 
 public class LlmCredentialTests
 {
-    [Fact]
+    [Test]
     public void Defaults_AreEmpty()
     {
         var cred = new LlmCredential();
-        Assert.Equal("", cred.ApiKey);
-        Assert.Equal("", cred.Model);
-        Assert.NotNull(cred.Extra);
-        Assert.Empty(cred.Extra);
+        Assert.That(cred.ApiKey, Is.EqualTo(""));
+        Assert.That(cred.Model, Is.EqualTo(""));
+        Assert.That(cred.Extra, Is.Not.Null);
+        Assert.That(cred.Extra, Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void RoundTripsThroughJson()
     {
         var original = new LlmCredential
@@ -28,10 +28,10 @@ public class LlmCredentialTests
         var json = JsonSerializer.Serialize(original);
         var restored = JsonSerializer.Deserialize<LlmCredential>(json);
 
-        Assert.NotNull(restored);
-        Assert.Equal("sk-test", restored!.ApiKey);
-        Assert.Equal("test-model", restored.Model);
-        Assert.Equal("us-east-1", restored.Extra["region"]);
-        Assert.Equal("alloy", restored.Extra["voice"]);
+        Assert.That(restored, Is.Not.Null);
+        Assert.That(restored!.ApiKey, Is.EqualTo("sk-test"));
+        Assert.That(restored.Model, Is.EqualTo("test-model"));
+        Assert.That(restored.Extra["region"], Is.EqualTo("us-east-1"));
+        Assert.That(restored.Extra["voice"], Is.EqualTo("alloy"));
     }
 }

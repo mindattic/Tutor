@@ -4,25 +4,25 @@ namespace Tutor.Tests.Models;
 
 public class KnowledgeGraphTests
 {
-    [Fact]
+    [Test]
     public void NewGraph_HasUniqueId()
     {
         var a = new KnowledgeGraph();
         var b = new KnowledgeGraph();
-        Assert.NotEqual(a.Id, b.Id);
+        Assert.That(b.Id, Is.Not.EqualTo(a.Id));
     }
 
-    [Fact]
+    [Test]
     public void DefaultCollections_AreEmpty()
     {
         var graph = new KnowledgeGraph();
-        Assert.Empty(graph.Nodes);
-        Assert.Empty(graph.Relationships);
-        Assert.Empty(graph.ForwardEdges);
-        Assert.Empty(graph.BackwardEdges);
+        Assert.That(graph.Nodes, Is.Empty);
+        Assert.That(graph.Relationships, Is.Empty);
+        Assert.That(graph.ForwardEdges, Is.Empty);
+        Assert.That(graph.BackwardEdges, Is.Empty);
     }
 
-    [Fact]
+    [Test]
     public void Properties_CanBeSet()
     {
         var graph = new KnowledgeGraph
@@ -31,22 +31,22 @@ public class KnowledgeGraphTests
             Description = "Classical mechanics",
             CourseId = "course-1"
         };
-        Assert.Equal("Physics", graph.Name);
-        Assert.Equal("Classical mechanics", graph.Description);
-        Assert.Equal("course-1", graph.CourseId);
+        Assert.That(graph.Name, Is.EqualTo("Physics"));
+        Assert.That(graph.Description, Is.EqualTo("Classical mechanics"));
+        Assert.That(graph.CourseId, Is.EqualTo("course-1"));
     }
 
-    [Fact]
+    [Test]
     public void Nodes_CanBeAdded()
     {
         var graph = new KnowledgeGraph();
         var node = new ConceptNode { Id = "n1", Term = "Force" };
         graph.Nodes["n1"] = node;
-        Assert.Single(graph.Nodes);
-        Assert.Equal("Force", graph.Nodes["n1"].Term);
+        Assert.That(graph.Nodes, Has.Count.EqualTo(1));
+        Assert.That(graph.Nodes["n1"].Term, Is.EqualTo("Force"));
     }
 
-    [Fact]
+    [Test]
     public void Relationships_CanBeAdded()
     {
         var graph = new KnowledgeGraph();
@@ -57,6 +57,6 @@ public class KnowledgeGraphTests
             TargetConceptId = "n2"
         };
         graph.Relationships["r1"] = rel;
-        Assert.Single(graph.Relationships);
+        Assert.That(graph.Relationships, Has.Count.EqualTo(1));
     }
 }
