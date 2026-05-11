@@ -453,13 +453,25 @@
               "target": "Package",
               "version": "[17.14.1, )"
             },
-            "xunit": {
+            "NUnit": {
               "target": "Package",
-              "version": "[2.9.3, )"
+              "version": "[4.3.2, )"
             },
-            "xunit.runner.visualstudio": {
+            "NUnit.Analyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
               "target": "Package",
-              "version": "[3.1.1, )"
+              "version": "[4.7.0, )"
+            },
+            "NUnit3TestAdapter": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "coverlet.collector": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[6.0.4, )"
             }
           },
           "imports": [
