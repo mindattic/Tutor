@@ -1,10 +1,6 @@
 # Tutor
 
-A Blazor Server application that turns books and documents into navigable
-courses. Tutor parses source material (PDF, EPUB, HTML, DOCX, .doc, .rtf,
-.odt, .mobi, .azw), extracts concepts via an LLM, builds a concept map
-plus a knowledge graph, then generates a structured learning path you can
-read, quiz against, and track progress through.
+Blazor Server app that converts books and documents (PDF, EPUB, DOCX, HTML, MOBI, AZW, RTF, ODT) into structured courses. A multi-LLM pipeline (OpenAI, Claude, DeepSeek, Gemini) extracts concepts, correlates them via LSH/SimHash into a knowledge graph, and generates a learning path with RAG retrieval, quizzes, and progress tracking.
 
 ## What it does
 
