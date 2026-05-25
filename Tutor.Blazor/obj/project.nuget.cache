@@ -1,13 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "SJpxwP+uR28=",
+  "dgSpecHash": "XE3tqHyr1AY=",
   "success": true,
   "projectFilePath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Blazor\\Tutor.Blazor.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ryand\\.nuget\\packages\\anglesharp\\1.4.0\\anglesharp.1.4.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\documentformat.openxml\\3.5.1\\documentformat.openxml.3.5.1.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\documentformat.openxml.framework\\3.5.1\\documentformat.openxml.framework.3.5.1.nupkg.sha512",
-    "C:\\Users\\ryand\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.5\\microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512",
+    "C:\\Users\\ryand\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.8\\microsoft.aspnetcore.app.internal.assets.10.0.8.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\mindattic.legion\\2.2.0\\mindattic.legion.2.2.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\mindattic.vault\\0.2.0\\mindattic.vault.0.2.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\pdfpig\\0.1.14\\pdfpig.0.1.14.nupkg.sha512",

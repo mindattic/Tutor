@@ -66,8 +66,6 @@ D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\rjimswa.dswa.cache.js
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\scopedcss\bundle\Tutor.Blazor.styles.css
-D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\ndzunpl2dk-{0}-b9228eflpl-b9228eflpl.gz
-D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\6mnqkstwem-{0}-2tj1sjhksk-2tj1sjhksk.gz
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\9a8noj3me7-{0}-9spwkzsnxy-9spwkzsnxy.gz
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\staticwebassets.build.json
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\staticwebassets.build.json.cache
@@ -101,3 +99,5 @@ D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\x64\leptonica-1.82.0.
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\x64\tesseract50.dll
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Vault.dll
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\Tesseract.dll
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\ndzunpl2dk-{0}-ej96puwv3k-ej96puwv3k.gz
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\6mnqkstwem-{0}-cj5793hgrt-cj5793hgrt.gz

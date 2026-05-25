@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Tutor.Core.Models;
 using Tutor.Core.Services.Abstractions;
+using Tutor.Core.Services.Logging;
 
 namespace Tutor.Core.Services;
 
@@ -78,9 +79,9 @@ public sealed class AuthenticationService
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore - user will need to log in
+            Log.Warn($"AuthenticationService: failed to restore persisted session - {ex.Message}");
         }
 
         isInitialized = true;
@@ -149,8 +150,11 @@ public sealed class AuthenticationService
         {
             securePreferences.Remove("CURRENT_USER");
         }
-        catch { }
-        
+        catch (Exception ex)
+        {
+            Log.Warn($"AuthenticationService: failed to clear persisted session on logout - {ex.Message}");
+        }
+
         await authController.LogoutAsync();
         
         OnUserLoggedOut?.Invoke();

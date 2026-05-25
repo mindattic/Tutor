@@ -30,6 +30,7 @@ public sealed class BackgroundQueueStorageService
     public async Task SaveAsync(BackgroundQueueState state, CancellationToken ct = default)
     {
         if (state == null) return;
+        ct.ThrowIfCancellationRequested();
 
         try
         {
@@ -37,6 +38,7 @@ public sealed class BackgroundQueueStorageService
             state.PruneHistory();
 
             var json = JsonSerializer.Serialize(state, jsonOptions);
+            ct.ThrowIfCancellationRequested();
 
             lock (fileLock)
             {
@@ -72,6 +74,7 @@ public sealed class BackgroundQueueStorageService
     /// </summary>
     public async Task<BackgroundQueueState?> LoadAsync(CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         try
         {
             if (!File.Exists(QueueStateFilePath))
@@ -85,6 +88,8 @@ public sealed class BackgroundQueueStorageService
             {
                 json = File.ReadAllText(QueueStateFilePath);
             }
+
+            ct.ThrowIfCancellationRequested();
 
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -169,6 +174,7 @@ public sealed class BackgroundQueueStorageService
     /// </summary>
     public async Task<string?> BackupAsync(CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         try
         {
             if (!File.Exists(QueueStateFilePath))

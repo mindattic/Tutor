@@ -575,8 +575,16 @@ public static class BackgroundQueueService
                     continue;
                 }
 
-                // Don't await - allow concurrent processing up to throttle limit
-                _ = ProcessTaskAsync(taskId);
+                // Don't await - allow concurrent processing up to throttle limit.
+                // Attach a faulted continuation so any unobserved exception (e.g. from
+                // throttle.WaitAsync cancellation) is logged instead of silently swallowed.
+                var capturedTaskId = taskId;
+                _ = ProcessTaskAsync(capturedTaskId).ContinueWith(t =>
+                {
+                    var ex = t.Exception?.GetBaseException();
+                    if (ex is OperationCanceledException) return;
+                    Log.Error($"BackgroundQueueService: unobserved failure for task {capturedTaskId} - {ex?.Message}", ex);
+                }, TaskContinuationOptions.OnlyOnFaulted);
             }
         }
         catch (OperationCanceledException)
@@ -598,11 +606,15 @@ public static class BackgroundQueueService
         if (item.IsTerminal || item.Status == BackgroundTaskStatus.InProgress)
             return;
 
-        // Acquire processing slot
-        await taskThrottle!.WaitAsync(cts!.Token);
-
+        // Acquire processing slot. Hold inside try/finally so the OperationCanceledException
+        // from WaitAsync is observed by the outer handlers below rather than escaping
+        // as an unobserved task exception.
+        var slotAcquired = false;
         try
         {
+            await taskThrottle!.WaitAsync(cts!.Token);
+            slotAcquired = true;
+
             // Double-check status after acquiring lock
             if (item.IsTerminal || item.Status == BackgroundTaskStatus.InProgress)
                 return;
@@ -684,7 +696,7 @@ public static class BackgroundQueueService
         }
         finally
         {
-            taskThrottle.Release();
+            if (slotAcquired) taskThrottle!.Release();
         }
     }
 

@@ -286,8 +286,22 @@ public sealed class ResourceProcessingService : IDisposable
     {
         await foreach (var task in processingQueue.Reader.ReadAllAsync(cts.Token))
         {
-            // Don't await - let multiple tasks process concurrently (up to throttle limit)
-            _ = ProcessResourceAsync(task);
+            // Don't await - let multiple tasks process concurrently (up to throttle limit).
+            // Attach a faulted continuation so exceptions thrown before the inner try
+            // (e.g. throttle.WaitAsync cancellation) are observed and surfaced.
+            var capturedTask = task;
+            _ = ProcessResourceAsync(capturedTask).ContinueWith(t =>
+            {
+                var ex = t.Exception?.GetBaseException();
+                if (ex is OperationCanceledException)
+                {
+                    Log.Debug($"ResourceProcessing: '{capturedTask.Resource.Title}' cancelled before start");
+                    return;
+                }
+                Log.Error($"ResourceProcessing: unobserved failure for '{capturedTask.Resource.Title}' - {ex?.Message}", ex);
+                UpdateStatus(capturedTask.TaskId, ProcessingStage.Failed, 0, $"Error: {ex?.Message}");
+                OnProcessingError?.Invoke(capturedTask.TaskId, ex?.Message ?? "Unknown error");
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 

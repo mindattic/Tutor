@@ -285,9 +285,9 @@ public sealed class VectorStoreService
             var json = JsonSerializer.Serialize(chunks, new JsonSerializerOptions { WriteIndented = false });
             await File.WriteAllTextAsync(ChunksFilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Log or handle error
+            Log.Error($"VectorStore: failed to persist chunks to {ChunksFilePath} - {ex.Message}", ex);
         }
     }
 

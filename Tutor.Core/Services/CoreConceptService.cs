@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Tutor.Core.Models;
 using Tutor.Core.Services.Abstractions;
+using Tutor.Core.Services.Logging;
 
 namespace Tutor.Core.Services;
 
@@ -56,7 +57,10 @@ public class CoreConceptService
             var json = JsonSerializer.Serialize(concepts);
             await securePreferences.SetAsync(ConceptsKeyPrefix + currentUserId, json);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Error($"CoreConceptService: failed to persist concepts for user {currentUserId} - {ex.Message}", ex);
+        }
     }
 
     public async Task<bool> AddConceptAsync(string term, string description)
@@ -109,7 +113,14 @@ public class CoreConceptService
     public async Task ClearAllAsync()
     {
         concepts.Clear();
-        try { securePreferences.Remove(ConceptsKeyPrefix + currentUserId); } catch { }
+        try
+        {
+            securePreferences.Remove(ConceptsKeyPrefix + currentUserId);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"CoreConceptService: failed to clear stored concepts for user {currentUserId} - {ex.Message}");
+        }
         OnConceptsChanged?.Invoke();
         await Task.CompletedTask;
     }

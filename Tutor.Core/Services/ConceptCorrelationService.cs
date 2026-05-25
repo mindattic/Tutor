@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Tutor.Core.Models;
+using Tutor.Core.Services.Logging;
 
 namespace Tutor.Core.Services;
 
@@ -394,7 +395,10 @@ public sealed class ConceptCorrelationService
                 });
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Warn($"ConceptCorrelation: failed to parse LLM relationship response - {ex.Message}");
+        }
 
         return relationships;
     }

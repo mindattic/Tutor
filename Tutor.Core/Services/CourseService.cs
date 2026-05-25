@@ -646,7 +646,10 @@ public sealed class CourseService
             var progressKey = $"COURSE_PROGRESS_{userId}_{courseId}";
             securePreferences.Remove(progressKey);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Warn($"CourseService: failed to reset course {courseId} for user {userId} - {ex.Message}");
+        }
 
         await Task.CompletedTask;
     }
