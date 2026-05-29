@@ -535,6 +535,8 @@ private bool isQuizMode;
 private int totalQuestions;
 private int currentQuestionNumber;
 private GradingScale gradingScale;
+// Topic titles the current quiz should attribute its score to (empty for full-course quiz).
+private List<string> quizAttributionTopics = new();
 
 // Table of Contents state (kept for compatibility, but now using sidebar)
 private bool showTableOfContents;
@@ -951,35 +953,42 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
 
         var topic = lessonTopics[currentLessonIndex];
 
-        // Use encounteredConcepts for enrichment - includes both completed topics AND side explorations
-        var hasEncountered = encounteredConcepts.Count > 0;
-        var shouldEnrich = enrichWithLearned || hasEncountered;
-
-        string teachPrompt;
-        if (shouldEnrich && encounteredConcepts.Count > 0)
+        // Spiral depth is driven by durable per-user mastery (persists across sessions).
+        // RecordTopicTaught returns the level (1-3) to teach at, based on revisit count and
+        // demonstrated quiz mastery. Fall back to the in-session revisit hint when there is
+        // no active course to read progress from.
+        var spiralLevel = enrichWithLearned ? 2 : 1;
+        int? lastQuizScore = null;
+        if (activeCourse != null)
         {
-            var encounteredList = string.Join(", ", encounteredConcepts);
-            var isRevisit = enrichWithLearned && learnedConcepts.Count > 0;
-            teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
-
-IMPORTANT CONTEXT - SPIRAL LEARNING:
-The student has already encountered these concepts: {encounteredList}
-{(isRevisit ? $"The student is REVISITING \"{topic}\" after learning more advanced material." : "The student has explored these concepts through the lesson and side conversations.")}
-
-You must:
-1. Connect ""{topic}"" to the concepts they already know
-2. Reference and build upon their existing knowledge naturally
-3. {(isRevisit ? "Provide deeper insights now that they have more context" : "Introduce new material while weaving in familiar concepts")}
-4. Use examples that reference the concepts they've encountered
-
-Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
-__First specific question about {topic}?__
-__Second specific question about {topic}?__
-__Third specific question about {topic}?__";
+            var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+            var topicKey = NormalizeTopicKey(topic);
+            spiralLevel = progress.RecordTopicTaught(topicKey, topic);
+            lastQuizScore = progress.TopicMastery.TryGetValue(topicKey, out var mastery)
+                ? mastery.LastQuizScorePct
+                : null;
+            await ProgressService.SaveProgressAsync(progress);
         }
-        else
+
+        prompt = BuildTeachPrompt(topic, spiralLevel, lastQuizScore);
+        pendingDisplayText = $"Teach me about \"{topic}\"";
+        await SendAsync();
+    }
+
+    /// <summary>
+    /// Builds a graduated "spiral curriculum" teaching prompt. The depth escalates with the
+    /// spiral level; a weak last quiz score re-grounds the fundamentals before deepening.
+    /// </summary>
+    private string BuildTeachPrompt(string topic, int spiralLevel, int? lastQuizScore)
+    {
+        var encounteredList = encounteredConcepts.Count > 0
+            ? string.Join(", ", encounteredConcepts)
+            : null;
+
+        // Level 1 - fresh introduction, no prior context to lean on.
+        if (spiralLevel <= 1)
         {
-            teachPrompt = $@"Teach me about ""{topic}"" from the curriculum.
+            return $@"Teach me about ""{topic}"" from the curriculum.
 Explain the key concepts clearly, as if you're a tutor.
 
 At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
@@ -990,9 +999,116 @@ __Third specific question?__
 The questions should be specific to what you just taught, not generic.";
         }
 
-        prompt = teachPrompt;
-        pendingDisplayText = $"Teach me about \"{topic}\"";
-        await SendAsync();
+        // Levels 2-3 - spiral revisit. The student is returning with more context.
+        var context = encounteredList != null
+            ? $"The student has already encountered these concepts: {encounteredList}"
+            : "The student has worked through earlier material in this course.";
+
+        var regroundNote = lastQuizScore is int score && score < UserProgress.TopicPassThreshold
+            ? $@"
+IMPORTANT - the student scored {score}% on the last check for this topic, which suggests gaps.
+Before going deeper, briefly re-ground the core fundamentals of ""{topic}"" in plain terms, then build up from there."
+            : "";
+
+        var depthInstruction = spiralLevel >= 3
+            ? $@"This is an ADVANCED revisit. Assume the student is fluent in the basics of ""{topic}"".
+1. Skip the introductory definitions
+2. Explore edge cases, trade-offs, and common misconceptions
+3. Synthesize ""{topic}"" with the other concepts they've learned, showing how it all connects
+4. Use richer, more challenging examples"
+            : $@"This is a deeper revisit now that the student has more context.
+1. Connect ""{topic}"" to the concepts they already know
+2. Build on their existing understanding rather than repeating the basics
+3. Add nuance, detail, and examples that reference familiar concepts";
+
+        return $@"Teach me about ""{topic}"" from the curriculum.
+
+IMPORTANT CONTEXT - SPIRAL LEARNING (depth level {spiralLevel}):
+{context}{regroundNote}
+
+{depthInstruction}
+
+Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
+__First specific question about {topic}?__
+__Second specific question about {topic}?__
+__Third specific question about {topic}?__";
+    }
+
+    /// <summary>
+    /// Normalizes a topic title into a stable per-course key so spiral mastery survives the
+    /// live curriculum being regenerated (lowercase, alphanumerics only, single-spaced).
+    /// </summary>
+    private static string NormalizeTopicKey(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return "";
+        var lowered = title.ToLowerInvariant();
+        var cleaned = Regex.Replace(lowered, @"[^a-z0-9]+", " ");
+        return cleaned.Trim();
+    }
+
+    /// <summary>
+    /// Parses the AI quiz summary into an overall score percentage (0-100). Recognizes
+    /// "Percentage: X%", "X/Y" / "X out of Y", and a bare "X%".
+    /// </summary>
+    private static bool TryParseQuizPercent(string text, out int pct)
+    {
+        pct = 0;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        // "Percentage: 80%" or "Score: 80%"
+        var pctMatch = Regex.Match(text, @"(?:percentage|score)\D{0,12}(\d{1,3})\s*%", RegexOptions.IgnoreCase);
+        if (pctMatch.Success && int.TryParse(pctMatch.Groups[1].Value, out pct))
+        {
+            pct = Math.Clamp(pct, 0, 100);
+            return true;
+        }
+
+        // "Total correct: 8/10", "8 / 10", "8 out of 10"
+        var ratioMatch = Regex.Match(text, @"(\d{1,3})\s*(?:/|out of)\s*(\d{1,3})", RegexOptions.IgnoreCase);
+        if (ratioMatch.Success
+            && int.TryParse(ratioMatch.Groups[1].Value, out var correct)
+            && int.TryParse(ratioMatch.Groups[2].Value, out var total)
+            && total > 0)
+        {
+            pct = Math.Clamp((int)Math.Round(correct * 100.0 / total), 0, 100);
+            return true;
+        }
+
+        // Bare "80%"
+        var bareMatch = Regex.Match(text, @"(\d{1,3})\s*%");
+        if (bareMatch.Success && int.TryParse(bareMatch.Groups[1].Value, out pct))
+        {
+            pct = Math.Clamp(pct, 0, 100);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Records the completed quiz's score against the attributed topics' durable mastery,
+    /// so the next revisit teaches at the right spiral depth.
+    /// </summary>
+    private async Task RecordQuizMasteryAsync(string quizSummaryText)
+    {
+        if (activeCourse == null || quizAttributionTopics.Count == 0)
+            return;
+
+        if (!TryParseQuizPercent(quizSummaryText, out var pct))
+        {
+            Log.Debug("Chat: Could not parse a score from the quiz summary; skipping mastery update");
+            return;
+        }
+
+        var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+        foreach (var topic in quizAttributionTopics)
+        {
+            var key = NormalizeTopicKey(topic);
+            if (!string.IsNullOrEmpty(key))
+                progress.RecordTopicQuiz(key, topic, pct);
+        }
+        await ProgressService.SaveProgressAsync(progress);
+        Log.Info($"Chat: Recorded quiz score {pct}% against {quizAttributionTopics.Count} topic(s)");
     }
 
     // Tab management methods
@@ -1279,6 +1395,16 @@ __Third specific question about {concept.Title}?__";
         isQuizMode = true;
         // Keep lesson mode active so we can return to it
 
+        // Attribute this quiz's score to the current topic plus everything covered so far,
+        // so spiral depth on the next revisit reflects demonstrated mastery.
+        quizAttributionTopics = new List<string>(learnedConcepts);
+        if (currentLessonIndex < lessonTopics.Count)
+        {
+            var currentTopic = lessonTopics[currentLessonIndex];
+            if (!quizAttributionTopics.Contains(currentTopic))
+                quizAttributionTopics.Add(currentTopic);
+        }
+
         var topicsList = string.Join(", ", learnedConcepts);
         var quizPrompt = $@"Quiz me on what I've learned so far. I have covered these topics: {topicsList}
 
@@ -1289,7 +1415,7 @@ QUIZ RULES:
 2. Wait for my answer before asking the next question
 3. After I answer, tell me if I'm correct or incorrect and briefly explain why
 4. Keep track of my score
-5. After all {questionCount} questions, provide a summary and then I'll continue with my lesson
+5. After all {questionCount} questions, provide a summary that includes a line ""Percentage: X%"" with my overall score, then I'll continue with my lesson
 
 Please start with Question 1.";
 
@@ -1316,6 +1442,9 @@ Please start with Question 1.";
         currentQuestionNumber = 1;
         isQuizMode = true;
         isLessonMode = false;
+
+        // Full-course quiz: no per-topic mastery attribution.
+        quizAttributionTopics = new List<string>();
 
         // Clear previous messages for fresh quiz
         ResetToLessonTab();
@@ -1550,6 +1679,7 @@ Keep track of the running score.";
                 {
                     Log.Info("Chat: Quiz completed");
                     isQuizMode = false;
+                    await RecordQuizMasteryAsync(reply.Text);
                 }
             }
 

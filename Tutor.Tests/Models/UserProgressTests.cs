@@ -142,4 +142,94 @@ public class UserProgressTests
 
         Assert.That(p.GetSectionCompletionPercentage(totalSections: 4), Is.EqualTo(25.0));
     }
+
+    // --- Spiral curriculum: TopicMastery state machine ---
+
+    [Test]
+    public void RecordTopicTaught_FirstTime_IsLevelOne()
+    {
+        var p = new UserProgress();
+        var level = p.RecordTopicTaught("intro", "Introduction");
+
+        Assert.That(level, Is.EqualTo(1));
+        Assert.That(p.TopicMastery["intro"].VisitCount, Is.EqualTo(1));
+        Assert.That(p.TopicMastery["intro"].TopicTitle, Is.EqualTo("Introduction"));
+    }
+
+    [Test]
+    public void RecordTopicTaught_NoQuiz_CapsAtUnquizzedLevel()
+    {
+        var p = new UserProgress();
+        var l1 = p.RecordTopicTaught("k", "T");
+        var l2 = p.RecordTopicTaught("k", "T");
+        var l3 = p.RecordTopicTaught("k", "T");
+
+        // Without a quiz to validate understanding, depth never exceeds the unquizzed cap.
+        Assert.That(l1, Is.EqualTo(1));
+        Assert.That(l2, Is.EqualTo(UserProgress.UnquizzedSpiralCap));
+        Assert.That(l3, Is.EqualTo(UserProgress.UnquizzedSpiralCap));
+    }
+
+    [Test]
+    public void RecordTopicTaught_PassingQuiz_AdvancesAndCapsAtMax()
+    {
+        var p = new UserProgress();
+        var l1 = p.RecordTopicTaught("k", "T");      // 1
+        p.RecordTopicQuiz("k", "T", 80);
+        var l2 = p.RecordTopicTaught("k", "T");      // 2
+        p.RecordTopicQuiz("k", "T", 90);
+        var l3 = p.RecordTopicTaught("k", "T");      // 3
+        var l4 = p.RecordTopicTaught("k", "T");      // still 3 (max)
+
+        Assert.That(new[] { l1, l2, l3, l4 }, Is.EqualTo(new[] { 1, 2, 3, 3 }));
+    }
+
+    [Test]
+    public void RecordTopicTaught_FailingQuiz_HoldsLevel()
+    {
+        var p = new UserProgress();
+        var l1 = p.RecordTopicTaught("k", "T");      // 1
+        p.RecordTopicQuiz("k", "T", 50);             // below pass threshold
+        var l2 = p.RecordTopicTaught("k", "T");      // held at 1
+
+        Assert.That(l1, Is.EqualTo(1));
+        Assert.That(l2, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RecordTopicTaught_FailThenPass_Advances()
+    {
+        var p = new UserProgress();
+        p.RecordTopicTaught("k", "T");               // 1
+        p.RecordTopicQuiz("k", "T", 50);
+        var held = p.RecordTopicTaught("k", "T");    // held at 1
+        p.RecordTopicQuiz("k", "T", 85);             // best now passing
+        var advanced = p.RecordTopicTaught("k", "T");
+
+        Assert.That(held, Is.EqualTo(1));
+        Assert.That(advanced, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void RecordTopicQuiz_TracksLastAndBest()
+    {
+        var p = new UserProgress();
+        p.RecordTopicQuiz("k", "T", 80);
+        p.RecordTopicQuiz("k", "T", 60);
+
+        var m = p.TopicMastery["k"];
+        Assert.That(m.LastQuizScorePct, Is.EqualTo(60));
+        Assert.That(m.BestQuizScorePct, Is.EqualTo(80));
+    }
+
+    [Test]
+    public void RecordTopicQuiz_ClampsToValidRange()
+    {
+        var p = new UserProgress();
+        p.RecordTopicQuiz("hi", "T", 150);
+        p.RecordTopicQuiz("lo", "T", -10);
+
+        Assert.That(p.TopicMastery["hi"].LastQuizScorePct, Is.EqualTo(100));
+        Assert.That(p.TopicMastery["lo"].LastQuizScorePct, Is.EqualTo(0));
+    }
 }
