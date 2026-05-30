@@ -146,6 +146,15 @@ public class UserProgress
     /// </summary>
     public List<string> QuizResultIds { get; set; } = [];
 
+    /// <summary>Id of the passing final-exam <c>QuizResult</c>, once the course is completed.</summary>
+    public string? FinalExamResultId { get; set; }
+
+    /// <summary>True once the student has passed the final exam for this course.</summary>
+    public bool HasCompletedCourse { get; set; }
+
+    /// <summary>When the course was completed (final exam passed), if it has been.</summary>
+    public DateTime? CourseCompletedAt { get; set; }
+
     /// <summary>
     /// Time spent on each section (sectionId -> seconds).
     /// </summary>
@@ -312,6 +321,29 @@ public class UserProgress
 
     /// <summary>Cap on spiral depth before any quiz has validated understanding.</summary>
     public const int UnquizzedSpiralCap = 2;
+
+    /// <summary>
+    /// Derives the stable per-course mastery key for a topic from its title. Topic ids are
+    /// regenerated when the curriculum is rebuilt, so a title slug is used instead so a
+    /// student's mastery survives re-generation. Always pair with the topic title when
+    /// recording so the display name stays current.
+    /// </summary>
+    public static string TopicKey(string topicTitle)
+    {
+        if (string.IsNullOrWhiteSpace(topicTitle)) return "topic";
+        var chars = topicTitle.Trim().ToLowerInvariant()
+            .Select(c => char.IsLetterOrDigit(c) ? c : '-')
+            .ToArray();
+        var slug = new string(chars);
+        while (slug.Contains("--")) slug = slug.Replace("--", "-");
+        slug = slug.Trim('-');
+        return slug.Length > 0 ? slug : "topic";
+    }
+
+    /// <summary>True when a topic's best quiz score meets the mastery threshold.</summary>
+    public bool IsTopicMastered(string topicTitle)
+        => TopicMastery.TryGetValue(TopicKey(topicTitle), out var m)
+           && m.BestQuizScorePct is int best && best >= TopicPassThreshold;
 
     /// <summary>
     /// Gets the mastery record for a topic, creating it on first use.

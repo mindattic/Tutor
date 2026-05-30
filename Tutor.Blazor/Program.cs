@@ -12,15 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Cloud-native configuration chain. Layered so existing dev workflows keep working:
 //   AddJsonFile (already added by WebApplicationBuilder for appsettings.json).
-//   AddMindAtticVaultFiles surfaces %APPDATA%\MindAttic\LLM\providers.json on dev machines.
-//   AddUserSecrets<Program> reads this project's User Secrets, pinned to the shared
-//     family id (mindattic-vault-shared) so any MindAttic app sharing that id sees
-//     the same dev secrets.
+//   AddMindAtticVaultFiles surfaces %APPDATA%\MindAttic\LLM\providers.json on dev
+//     machines — the single local source of truth for credentials.
 //   AddEnvironmentVariables (already present) picks up App Service Application Settings
 //     and Azure Key Vault references in production.
 builder.Configuration
-    .AddMindAtticVaultFiles()
-    .AddUserSecrets<Program>(optional: true);
+    .AddMindAtticVaultFiles();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -124,6 +121,9 @@ builder.Services.AddSingleton<KnowledgeGraphService>();
 
 // User progress service (learning progress tracking)
 builder.Services.AddSingleton<UserProgressService>();
+
+// Learning path service (mastery-gated spiral progression + exam eligibility)
+builder.Services.AddSingleton<LearningPathService>();
 
 // ConceptMap storage service (persistence for individual ConceptMaps)
 builder.Services.AddSingleton<ConceptMapStorageService>();

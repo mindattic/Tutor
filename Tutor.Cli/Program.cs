@@ -47,12 +47,11 @@ string? llmOverride = null;
 var services = new ServiceCollection();
 
 // Cloud-native credential resolution via MindAttic.Vault. The chain layers the
-// legacy %APPDATA%\MindAttic\LLM keyring under the shared User Secrets and env
-// vars, so the CLI resolves the same working keys every other MindAttic app uses
-// (User Secrets / App Service / Key Vault) — not just the on-disk fallback.
+// %APPDATA%\MindAttic\LLM keyring under env vars, so the CLI resolves the same
+// working keys every other MindAttic app uses (App Service / Key Vault) — the
+// %APPDATA% files are the single local source of truth.
 var configuration = new ConfigurationBuilder()
     .AddMindAtticVaultFiles()
-    .AddUserSecrets(VaultConfigurationKeys.SharedUserSecretsId)
     .AddEnvironmentVariables()
     .Build();
 services.AddMindAtticVault(configuration);
