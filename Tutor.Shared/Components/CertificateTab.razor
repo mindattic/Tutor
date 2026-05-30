@@ -1,0 +1,71 @@
+@using Tutor.Core.Models
+@inject IJSRuntime JS
+
+<section class="certificate-tab" aria-labelledby="certificate-heading">
+    @if (Certificate == null)
+    {
+        <div class="quiz-empty" role="status">
+            <span class="bi bi-award" aria-hidden="true"></span>
+            <h3>No certificate yet</h3>
+            <p>Pass the final exam to earn your certificate of completion.</p>
+            @if (OnBack.HasDelegate)
+            {
+                <button class="quiz-btn secondary" type="button" @onclick="() => OnBack.InvokeAsync()">
+                    <span class="bi bi-arrow-left" aria-hidden="true"></span><span>Back</span>
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="certificate-card" id="certificate-print">
+            <div class="certificate-seal" aria-hidden="true"><span class="bi bi-award-fill"></span></div>
+            <h2 id="certificate-heading">Certificate of Completion</h2>
+            <p class="cert-preamble">This certifies that</p>
+            <p class="cert-student">@Certificate.StudentName</p>
+            <p class="cert-preamble">has successfully completed</p>
+            <p class="cert-course">@Certificate.CourseName</p>
+            <p class="cert-score">Final exam score: <strong>@Certificate.FinalScorePct%</strong></p>
+            <div class="cert-meta">
+                <span>Issued @Certificate.IssuedAt.ToLocalTime().ToString("MMMM d, yyyy")</span>
+                <span>Certificate No. @Certificate.CertificateNumber</span>
+            </div>
+            <p class="cert-hash" title="@Certificate.CourseContentHash">
+                Course content: <code>@ShortHash(Certificate.CourseContentHash)</code>
+            </p>
+            @if (!Certificate.IsSigned)
+            {
+                <p class="cert-unsigned" role="note">
+                    <span class="bi bi-shield-exclamation" aria-hidden="true"></span>
+                    Completion certificate — cryptographic verification is coming in a future update.
+                </p>
+            }
+        </div>
+
+        <div class="cert-actions">
+            <button class="quiz-btn primary" type="button" @onclick="Print">
+                <span class="bi bi-printer" aria-hidden="true"></span><span>Print / Save PDF</span>
+            </button>
+            @if (OnBack.HasDelegate)
+            {
+                <button class="quiz-btn secondary" type="button" @onclick="() => OnBack.InvokeAsync()">
+                    <span class="bi bi-arrow-left" aria-hidden="true"></span><span>Back to Learning</span>
+                </button>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public CourseCertificate? Certificate { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private static string ShortHash(string hash)
+        => string.IsNullOrEmpty(hash) ? "—" : (hash.Length > 16 ? hash[..16] + "…" : hash);
+
+    private async Task Print()
+    {
+        try { await JS.InvokeVoidAsync("window.print"); }
+        catch { /* printing is best-effort */ }
+    }
+}

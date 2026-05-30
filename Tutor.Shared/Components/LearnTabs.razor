@@ -62,6 +62,17 @@
                 <span class="bi bi-diagram-3" aria-hidden="true"></span>
                 <span class="tab-label">Visualize</span>
             </button>
+            <button class="learn-tab @(activeTab == LearnTab.FinalExam ? "active" : "")"
+                    type="button"
+                    role="tab"
+                    id="learn-tab-finalexam"
+                    aria-selected="@((activeTab == LearnTab.FinalExam).ToString().ToLowerInvariant())"
+                    aria-controls="learn-panel-finalexam"
+                    tabindex="@(activeTab == LearnTab.FinalExam ? "0" : "-1")"
+                    @onclick="() => SwitchTab(LearnTab.FinalExam)">
+                <span class="bi bi-mortarboard" aria-hidden="true"></span>
+                <span class="tab-label">Final Exam</span>
+            </button>
         </div>
         @if (activeCourse != null)
         {
@@ -118,6 +129,12 @@
                                                EmbeddedMode="true"
                                                OnAskAboutConcept="HandleAskAboutConceptFromGraph"
                                                OnViewConceptDetails="HandleViewConceptDetails" />
+                </div>
+                break;
+
+            case LearnTab.FinalExam:
+                <div id="learn-panel-finalexam" class="tab-panel finalexam-panel" role="tabpanel" aria-labelledby="learn-tab-finalexam" tabindex="0">
+                    <FinalExamTab CourseId="@activeCourse?.Id" OnBack="() => SwitchTab(LearnTab.Chat)" />
                 </div>
                 break;
         }
@@ -330,6 +347,7 @@
         Chat,
         Quiz,
         Concepts,
-        Visualize
+        Visualize,
+        FinalExam
     }
 }

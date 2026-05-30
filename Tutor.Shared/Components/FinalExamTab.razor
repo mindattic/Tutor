@@ -1,0 +1,279 @@
+@using Tutor.Core.Models
+@using Tutor.Core.Services
+@inject QuizService QuizService
+@inject FinalExamService FinalExamService
+@inject CertificateService CertificateService
+@inject CourseService CourseService
+@inject CourseStructureStorageService StructureStorage
+@inject UserProgressService ProgressService
+@inject AuthenticationService AuthService
+@implements IDisposable
+
+<section class="final-exam-tab" aria-labelledby="final-exam-heading">
+    <h2 id="final-exam-heading" class="sr-only">Final exam</h2>
+
+    @if (string.IsNullOrEmpty(CourseId) || _course == null)
+    {
+        <div class="quiz-empty" role="status">
+            <span class="bi bi-mortarboard" aria-hidden="true"></span>
+            <h3>No course selected</h3>
+        </div>
+    }
+    else if (_loading)
+    {
+        <div class="quiz-loading" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span><p>Loading…</p>
+        </div>
+    }
+    else if (_certificate != null)
+    {
+        <CertificateTab Certificate="_certificate" OnBack="BackToLesson" />
+    }
+    else if (QuizService.HasActiveSession)
+    {
+        @* Active exam — same question/answer flow as a quiz, just comprehensive *@
+        <div class="quiz-active">
+            <div class="quiz-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                 aria-valuenow="@((int)GetProgressPercentage())" aria-label="Exam progress">
+                <div class="quiz-progress" style="width: @GetProgressPercentage()%"></div>
+            </div>
+            <div class="quiz-header" aria-live="polite" aria-atomic="true">
+                <span class="question-counter">Question @(QuizService.CurrentSession!.CurrentQuestionIndex + 1) of @QuizService.CurrentSession.Questions.Count</span>
+            </div>
+
+            @if (_currentQuestion != null)
+            {
+                <div class="question-bubble" role="group" aria-labelledby="exam-question-text">
+                    <span class="bi bi-question-circle" aria-hidden="true"></span>
+                    <div id="exam-question-text" class="question-text">@_currentQuestion.QuestionText</div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_feedback))
+                {
+                    <div class="feedback-bubble @(_lastAnswerCorrect ? "correct" : "incorrect")" role="status" aria-live="assertive">
+                        <span class="bi @(_lastAnswerCorrect ? "bi-check-circle" : "bi-x-circle")" aria-hidden="true"></span>
+                        <div class="feedback-text">@(_lastAnswerCorrect ? "Correct. " : "Incorrect. ")@_feedback</div>
+                    </div>
+                    <button class="quiz-btn primary" type="button" @onclick="NextQuestion">
+                        <span>@(_complete ? "View Results" : "Next Question")</span>
+                        <span class="bi bi-arrow-right" aria-hidden="true"></span>
+                    </button>
+                }
+                else
+                {
+                    <div class="answer-section">
+                        <label for="exam-answer" class="sr-only">Your answer</label>
+                        <textarea id="exam-answer" @bind="_userAnswer" @bind:event="oninput"
+                                  placeholder="Type your answer here..." rows="3" disabled="@_submitting"></textarea>
+                        <button class="quiz-btn primary" type="button" @onclick="SubmitAnswer"
+                                disabled="@(string.IsNullOrWhiteSpace(_userAnswer) || _submitting)"
+                                aria-busy="@_submitting.ToString().ToLowerInvariant()">
+                            <span class="bi bi-send" aria-hidden="true"></span><span>Submit Answer</span>
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+    }
+    else if (_examResult != null)
+    {
+        @* Failed exam (a pass routes to the certificate above) *@
+        <section class="quiz-results" role="region" aria-labelledby="exam-results-heading">
+            <header class="results-header failed">
+                <span class="bi bi-emoji-frown" aria-hidden="true"></span>
+                <h2 id="exam-results-heading">Not quite yet</h2>
+            </header>
+            <div class="results-score">
+                <div class="score-circle failed" aria-hidden="true">
+                    <span class="score-value">@(_examResult.ScorePercentage.ToString("0"))%</span>
+                </div>
+                <div class="score-details">
+                    <p>You scored @(_examResult.ScorePercentage.ToString("0"))%. The final exam requires @FinalExamService.PassingScore% to pass.</p>
+                    <p>Review the topics you found hardest, then try again.</p>
+                </div>
+            </div>
+            <div class="results-actions">
+                <button class="quiz-btn secondary" type="button" @onclick="BackToLesson">
+                    <span class="bi bi-book" aria-hidden="true"></span><span>Back to Learning</span>
+                </button>
+                <button class="quiz-btn primary" type="button" @onclick="StartExam">
+                    <span class="bi bi-arrow-repeat" aria-hidden="true"></span><span>Retake Exam</span>
+                </button>
+            </div>
+        </section>
+    }
+    else if (!_eligible)
+    {
+        <section class="quiz-start" aria-labelledby="exam-locked-heading">
+            <header class="quiz-start-header">
+                <span class="bi bi-lock" aria-hidden="true"></span>
+                <h2 id="exam-locked-heading">Final Exam Locked</h2>
+                <p>Master every lesson to unlock the comprehensive final exam.</p>
+            </header>
+            <button class="quiz-btn secondary" type="button" @onclick="BackToLesson">
+                <span class="bi bi-book" aria-hidden="true"></span><span>Keep Learning</span>
+            </button>
+        </section>
+    }
+    else
+    {
+        <section class="quiz-start" aria-labelledby="exam-start-heading">
+            <header class="quiz-start-header">
+                <span class="bi bi-mortarboard" aria-hidden="true"></span>
+                <h2 id="exam-start-heading">Final Exam</h2>
+                <p>You've mastered every lesson in <strong>@_course.Name</strong>. Pass this comprehensive exam to earn your certificate.</p>
+            </header>
+            <ul class="quiz-info" aria-label="Exam overview" style="list-style:none;padding:0;">
+                <li class="info-item"><span class="bi bi-list-ol" aria-hidden="true"></span><span>Up to @FinalExamService.QuestionCount questions across the whole course</span></li>
+                <li class="info-item"><span class="bi bi-trophy" aria-hidden="true"></span><span>@FinalExamService.PassingScore% required to pass</span></li>
+            </ul>
+            <button class="quiz-btn primary large" type="button" @onclick="StartExam"
+                    disabled="@_starting" aria-busy="@_starting.ToString().ToLowerInvariant()">
+                <span class="bi bi-play-fill" aria-hidden="true"></span><span>Begin Final Exam</span>
+            </button>
+        </section>
+    }
+</section>
+
+@code {
+    [Parameter] public string? CourseId { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private bool _loading;
+    private bool _starting;
+    private bool _submitting;
+    private bool _complete;
+    private bool _lastAnswerCorrect;
+    private bool _eligible;
+    private string _userAnswer = "";
+    private string? _feedback;
+    private Course? _course;
+    private CourseStructure? _structure;
+    private QuizQuestion? _currentQuestion;
+    private QuizResult? _examResult;
+    private CourseCertificate? _certificate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        QuizService.OnQuizStateChanged += HandleQuizStateChanged;
+        await LoadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        if (string.IsNullOrEmpty(CourseId)) return;
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            _course = await CourseService.GetCourseAsync(CourseId);
+            _structure = _course?.CourseStructureId != null
+                ? await StructureStorage.LoadByCourseIdAsync(CourseId)
+                : null;
+
+            if (_structure != null)
+            {
+                var progress = await ProgressService.GetProgressAsync(CourseId);
+                _eligible = FinalExamService.IsEligible(_structure, progress);
+                // Surface an already-earned certificate.
+                var userId = AuthService.CurrentUserId ?? "default";
+                _certificate = await CertificateService.GetForCourseAsync(userId, CourseId);
+            }
+            _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task StartExam()
+    {
+        if (_structure == null) return;
+        _starting = true;
+        _examResult = null;
+        _certificate = null;
+        _feedback = null;
+        StateHasChanged();
+        try
+        {
+            await FinalExamService.StartAsync(_structure);
+            _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        finally
+        {
+            _starting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitAnswer()
+    {
+        if (string.IsNullOrWhiteSpace(_userAnswer)) return;
+        _submitting = true;
+        StateHasChanged();
+        try
+        {
+            var (isCorrect, feedback, complete) = await QuizService.SubmitAnswerAsync(_userAnswer);
+            _lastAnswerCorrect = isCorrect;
+            _feedback = feedback;
+            _complete = complete;
+        }
+        finally
+        {
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task NextQuestion()
+    {
+        if (_complete)
+        {
+            _examResult = QuizService.GetCurrentResult();
+            QuizService.CancelQuiz();
+            if (_examResult != null)
+                await CompleteExam(_examResult);
+        }
+        else
+        {
+            _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        _userAnswer = "";
+        _feedback = null;
+        StateHasChanged();
+    }
+
+    private async Task CompleteExam(QuizResult result)
+    {
+        if (string.IsNullOrEmpty(CourseId) || _course == null) return;
+
+        var progress = await ProgressService.GetProgressAsync(CourseId);
+        var completed = FinalExamService.ApplyResult(progress, result);
+        if (completed)
+        {
+            await ProgressService.SaveProgressAsync(progress);
+            var userId = AuthService.CurrentUserId ?? "default";
+            var studentName = AuthService.CurrentUser?.DisplayName
+                ?? AuthService.CurrentUsername ?? "Student";
+            _certificate = await CertificateService.IssueAsync(userId, studentName, _course, result);
+        }
+    }
+
+    private async Task BackToLesson() => await OnBack.InvokeAsync();
+
+    private double GetProgressPercentage()
+    {
+        var s = QuizService.CurrentSession;
+        if (s == null || s.Questions.Count == 0) return 0;
+        return (double)s.CurrentQuestionIndex / s.Questions.Count * 100;
+    }
+
+    private void HandleQuizStateChanged()
+        => InvokeAsync(() => { _currentQuestion = QuizService.GetCurrentQuestion(); StateHasChanged(); });
+
+    public void Dispose() => QuizService.OnQuizStateChanged -= HandleQuizStateChanged;
+}

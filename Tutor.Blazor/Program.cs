@@ -125,6 +125,13 @@ builder.Services.AddSingleton<UserProgressService>();
 // Learning path service (mastery-gated spiral progression + exam eligibility)
 builder.Services.AddSingleton<LearningPathService>();
 
+// Final exam service (comprehensive assessment + course completion)
+builder.Services.AddSingleton<FinalExamService>();
+
+// Certificate of completion (unsigned today; ICertificateAuthority is the signing seam)
+builder.Services.AddSingleton<ICertificateAuthority, LocalCertificateAuthority>();
+builder.Services.AddSingleton<CertificateService>();
+
 // ConceptMap storage service (persistence for individual ConceptMaps)
 builder.Services.AddSingleton<ConceptMapStorageService>();
 

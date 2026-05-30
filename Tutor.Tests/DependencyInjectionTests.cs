@@ -67,6 +67,10 @@ public class DependencyInjectionTests
         services.AddSingleton<ConceptCorrelationService>();
         services.AddSingleton<KnowledgeGraphService>();
         services.AddSingleton<UserProgressService>();
+        services.AddSingleton<LearningPathService>();
+        services.AddSingleton<FinalExamService>();
+        services.AddSingleton<ICertificateAuthority, LocalCertificateAuthority>();
+        services.AddSingleton<CertificateService>();
         services.AddSingleton<ConceptMapStorageService>();
         services.AddSingleton<ConceptMapCollectionService>();
         services.AddSingleton<CourseStructureStorageService>();
@@ -154,6 +158,9 @@ public class DependencyInjectionTests
     [TestCase(typeof(ConceptCorrelationService))]
     [TestCase(typeof(KnowledgeGraphService))]
     [TestCase(typeof(UserProgressService))]
+    [TestCase(typeof(LearningPathService))]
+    [TestCase(typeof(FinalExamService))]
+    [TestCase(typeof(CertificateService))]
     [TestCase(typeof(ConceptMapStorageService))]
     [TestCase(typeof(ConceptMapCollectionService))]
     [TestCase(typeof(CourseStructureStorageService))]

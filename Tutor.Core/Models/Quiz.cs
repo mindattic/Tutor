@@ -58,7 +58,14 @@ public class QuizResult
     public int TotalPoints { get; set; }
     public int EarnedPoints { get; set; }
     public double ScorePercentage => TotalQuestions > 0 ? (double)CorrectAnswers / TotalQuestions * 100 : 0;
-    public bool Passed => ScorePercentage >= 70;
+
+    /// <summary>Score (0-100) required to pass. Section quizzes use 70; the final exam sets a higher bar.</summary>
+    public int PassingScore { get; set; } = 70;
+
+    /// <summary>True when this result is from the course-wide final exam rather than a section quiz.</summary>
+    public bool IsFinalExam { get; set; }
+
+    public bool Passed => ScorePercentage >= PassingScore;
     public DateTime StartedAt { get; set; }
     public DateTime CompletedAt { get; set; }
 }
@@ -76,6 +83,12 @@ public class QuizSession
     public List<QuizAnswer> Answers { get; set; } = [];
     public int CurrentQuestionIndex { get; set; }
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Score (0-100) required to pass this session. Copied onto the result.</summary>
+    public int PassingScore { get; set; } = 70;
+
+    /// <summary>True when this session is the course-wide final exam.</summary>
+    public bool IsFinalExam { get; set; }
     
     public QuizQuestion? CurrentQuestion => 
         CurrentQuestionIndex < Questions.Count ? Questions[CurrentQuestionIndex] : null;
@@ -92,8 +105,10 @@ public class QuizSession
         TotalQuestions = Questions.Count,
         CorrectAnswers = Answers.Count(a => a.IsCorrect),
         TotalPoints = Questions.Sum(q => q.Points),
-        EarnedPoints = Answers.Where(a => a.IsCorrect).Sum(a => 
+        EarnedPoints = Answers.Where(a => a.IsCorrect).Sum(a =>
             Questions.FirstOrDefault(q => q.Id == a.QuestionId)?.Points ?? 0),
+        PassingScore = PassingScore,
+        IsFinalExam = IsFinalExam,
         StartedAt = StartedAt,
         CompletedAt = DateTime.UtcNow
     };
