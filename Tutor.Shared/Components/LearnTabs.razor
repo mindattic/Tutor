@@ -3,6 +3,7 @@
 @inject CourseService CourseService
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject QuizService QuizService
+@inject UserProgressService ProgressService
 @implements IDisposable
 
 <div class="learn-tabs-container">
@@ -83,7 +84,8 @@
                           EmbeddedMode="true"
                           OnNavigateToConcept="HandleNavigateToConcept"
                           OnNavigateToVisualize="HandleNavigateToVisualize"
-                          OnEncounteredConceptsChanged="HandleEncounteredConceptsChanged" />
+                          OnEncounteredConceptsChanged="HandleEncounteredConceptsChanged"
+                          OnStartSectionQuiz="HandleStartSectionQuiz" />
                 </div>
                 break;
 
@@ -279,20 +281,30 @@
     }
 
     /// <summary>
-    /// Called when section quiz is completed
+    /// Invoked by the Chat lesson flow to quiz the current (structure-backed) section.
     /// </summary>
-    private void HandleSectionQuizCompleted(QuizResult result)
+    private void HandleStartSectionQuiz(Section section)
     {
-        // Add section concepts to learned concepts if quiz passed
-        if (result.Passed && currentSection != null)
+        StartSectionQuiz(section, section.ConceptIds);
+    }
+
+    /// <summary>
+    /// Called when a section quiz completes. Records the authoritative score against the
+    /// section's durable spiral mastery (keyed by the same section id the lesson teaches by)
+    /// and marks the section complete on a pass — this is what drives spiral depth on return.
+    /// </summary>
+    private async Task HandleSectionQuizCompleted(QuizResult result)
+    {
+        if (currentSection != null && activeCourse != null)
         {
-            foreach (var conceptId in currentSectionConceptIds)
-            {
-                // Find the concept title from the map
-                // The Chat component will handle this when we navigate back
-            }
+            var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
+            progress.RecordTopicQuiz(currentSection.Id, currentSection.Title,
+                (int)Math.Round(result.ScorePercentage));
+            if (result.Passed)
+                progress.MarkSectionComplete(currentSection.Id, result.Id);
+            await ProgressService.SaveProgressAsync(progress);
         }
-        
+
         // Clear section quiz context
         currentSection = null;
         currentSectionConceptIds.Clear();

@@ -1,5 +1,6 @@
 @using Tutor.Core.Models
 @using Tutor.Core.Services
+@using Tutor.Core.Services.Queue
 @using Tutor.Core.Services.Logging
 @inject CourseService CourseService
 @inject ResourceProcessingService ProcessingService
@@ -111,9 +112,36 @@
                                         <span>Merge Duplicates</span>
                                     }
                                 </button>
+                                <button class="settings-btn small primary @(isBuildingStructure ? "processing" : "")"
+                                        @onclick="BuildCourseStructureAsync"
+                                        disabled="@isBuildingStructure"
+                                        title="Generate the lesson/section learning path (and quizzes) from this course's concepts">
+                                    @if (isBuildingStructure)
+                                    {
+                                        <span>Building...</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bi bi-mortarboard"></span>
+                                        <span>@(activeCourse.HasCourseStructure ? "Rebuild Course" : "Build Course")</span>
+                                    }
+                                </button>
                             }
                         </div>
                     </div>
+                    @* Course Structure Build Progress Bar *@
+                    @if (isBuildingStructure)
+                    {
+                        <div class="merge-progress-container">
+                            <div class="merge-progress-bar">
+                                <div class="merge-progress-fill" style="width: @buildProgressPercent%"></div>
+                            </div>
+                            <div class="merge-progress-status">
+                                <span class="bi bi-hourglass-split"></span>
+                                <span>@(string.IsNullOrEmpty(buildProgressMessage) ? "Building course structure..." : buildProgressMessage)</span>
+                            </div>
+                        </div>
+                    }
                     @* Merge Progress Bar *@
                     @if (isMergingDuplicates && !string.IsNullOrEmpty(mergeProgressMessage))
                     {
@@ -898,6 +926,12 @@ private string resourceContent = "";
     private string? mergeProgressMessage;
     private int mergeProgressPercent;
 
+    // Course-structure build tracking
+    private bool isBuildingStructure;
+    private string? buildTaskId;
+    private int buildProgressPercent;
+    private string buildProgressMessage = "";
+
     // Cancel task confirmation
     private bool showCancelConfirmModal;
     private string? cancelTaskId;
@@ -918,6 +952,11 @@ private string resourceContent = "";
         // Subscribe to CM build progress
         ConceptMapService.OnProgressChanged += OnConceptMapProgressChanged;
 
+        // Subscribe to background queue events (course-structure build progress)
+        BackgroundQueueService.OnStatusChanged += OnQueueStatusChanged;
+        BackgroundQueueService.OnTaskCompleted += OnQueueTaskCompleted;
+        BackgroundQueueService.OnTaskError += OnQueueTaskError;
+
         await LoadData();
         RefreshProcessingTasks();
         
@@ -936,6 +975,77 @@ private string resourceContent = "";
         ProcessingService.OnProcessingComplete -= OnProcessingComplete;
         ProcessingService.OnProcessingError -= OnProcessingError;
         ConceptMapService.OnProgressChanged -= OnConceptMapProgressChanged;
+        BackgroundQueueService.OnStatusChanged -= OnQueueStatusChanged;
+        BackgroundQueueService.OnTaskCompleted -= OnQueueTaskCompleted;
+        BackgroundQueueService.OnTaskError -= OnQueueTaskError;
+    }
+
+    /// <summary>
+    /// Queues a course-structure build (lessons → sections → content → quizzes) for the active
+    /// course. Refreshes the aggregated concept collection first so generation sees all resources.
+    /// </summary>
+    private async Task BuildCourseStructureAsync()
+    {
+        if (string.IsNullOrEmpty(selectedCourseId) || isBuildingStructure)
+            return;
+
+        var course = courses.FirstOrDefault(c => c.Id == selectedCourseId);
+        if (course == null)
+            return;
+
+        try
+        {
+            isBuildingStructure = true;
+            buildProgressPercent = 0;
+            buildProgressMessage = "Preparing concepts...";
+            kbErrorMessage = "";
+            StateHasChanged();
+
+            // Ensure the aggregated ConceptMapCollection is current before generating structure.
+            await CourseService.RebuildCourseConceptMapCollectionAsync(course);
+
+            buildTaskId = BackgroundQueueService.EnqueueCourseStructureBuild(
+                course.Id, course.Name, course.ConceptMapCollectionId ?? "");
+        }
+        catch (Exception ex)
+        {
+            isBuildingStructure = false;
+            buildProgressMessage = "";
+            kbErrorMessage = $"Failed to start course build: {ex.Message}";
+            Log.Error($"CourseManagement: Failed to start course build - {ex.Message}", ex);
+            StateHasChanged();
+        }
+    }
+
+    private void OnQueueStatusChanged(BackgroundQueueItem item)
+    {
+        if (buildTaskId == null || item.Id != buildTaskId)
+            return;
+        buildProgressPercent = item.Progress;
+        buildProgressMessage = item.CurrentOperation ?? "";
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnQueueTaskCompleted(BackgroundQueueItem item)
+    {
+        if (buildTaskId == null || item.Id != buildTaskId)
+            return;
+        buildTaskId = null;
+        isBuildingStructure = false;
+        buildProgressMessage = "";
+        await LoadData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnQueueTaskError(BackgroundQueueItem item, string error)
+    {
+        if (buildTaskId == null || item.Id != buildTaskId)
+            return;
+        buildTaskId = null;
+        isBuildingStructure = false;
+        buildProgressMessage = "";
+        kbErrorMessage = $"Course build failed: {error}";
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnProcessingStatusChanged(ResourceProcessingStatus status)

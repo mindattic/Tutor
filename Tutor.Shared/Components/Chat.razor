@@ -8,6 +8,7 @@
 @inject InstructionsService Instructions
 @inject SettingsService Settings
 @inject CourseService CourseService
+@inject CourseStructureStorageService StructureStorage
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject DynamicConceptExpansionService ConceptExpansionService
 @inject UserProgressService ProgressService
@@ -345,6 +346,17 @@
                                     <span class="bi bi-chevron-left" aria-hidden="true"></span>
                                     <span class="lesson-nav-text">@GetPreviousTopicName()</span>
                                 </button>
+                                @if (hasStartedLearning && UnitAt(currentLessonIndex)?.Section is not null)
+                                {
+                                    <button class="lesson-nav-btn quiz"
+                                            type="button"
+                                            @onclick="QuizCurrentSection"
+                                            title="Quiz this section"
+                                            aria-label="Quiz this section">
+                                        <span class="bi bi-question-circle" aria-hidden="true"></span>
+                                        <span class="lesson-nav-text">Quiz</span>
+                                    </button>
+                                }
                                 <button class="lesson-nav-btn continue"
                                         type="button"
                                         @onclick="ContinueLesson"
@@ -457,6 +469,7 @@
 [Parameter] public EventCallback<string> OnNavigateToConcept { get; set; }
 [Parameter] public EventCallback<string> OnNavigateToVisualize { get; set; }
 [Parameter] public EventCallback<HashSet<string>> OnEncounteredConceptsChanged { get; set; }
+[Parameter] public EventCallback<Section> OnStartSectionQuiz { get; set; }
 
 // Chat tab system - side conversations open in new tabs instead of inline
 private List<ChatTab> chatTabs = new() { new ChatTab { Title = "Lesson", IsCloseable = false } };
@@ -501,6 +514,38 @@ private List<string> lessonTopics = new();
 private List<string> learnedConcepts = new(); // Completed lesson topics (for progress tracking)
 private HashSet<string> encounteredConcepts = new(); // All concepts user has been exposed to (topics + side explorations)
 private HashSet<int> visitedTopicIndices = new(); // Track which topics have been visited
+
+// Teachable units aligned by index to lessonTopics. Populated from the prebuilt
+// CourseStructure (stable section ids + baked content) when available; empty on the
+// ad-hoc fallback path, where UnitAt() synthesizes a slug-keyed unit per topic title.
+private List<TeachableUnit> units = new();
+
+/// <summary>
+/// A teachable unit in the lesson. Id is a stable CourseStructure section id when the
+/// course has a built structure, otherwise a normalized slug of the title.
+/// </summary>
+private sealed record TeachableUnit(
+    string Id,
+    string Title,
+    string? Content,
+    List<string> ConceptIds,
+    Section? Section);
+
+/// <summary>
+/// Resolves the teachable unit at a topic index, synthesizing a slug-keyed unit from the
+/// topic title when no structure-backed unit exists (the ad-hoc fallback path).
+/// </summary>
+private TeachableUnit? UnitAt(int index)
+{
+    if (index < 0) return null;
+    if (index < units.Count) return units[index];
+    if (index < lessonTopics.Count)
+    {
+        var title = lessonTopics[index];
+        return new TeachableUnit(NormalizeTopicKey(title), title, null, new List<string>(), null);
+    }
+    return null;
+}
 
 
 
@@ -596,6 +641,7 @@ protected override async Task OnInitializedAsync()
         isLessonMode = false;
         hasStartedLearning = false;
         currentLessonIndex = 0;
+        units.Clear();
         lessonTopics.Clear();
         learnedConcepts.Clear();
         encounteredConcepts.Clear();
@@ -662,6 +708,9 @@ protected override async Task OnInitializedAsync()
         learnedConcepts = state.LearnedConcepts;
         encounteredConcepts = [.. state.EncounteredConcepts];
         visitedTopicIndices = [.. state.VisitedTopicIndices];
+
+        // Rebind teachable units (structure-backed when the course is built, else slug units).
+        await RehydrateUnitsAsync();
 
         // Restore messages to the Lesson tab (always index 0)
         chatTabs[0].Messages.Clear();
@@ -788,10 +837,24 @@ protected override async Task OnInitializedAsync()
         learnedConcepts.Clear();
         encounteredConcepts.Clear();
         visitedTopicIndices.Clear();
+        units.Clear();
+        lessonTopics.Clear();
         ResetToLessonTab();
         messages.Clear();
 
-        // Build a prompt that emphasizes using ALL resources together
+        // Prefer the prebuilt CourseStructure (stable section ids + baked content). Teaching
+        // still happens live (grounded in that content) when the student presses Begin.
+        if (await TryLoadStructureUnitsAsync())
+        {
+            messages.Add(new ChatMessage("assistant",
+                $"This course has a structured path of **{units.Count}** sections ready. Press **Begin** to start, or pick a topic from the contents.",
+                "Course structure loaded"));
+            showTableOfContents = true;
+            StateHasChanged();
+            return;
+        }
+
+        // Fallback: generate an ad-hoc curriculum from the resources via the LLM.
         var resourceNames = string.Join(", ", resources.Select(r => r.Title));
         var topicsPrompt = $@"Based on ALL the course resources ({resourceNames}), create a unified curriculum.
 
@@ -833,8 +896,22 @@ Keep it to 8-15 main topics to ensure comprehensive coverage.";
         learnedConcepts.Clear();
         encounteredConcepts.Clear();
         visitedTopicIndices.Clear();
+        units.Clear();
+        lessonTopics.Clear();
         ResetToLessonTab();
         messages.Clear();
+
+        // Prefer the prebuilt structure: jump straight to the requested section.
+        if (await TryLoadStructureUnitsAsync())
+        {
+            var targetIndex = FindTopicIndex(topicName);
+            currentLessonIndex = targetIndex >= 0 ? targetIndex : 0;
+            hasStartedLearning = true;
+            visitedTopicIndices.Add(currentLessonIndex);
+            showTableOfContents = true;
+            await TeachCurrentTopic();
+            return;
+        }
 
         // Build a prompt that gets topics and includes the target topic
         var resourceNames = string.Join(", ", resources.Select(r => r.Title));
@@ -876,8 +953,8 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
             hasStartedLearning = true;
             visitedTopicIndices.Add(currentLessonIndex);
             
-            // Mark section as visited
-            var sectionId = $"topic-{currentLessonIndex}";
+            // Mark section as visited (keyed by the unit's stable id)
+            var sectionId = UnitAt(currentLessonIndex)?.Id ?? $"topic-{currentLessonIndex}";
             var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
             progress.MarkSectionVisited(sectionId);
             await ProgressService.SaveProgressAsync(progress);
@@ -911,8 +988,8 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
         var enrichWithLearned = visitedTopicIndices.Contains(currentLessonIndex);
         visitedTopicIndices.Add(currentLessonIndex);
 
-        // Mark new section as visited
-        var newSectionId = $"topic-{currentLessonIndex}";
+        // Mark new section as visited (keyed by the unit's stable id)
+        var newSectionId = UnitAt(currentLessonIndex)?.Id ?? $"topic-{currentLessonIndex}";
         var newProgress = await ProgressService.GetProgressAsync(activeCourse.Id);
         newProgress.MarkSectionVisited(newSectionId);
         await ProgressService.SaveProgressAsync(newProgress);
@@ -949,47 +1026,53 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
 
     private async Task TeachCurrentTopic(bool enrichWithLearned = false)
     {
-        if (currentLessonIndex >= lessonTopics.Count) return;
-
-        var topic = lessonTopics[currentLessonIndex];
+        var unit = UnitAt(currentLessonIndex);
+        if (unit == null) return;
 
         // Spiral depth is driven by durable per-user mastery (persists across sessions).
         // RecordTopicTaught returns the level (1-3) to teach at, based on revisit count and
         // demonstrated quiz mastery. Fall back to the in-session revisit hint when there is
-        // no active course to read progress from.
+        // no active course to read progress from. Identity is the unit's stable id (a real
+        // CourseStructure section id when the course is built, else a title slug).
         var spiralLevel = enrichWithLearned ? 2 : 1;
         int? lastQuizScore = null;
         if (activeCourse != null)
         {
             var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
-            var topicKey = NormalizeTopicKey(topic);
-            spiralLevel = progress.RecordTopicTaught(topicKey, topic);
-            lastQuizScore = progress.TopicMastery.TryGetValue(topicKey, out var mastery)
+            spiralLevel = progress.RecordTopicTaught(unit.Id, unit.Title);
+            lastQuizScore = progress.TopicMastery.TryGetValue(unit.Id, out var mastery)
                 ? mastery.LastQuizScorePct
                 : null;
             await ProgressService.SaveProgressAsync(progress);
         }
 
-        prompt = BuildTeachPrompt(topic, spiralLevel, lastQuizScore);
-        pendingDisplayText = $"Teach me about \"{topic}\"";
+        prompt = BuildTeachPrompt(unit, spiralLevel, lastQuizScore);
+        pendingDisplayText = $"Teach me about \"{unit.Title}\"";
         await SendAsync();
     }
 
     /// <summary>
     /// Builds a graduated "spiral curriculum" teaching prompt. The depth escalates with the
     /// spiral level; a weak last quiz score re-grounds the fundamentals before deepening.
+    /// When the unit carries baked content (a built course), that content is supplied as
+    /// authoritative source material to ground the live explanation.
     /// </summary>
-    private string BuildTeachPrompt(string topic, int spiralLevel, int? lastQuizScore)
+    private string BuildTeachPrompt(TeachableUnit unit, int spiralLevel, int? lastQuizScore)
     {
+        var topic = unit.Title;
         var encounteredList = encounteredConcepts.Count > 0
             ? string.Join(", ", encounteredConcepts)
             : null;
+
+        var grounding = !string.IsNullOrWhiteSpace(unit.Content)
+            ? $"\n\nAUTHORITATIVE SOURCE MATERIAL for \"{topic}\" (teach from this and do not contradict it):\n{unit.Content}\n"
+            : "";
 
         // Level 1 - fresh introduction, no prior context to lean on.
         if (spiralLevel <= 1)
         {
             return $@"Teach me about ""{topic}"" from the curriculum.
-Explain the key concepts clearly, as if you're a tutor.
+Explain the key concepts clearly, as if you're a tutor.{grounding}
 
 At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
 __First specific question?__
@@ -1026,7 +1109,7 @@ Before going deeper, briefly re-ground the core fundamentals of ""{topic}"" in p
 IMPORTANT CONTEXT - SPIRAL LEARNING (depth level {spiralLevel}):
 {context}{regroundNote}
 
-{depthInstruction}
+{depthInstruction}{grounding}
 
 Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
 __First specific question about {topic}?__
@@ -1044,6 +1127,54 @@ __Third specific question about {topic}?__";
         var lowered = title.ToLowerInvariant();
         var cleaned = Regex.Replace(lowered, @"[^a-z0-9]+", " ");
         return cleaned.Trim();
+    }
+
+    /// <summary>
+    /// Loads the course's prebuilt CourseStructure (when Ready) into the flattened
+    /// <see cref="units"/> list — sections in learning order, with stable ids and baked
+    /// content. Returns false when no usable structure exists, so callers fall back to the
+    /// ad-hoc LLM curriculum.
+    /// </summary>
+    private async Task<bool> TryLoadStructureUnitsAsync()
+    {
+        if (activeCourse == null || !activeCourse.HasCourseStructure)
+            return false;
+
+        var structure = await StructureStorage.LoadByCourseIdAsync(activeCourse.Id);
+        if (structure == null || structure.Status != CourseStructureStatus.Ready)
+            return false;
+
+        var built = new List<TeachableUnit>();
+        foreach (var lesson in structure.GetLessonsInOrder())
+        {
+            foreach (var section in lesson.GetAllSectionsFlattened())
+            {
+                built.Add(new TeachableUnit(
+                    section.Id, section.Title, section.Content, section.ConceptIds, section));
+            }
+        }
+
+        if (built.Count == 0)
+            return false;
+
+        units = built;
+        lessonTopics = built.Select(u => u.Title).ToList();
+        return true;
+    }
+
+    /// <summary>
+    /// After restoring saved lesson state, rebinds <see cref="units"/> to the course's
+    /// structure (so section ids and baked content are available again). Falls back to
+    /// slug-keyed units derived from the saved topic titles when there is no structure.
+    /// </summary>
+    private async Task RehydrateUnitsAsync()
+    {
+        if (await TryLoadStructureUnitsAsync() && units.Count == lessonTopics.Count)
+            return;
+
+        units = lessonTopics
+            .Select(t => new TeachableUnit(NormalizeTopicKey(t), t, null, new List<string>(), null))
+            .ToList();
     }
 
     /// <summary>
@@ -1111,6 +1242,19 @@ __Third specific question about {topic}?__";
         Log.Info($"Chat: Recorded quiz score {pct}% against {quizAttributionTopics.Count} topic(s)");
     }
 
+    /// <summary>
+    /// Hands the current structure-backed section to the structured quiz flow (authoritative
+    /// scoring + spiral mastery). No-op on the ad-hoc fallback path, which has no real section.
+    /// </summary>
+    private async Task QuizCurrentSection()
+    {
+        var unit = UnitAt(currentLessonIndex);
+        if (unit?.Section != null && OnStartSectionQuiz.HasDelegate)
+        {
+            await OnStartSectionQuiz.InvokeAsync(unit.Section);
+        }
+    }
+
     // Tab management methods
     private void SwitchChatTab(int index)
     {
@@ -1170,6 +1314,7 @@ __Third specific question about {topic}?__";
         isLessonMode = false;
         hasStartedLearning = false;
         currentLessonIndex = 0;
+        units.Clear();
         lessonTopics.Clear();
         learnedConcepts.Clear();
         encounteredConcepts.Clear();
@@ -1718,6 +1863,9 @@ Keep track of the running score.";
 
     private void ParseTopicsFromResponse(string response)
     {
+        // Ad-hoc fallback curriculum: no structure-backed units, so clear them and let
+        // UnitAt() synthesize slug-keyed units from the parsed topic titles.
+        units.Clear();
         lessonTopics.Clear();
         var lines = response.Split('\n');
         foreach (var line in lines)
@@ -2196,8 +2344,8 @@ The questions should be specific and relevant to what you just explained, not ge
             var elapsedSeconds = (int)(DateTime.UtcNow - sectionStartTime).TotalSeconds;
             currentSectionReadingSeconds += elapsedSeconds;
             
-            // Get current topic as section ID (for now using topic index)
-            var sectionId = $"topic-{currentLessonIndex}";
+            // Section ID = the unit's stable id (real section id when the course is built)
+            var sectionId = UnitAt(currentLessonIndex)?.Id ?? $"topic-{currentLessonIndex}";
             
             // Determine the target reading time
             var targetReadingTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;

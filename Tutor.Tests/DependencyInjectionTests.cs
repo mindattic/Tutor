@@ -86,6 +86,7 @@ public class DependencyInjectionTests
         services.AddSingleton<ResourceUploadTaskHandler>();
         services.AddSingleton<ResourceFormatTaskHandler>();
         services.AddSingleton<ConceptMapBuildTaskHandler>();
+        services.AddSingleton<CourseStructureBuildTaskHandler>();
 
         // Auth
         services.AddSingleton<IAuthController, LocalAuthController>();
@@ -170,6 +171,7 @@ public class DependencyInjectionTests
     [TestCase(typeof(ResourceUploadTaskHandler))]
     [TestCase(typeof(ResourceFormatTaskHandler))]
     [TestCase(typeof(ConceptMapBuildTaskHandler))]
+    [TestCase(typeof(CourseStructureBuildTaskHandler))]
     [TestCase(typeof(AuthenticationService))]
     [TestCase(typeof(UserStorageService))]
     [TestCase(typeof(NewsService))]

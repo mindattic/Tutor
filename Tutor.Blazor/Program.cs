@@ -173,6 +173,7 @@ builder.Services.AddSingleton<BackgroundQueueStorageService>();
 builder.Services.AddSingleton<ResourceUploadTaskHandler>();
 builder.Services.AddSingleton<ResourceFormatTaskHandler>();
 builder.Services.AddSingleton<ConceptMapBuildTaskHandler>();
+builder.Services.AddSingleton<CourseStructureBuildTaskHandler>();
 
 // Authentication services
 builder.Services.AddSingleton<IAuthController, LocalAuthController>();

@@ -30,7 +30,13 @@ public enum BackgroundTaskType
     /// <summary>
     /// Build knowledge graph relationships.
     /// </summary>
-    GraphBuild
+    GraphBuild,
+
+    /// <summary>
+    /// Generate a course's learning structure (lessons → sections → content → quizzes)
+    /// from its aggregated ConceptMapCollection.
+    /// </summary>
+    CourseStructureBuild
 }
 
 /// <summary>
@@ -275,6 +281,22 @@ public class ConceptMapBuildPayload
     /// Whether to update the CourseResource with the ConceptMap ID after build.
     /// </summary>
     public bool UpdateResource { get; set; } = true;
+}
+
+/// <summary>
+/// Payload for course-structure build tasks. Generates the lesson/section learning path
+/// (and pre-generated section quizzes) from a course's aggregated ConceptMapCollection.
+/// </summary>
+public class CourseStructureBuildPayload
+{
+    /// <summary>The course to build a structure for.</summary>
+    public string CourseId { get; set; } = "";
+
+    /// <summary>The course's aggregated ConceptMapCollection id.</summary>
+    public string ConceptMapCollectionId { get; set; } = "";
+
+    /// <summary>Display name for the course (for the merged map name).</summary>
+    public string Name { get; set; } = "";
 }
 
 /// <summary>

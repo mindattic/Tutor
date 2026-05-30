@@ -286,6 +286,33 @@ public static class BackgroundQueueService
     }
 
     /// <summary>
+    /// Enqueues a course-structure build task for a course (lessons → sections → content → quizzes).
+    /// </summary>
+    public static string EnqueueCourseStructureBuild(
+        string courseId,
+        string courseName,
+        string conceptMapCollectionId)
+    {
+        var payload = new CourseStructureBuildPayload
+        {
+            CourseId = courseId,
+            ConceptMapCollectionId = conceptMapCollectionId,
+            Name = courseName
+        };
+
+        var item = new BackgroundQueueItem
+        {
+            TaskType = BackgroundTaskType.CourseStructureBuild,
+            DisplayName = $"Build course: {courseName}",
+            PayloadJson = JsonSerializer.Serialize(payload),
+            Priority = 110, // After concept-map builds, which it depends on
+            MaxRetries = 5
+        };
+
+        return Enqueue(item);
+    }
+
+    /// <summary>
     /// Gets a task by its ID.
     /// </summary>
     public static BackgroundQueueItem? GetTask(string taskId)
@@ -518,7 +545,8 @@ public static class BackgroundQueueService
         {
             typeof(ResourceUploadTaskHandler),
             typeof(ResourceFormatTaskHandler),
-            typeof(ConceptMapBuildTaskHandler)
+            typeof(ConceptMapBuildTaskHandler),
+            typeof(CourseStructureBuildTaskHandler)
         };
 
         foreach (var handlerType in handlerTypes)

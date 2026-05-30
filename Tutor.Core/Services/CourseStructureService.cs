@@ -96,8 +96,6 @@ public sealed class CourseStructureService
         string conceptMapId,
         CancellationToken ct = default)
     {
-        Log.Info($"CourseStructure: Generating from ConceptMap {conceptMapId} for course {courseId}");
-        
         // Load the ConceptMap
         var conceptMap = await conceptMapStorageService.LoadAsync(conceptMapId, ct);
         if (conceptMap == null)
@@ -111,7 +109,27 @@ public sealed class CourseStructureService
             Log.Error($"CourseStructure: ConceptMap not ready. Status: {conceptMap.Status}");
             throw new InvalidOperationException($"ConceptMap is not ready. Status: {conceptMap.Status}");
         }
-        
+
+        return await GenerateFromConceptMapAsync(courseId, conceptMap, ct);
+    }
+
+    /// <summary>
+    /// Generates a CourseStructure from an already-loaded ConceptMap. Used when the source
+    /// concepts come from an aggregated/merged map (e.g. a course's entire ConceptMapCollection
+    /// merged in memory) rather than a single persisted ConceptMap.
+    /// </summary>
+    public async Task<CourseStructure> GenerateFromConceptMapAsync(
+        string courseId,
+        ConceptMap conceptMap,
+        CancellationToken ct = default)
+    {
+        Log.Info($"CourseStructure: Generating from ConceptMap {conceptMap.Id} for course {courseId}");
+
+        if (conceptMap.Concepts == null || conceptMap.Concepts.Count == 0)
+        {
+            throw new InvalidOperationException("ConceptMap has no concepts to build a structure from");
+        }
+
         Log.Debug($"CourseStructure: ConceptMap '{conceptMap.Name}' has {conceptMap.Concepts.Count} concepts");
 
         // Create new CourseStructure
@@ -120,7 +138,7 @@ public sealed class CourseStructureService
             Name = $"Learning Path for {conceptMap.Name}",
             Description = $"Structured curriculum based on {conceptMap.Name}",
             CourseId = courseId,
-            KnowledgeBaseId = conceptMapId,
+            KnowledgeBaseId = conceptMap.Id,
             Status = CourseStructureStatus.NotStarted
         };
 
