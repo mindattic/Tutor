@@ -17,6 +17,7 @@ public sealed class SideNavService
     private readonly ConceptMapStorageService conceptMapStorageService;
     private readonly CourseStructureStorageService structureStorageService;
     private readonly UserProgressService progressService;
+    private readonly LearningPathService learningPath;
     private readonly AppUiState uiState;
 
     public SideNavService(
@@ -24,12 +25,14 @@ public sealed class SideNavService
         ConceptMapStorageService conceptMapStorageService,
         CourseStructureStorageService structureStorageService,
         UserProgressService progressService,
+        LearningPathService learningPath,
         AppUiState uiState)
     {
         this.courseService = courseService;
         this.conceptMapStorageService = conceptMapStorageService;
         this.structureStorageService = structureStorageService;
         this.progressService = progressService;
+        this.learningPath = learningPath;
         this.uiState = uiState;
     }
 
@@ -142,13 +145,15 @@ public sealed class SideNavService
 
         foreach (var lesson in structure.GetLessonsInOrder())
         {
+            var lessonLocked = !learningPath.IsLessonUnlocked(structure, progress, lesson.Id);
             var lessonNode = new NavNode
             {
                 Id = $"lesson-{lesson.Id}",
                 Title = lesson.Title,
-                Icon = lesson.Icon ?? "bi-journal-text",
+                Icon = lessonLocked ? "bi-lock" : (lesson.Icon ?? "bi-journal-text"),
                 Description = lesson.Summary,
                 IsExpanded = false,
+                Locked = lessonLocked,
                 Data = lesson
             };
 
@@ -250,6 +255,8 @@ public sealed class SideNavService
             Icon = icon,
             Description = section.Summary,
             IsExpanded = false,
+            Status = status,
+            SpiralLevel = learningPath.GetSectionSpiralLevel(progress, section.Id),
             Data = section
         };
 

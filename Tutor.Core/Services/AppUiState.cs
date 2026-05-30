@@ -44,6 +44,18 @@ public class NavNode
     /// Depth level in the hierarchy (0 = top level).
     /// </summary>
     public int Depth { get; set; }
+
+    /// <summary>
+    /// True when this node is gated off — the student hasn't mastered the prerequisites yet.
+    /// Locked nodes render dimmed with a lock and are not navigable.
+    /// </summary>
+    public bool Locked { get; set; }
+
+    /// <summary>
+    /// Spiral depth this node has been taught at (0 = not yet, 1 = intro, 2 = deepen,
+    /// 3 = synthesis). Surfaced as a small badge so the student sees the path deepening.
+    /// </summary>
+    public int SpiralLevel { get; set; }
 }
 
 /// <summary>

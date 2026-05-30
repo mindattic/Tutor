@@ -1,18 +1,20 @@
 @using Tutor.Core.Services
 @using Tutor.Core.Models
 
-<li class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "") @GetStatusClass()"
+<li class="side-nav-item @(Node.IsSelected ? "selected" : "") @(Node.Children.Count > 0 ? "has-children" : "") @(Node.Locked ? "locked" : "") @GetStatusClass()"
     style="--indent-level: @Level"
     role="treeitem"
     aria-level="@(Level + 1)"
     aria-selected="@Node.IsSelected.ToString().ToLowerInvariant()"
+    aria-disabled="@Node.Locked.ToString().ToLowerInvariant()"
     aria-expanded="@(Node.Children.Count > 0 ? Node.IsExpanded.ToString().ToLowerInvariant() : null)">
 
     <div class="side-nav-item-content"
-         @onclick="() => OnNodeClick.InvokeAsync(Node)"
+         @onclick="HandleContentClick"
          tabindex="0"
          role="button"
-         aria-label="@GetItemAriaLabel()">
+         aria-label="@GetItemAriaLabel()"
+         title="@(Node.Locked ? "Locked — master the previous lesson to unlock" : null)">
         @if (Node.Children.Count > 0)
         {
             <button class="expand-btn"
@@ -45,6 +47,14 @@
 
         <span class="side-nav-title">@Node.Title</span>
 
+        @* Spiral-depth badge: shown once a topic has been deepened beyond the intro level *@
+        @if (Node.SpiralLevel > 1)
+        {
+            <span class="side-nav-spiral"
+                  title="Spiral depth @Node.SpiralLevel of @UserProgress.MaxSpiralLevel"
+                  aria-label="Spiral depth @Node.SpiralLevel">↻@Node.SpiralLevel</span>
+        }
+
         @* Progress percentage for parent nodes *@
         @if (Node.Children.Count > 0 && Node.CompletionPercentage > 0)
         {
@@ -75,6 +85,13 @@
 
     [Parameter]
     public EventCallback<NavNode> OnToggle { get; set; }
+
+    private async Task HandleContentClick()
+    {
+        // Locked nodes are gated off until prerequisites are mastered — ignore clicks.
+        if (Node.Locked) return;
+        await OnNodeClick.InvokeAsync(Node);
+    }
 
     private async Task HandleToggleClick()
     {

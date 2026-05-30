@@ -173,6 +173,27 @@
     border-left: 3px solid #ff9800;
 }
 
+/* Locked (mastery-gated) lessons */
+.side-nav-item.locked > .side-nav-item-content {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.side-nav-item.locked > .side-nav-item-content:hover {
+    background: transparent;
+}
+
+/* Spiral-depth badge */
+.side-nav-spiral {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent, #6f42c1);
+    background: var(--bg-tertiary, rgba(111, 66, 193, 0.12));
+    padding: 1px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
 /* Scrollbar styling */
 .side-nav::-webkit-scrollbar {
     width: 6px;
