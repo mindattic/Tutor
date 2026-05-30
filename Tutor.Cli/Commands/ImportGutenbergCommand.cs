@@ -56,6 +56,7 @@ public sealed class ImportGutenbergCommand
             ResourceDescription: $"Project Gutenberg eBook #{bookId}",
             FileName: $"pg{bookId}.txt",
             Content: content,
+            QuizMode: QuizModes.Parse(options.Get("quiz-mode")),
             AllowDuplicate: options.ContainsKey("allow-duplicate"));
 
         var result = await pipeline.ImportAsync(request, ct);

@@ -3,7 +3,7 @@ using Tutor.Cli.Export;
 namespace Tutor.Cli.Commands;
 
 /// <summary>
-/// <c>tutor export &lt;course-id&gt; &lt;output.tutorcourse&gt;</c> — pack a course
+/// <c>tutor export &lt;course-id&gt; &lt;output.tutor&gt;</c> — pack a course
 /// (resources, concept map, structure, embeddings) into a single shareable bundle.
 /// </summary>
 public sealed class ExportCommand
@@ -25,16 +25,17 @@ public sealed class ExportCommand
         var (positionals, _) = Args.Parse(args);
         if (positionals.Count < 2)
         {
-            Console.Error.WriteLine("Usage: tutor export <course-id> <output.tutorcourse>");
+            Console.Error.WriteLine("Usage: tutor export <course-id> <output.tutor>");
             return 64;
         }
 
         var courseId = positionals[0];
         var outputPath = positionals[1];
 
-        if (!outputPath.EndsWith(".tutorcourse", StringComparison.OrdinalIgnoreCase))
+        if (!outputPath.EndsWith(".tutor", StringComparison.OrdinalIgnoreCase) &&
+            !outputPath.EndsWith(".tutorcourse", StringComparison.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine("WARN: output path does not end in .tutorcourse — proceeding anyway.");
+            Console.Error.WriteLine("WARN: output path does not end in .tutor — proceeding anyway.");
         }
 
         Console.WriteLine($"Exporting course '{courseId}' → {outputPath}");

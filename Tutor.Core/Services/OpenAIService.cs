@@ -49,8 +49,7 @@ public sealed class OpenAIService : ILlmService
     public async Task<bool> IsConfiguredAsync()
     {
         var key = await opt.GetApiKeyAsync();
-        if (!string.IsNullOrWhiteSpace(key)) return true;
-        return !string.IsNullOrWhiteSpace(MindAtticCredentialStore.GetKey("openai"));
+        return !string.IsNullOrWhiteSpace(key);
     }
 
     public async Task<ChatReply> AskAsync(string question, CancellationToken ct = default)
@@ -97,11 +96,9 @@ public sealed class OpenAIService : ILlmService
 
         var apiKey = await opt.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey))
-            apiKey = MindAtticCredentialStore.GetKey("openai");
-        if (string.IsNullOrWhiteSpace(apiKey))
         {
             Log.Error("OpenAI: API key is missing");
-            throw new InvalidOperationException("OpenAI API key is missing. Set it in Settings > Credentials.");
+            throw new InvalidOperationException("OpenAI API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
         }
 
         var model = await opt.GetModelAsync();

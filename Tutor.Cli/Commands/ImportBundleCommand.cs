@@ -3,8 +3,9 @@ using Tutor.Cli.Export;
 namespace Tutor.Cli.Commands;
 
 /// <summary>
-/// <c>tutor import-bundle &lt;file.tutorcourse&gt; [--course "Override Name"] [--allow-duplicate]</c>
-/// — restores a course from a .tutorcourse bundle. Skips the LLM pipeline entirely
+/// <c>tutor import-bundle &lt;file.tutor&gt; [--course "Override Name"] [--allow-duplicate]</c>
+/// (also aliased as <c>tutor install</c>) — restores a course from a .tutor bundle
+/// (legacy .tutorcourse files are also accepted). Skips the LLM pipeline entirely
 /// because the embeddings ride along in the bundle, so it's typically &lt;1s regardless
 /// of book size.
 /// </summary>
@@ -24,7 +25,7 @@ public sealed class ImportBundleCommand
         if (positionals.Count == 0)
         {
             Console.Error.WriteLine(
-                "Usage: tutor import-bundle <file.tutorcourse> [--course \"Override Name\"] [--allow-duplicate]");
+                "Usage: tutor import-bundle <file.tutor> [--course \"Override Name\"] [--allow-duplicate]");
             return 64;
         }
 

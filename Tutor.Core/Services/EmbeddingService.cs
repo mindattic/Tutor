@@ -68,11 +68,9 @@ public sealed class EmbeddingService
 
         var apiKey = await opt.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey))
-            apiKey = MindAtticCredentialStore.GetKey("openai");
-        if (string.IsNullOrWhiteSpace(apiKey))
         {
             Log.Error("EmbeddingService: API key is missing");
-            throw new InvalidOperationException("OpenAI API key is missing.");
+            throw new InvalidOperationException("OpenAI API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
         }
 
         var allEmbeddings = new List<float[]>();

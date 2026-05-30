@@ -1,5 +1,8 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MindAttic.Legion;
+using MindAttic.Vault.Configuration;
+using MindAttic.Vault.DependencyInjection;
 using Tutor.Cli.Commands;
 using Tutor.Cli.Export;
 using Tutor.Cli.Gutenberg;
@@ -27,10 +30,33 @@ Log.Store.EntryAdded += (_, entry) =>
 };
 args = args.Where(a => a != "--verbose").ToArray();
 
+// Global --llm <provider> override (default: claude). Stripped here so individual
+// commands don't have to know about it. Maps to the LlmServiceRouter's SELECTED_MODEL.
+string? llmOverride = null;
+{
+    var list = args.ToList();
+    var i = list.FindIndex(a => a.Equals("--llm", StringComparison.OrdinalIgnoreCase));
+    if (i >= 0)
+    {
+        if (i + 1 < list.Count && !list[i + 1].StartsWith("--")) { llmOverride = list[i + 1]; list.RemoveAt(i + 1); }
+        list.RemoveAt(i);
+        args = list.ToArray();
+    }
+}
+
 var services = new ServiceCollection();
 
-// Shared cross-MindAttic LLM credential store + Legion HTTP client.
-services.AddSingleton<LlmCredentialStore>();
+// Cloud-native credential resolution via MindAttic.Vault. The chain layers the
+// legacy %APPDATA%\MindAttic\LLM keyring under the shared User Secrets and env
+// vars, so the CLI resolves the same working keys every other MindAttic app uses
+// (User Secrets / App Service / Key Vault) — not just the on-disk fallback.
+var configuration = new ConfigurationBuilder()
+    .AddMindAtticVaultFiles()
+    .AddUserSecrets(VaultConfigurationKeys.SharedUserSecretsId)
+    .AddEnvironmentVariables()
+    .Build();
+services.AddMindAtticVault(configuration);
+
 services.AddLegionClient();
 
 // Platform abstractions — CLI variants of the Blazor implementations.
@@ -104,12 +130,14 @@ services.AddSingleton<ParserRegistry>();
 
 // CLI-specific services.
 services.AddHttpClient<GutenbergFetcher>();
+services.AddSingleton<CourseBuildPipeline>();
 services.AddSingleton<BookImportPipeline>();
 services.AddSingleton<CourseExporter>();
 services.AddSingleton<BundleImporter>();
 services.AddSingleton<ImportGutenbergCommand>();
 services.AddSingleton<GutenbergTop10Command>();
 services.AddSingleton<ImportFileCommand>();
+services.AddSingleton<BuildCourseCommand>();
 services.AddSingleton<ExportCommand>();
 services.AddSingleton<ImportBundleCommand>();
 services.AddSingleton<ListCommand>();
@@ -119,18 +147,46 @@ services.AddSingleton<ParseOnlyCommand>();
 
 using var provider = services.BuildServiceProvider();
 
+// Default the chat LLM to Claude (overridable with --llm). Embeddings always use
+// OpenAI regardless — only the reasoning/generation provider is switched here.
+// Written through the shared preference the LlmServiceRouter reads (SELECTED_MODEL).
+var desiredModel = MapLlm(llmOverride ?? "claude");
+var prefs = provider.GetRequiredService<ISecurePreferences>();
+var currentModel = await prefs.GetAsync("SELECTED_MODEL");
+if (!string.Equals(currentModel, desiredModel, StringComparison.Ordinal))
+{
+    await prefs.SetAsync("SELECTED_MODEL", desiredModel);
+    Console.Error.WriteLine($"  [LLM] Chat provider set to {desiredModel} (embeddings use OpenAI).");
+}
+
 var verb = args.Length == 0 ? "help" : args[0].ToLowerInvariant();
 var rest = args.Skip(1).ToArray();
 
 try
 {
+    if (verb == "diag-keys")
+    {
+        var resolver = provider.GetRequiredService<MindAttic.Vault.Credentials.LlmCredentialResolver>();
+        static string Mask(string? s) => string.IsNullOrEmpty(s) ? "(empty)" : $"len={s.Length} …{s[Math.Max(0, s.Length - 4)..]}";
+        foreach (var p in new[] { "openai", "claude", "gemini" })
+        {
+            Console.WriteLine($"  vault.GetKey({p,-7}) = {Mask(resolver.GetKey(p))}");
+        }
+        foreach (var k in new[] { "OPENAI_API_KEY", "CLAUDE_API_KEY", "SELECTED_MODEL" })
+        {
+            Console.WriteLine($"  prefs[{k,-15}]  = {Mask(await prefs.GetAsync(k))}");
+        }
+        return 0;
+    }
+
     return verb switch
     {
         "gutenberg"     => await provider.GetRequiredService<ImportGutenbergCommand>().RunAsync(rest),
         "gutenberg-top10" => await provider.GetRequiredService<GutenbergTop10Command>().RunAsync(rest),
         "import"        => await provider.GetRequiredService<ImportFileCommand>().RunAsync(rest),
+        "build-course"  => await provider.GetRequiredService<BuildCourseCommand>().RunAsync(rest),
         "export"        => await provider.GetRequiredService<ExportCommand>().RunAsync(rest),
-        "import-bundle" => await provider.GetRequiredService<ImportBundleCommand>().RunAsync(rest),
+        "import-bundle" or "install" => await provider.GetRequiredService<ImportBundleCommand>().RunAsync(rest),
         "list"          => await provider.GetRequiredService<ListCommand>().RunAsync(rest),
         "delete"        => await provider.GetRequiredService<DeleteCommand>().RunAsync(rest),
         "fetch"         => await provider.GetRequiredService<FetchOnlyCommand>().RunAsync(rest),
@@ -156,31 +212,48 @@ static int PrintHelp()
               Download a book from Project Gutenberg by ID and import it as a new course.
               Example: tutor gutenberg 2701 --course "Moby Dick"
 
-          tutor gutenberg-top10 [--dry-run] [--allow-duplicate]
+          tutor gutenberg-top10 [--dry-run] [--allow-duplicate] [--export-dir <dir>] [--quiz-mode baked|dynamic|both]
               Drive the curated top-10 (Moby Dick, Pride and Prejudice, Frankenstein,
               Sherlock Holmes, Alice, Dorian Gray, Tom Sawyer, Treasure Island,
               Gulliver's Travels, Dracula) sequentially. Skips books whose course name
               already exists, so re-running after a partial failure resumes naturally.
+              With --export-dir, each course is written to <dir>/<Title>.tutor.
               Long-running: ~2 hours per book and meaningful API spend.
 
-          tutor import <path-to-file> --course "Name" [--description "..."] [--author "..."] [--title "..."] [--allow-duplicate]
+          tutor import <path-to-file> --course "Name" [--description "..."] [--author "..."] [--title "..."] [--quiz-mode ...] [--allow-duplicate]
               Import a local file as a new course. The parser is picked from the
               file extension. Phase A formats: .txt .md .html .htm .epub .pdf .docx
               Phase B formats: .doc .mobi .azw .azw3 .rtf .odt (require Calibre/LibreOffice)
+
+          tutor build-course <dir-or-zip> [--course "Override Name"] [--quiz-mode ...] [--export <out.tutor>] [--allow-duplicate]
+              Build ONE course out of MANY source files in a single command — the
+              headless equivalent of adding each resource in the UI and clicking
+              "Build Course". Point it at a directory or .zip containing a manifest.json
+              plus the files it lists. With --export, also writes the redistributable
+              .tutor bundle. manifest.json shape:
+                { "name": "...", "description": "...", "quizMode": "both",
+                  "items": [ { "file": "ch1.epub", "title": "...", "author": "..." } ] }
+
+          --quiz-mode controls section quizzes: "baked"/"both" (default) pre-generate
+          and bundle questions for offline play; "dynamic" skips pre-generation and lets
+          the runtime generate them live from the bundled concept maps.
 
           NOTE: by default a duplicate-name course is rejected. Use --allow-duplicate
           when you intentionally want a second copy (e.g. a different printing of
           the same book — Bible translations, pre/post-edit Stephen King, etc.).
 
-          tutor export <course-id> <output.tutorcourse>
+          tutor export <course-id> <output.tutor>
               Export a course (resources, concept map, structure, embeddings) to a single
-              shareable bundle.
+              shareable .tutor bundle.
 
-          tutor import-bundle <file.tutorcourse> [--course "Override Name"] [--allow-duplicate]
-              Restore a course from a .tutorcourse bundle. All IDs are rewritten so a
-              re-import never collides with the existing data — you'll get a brand-new
-              course. Skips the LLM pipeline entirely (the embeddings ride along in the
-              bundle), so it's typically <1s regardless of book size.
+          tutor import-bundle <file.tutor> [--course "Override Name"] [--allow-duplicate]
+          tutor install <file.tutor> [--course "Override Name"] [--allow-duplicate]
+              Restore (install) a course from a .tutor bundle — lands the course,
+              resources, concept maps, structure, and embeddings in all the proper
+              places so it shows up in the Blazor UI. Legacy .tutorcourse files are also
+              accepted. All IDs are rewritten so a re-import never collides with existing
+              data. Skips the LLM pipeline entirely (embeddings ride along), so it's
+              typically <1s regardless of book size.
 
           tutor list
               List all courses on this machine.
@@ -202,6 +275,15 @@ static int PrintHelp()
         """);
     return 0;
 }
+
+// Normalizes a --llm value to the token LlmServiceRouter expects in SELECTED_MODEL.
+static string MapLlm(string s) => s.Trim().ToLowerInvariant() switch
+{
+    "openai" or "gpt" or "chatgpt" => "OpenAI",
+    "gemini" or "google"           => "Gemini",
+    "deepseek"                     => "DeepSeek",
+    _                              => "Claude",
+};
 
 static int UnknownVerb(string verb)
 {

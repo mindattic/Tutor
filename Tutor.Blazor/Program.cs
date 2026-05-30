@@ -25,13 +25,9 @@ builder.Configuration
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Tutor's local Tutor.Core.Services.LlmCredentialStore is the existing per-app
-// credential reader. MindAttic.Vault adds a cloud-native overlay alongside it —
-// future code can inject MindAttic.Vault.Credentials.LlmCredentialResolver to
-// read from IConfiguration first. The Tutor-local store is left in place so
-// existing services keep compiling without churn; it can be retired in a
-// follow-up cleanup PR.
-builder.Services.AddSingleton<LlmCredentialStore>();
+// All LLM credentials resolve (read-only) through MindAttic.Vault's
+// LlmCredentialResolver: IConfiguration (User Secrets / env / App Service / Key Vault)
+// → the shared %APPDATA%\MindAttic\LLM\providers.json. The app never stores keys itself.
 builder.Services.AddMindAtticVault(builder.Configuration);
 
 // MindAttic.Legion — universal LLM-call client. Owns endpoints, auth headers,

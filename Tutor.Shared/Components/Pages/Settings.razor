@@ -547,141 +547,19 @@ else
         else if (activeTab == "Credentials")
         {
             <div class="settings-section">
-                <h4 id="cred-openai-heading">OpenAI (ChatGPT)</h4>
-                <div class="credential-row">
-                    <div class="credential-input-group">
-                        <label for="openai-api-key">API Key</label>
-                        <input id="openai-api-key"
-                               type="password"
-                               class="settings-input"
-                               autocomplete="off"
-                               @bind="chatGptApiKey"
-                               placeholder="sk-..." />
-                    </div>
-                    <div class="credential-actions">
-                        <button class="settings-btn small" type="button" @onclick="SaveChatGptKeyAsync" disabled="@isBusy" aria-label="Save OpenAI API key">Save</button>
-                        <button class="settings-btn small" type="button" @onclick="ClearChatGptKeyAsync" disabled="@isBusy" aria-label="Clear OpenAI API key">Clear</button>
-                    </div>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(chatGptKeyPreview))
-                {
-                    <p class="key-preview">Stored: <code>@chatGptKeyPreview</code></p>
-                }
-                <div class="credential-model-row">
-                    <label for="openai-model">Model:</label>
-                    <select id="openai-model" class="theme-select small" @bind="chatGptModel" @bind:after="SaveChatGptModelAsync">
-                        <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                        <option value="gpt-4.1">GPT-4.1</option>
-                        <option value="gpt-4o">GPT-4o</option>
-                        <option value="gpt-4o-mini">GPT-4o Mini</option>
-                    </select>
-                </div>
-                <p class="credential-link">Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI Platform <span class="sr-only">(opens in a new tab)</span></a></p>
+                <h4>API Keys</h4>
+                <p>
+                    API keys are <strong>managed centrally in MindAttic Vault</strong> — there is no in-app
+                    key entry. Every MindAttic application reads the same keys, so a key only ever needs to be
+                    set or rotated in one place.
+                </p>
+                <p class="hint">
+                    Keys resolve from your environment, User Secrets, or the shared file
+                    <code>%APPDATA%\MindAttic\LLM\providers.json</code> (whichever is present, in that order).
+                    Choose which provider acts as the teacher on the <strong>General</strong> tab under
+                    "Active AI Model".
+                </p>
             </div>
-
-            <div class="settings-section">
-                <h4 id="cred-claude-heading">Anthropic (Claude)</h4>
-                <div class="credential-row">
-                    <div class="credential-input-group">
-                        <label for="claude-api-key">API Key</label>
-                        <input id="claude-api-key"
-                               type="password"
-                               class="settings-input"
-                               autocomplete="off"
-                               @bind="claudeApiKey"
-                               placeholder="sk-ant-..." />
-                    </div>
-                    <div class="credential-actions">
-                        <button class="settings-btn small" type="button" @onclick="SaveClaudeKeyAsync" disabled="@isBusy" aria-label="Save Claude API key">Save</button>
-                        <button class="settings-btn small" type="button" @onclick="ClearClaudeKeyAsync" disabled="@isBusy" aria-label="Clear Claude API key">Clear</button>
-                    </div>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(claudeKeyPreview))
-                {
-                    <p class="key-preview">Stored: <code>@claudeKeyPreview</code></p>
-                }
-                <div class="credential-model-row">
-                    <label for="claude-model">Model:</label>
-                    <select id="claude-model" class="theme-select small" @bind="claudeModel" @bind:after="SaveClaudeModelAsync">
-                        <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-                        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
-                    </select>
-                </div>
-                <p class="credential-link">Get your key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">Anthropic Console <span class="sr-only">(opens in a new tab)</span></a></p>
-            </div>
-
-            <div class="settings-section">
-                <h4 id="cred-deepseek-heading">DeepSeek</h4>
-                <div class="credential-row">
-                    <div class="credential-input-group">
-                        <label for="deepseek-api-key">API Key</label>
-                        <input id="deepseek-api-key"
-                               type="password"
-                               class="settings-input"
-                               autocomplete="off"
-                               @bind="deepSeekApiKey"
-                               placeholder="sk-..." />
-                    </div>
-                    <div class="credential-actions">
-                        <button class="settings-btn small" type="button" @onclick="SaveDeepSeekKeyAsync" disabled="@isBusy" aria-label="Save DeepSeek API key">Save</button>
-                        <button class="settings-btn small" type="button" @onclick="ClearDeepSeekKeyAsync" disabled="@isBusy" aria-label="Clear DeepSeek API key">Clear</button>
-                    </div>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(deepSeekKeyPreview))
-                {
-                    <p class="key-preview">Stored: <code>@deepSeekKeyPreview</code></p>
-                }
-                <div class="credential-model-row">
-                    <label for="deepseek-model">Model:</label>
-                    <select id="deepseek-model" class="theme-select small" @bind="deepSeekModel" @bind:after="SaveDeepSeekModelAsync">
-                        <option value="deepseek-chat">DeepSeek Chat (V3)</option>
-                        <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
-                    </select>
-                </div>
-                <p class="credential-link">Get your key from <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">DeepSeek Platform <span class="sr-only">(opens in a new tab)</span></a></p>
-            </div>
-
-            <div class="settings-section">
-                <h4 id="cred-gemini-heading">Google AI (Gemini)</h4>
-                <div class="credential-row">
-                    <div class="credential-input-group">
-                        <label for="gemini-api-key">API Key</label>
-                        <input id="gemini-api-key"
-                               type="password"
-                               class="settings-input"
-                               autocomplete="off"
-                               @bind="geminiApiKey"
-                               placeholder="AIza..." />
-                    </div>
-                    <div class="credential-actions">
-                        <button class="settings-btn small" type="button" @onclick="SaveGeminiKeyAsync" disabled="@isBusy" aria-label="Save Gemini API key">Save</button>
-                        <button class="settings-btn small" type="button" @onclick="ClearGeminiKeyAsync" disabled="@isBusy" aria-label="Clear Gemini API key">Clear</button>
-                    </div>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(geminiKeyPreview))
-                {
-                    <p class="key-preview">Stored: <code>@geminiKeyPreview</code></p>
-                }
-                <div class="credential-model-row">
-                    <label for="gemini-model">Model:</label>
-                    <select id="gemini-model" class="theme-select small" @bind="geminiModel" @bind:after="SaveGeminiModelAsync">
-                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                    </select>
-                </div>
-                <p class="credential-link">Get your key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio <span class="sr-only">(opens in a new tab)</span></a></p>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(status))
-            {
-                <div class="status-message @(status.Contains("Error") || status.Contains("failed") ? "error" : "success")"
-                     role="@(status.Contains("Error") || status.Contains("failed") ? "alert" : "status")"
-                     aria-live="@(status.Contains("Error") || status.Contains("failed") ? "assertive" : "polite")"
-                     aria-atomic="true">
-                    @status
-                </div>
-            }
         }
         else if (activeTab == "Logs")
         {
@@ -819,33 +697,12 @@ else
 @code
 {
     private const string SelectedModelKey = "SELECTED_MODEL";
-    private const string ChatGptApiKeyName = "OPENAI_API_KEY";
-    private const string ClaudeApiKeyName = "CLAUDE_API_KEY";
-    private const string DeepSeekApiKeyName = "DEEPSEEK_API_KEY";
-    private const string GeminiApiKeyName = "GEMINI_API_KEY";
     private const string EnterToSendKey = "ENTER_TO_SEND";
-    private const string ChatGptModelKey = "CHATGPT_MODEL";
-    private const string ClaudeModelKey = "CLAUDE_MODEL";
-    private const string DeepSeekModelKey = "DEEPSEEK_MODEL";
-    private const string GeminiModelKey = "GEMINI_MODEL";
 
     private string activeTab = "General";
     private string selectedTheme = "Light";
     private string selectedModel = "ChatGPT";
-    private string chatGptModel = "gpt-4.1-mini";
-    private string claudeModel = "claude-sonnet-4-20250514";
-    private string deepSeekModel = "deepseek-chat";
-    private string geminiModel = "gemini-2.5-flash";
-    private string chatGptApiKey = "";
-    private string claudeApiKey = "";
-    private string deepSeekApiKey = "";
-    private string geminiApiKey = "";
-    private string chatGptKeyPreview = "";
-    private string claudeKeyPreview = "";
-    private string deepSeekKeyPreview = "";
-    private string geminiKeyPreview = "";
     private string status = "";
-    private bool isBusy;
     private bool isLoaded;
     private bool enterToSend = true;
     
@@ -947,12 +804,7 @@ else
 
         selectedTheme = await ThemeService.GetThemeAsync();
         await LoadSelectedModelAsync();
-        await LoadAllApiKeysAsync();
         await LoadEnterToSendAsync();
-        await LoadChatGptModelAsync();
-        await LoadClaudeModelAsync();
-        await LoadDeepSeekModelAsync();
-        await LoadGeminiModelAsync();
         await LoadQuizSettingsAsync();
         await LoadReadingTimeSettingsAsync();
         await LoadAvatarSettingsAsync();
@@ -1376,210 +1228,6 @@ else
         }
     }
 
-    private async Task LoadChatGptModelAsync()
-    {
-        try
-        {
-            var model = await SecurePreferences.GetAsync(ChatGptModelKey);
-            if (!string.IsNullOrEmpty(model)) chatGptModel = model;
-        }
-        catch { }
-    }
-
-    private async Task LoadClaudeModelAsync()
-    {
-        try
-        {
-            var model = await SecurePreferences.GetAsync(ClaudeModelKey);
-            if (!string.IsNullOrEmpty(model)) claudeModel = model;
-        }
-        catch { }
-    }
-
-    private async Task LoadDeepSeekModelAsync()
-    {
-        try
-        {
-            var model = await SecurePreferences.GetAsync(DeepSeekModelKey);
-            if (!string.IsNullOrEmpty(model)) deepSeekModel = model;
-        }
-        catch { }
-    }
-
-    private async Task LoadGeminiModelAsync()
-    {
-        try
-        {
-            var model = await SecurePreferences.GetAsync(GeminiModelKey);
-            if (!string.IsNullOrEmpty(model)) geminiModel = model;
-        }
-        catch { }
-    }
-
-    private async Task SaveChatGptModelAsync()
-    {
-        try
-        {
-            await SecurePreferences.SetAsync(ChatGptModelKey, chatGptModel);
-            status = $"ChatGPT model set to {chatGptModel}.";
-        }
-        catch (Exception ex)
-        {
-            status = "Failed to save model: " + ex.Message;
-        }
-    }
-
-    private async Task LoadAllApiKeysAsync()
-    {
-        chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
-        claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
-        deepSeekKeyPreview = await LoadKeyPreviewAsync(DeepSeekApiKeyName);
-        geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
-    }
-
-    private async Task<string> LoadKeyPreviewAsync(string keyName)
-    {
-        try
-        {
-            var key = await SecurePreferences.GetAsync(keyName);
-            return string.IsNullOrWhiteSpace(key) ? "" : MaskKey(key);
-        }
-        catch
-        {
-            return "";
-        }
-    }
-
-    private async Task SaveChatGptKeyAsync()
-    {
-        await SaveApiKeyAsync(ChatGptApiKeyName, chatGptApiKey, "ChatGPT");
-        chatGptKeyPreview = await LoadKeyPreviewAsync(ChatGptApiKeyName);
-        chatGptApiKey = "";
-    }
-
-    private async Task ClearChatGptKeyAsync()
-    {
-        await ClearApiKeyAsync(ChatGptApiKeyName, "ChatGPT");
-        chatGptKeyPreview = "";
-        chatGptApiKey = "";
-    }
-
-    private async Task SaveClaudeKeyAsync()
-    {
-        await SaveApiKeyAsync(ClaudeApiKeyName, claudeApiKey, "Claude");
-        claudeKeyPreview = await LoadKeyPreviewAsync(ClaudeApiKeyName);
-        claudeApiKey = "";
-    }
-
-    private async Task ClearClaudeKeyAsync()
-    {
-        await ClearApiKeyAsync(ClaudeApiKeyName, "Claude");
-        claudeKeyPreview = "";
-        claudeApiKey = "";
-    }
-
-    private async Task SaveGeminiKeyAsync()
-    {
-        await SaveApiKeyAsync(GeminiApiKeyName, geminiApiKey, "Gemini");
-        geminiKeyPreview = await LoadKeyPreviewAsync(GeminiApiKeyName);
-        geminiApiKey = "";
-    }
-
-    private async Task ClearGeminiKeyAsync()
-    {
-        await ClearApiKeyAsync(GeminiApiKeyName, "Gemini");
-        geminiKeyPreview = "";
-        geminiApiKey = "";
-    }
-
-    private async Task SaveDeepSeekKeyAsync()
-    {
-        await SaveApiKeyAsync(DeepSeekApiKeyName, deepSeekApiKey, "DeepSeek");
-        deepSeekKeyPreview = await LoadKeyPreviewAsync(DeepSeekApiKeyName);
-        deepSeekApiKey = "";
-    }
-
-    private async Task ClearDeepSeekKeyAsync()
-    {
-        await ClearApiKeyAsync(DeepSeekApiKeyName, "DeepSeek");
-        deepSeekKeyPreview = "";
-        deepSeekApiKey = "";
-    }
-
-    private async Task SaveClaudeModelAsync()
-    {
-        try
-        {
-            await SecurePreferences.SetAsync(ClaudeModelKey, claudeModel);
-            status = $"Claude model set to {claudeModel}.";
-        }
-        catch (Exception ex) { status = "Failed to save model: " + ex.Message; }
-    }
-
-    private async Task SaveDeepSeekModelAsync()
-    {
-        try
-        {
-            await SecurePreferences.SetAsync(DeepSeekModelKey, deepSeekModel);
-            status = $"DeepSeek model set to {deepSeekModel}.";
-        }
-        catch (Exception ex) { status = "Failed to save model: " + ex.Message; }
-    }
-
-    private async Task SaveGeminiModelAsync()
-    {
-        try
-        {
-            await SecurePreferences.SetAsync(GeminiModelKey, geminiModel);
-            status = $"Gemini model set to {geminiModel}.";
-        }
-        catch (Exception ex) { status = "Failed to save model: " + ex.Message; }
-    }
-
-    private async Task SaveApiKeyAsync(string keyName, string keyValue, string modelName)
-    {
-        var trimmed = (keyValue ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            status = $"{modelName} API key is empty.";
-            return;
-        }
-
-        isBusy = true;
-        try
-        {
-            await SecurePreferences.SetAsync(keyName, trimmed);
-            status = $"{modelName} API key saved.";
-        }
-        catch (Exception ex)
-        {
-            status = "Save failed: " + ex.Message;
-        }
-        finally
-        {
-            isBusy = false;
-        }
-    }
-
-    private async Task ClearApiKeyAsync(string keyName, string modelName)
-    {
-        isBusy = true;
-        try
-        {
-            SecurePreferences.Remove(keyName);
-            status = $"{modelName} API key cleared.";
-        }
-        catch (Exception ex)
-        {
-            status = "Clear failed: " + ex.Message;
-        }
-        finally
-        {
-            isBusy = false;
-        }
-        await Task.CompletedTask;
-    }
-
     private async Task LoadEnterToSendAsync()
     {
         try
@@ -1604,14 +1252,5 @@ else
         {
             status = "Save failed: " + ex.Message;
         }
-    }
-
-    private static string MaskKey(string key)
-    {
-        if (key.Length <= 12) return new string('*', key.Length);
-
-        var start = key.Substring(0, 6);
-        var end = key.Substring(key.Length - 4, 4);
-        return start + "..." + end;
     }
 }

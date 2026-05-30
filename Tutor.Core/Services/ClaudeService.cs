@@ -33,9 +33,7 @@ public sealed class ClaudeService : ILlmService
     public async Task<bool> IsConfiguredAsync()
     {
         var key = await prefs.GetAsync(ApiKeyName);
-        if (!string.IsNullOrWhiteSpace(key)) return true;
-        // Fall back to the shared Legion credential store.
-        return !string.IsNullOrWhiteSpace(MindAtticCredentialStore.GetKey("claude"));
+        return !string.IsNullOrWhiteSpace(key);
     }
 
     public async Task<ChatReply> GetReplyAsync(
@@ -47,11 +45,9 @@ public sealed class ClaudeService : ILlmService
 
         var apiKey = await prefs.GetAsync(ApiKeyName);
         if (string.IsNullOrWhiteSpace(apiKey))
-            apiKey = MindAtticCredentialStore.GetKey("claude");
-        if (string.IsNullOrWhiteSpace(apiKey))
         {
             Log.Error("Claude: API key is missing");
-            throw new InvalidOperationException("Claude API key is missing. Set it in Settings > Credentials.");
+            throw new InvalidOperationException("Claude API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
         }
 
         var model = await prefs.GetAsync(ModelKeyName);

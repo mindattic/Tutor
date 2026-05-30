@@ -1,19 +1,22 @@
 using System.Text.Json;
-using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
+using LlmCredentialResolver = MindAttic.Vault.Credentials.LlmCredentialResolver;
 
 namespace Tutor.Cli.Services;
 
 /// <summary>
 /// Mirrors <c>Tutor.Blazor.Services.BlazorSecurePreferences</c> — keeps the same on-disk
-/// path (%LocalAppData%/Tutor/Settings/secure-preferences.json) so courses created
-/// from the CLI are visible to the Blazor UI and vice versa. LLM credentials are
-/// routed through the shared <see cref="LlmCredentialStore"/> at %APPDATA%/MindAttic/LLM/.
+/// path (%LocalAppData%/Tutor/Settings/secure-preferences.json) so courses created from
+/// the CLI are visible to the Blazor UI and vice versa. LLM API keys and models are NOT
+/// stored in-app: they resolve read-only through MindAttic.Vault's
+/// <see cref="LlmCredentialResolver"/> (User Secrets / env / App Service / Key Vault →
+/// the shared %APPDATA%/MindAttic/LLM/providers.json). Ordinary preferences
+/// (SELECTED_MODEL, ENTER_TO_SEND, …) live in the local JSON.
 /// </summary>
 public sealed class CliSecurePreferences : ISecurePreferences, IDisposable
 {
     private readonly string filePath;
-    private readonly LlmCredentialStore credentialStore;
+    private readonly LlmCredentialResolver vault;
     private Dictionary<string, string> store = new();
     private readonly SemaphoreSlim @lock = new(1, 1);
 
@@ -29,13 +32,9 @@ public sealed class CliSecurePreferences : ISecurePreferences, IDisposable
         ["DEEPSEEK_MODEL"]    = ("deepseek", false),
     };
 
-    /// <summary>
-    /// Loads any existing local preferences from disk; the LLM credential store is
-    /// consulted lazily when keys are read or written.
-    /// </summary>
-    public CliSecurePreferences(LlmCredentialStore credentialStore)
+    public CliSecurePreferences(LlmCredentialResolver vault)
     {
-        this.credentialStore = credentialStore;
+        this.vault = vault;
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Tutor", "Settings");
@@ -44,50 +43,24 @@ public sealed class CliSecurePreferences : ISecurePreferences, IDisposable
         Load();
     }
 
-    /// <summary>
-    /// Reads a preference. LLM-mapped keys try the shared MindAttic credential store
-    /// first and fall back to the legacy local JSON; legacy hits are auto-migrated up
-    /// into the shared store on first access.
-    /// </summary>
-    public async Task<string?> GetAsync(string key)
+    /// <summary>Reads a preference. LLM-mapped keys resolve from Vault; everything else from local prefs.</summary>
+    public Task<string?> GetAsync(string key)
     {
         if (LlmKeyMap.TryGetValue(key, out var map))
-        {
-            var fromStore = ReadFromStore(map.Provider, map.IsApiKey);
-            if (!string.IsNullOrEmpty(fromStore)) return fromStore;
-
-            if (store.TryGetValue(key, out var legacy) && !string.IsNullOrEmpty(legacy))
-            {
-                await @lock.WaitAsync();
-                try
-                {
-                    if (!credentialStore.Exists(map.Provider) || string.IsNullOrEmpty(ReadFromStore(map.Provider, map.IsApiKey)))
-                        WriteToStore(map.Provider, map.IsApiKey, legacy);
-                }
-                finally { @lock.Release(); }
-                return legacy;
-            }
-            return null;
-        }
+            return Task.FromResult(ReadFromVault(map.Provider, map.IsApiKey));
 
         store.TryGetValue(key, out var value);
-        return value;
+        return Task.FromResult<string?>(value);
     }
 
-    /// <summary>
-    /// Writes a preference to both the shared MindAttic credential store (for mapped
-    /// LLM keys) and the local JSON mirror so legacy readers stay consistent.
-    /// </summary>
+    /// <summary>Writes a preference. LLM-mapped keys are Vault-managed (read-only) and ignored.</summary>
     public async Task SetAsync(string key, string value)
     {
+        if (LlmKeyMap.ContainsKey(key)) return;
+
         await @lock.WaitAsync();
         try
         {
-            if (LlmKeyMap.TryGetValue(key, out var map))
-            {
-                WriteToStore(map.Provider, map.IsApiKey, value);
-            }
-
             store[key] = value;
             await SaveAsync();
         }
@@ -97,20 +70,14 @@ public sealed class CliSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    /// <summary>
-    /// Removes a preference. For mapped LLM keys this also clears the corresponding
-    /// field in the shared credential store.
-    /// </summary>
+    /// <summary>Removes a preference. LLM-mapped keys are Vault-managed and ignored.</summary>
     public void Remove(string key)
     {
+        if (LlmKeyMap.ContainsKey(key)) return;
+
         @lock.Wait();
         try
         {
-            if (LlmKeyMap.TryGetValue(key, out var map))
-            {
-                WriteToStore(map.Provider, map.IsApiKey, "");
-            }
-
             store.Remove(key);
             SaveSync();
         }
@@ -120,29 +87,30 @@ public sealed class CliSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    private string? ReadFromStore(string provider, bool isApiKey)
+    // apiKey → resolver.GetKey; model → the provider's "model" field from the raw record.
+    private string? ReadFromVault(string provider, bool isApiKey)
     {
         try
         {
-            var value = isApiKey ? credentialStore.GetApiKey(provider) : credentialStore.GetModel(provider);
-            return string.IsNullOrEmpty(value) ? null : value;
+            if (isApiKey)
+            {
+                var key = vault.GetKey(provider);
+                return string.IsNullOrWhiteSpace(key) ? null : key;
+            }
+            if (vault.LoadAllRaw().TryGetValue(provider, out var raw) && !string.IsNullOrWhiteSpace(raw))
+            {
+                using var doc = JsonDocument.Parse(raw);
+                if (doc.RootElement.TryGetProperty("model", out var m) && m.ValueKind == JsonValueKind.String)
+                {
+                    var model = m.GetString();
+                    return string.IsNullOrWhiteSpace(model) ? null : model;
+                }
+            }
+            return null;
         }
         catch
         {
             return null;
-        }
-    }
-
-    private void WriteToStore(string provider, bool isApiKey, string value)
-    {
-        try
-        {
-            if (isApiKey) credentialStore.SetApiKey(provider, value);
-            else          credentialStore.SetModel(provider, value);
-        }
-        catch
-        {
-            // Best-effort write to shared store
         }
     }
 

@@ -1,29 +1,27 @@
 using System.Text.Json;
-using Tutor.Core.Services;
+using MindAttic.Vault.Credentials;
 using Tutor.Core.Services.Abstractions;
 
 namespace Tutor.Blazor.Services;
 
 /// <summary>
-/// File-backed preferences store for Tutor. LLM credentials are routed through
-/// the shared <see cref="LlmCredentialStore"/> at %APPDATA%/MindAttic/LLM/ so a
-/// key rotation in any MindAttic app propagates to every other app.
+/// File-backed preferences store for Tutor. LLM credentials are NOT stored in-app —
+/// they resolve (read-only) through MindAttic.Vault's <see cref="LlmCredentialResolver"/>
+/// (User Secrets / env / App Service / Key Vault → the shared
+/// <c>%APPDATA%\MindAttic\LLM\providers.json</c>). Keys are fixed in one place and every
+/// MindAttic app picks them up; the app never writes credentials.
 ///
-/// Resolution order for LLM keys:
-///   1. Shared %APPDATA%/MindAttic/LLM/{provider}.json  (canonical)
-///   2. Local secure-preferences.json                    (legacy fallback)
-///
-/// First-time reads that resolve via legacy are auto-migrated up into the shared
-/// store so subsequent reads short-circuit on step 1.
+/// Ordinary preferences (theme, SELECTED_MODEL, ENTER_TO_SEND, …) continue to live in
+/// the local <c>secure-preferences.json</c>.
 /// </summary>
 public class BlazorSecurePreferences : ISecurePreferences, IDisposable
 {
     private readonly string filePath;
-    private readonly LlmCredentialStore credentialStore;
+    private readonly LlmCredentialResolver vault;
     private Dictionary<string, string> store = new();
     private readonly SemaphoreSlim @lock = new(1, 1);
 
-    // Tutor's ISecurePreferences keys → (provider, isApiKey) in the shared store.
+    // Tutor's ISecurePreferences keys → (provider, isApiKey) resolved from Vault.
     // Provider IDs follow the MindAttic cross-app convention (claude/openai/gemini/deepseek).
     private static readonly Dictionary<string, (string Provider, bool IsApiKey)> LlmKeyMap = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -37,13 +35,10 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         ["DEEPSEEK_MODEL"]    = ("deepseek", false),
     };
 
-    /// <summary>
-    /// Loads any existing local preferences from disk; the LLM credential store is
-    /// consulted lazily when keys are read or written.
-    /// </summary>
-    public BlazorSecurePreferences(LlmCredentialStore credentialStore)
+    /// <summary>Loads local (non-secret) preferences; LLM keys are read from Vault on demand.</summary>
+    public BlazorSecurePreferences(LlmCredentialResolver vault)
     {
-        this.credentialStore = credentialStore;
+        this.vault = vault;
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Tutor", "Settings");
@@ -52,52 +47,27 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         Load();
     }
 
-    /// <summary>
-    /// Reads a preference. LLM-mapped keys try the shared MindAttic credential store
-    /// first and fall back to the legacy local JSON; legacy hits are auto-migrated up
-    /// into the shared store on first access.
-    /// </summary>
-    public async Task<string?> GetAsync(string key)
+    /// <summary>Reads a preference. LLM-mapped keys resolve from Vault; everything else from local prefs.</summary>
+    public Task<string?> GetAsync(string key)
     {
         if (LlmKeyMap.TryGetValue(key, out var map))
-        {
-            var fromStore = ReadFromStore(map.Provider, map.IsApiKey);
-            if (!string.IsNullOrEmpty(fromStore)) return fromStore;
-
-            // Fallback to legacy local store; migrate up if found.
-            if (store.TryGetValue(key, out var legacy) && !string.IsNullOrEmpty(legacy))
-            {
-                await @lock.WaitAsync();
-                try
-                {
-                    if (!credentialStore.Exists(map.Provider) || string.IsNullOrEmpty(ReadFromStore(map.Provider, map.IsApiKey)))
-                        WriteToStore(map.Provider, map.IsApiKey, legacy);
-                }
-                finally { @lock.Release(); }
-                return legacy;
-            }
-            return null;
-        }
+            return Task.FromResult(ReadFromVault(map.Provider, map.IsApiKey));
 
         store.TryGetValue(key, out var value);
-        return value;
+        return Task.FromResult<string?>(value);
     }
 
     /// <summary>
-    /// Writes a preference to both the shared MindAttic credential store (for mapped
-    /// LLM keys) and the local JSON mirror so legacy readers stay consistent.
+    /// Writes a preference. LLM-mapped keys are read-only (managed in Vault) and ignored —
+    /// only ordinary preferences are persisted to the local store.
     /// </summary>
     public async Task SetAsync(string key, string value)
     {
+        if (LlmKeyMap.ContainsKey(key)) return; // credentials are Vault-managed; in-app writes are a no-op
+
         await @lock.WaitAsync();
         try
         {
-            if (LlmKeyMap.TryGetValue(key, out var map))
-            {
-                WriteToStore(map.Provider, map.IsApiKey, value);
-            }
-
-            // Always mirror to local JSON so legacy readers still see consistent state.
             store[key] = value;
             await SaveAsync();
         }
@@ -107,20 +77,14 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    /// <summary>
-    /// Removes a preference. For mapped LLM keys this also clears the corresponding
-    /// field in the shared credential store.
-    /// </summary>
+    /// <summary>Removes a preference. LLM-mapped keys are Vault-managed and ignored.</summary>
     public void Remove(string key)
     {
+        if (LlmKeyMap.ContainsKey(key)) return;
+
         @lock.Wait();
         try
         {
-            if (LlmKeyMap.TryGetValue(key, out var map))
-            {
-                WriteToStore(map.Provider, map.IsApiKey, "");
-            }
-
             store.Remove(key);
             SaveSync();
         }
@@ -130,29 +94,30 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    private string? ReadFromStore(string provider, bool isApiKey)
+    // apiKey → resolver.GetKey; model → the provider's "model" field from the raw record.
+    private string? ReadFromVault(string provider, bool isApiKey)
     {
         try
         {
-            var value = isApiKey ? credentialStore.GetApiKey(provider) : credentialStore.GetModel(provider);
-            return string.IsNullOrEmpty(value) ? null : value;
+            if (isApiKey)
+            {
+                var key = vault.GetKey(provider);
+                return string.IsNullOrWhiteSpace(key) ? null : key;
+            }
+            if (vault.LoadAllRaw().TryGetValue(provider, out var raw) && !string.IsNullOrWhiteSpace(raw))
+            {
+                using var doc = JsonDocument.Parse(raw);
+                if (doc.RootElement.TryGetProperty("model", out var m) && m.ValueKind == JsonValueKind.String)
+                {
+                    var model = m.GetString();
+                    return string.IsNullOrWhiteSpace(model) ? null : model;
+                }
+            }
+            return null;
         }
         catch
         {
             return null;
-        }
-    }
-
-    private void WriteToStore(string provider, bool isApiKey, string value)
-    {
-        try
-        {
-            if (isApiKey) credentialStore.SetApiKey(provider, value);
-            else          credentialStore.SetModel(provider, value);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[BlazorSecurePreferences] Failed to write shared LLM credential for '{provider}': {ex.Message}");
         }
     }
 

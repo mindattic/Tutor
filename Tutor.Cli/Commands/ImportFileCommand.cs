@@ -84,6 +84,7 @@ public sealed class ImportFileCommand
             ResourceDescription: "",
             FileName: Path.GetFileName(path),
             Content: extracted.PlainText,
+            QuizMode: QuizModes.Parse(options.Get("quiz-mode")),
             AllowDuplicate: options.ContainsKey("allow-duplicate"));
 
         var result = await pipeline.ImportAsync(request, ct);

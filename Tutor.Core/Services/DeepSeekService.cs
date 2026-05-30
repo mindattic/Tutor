@@ -31,8 +31,7 @@ public sealed class DeepSeekService : ILlmService
     public async Task<bool> IsConfiguredAsync()
     {
         var key = await prefs.GetAsync(ApiKeyName);
-        if (!string.IsNullOrWhiteSpace(key)) return true;
-        return !string.IsNullOrWhiteSpace(MindAtticCredentialStore.GetKey("deepseek"));
+        return !string.IsNullOrWhiteSpace(key);
     }
 
     public async Task<ChatReply> GetReplyAsync(
@@ -44,11 +43,9 @@ public sealed class DeepSeekService : ILlmService
 
         var apiKey = await prefs.GetAsync(ApiKeyName);
         if (string.IsNullOrWhiteSpace(apiKey))
-            apiKey = MindAtticCredentialStore.GetKey("deepseek");
-        if (string.IsNullOrWhiteSpace(apiKey))
         {
             Log.Error("DeepSeek: API key is missing");
-            throw new InvalidOperationException("DeepSeek API key is missing. Set it in Settings > Credentials.");
+            throw new InvalidOperationException("DeepSeek API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
         }
 
         var model = await prefs.GetAsync(ModelKeyName);

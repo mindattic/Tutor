@@ -1,200 +1,45 @@
 using Tutor.Core.Models;
-using Tutor.Core.Services;
 
 namespace Tutor.Cli.Pipeline;
 
 /// <summary>
-/// Synchronous orchestration mirroring <c>ResourceProcessingService.ProcessResourceAsync</c>,
-/// but with stdout progress instead of UI events. Stages:
-/// <list type="number">
-///   <item><description>Create Course</description></item>
-///   <item><description>Save raw resource (also persists original to disk for GitHub sync)</description></item>
-///   <item><description>Add resource to course → embeds raw content into the vector store</description></item>
-///   <item><description>Format content with AI → updates FormattedContent</description></item>
-///   <item><description>Build per-resource ConceptMap → links to resource</description></item>
-///   <item><description>Rebuild course ConceptMapCollection</description></item>
-///   <item><description>Generate CourseStructure (lessons → topics → sections → content)</description></item>
-///   <item><description>Pre-generate section quizzes (baked into the structure so re-imports skip the LLM)</description></item>
-/// </list>
+/// Single-resource convenience wrapper over <see cref="CourseBuildPipeline"/>: one
+/// book/file becomes a one-item course. Kept as its own type so the
+/// <c>gutenberg</c>/<c>import</c>/<c>gutenberg-top10</c> commands read naturally.
 /// </summary>
 public sealed class BookImportPipeline
 {
-    private readonly CourseService courseService;
-    private readonly ContentFormatterService formatterService;
-    private readonly ConceptMapService conceptMapService;
-    private readonly ConceptMapStorageService conceptMapStorageService;
-    private readonly CourseStructureService courseStructureService;
-    private readonly CourseStructureStorageService courseStructureStorageService;
-    private readonly QuizGenerationService quizGenerationService;
-    private readonly SettingsService settingsService;
+    private readonly CourseBuildPipeline builder;
 
-    public BookImportPipeline(
-        CourseService courseService,
-        ContentFormatterService formatterService,
-        ConceptMapService conceptMapService,
-        ConceptMapStorageService conceptMapStorageService,
-        CourseStructureService courseStructureService,
-        CourseStructureStorageService courseStructureStorageService,
-        QuizGenerationService quizGenerationService,
-        SettingsService settingsService)
+    public BookImportPipeline(CourseBuildPipeline builder)
     {
-        this.courseService = courseService;
-        this.formatterService = formatterService;
-        this.conceptMapService = conceptMapService;
-        this.conceptMapStorageService = conceptMapStorageService;
-        this.courseStructureService = courseStructureService;
-        this.courseStructureStorageService = courseStructureStorageService;
-        this.quizGenerationService = quizGenerationService;
-        this.settingsService = settingsService;
+        this.builder = builder;
     }
 
     /// <summary>
-    /// Runs all seven stages, printing progress to stdout. Throws
-    /// <see cref="InvalidOperationException"/> when a course of the same name already
-    /// exists and <see cref="BookImportRequest.AllowDuplicate"/> is false.
+    /// Builds a one-resource course. Throws <see cref="InvalidOperationException"/>
+    /// when a course of the same name already exists and
+    /// <see cref="BookImportRequest.AllowDuplicate"/> is false.
     /// </summary>
     public async Task<ImportResult> ImportAsync(BookImportRequest req, CancellationToken ct = default)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-        // Duplicate-name guard. Phase 1: case-insensitive exact match on course
-        // name. Phase 2 (TODO): also compare a SimHash of the first ~50KB of
-        // content against existing resources to catch "same book, different
-        // filename" while still allowing distinct printings (e.g. The Gunslinger
-        // 1982 vs 2003) whose openings diverge.
-        if (!req.AllowDuplicate)
-        {
-            var existing = (await courseService.GetAllCoursesAsync())
-                .FirstOrDefault(c => string.Equals(c.Name, req.CourseName, StringComparison.OrdinalIgnoreCase));
-            if (existing != null)
+        var buildRequest = new CourseBuildRequest(
+            CourseName: req.CourseName,
+            CourseDescription: req.CourseDescription,
+            Items: new[]
             {
-                throw new InvalidOperationException(
-                    $"A course named '{req.CourseName}' already exists (id: {existing.Id}). " +
-                    "Pass --allow-duplicate to import anyway, or rename the new course with --course \"...\".");
-            }
-        }
+                new CourseItem(
+                    Title: req.ResourceTitle,
+                    Author: req.Author,
+                    Description: req.ResourceDescription,
+                    FileName: req.FileName,
+                    Content: req.Content),
+            },
+            QuizMode: req.QuizMode,
+            AllowDuplicate: req.AllowDuplicate);
 
-        Console.WriteLine();
-        Console.WriteLine($"[1/8] Creating course '{req.CourseName}'");
-        var course = await courseService.CreateCourseAsync(req.CourseName, req.CourseDescription);
-
-        Console.WriteLine($"[2/8] Saving resource '{req.ResourceTitle}' ({req.Content.Length:N0} chars)");
-        var resource = new CourseResource
-        {
-            Title = req.ResourceTitle,
-            Author = req.Author,
-            Description = req.ResourceDescription,
-            Content = req.Content,
-            Type = ResourceType.Text,
-            FileName = req.FileName,
-        };
-        var resourceId = await courseService.SaveResourceCoreAsync(resource);
-        resource.Id = resourceId;
-
-        Console.WriteLine("[3/8] Adding resource to course (chunk + embed for RAG)");
-        await courseService.AddResourceToCourseAsync(course.Id, resourceId);
-
-        Console.WriteLine("[4/8] Formatting content with AI (this is the slow stage)");
-        try
-        {
-            var formatted = await formatterService.FormatContentAsync(
-                resource.Content,
-                (current, total) => Console.WriteLine($"      formatting section {current}/{total}"),
-                ct);
-            resource.FormattedContent = formatted;
-            await courseService.UpdateResourceContentAsync(resourceId, formatted, isFormatted: true);
-        }
-        catch (Exception ex)
-        {
-            // Match ResourceProcessingService: formatting failures are non-fatal warnings.
-            Console.WriteLine($"      WARN: formatting failed — {ex.Message} (continuing with raw content)");
-        }
-
-        Console.WriteLine("[5/8] Building ConceptMap (extract concepts + relationships)");
-        var globalMaxIters = await settingsService.GetOrphanLinkingMaxIterationsAsync();
-        var globalMinConf  = await settingsService.GetOrphanLinkingMinConfidenceAsync();
-        var maxIters = resource.GetEffectiveMaxIterations(globalMaxIters);
-        var minConf  = resource.GetEffectiveMinConfidence(globalMinConf);
-
-        void OnConceptProgress(ConceptMapBuildProgress p) =>
-            Console.WriteLine($"      [{p.Progress,3}%] {p.Message}");
-        conceptMapService.OnProgressChanged += OnConceptProgress;
-        ConceptMap conceptMap;
-        try
-        {
-            conceptMap = await conceptMapService.BuildFromResourceAsync(resource, maxIters, minConf, ct);
-        }
-        finally
-        {
-            conceptMapService.OnProgressChanged -= OnConceptProgress;
-        }
-
-        resource.ConceptMapId = conceptMap.Id;
-        resource.ConceptMapStatus = conceptMap.Status;
-        resource.IsProcessed = true;
-        await courseService.SaveResourceAsync(resource);
-
-        Console.WriteLine($"      ConceptMap: {conceptMap.Concepts.Count} concepts, {conceptMap.Relations.Count} relations");
-
-        Console.WriteLine("[6/8] Rebuilding course ConceptMap collection");
-        await courseService.RebuildCourseConceptMapCollectionAsync(course, ct);
-
-        Console.WriteLine("[7/8] Generating course structure (lessons → topics → sections → content)");
-        void OnStructureProgress(CourseStructureProgress p) =>
-            Console.WriteLine($"      [{p.Progress,3}%] {p.Message}");
-        courseStructureService.OnProgressChanged += OnStructureProgress;
-        CourseStructure structure;
-        try
-        {
-            structure = await courseStructureService.GenerateFromConceptMapAsync(course.Id, conceptMap.Id, ct);
-        }
-        finally
-        {
-            courseStructureService.OnProgressChanged -= OnStructureProgress;
-        }
-
-        course.CourseStructureId = structure.Id;
-        course.UpdatedAt = DateTime.UtcNow;
-        await courseService.SaveCourseAsync(course);
-
-        Console.WriteLine("[8/8] Pre-generating section quizzes (baked into the bundle)");
-        var quizSections = structure.Lessons
-            .SelectMany(l => l.GetAllSectionsFlattened())
-            .Where(s => s.HasQuiz)
-            .ToList();
-        var quizCount = 0;
-        var totalQuizzes = quizSections.Count;
-        foreach (var section in quizSections)
-        {
-            ct.ThrowIfCancellationRequested();
-            quizCount++;
-            // Sections without ConceptIds can't be quizzed — the LLM has nothing
-            // to ground on. Skip silently rather than emit empty quizzes.
-            if (section.ConceptIds.Count == 0) continue;
-
-            var questions = await quizGenerationService.GenerateAsync(
-                course.ConceptMapCollectionId!,
-                section.ConceptIds,
-                new List<string> { section.Id },
-                Math.Max(1, section.QuizQuestionCount),
-                ct);
-
-            section.PreGeneratedQuestions = questions;
-            Console.WriteLine($"      [{quizCount}/{totalQuizzes}] {section.Number} {section.Title} → {questions.Count} questions");
-        }
-        await courseStructureStorageService.SaveAsync(structure, ct);
-
-        stopwatch.Stop();
-        Console.WriteLine();
-        Console.WriteLine($"Done in {stopwatch.Elapsed:hh\\:mm\\:ss}.");
-        Console.WriteLine($"  Course ID:      {course.Id}");
-        Console.WriteLine($"  Resource ID:    {resourceId}");
-        Console.WriteLine($"  ConceptMap ID:  {conceptMap.Id}");
-        Console.WriteLine($"  Structure ID:   {structure.Id}");
-        Console.WriteLine($"  Lessons:        {structure.TotalLessons}");
-        Console.WriteLine($"  Topics:         {structure.TotalTopics}");
-
-        return new ImportResult(course, resource, conceptMap, structure, stopwatch.Elapsed);
+        var result = await builder.BuildAsync(buildRequest, ct);
+        return new ImportResult(result.Course, result.Resources[0], result.Structure, result.Elapsed);
     }
 }
 
@@ -210,15 +55,15 @@ public sealed record BookImportRequest(
     string ResourceDescription,
     string FileName,
     string Content,
+    QuizMode QuizMode = QuizMode.Both,
     bool AllowDuplicate = false);
 
 /// <summary>
 /// Output of <see cref="BookImportPipeline.ImportAsync"/> — the persisted course,
-/// resource, concept map, and structure plus the total wall-clock duration.
+/// its single resource, the generated structure, and total wall-clock duration.
 /// </summary>
 public sealed record ImportResult(
     Course Course,
     CourseResource Resource,
-    ConceptMap ConceptMap,
     CourseStructure Structure,
     TimeSpan Elapsed);

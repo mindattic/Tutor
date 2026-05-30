@@ -10,3 +10,6 @@
 scripts/cli/deploy.settings.json
 node_modules/
 package-lock.json
+
+# Generated course bundles + CLI run artifacts (.tutor zips carry embeddings; large)
+dist/
