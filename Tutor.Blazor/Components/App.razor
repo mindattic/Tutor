@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="_content/Tutor.Shared/css/reading-timer.css" />
     <link rel="stylesheet" href="_content/Tutor.Shared/css/a11y.css" />
     <link rel="stylesheet" href="Tutor.Blazor.styles.css" />
+    @* MindAttic.UiUx auth-visual component CSS (synced into wwwroot/app.css by sync-tutor.ps1). *@
+    <link rel="stylesheet" href="app.css" />
     <link rel="icon" href="data:," />
     <HeadOutlet @rendermode="@PageRenderMode" />
 </head>
@@ -24,6 +26,10 @@
     <script src="_content/Tutor.Shared/tutor-interop.js"></script>
     <!-- D3.js library for force graph -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    @* MindAttic.UiUx auth-visual components (synced into wwwroot/js by sync-tutor.ps1). *@
+    <script src="js/user-login.js"></script>
+    <script src="js/user-circle.js"></script>
+    <script src="js/user-timeout.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 </html>

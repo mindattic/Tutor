@@ -9,6 +9,9 @@
 <div class="app-layout">
     <TopMenu />
 
+    @* 30-min idle auto-logout (renders/arms only when authenticated). *@
+    <UserTimeout />
+
     <main id="main-content" class="main-panel" tabindex="-1" role="main" aria-label="Main content">
         <article class="content">
             @Body

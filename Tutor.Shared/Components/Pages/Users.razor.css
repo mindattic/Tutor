@@ -1,0 +1,37 @@
+.users-title { margin: 1rem 0; }
+
+.users-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
+
+.users-list { flex: 0 0 16rem; display: flex; flex-direction: column; gap: .4rem; }
+
+.users-new {
+    padding: .55rem .8rem; border: 1px dashed #888; border-radius: 8px;
+    background: none; color: inherit; cursor: pointer; width: 100%;
+}
+
+.users-item { padding: .5rem .7rem; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+.users-item:hover { background: rgba(127, 127, 127, .12); }
+.users-item.active { border-color: var(--accent, #e2231a); background: rgba(226, 35, 26, .08); }
+.users-item-name { font-weight: 600; font-size: .9rem; }
+.users-item-sub { font-size: .72rem; opacity: .7; }
+.users-badge { font-size: .6rem; padding: .05rem .35rem; border-radius: 6px; background: #555; color: #fff; margin-left: .4rem; vertical-align: middle; }
+
+.users-editor { flex: 1 1 auto; min-width: 18rem; }
+.users-editor-head { display: flex; align-items: center; gap: .6rem; border-bottom: 1px solid rgba(127,127,127,.3); padding-bottom: .5rem; margin-bottom: .9rem; }
+.users-editor-head h2 { flex: 1 1 auto; margin: 0; font-size: 1.1rem; }
+
+.users-save { padding: .45rem .9rem; border: none; border-radius: 8px; background: #2e7d32; color: #fff; cursor: pointer; }
+.users-deactivate { padding: .45rem .9rem; border: none; border-radius: 8px; background: #6b2b2b; color: #fff; cursor: pointer; }
+
+.users-field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem; max-width: 26rem; font-size: .85rem; }
+.users-field input, .users-field select { padding: .5rem .6rem; border-radius: 8px; border: 1px solid #555; }
+.users-field input:disabled { opacity: .6; }
+.users-field small { opacity: .6; font-size: .68rem; }
+
+.users-policy { font-size: .68rem; opacity: .7; line-height: 1.5; margin-bottom: .9rem; }
+
+.users-status { padding: .5rem .7rem; border-radius: 8px; font-size: .85rem; max-width: 26rem; }
+.users-status.ok { background: rgba(46, 125, 50, .18); }
+.users-status.err { background: rgba(226, 35, 26, .18); }
+
+.users-meta { font-size: .72rem; opacity: .7; margin-top: 1rem; line-height: 1.6; }

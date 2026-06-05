@@ -1,0 +1,179 @@
+@page "/users"
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication
+@using MindAttic.Authentication.Services
+@using MindAttic.Authentication.Options
+@inject IUserAdminService UserAdmin
+@inject PasswordPolicyDescriptor Policy
+
+<PageTitle>User Management</PageTitle>
+
+<h1 class="users-title">User Management</h1>
+
+<div class="users-layout">
+    <div class="users-list">
+        <button class="users-new" @onclick="StartNewUser">+ New User</button>
+        @foreach (var u in users)
+        {
+            <div class="users-item @(editing?.Id == u.Id ? "active" : "")" @onclick="() => Edit(u)">
+                <div class="users-item-name">
+                    @u.UserName
+                    @if (!u.IsActive)
+                    {
+                        <span class="users-badge">inactive</span>
+                    }
+                </div>
+                <div class="users-item-sub">@(string.IsNullOrEmpty(u.Email) ? "—" : u.Email) &mdash; @u.Role</div>
+            </div>
+        }
+    </div>
+
+    <div class="users-editor">
+        @if (editing != null)
+        {
+            <div class="users-editor-head">
+                <h2>@(isNew ? "New User" : editing.UserName)</h2>
+                <button class="users-save" @onclick="SaveUser">Save</button>
+                @if (!isNew && editing.IsActive)
+                {
+                    <button class="users-deactivate" @onclick="DeactivateUser">Deactivate</button>
+                }
+            </div>
+
+            <label class="users-field">
+                <span>Username</span>
+                <input type="text" @bind="editing.UserName" disabled="@(!isNew)" />
+                @if (!isNew)
+                {
+                    <small>Username is the login id and is fixed after creation.</small>
+                }
+            </label>
+
+            <label class="users-field">
+                <span>Email (optional)</span>
+                <input type="email" @bind="editing.Email" />
+            </label>
+
+            <label class="users-field">
+                <span>Role</span>
+                <select @bind="editing.Role">
+                    @foreach (var role in roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </label>
+
+            <label class="users-field">
+                <span>@(isNew ? "Password" : "New password (blank = keep current)")</span>
+                <input type="password" @bind="newPassword" />
+            </label>
+            <div class="users-policy">
+                @foreach (var req in Policy.Requirements)
+                {
+                    <div>• @req</div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(statusMessage))
+            {
+                <div class="users-status @(isError ? "err" : "ok")">@statusMessage</div>
+            }
+
+            @if (!isNew)
+            {
+                <div class="users-meta">
+                    <div>Created: @editing.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</div>
+                    @if (editing.LastLoginUtc.HasValue)
+                    {
+                        <div>Last login: @editing.LastLoginUtc.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                    }
+                    <div>Status: @(editing.IsActive ? "Active" : "Inactive")</div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private sealed class UserEdit
+    {
+        public Guid Id { get; set; }
+        public string UserName { get; set; } = "";
+        public string? Email { get; set; }
+        public string Role { get; set; } = "Student";
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedUtc { get; set; }
+        public DateTime? LastLoginUtc { get; set; }
+    }
+
+    private readonly string[] roles = { "Student", MaRoles.Admin };
+
+    private IReadOnlyList<AuthUserSummary> users = [];
+    private UserEdit? editing;
+    private bool isNew;
+    private string newPassword = "";
+    private string statusMessage = "";
+    private bool isError;
+
+    protected override async Task OnInitializedAsync() => await LoadUsers();
+
+    private async Task LoadUsers() => users = await UserAdmin.ListAsync();
+
+    private void Edit(AuthUserSummary u)
+    {
+        editing = new UserEdit
+        {
+            Id = u.Id, UserName = u.UserName, Email = u.Email, Role = u.Role,
+            IsActive = u.IsActive, CreatedUtc = u.CreatedUtc, LastLoginUtc = u.LastLoginUtc,
+        };
+        isNew = false; newPassword = ""; statusMessage = "";
+    }
+
+    private void StartNewUser()
+    {
+        editing = new UserEdit { Role = "Student" };
+        isNew = true; newPassword = ""; statusMessage = "";
+    }
+
+    private async Task SaveUser()
+    {
+        if (editing == null) return;
+
+        if (isNew)
+        {
+            if (string.IsNullOrWhiteSpace(editing.UserName)) { Fail("Username is required."); return; }
+            if (string.IsNullOrWhiteSpace(newPassword)) { Fail("Password is required for new users."); return; }
+            var r = await UserAdmin.CreateAsync(userName: editing.UserName, email: editing.Email, role: editing.Role,
+                                                password: newPassword, mustChangePassword: true);
+            if (!r.Ok) { Fail(r.Error ?? "Could not create the user."); return; }
+        }
+        else
+        {
+            var profile = await UserAdmin.UpdateProfileAsync(editing.Id, editing.Email);
+            if (!profile.Ok) { Fail(profile.Error ?? "Could not update the profile."); return; }
+            var role = await UserAdmin.SetRoleAsync(editing.Id, editing.Role);
+            if (!role.Ok) { Fail(role.Error ?? "Could not change the role."); return; }
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                var pwd = await UserAdmin.ResetPasswordAsync(editing.Id, newPassword, requireChange: true);
+                if (!pwd.Ok) { Fail(pwd.Error ?? "Could not reset the password."); return; }
+            }
+        }
+
+        await LoadUsers();
+        statusMessage = "Saved."; isError = false; isNew = false; newPassword = "";
+    }
+
+    private async Task DeactivateUser()
+    {
+        if (editing == null || isNew) return;
+        var r = await UserAdmin.SetActiveAsync(editing.Id, active: false);
+        if (!r.Ok) { Fail(r.Error ?? "Could not deactivate the user."); return; }
+        editing = null; statusMessage = "";
+        await LoadUsers();
+    }
+
+    private void Fail(string message) { statusMessage = message; isError = true; }
+}
