@@ -1,12 +1,13 @@
 @using Tutor.Core.Models
 @using Tutor.Core.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using MindAttic.Authentication
 @inject QuizService QuizService
 @inject FinalExamService FinalExamService
 @inject CertificateService CertificateService
 @inject CourseService CourseService
 @inject CourseStructureStorageService StructureStorage
 @inject UserProgressService ProgressService
-@inject AuthenticationService AuthService
 @implements IDisposable
 
 <section class="final-exam-tab" aria-labelledby="final-exam-heading">
@@ -178,7 +179,7 @@
                 var progress = await ProgressService.GetProgressAsync(CourseId);
                 _eligible = FinalExamService.IsEligible(_structure, progress);
                 // Surface an already-earned certificate.
-                var userId = AuthService.CurrentUserId ?? "default";
+                var (userId, _) = await GetCurrentUserAsync();
                 _certificate = await CertificateService.GetForCourseAsync(userId, CourseId);
             }
             _currentQuestion = QuizService.GetCurrentQuestion();
@@ -188,6 +189,18 @@
             _loading = false;
             StateHasChanged();
         }
+    }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Current user from the MindAttic.Authentication principal: id = AuthUser.Id (ma:uid),
+    // name = UserName (ClaimTypes.Name). Falls back when unauthenticated (shouldn't happen here).
+    private async Task<(string userId, string studentName)> GetCurrentUserAsync()
+    {
+        if (AuthState is null) return ("default", "Student");
+        var user = (await AuthState).User;
+        return (user.FindFirst(MaClaims.UserId)?.Value ?? "default",
+                user.Identity?.Name ?? "Student");
     }
 
     private async Task StartExam()
@@ -256,9 +269,7 @@
         if (completed)
         {
             await ProgressService.SaveProgressAsync(progress);
-            var userId = AuthService.CurrentUserId ?? "default";
-            var studentName = AuthService.CurrentUser?.DisplayName
-                ?? AuthService.CurrentUsername ?? "Student";
+            var (userId, studentName) = await GetCurrentUserAsync();
             _certificate = await CertificateService.IssueAsync(userId, studentName, _course, result);
         }
     }

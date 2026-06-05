@@ -1,3 +1,5 @@
+@using Microsoft.AspNetCore.Components.Endpoints
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
 <!DOCTYPE html>
 <html lang="en" data-theme="Light">
 <head>
@@ -15,13 +17,22 @@
     <link rel="stylesheet" href="_content/Tutor.Shared/css/a11y.css" />
     <link rel="stylesheet" href="Tutor.Blazor.styles.css" />
     <link rel="icon" href="data:," />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="@PageRenderMode" />
 </head>
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="@PageRenderMode" />
     <script src="_content/Tutor.Shared/tutor-interop.js"></script>
     <!-- D3.js library for force graph -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 </html>
+
+@code {
+    // Global InteractiveServer EXCEPT for pages marked [ExcludeFromInteractiveRouting] (the auth
+    // pages), which must render static-SSR so the MaLogin/MaChangePassword antiforgery POSTs validate.
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+}

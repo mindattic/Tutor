@@ -1,11 +1,12 @@
 @page "/knowledge-bases"
 @page "/knowledge-graph"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using Tutor.Core.Models
 @using Tutor.Core.Services
 @inject KnowledgeGraphService GraphService
 @inject CourseService CourseService
 
-<AuthGuard>
 <h1 class="page-title">Knowledge Bases</h1>
 
 <div class="knowledge-graph-page">
@@ -317,8 +318,6 @@
         }
     }
 </div>
-</AuthGuard>
-
 @code {
     private string? activeCourseId;
     private Course? activeCourse;

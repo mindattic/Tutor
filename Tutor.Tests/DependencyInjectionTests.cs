@@ -92,9 +92,11 @@ public class DependencyInjectionTests
         services.AddSingleton<ConceptMapBuildTaskHandler>();
         services.AddSingleton<CourseStructureBuildTaskHandler>();
 
-        // Auth
-        services.AddSingleton<IAuthController, LocalAuthController>();
-        services.AddSingleton<AuthenticationService>();
+        // Auth — the in-memory LocalAuthController/AuthenticationService singletons were retired for
+        // MindAttic.Authentication. QuizService now reads identity from IHttpContextAccessor; the full
+        // auth stack (AddMindAtticAuthentication) is exercised by the importer/admin NUnit tests, not
+        // this lightweight container check.
+        services.AddHttpContextAccessor();
         services.AddSingleton<UserStorageService>();
 
         // News
@@ -124,7 +126,6 @@ public class DependencyInjectionTests
     [TestCase(typeof(ISecurePreferences))]
     [TestCase(typeof(IAppDataPathProvider))]
     [TestCase(typeof(IFilePickerService))]
-    [TestCase(typeof(IAuthController))]
     [TestCase(typeof(INewsController))]
     [TestCase(typeof(IQuizController))]
     public void Interfaces_ResolveToImplementations(Type serviceType)
@@ -179,7 +180,6 @@ public class DependencyInjectionTests
     [TestCase(typeof(ResourceFormatTaskHandler))]
     [TestCase(typeof(ConceptMapBuildTaskHandler))]
     [TestCase(typeof(CourseStructureBuildTaskHandler))]
-    [TestCase(typeof(AuthenticationService))]
     [TestCase(typeof(UserStorageService))]
     [TestCase(typeof(NewsService))]
     [TestCase(typeof(QuizService))]
@@ -205,14 +205,6 @@ public class DependencyInjectionTests
         using var sp = BuildTestContainer();
         var router = sp.GetRequiredService<LlmServiceRouter>();
         Assert.That(router, Is.AssignableTo<ILlmService>());
-    }
-
-    [Test]
-    public void AuthController_IsLocalAuthController()
-    {
-        using var sp = BuildTestContainer();
-        var controller = sp.GetRequiredService<IAuthController>();
-        Assert.That(controller, Is.InstanceOf<LocalAuthController>());
     }
 
     [Test]

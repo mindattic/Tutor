@@ -1,0 +1,11 @@
+@inject NavigationManager Nav
+
+@code {
+    // Static-SSR redirect for AuthorizeRouteView's NotAuthorized: an anonymous request to an
+    // [Authorize] page is sent to the MindAttic.Authentication login, preserving the original URL.
+    protected override void OnInitialized()
+    {
+        var returnUrl = Uri.EscapeDataString(new Uri(Nav.Uri).PathAndQuery);
+        Nav.NavigateTo($"/login?returnUrl={returnUrl}", forceLoad: true);
+    }
+}

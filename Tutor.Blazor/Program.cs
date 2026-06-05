@@ -1,8 +1,14 @@
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using MindAttic.Authentication.Web;
 using MindAttic.Legion;
 using MindAttic.Vault.Configuration;
 using MindAttic.Vault.DependencyInjection;
+using Tutor.Core.Data;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
+using Tutor.Core.Services.Auth;
 using Tutor.Core.Services.Logging;
 using Tutor.Core.Services.Queue;
 using Tutor.Blazor.Components;
@@ -16,8 +22,11 @@ var builder = WebApplication.CreateBuilder(args);
 //     machines — the single local source of truth for credentials.
 //   AddEnvironmentVariables (already present) picks up App Service Application Settings
 //     and Azure Key Vault references in production.
+// "Security" is the MindAttic.Authentication trust domain (pepper, bootstrap-token,
+// reset-token-key); it is NOT in the default bucket list, so it must be named explicitly
+// or the auth secrets never bind and AuthBootstrapper fail-closes.
 builder.Configuration
-    .AddMindAtticVaultFiles();
+    .AddMindAtticVaultFiles(o => o.Buckets = new[] { "LLM", "Security" });
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -178,11 +187,36 @@ builder.Services.AddSingleton<ResourceFormatTaskHandler>();
 builder.Services.AddSingleton<ConceptMapBuildTaskHandler>();
 builder.Services.AddSingleton<CourseStructureBuildTaskHandler>();
 
-// Authentication services
-builder.Services.AddSingleton<IAuthController, LocalAuthController>();
-builder.Services.AddSingleton<AuthenticationService>();
+// --- Auth: the unified, Vault-backed MindAttic.Authentication engine, replacing the interim
+//     in-memory LocalAuthController/AuthenticationService singletons. Tutor's FIRST SQL database
+//     (auth-only); courses/progress stay JSON. MFA off for now ⇒ MaPolicies.Admin = role-only. ---
+var authConnectionString =
+    builder.Configuration.GetConnectionString("TutorAuth")
+    ?? Environment.GetEnvironmentVariable("ConnectionStrings__TutorAuth")
+    ?? "Server=(localdb)\\MSSQLLocalDB;Database=TutorAuth;Trusted_Connection=True;TrustServerCertificate=True;";
+builder.Services.AddDbContext<TutorAuthDbContext>(o => o.UseSqlServer(authConnectionString));   // scoped IAuthDataContext
+builder.Services.AddMindAtticAuthentication<TutorAuthDbContext>(builder.Configuration, o =>
+{
+    o.AppName = "Tutor";                                   // per-app Data Protection trust boundary
+    o.IsProduction = !builder.Environment.IsDevelopment();
+    if (o.IsProduction)
+    {
+        o.ConfigureDataProtection = dp =>
+        {
+            var cred = new Azure.Identity.DefaultAzureCredential();
+            var blobUri = builder.Configuration["DataProtection:BlobUri"]
+                ?? throw new InvalidOperationException("DataProtection:BlobUri is required in production.");
+            var kvKeyId = builder.Configuration["DataProtection:KeyVaultKeyId"]
+                ?? throw new InvalidOperationException("DataProtection:KeyVaultKeyId is required in production.");
+            dp.PersistKeysToAzureBlobStorage(new Uri(blobUri), cred)
+              .ProtectKeysWithAzureKeyVault(new Uri(kvKeyId), cred);
+        };
+    }
+});
+// Idempotent legacy Users.json (unsalted SHA256) -> AuthUser import (upgrade-on-login).
+builder.Services.AddScoped<AuthUserImportService>();
 
-// User storage service (JSON file-based user data)
+// User storage service (JSON file-based per-user progress; username-keyed, kept as-is).
 builder.Services.AddSingleton<UserStorageService>();
 
 // News services
@@ -197,6 +231,19 @@ builder.Services.AddSingleton<IQuizController, LocalQuizController>();
 builder.Services.AddSingleton<QuizService>();
 
 var app = builder.Build();
+
+// --- Auth startup orchestration: migrate (dev) -> import legacy users -> seed bootstrap admin.
+//     MigrateAsync is dev-only (prod DDL runs in CI under db_ddladmin). Import runs before Seed so
+//     ryan/erin come in first (SeedAdminAsync no-ops once any user exists). ---
+using (var scope = app.Services.CreateScope())
+{
+    var sp = scope.ServiceProvider;
+    if (app.Environment.IsDevelopment())
+        await sp.GetRequiredService<TutorAuthDbContext>().Database.MigrateAsync();
+    var imported = await sp.GetRequiredService<AuthUserImportService>().ImportAsync();
+    Console.WriteLine($"[auth] legacy user import: {imported} account(s) migrated.");
+    await sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>().SeedAdminAsync();
+}
 
 // Initialize services that need startup initialization
 var logStorage = app.Services.GetRequiredService<LogStorageService>();
@@ -214,11 +261,27 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Honor the reverse proxy's forwarded scheme/IP (secure cookie + real client IP) before auth.
+var forwardedHeaders = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+forwardedHeaders.KnownIPNetworks.Clear();
+forwardedHeaders.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaders);
+
 app.UseStaticFiles();
+
+// authn + authz + forced-step (MustChangePassword -> /account/change-password) + scoped CSP.
+app.UseMindAtticAuthentication();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(typeof(Tutor.Shared.Components.Pages.Home).Assembly);
+
+// MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
+app.MapMindAtticAuthEndpoints();
 
 app.Run();

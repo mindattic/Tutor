@@ -14,8 +14,9 @@
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject ISecurePreferences SecurePreferences
 @implements IDisposable
-
-<AuthGuard RequiredRole="UserRole.Admin">
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication
 
 @if (!isLoaded)
 {
@@ -691,8 +692,6 @@ else
     }
 </section>
 }
-
-</AuthGuard>
 
 @code
 {

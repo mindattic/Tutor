@@ -1,156 +1,70 @@
 @page "/"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using Tutor.Core.Services
-@using Tutor.Core.Models
 @inject NavigationManager Nav
-@inject AuthenticationService AuthService
 @inject CourseService CourseService
 @inject ConceptMapCollectionService ConceptMapCollectionService
 
-@if (AuthService.IsAuthenticated)
-{
-    <div class="home-page">
-        <div class="welcome-container">
-            <section class="welcome-card" aria-labelledby="welcome-heading">
-                <span class="bi bi-mortarboard-fill welcome-icon" aria-hidden="true"></span>
-                <h1 id="welcome-heading">Welcome to Tutor</h1>
-                <p class="welcome-subtitle">Your AI-Powered Learning Companion</p>
+@* Sign-in is owned by MindAttic.Authentication: anonymous visitors are routed to /login by
+   AuthorizeRouteView + RedirectToLogin. This page is the authenticated landing. *@
+<div class="home-page">
+    <div class="welcome-container">
+        <section class="welcome-card" aria-labelledby="welcome-heading">
+            <span class="bi bi-mortarboard-fill welcome-icon" aria-hidden="true"></span>
+            <h1 id="welcome-heading">Welcome to Tutor</h1>
+            <p class="welcome-subtitle">Your AI-Powered Learning Companion</p>
 
-                @if (_loadingStats)
-                {
-                    <div class="stats-loading" role="status" aria-live="polite">
-                        <span class="spinner-small" aria-hidden="true"></span>
-                        <span>Loading your library...</span>
-                    </div>
-                }
-                else
-                {
-                    <dl class="home-stats" aria-label="Library summary">
-                        <div class="stat-item">
-                            <span class="bi bi-journal-bookmark-fill stat-icon" aria-hidden="true"></span>
-                            <div class="stat-content">
-                                <dt class="stat-label">Courses</dt>
-                                <dd class="stat-value">@_courseCount</dd>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="bi bi-file-earmark-text-fill stat-icon" aria-hidden="true"></span>
-                            <div class="stat-content">
-                                <dt class="stat-label">Resources</dt>
-                                <dd class="stat-value">@_resourceCount</dd>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="bi bi-diagram-3-fill stat-icon" aria-hidden="true"></span>
-                            <div class="stat-content">
-                                <dt class="stat-label">Concepts</dt>
-                                <dd class="stat-value">@FormatNumber(_conceptCount)</dd>
-                            </div>
-                        </div>
-                    </dl>
-                }
-
-                <button class="auth-btn primary" type="button" @onclick="GoToLearn">
-                    <span class="bi bi-book" aria-hidden="true"></span>
-                    <span>Start Learning</span>
-                </button>
-            </section>
-        </div>
-    </div>
-}
-else
-{
-    <div class="home-page">
-        <div class="auth-container">
-            <section class="auth-card" aria-labelledby="login-heading">
-                <div class="auth-header">
-                    <span class="bi bi-mortarboard-fill auth-icon" aria-hidden="true"></span>
-                    <h1 id="login-heading">Welcome to Tutor</h1>
-                    <p class="auth-subtitle">Your AI-Powered Learning Companion</p>
+            @if (_loadingStats)
+            {
+                <div class="stats-loading" role="status" aria-live="polite">
+                    <span class="spinner-small" aria-hidden="true"></span>
+                    <span>Loading your library...</span>
                 </div>
-
-                <form class="auth-form" @onsubmit="LoginAsync" @onsubmit:preventDefault="true" aria-labelledby="login-form-heading">
-                    <h2 id="login-form-heading">Login</h2>
-
-                    <div class="auth-error-region" role="alert" aria-live="assertive" aria-atomic="true">
-                        @if (!string.IsNullOrEmpty(_errorMessage))
-                        {
-                            <div class="auth-error">
-                                <span class="bi bi-exclamation-triangle" aria-hidden="true"></span>
-                                @_errorMessage
-                            </div>
-                        }
+            }
+            else
+            {
+                <dl class="home-stats" aria-label="Library summary">
+                    <div class="stat-item">
+                        <span class="bi bi-journal-bookmark-fill stat-icon" aria-hidden="true"></span>
+                        <div class="stat-content">
+                            <dt class="stat-label">Courses</dt>
+                            <dd class="stat-value">@_courseCount</dd>
+                        </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text"
-                               id="username"
-                               name="username"
-                               autocomplete="username"
-                               required
-                               aria-required="true"
-                               aria-invalid="@(!string.IsNullOrEmpty(_errorMessage)).ToString().ToLowerInvariant()"
-                               @bind="_username"
-                               @bind:event="oninput"
-                               placeholder="Enter your username"
-                               disabled="@_processing" />
+                    <div class="stat-item">
+                        <span class="bi bi-file-earmark-text-fill stat-icon" aria-hidden="true"></span>
+                        <div class="stat-content">
+                            <dt class="stat-label">Resources</dt>
+                            <dd class="stat-value">@_resourceCount</dd>
+                        </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password"
-                               id="password"
-                               name="password"
-                               autocomplete="current-password"
-                               required
-                               aria-required="true"
-                               aria-invalid="@(!string.IsNullOrEmpty(_errorMessage)).ToString().ToLowerInvariant()"
-                               @bind="_password"
-                               @bind:event="oninput"
-                               placeholder="Enter your password"
-                               disabled="@_processing"
-                               @onkeydown="HandleKeyDown" />
+                    <div class="stat-item">
+                        <span class="bi bi-diagram-3-fill stat-icon" aria-hidden="true"></span>
+                        <div class="stat-content">
+                            <dt class="stat-label">Concepts</dt>
+                            <dd class="stat-value">@FormatNumber(_conceptCount)</dd>
+                        </div>
                     </div>
+                </dl>
+            }
 
-                    <button class="auth-btn primary"
-                            type="submit"
-                            disabled="@_processing"
-                            aria-busy="@_processing.ToString().ToLowerInvariant()">
-                        @if (_processing)
-                        {
-                            <span class="spinner-small" aria-hidden="true"></span>
-                        }
-                        else
-                        {
-                            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span>
-                        }
-                        <span>@(_processing ? "Logging in..." : "Login")</span>
-                    </button>
-                </form>
-            </section>
-        </div>
+            <button class="auth-btn primary" type="button" @onclick="GoToLearn">
+                <span class="bi bi-book" aria-hidden="true"></span>
+                <span>Start Learning</span>
+            </button>
+        </section>
     </div>
-}
+</div>
 
 @code {
-private bool _processing;
-private string _username = "";
-private string _password = "";
-private string? _errorMessage;
-    
-// Stats
-private bool _loadingStats = true;
-private int _courseCount;
-private int _resourceCount;
-private int _conceptCount;
+    // Stats
+    private bool _loadingStats = true;
+    private int _courseCount;
+    private int _resourceCount;
+    private int _conceptCount;
 
-protected override async Task OnInitializedAsync()
-{
-    if (AuthService.IsAuthenticated)
-    {
-        await LoadStatsAsync();
-    }
-}
+    protected override async Task OnInitializedAsync() => await LoadStatsAsync();
 
     private async Task LoadStatsAsync()
     {
@@ -159,23 +73,20 @@ protected override async Task OnInitializedAsync()
         {
             var courses = await CourseService.GetAllCoursesAsync();
             var resources = await CourseService.GetAllResourcesAsync();
-            
+
             _courseCount = courses.Count;
             _resourceCount = resources.Count;
-            
+
             // Count concepts from all concept map collections
             _conceptCount = 0;
             foreach (var course in courses)
             {
-                // Collection ID is based on course ID
                 var collectionId = $"collection_{course.Id}";
                 var loadedCollection = await ConceptMapCollectionService.LoadWithConceptMapsAsync(collectionId);
                 if (loadedCollection != null)
                 {
                     foreach (var cm in loadedCollection.ConceptMaps)
-                    {
                         _conceptCount += cm.Concepts.Count;
-                    }
                 }
             }
         }
@@ -189,63 +100,7 @@ protected override async Task OnInitializedAsync()
         }
     }
 
-private static string FormatNumber(int number)
-{
-    return number.ToString("N0");
-}
+    private static string FormatNumber(int number) => number.ToString("N0");
 
-private void GoToLearn()
-{
-    Nav.NavigateTo("/learn");
-}
-
-private async Task LoginAsync()
-    {
-        _errorMessage = null;
-        
-        if (string.IsNullOrWhiteSpace(_username))
-        {
-            _errorMessage = "Please enter your username.";
-            return;
-        }
-        
-        if (string.IsNullOrWhiteSpace(_password))
-        {
-            _errorMessage = "Please enter your password.";
-            return;
-        }
-
-        _processing = true;
-        StateHasChanged();
-
-        try
-        {
-            var result = await AuthService.LoginAsync(_username.Trim(), _password);
-            
-            if (result.Success)
-            {
-                Nav.NavigateTo("/learn");
-            }
-            else
-            {
-                _errorMessage = result.ErrorMessage ?? "Login failed.";
-            }
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = $"An error occurred: {ex.Message}";
-        }
-        
-        _processing = false;
-        _password = "";
-        StateHasChanged();
-    }
-
-    private void HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            _ = LoginAsync();
-        }
-    }
+    private void GoToLearn() => Nav.NavigateTo("/learn");
 }

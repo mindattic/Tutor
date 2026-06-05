@@ -8,9 +8,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MindAttic.Legion" Version="2.6.0" />
-        <PackageReference Include="MindAttic.Vault" Version="0.3.0" />
+        <PackageReference Include="MindAttic.Legion" Version="3.0.0" />
+        <PackageReference Include="MindAttic.Vault" Version="1.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
+
+        <!-- Auth: the unified, Vault-backed MindAttic.Authentication engine. Tutor's FIRST SQL
+             dependency — an auth-only SQL Server DB (TutorAuthDbContext : IAuthDataContext);
+             courses/progress stay JSON. -->
+        <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
 
         <!-- Phase A book parsers (PDF, EPUB, HTML, DOCX). All MIT/Apache, all
              pure-managed C# so we keep the cross-platform story intact.

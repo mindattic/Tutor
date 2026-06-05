@@ -12,4 +12,13 @@
         <ProjectReference Include="..\Tutor.Shared\Tutor.Shared.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- PROD Data Protection key-ring persistence + at-rest protection for
+             MindAttic.Authentication (DefaultAzureCredential -> Blob + Key Vault).
+             Only the production path uses these; dev persists to the file system. -->
+        <PackageReference Include="Azure.Identity" Version="1.21.0" />
+        <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.3" />
+        <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.3" />
+    </ItemGroup>
+
 </Project>

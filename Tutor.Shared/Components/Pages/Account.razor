@@ -1,0 +1,28 @@
+@page "/account"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@attribute [ExcludeFromInteractiveRouting]
+
+<PageTitle>Account</PageTitle>
+
+<div class="home-page">
+    <div class="auth-container">
+        <section class="auth-card" aria-labelledby="account-heading">
+            <h1 id="account-heading">Account</h1>
+            @if (Changed == 1)
+            {
+                <p role="status">Your password was changed.</p>
+            }
+            <p><a href="/account/change-password">Change password</a></p>
+            @* Logout is an antiforgery-protected POST owned by the library endpoint. *@
+            <form method="post" action="/_ma-auth/logout">
+                <AntiforgeryToken />
+                <button class="auth-btn primary" type="submit">Sign out</button>
+            </form>
+        </section>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public int Changed { get; set; }
+}

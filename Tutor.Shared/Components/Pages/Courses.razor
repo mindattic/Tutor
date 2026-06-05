@@ -1,10 +1,10 @@
 @page "/courses"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using Tutor.Core.Services
 @inject AppUiState UiState
 
-<AuthGuard>
-    <CourseManagement />
-</AuthGuard>
+<CourseManagement />
 
 @code {
     protected override void OnInitialized()

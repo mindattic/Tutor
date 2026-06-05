@@ -1,0 +1,27 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication.Components
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+
+<PageTitle>Sign in</PageTitle>
+
+<div class="home-page">
+    <div class="auth-container">
+        <section class="auth-card" aria-labelledby="login-heading">
+            <div class="auth-header">
+                <span class="bi bi-mortarboard-fill auth-icon" aria-hidden="true"></span>
+                <h1 id="login-heading">Welcome to Tutor</h1>
+                <p class="auth-subtitle">Your AI-Powered Learning Companion</p>
+            </div>
+            @* Static-SSR form; MaLogin posts to the antiforgery-protected /_ma-auth/login endpoint
+               (which owns sign-in). Failure redirects back here with ?error=1. *@
+            <MaLogin ReturnUrl="@ReturnUrl" Error="@(Error == 1)" />
+        </section>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] public int Error { get; set; }
+}

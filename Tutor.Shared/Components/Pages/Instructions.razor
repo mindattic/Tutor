@@ -1,8 +1,9 @@
 @page "/instructions"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @inject NavigationManager Nav
 @inject ISecurePreferences SecurePreferences
 
-<AuthGuard>
 <section aria-labelledby="instructions-heading">
     <h1 id="instructions-heading" class="page-title">Instructions</h1>
     <p>Add instructions that will be sent with every prompt to control ChatGPT's behavior.</p>
@@ -46,8 +47,6 @@
         <p class="status-message" role="status" aria-live="polite" aria-atomic="true">@status</p>
     </div>
 </section>
-</AuthGuard>
-
 @code {
     private const string StorageKeyPrefix = "INSTRUCTION_";
     private const string CountKey = "INSTRUCTION_COUNT";

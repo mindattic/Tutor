@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+using MindAttic.Authentication;
 using Tutor.Core.Models;
 
 namespace Tutor.Core.Services;
@@ -8,17 +10,24 @@ namespace Tutor.Core.Services;
 public class QuizService
 {
     private readonly IQuizController quizController;
-    private readonly AuthenticationService authService;
+    private readonly IHttpContextAccessor httpContextAccessor;
     private QuizSession? currentSession;
 
     /// <summary>Event fired when quiz session state changes</summary>
     public event Action? OnQuizStateChanged;
 
-    public QuizService(IQuizController quizController, AuthenticationService authService)
+    public QuizService(IQuizController quizController, IHttpContextAccessor httpContextAccessor)
     {
         this.quizController = quizController;
-        this.authService = authService;
+        this.httpContextAccessor = httpContextAccessor;
     }
+
+    // The MindAttic.Authentication user id (AuthUser.Id) from the current principal. NOTE: in a
+    // long-lived Blazor Server circuit HttpContext is null after the initial render, so this resolves
+    // to "anonymous" for in-circuit quiz starts. TODO: thread the user id from the calling component's
+    // AuthenticationState for reliable per-user quiz attribution (pre-existing single-session singleton).
+    private string CurrentUserId =>
+        httpContextAccessor.HttpContext?.User.FindFirst(MaClaims.UserId)?.Value ?? "anonymous";
 
     /// <summary>Gets whether there's an active quiz session</summary>
     public bool HasActiveSession => currentSession != null && !currentSession.IsComplete;
@@ -35,7 +44,7 @@ public class QuizService
         List<string> conceptIds,
         int questionCount = 5)
     {
-        var userId = authService.CurrentUser?.Id ?? "anonymous";
+        var userId = CurrentUserId;
         
         var questions = await quizController.GenerateQuestionsAsync(
             courseId, sectionIds, conceptIds, questionCount);
@@ -125,7 +134,7 @@ public class QuizService
     /// </summary>
     public async Task<List<QuizResult>> GetQuizHistoryAsync(string? courseId = null)
     {
-        var userId = authService.CurrentUser?.Id ?? "anonymous";
+        var userId = CurrentUserId;
         return await quizController.GetQuizResultsAsync(userId, courseId);
     }
 

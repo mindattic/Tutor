@@ -1,4 +1,6 @@
 ﻿@page "/learn"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using Tutor.Core.Services
 @using Tutor.Core.Models
 @inject CourseService CourseService
@@ -6,14 +8,11 @@
 @inject AppUiState UiState
 @inject UserProgressService ProgressService
 @inject NavigationManager Nav
-@inject AuthenticationService AuthService
 @implements IDisposable
 
-<AuthGuard>
-    <div class="learn-page">
-        <LearnTabs @ref="learnTabs" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
-    </div>
-</AuthGuard>
+<div class="learn-page">
+    <LearnTabs @ref="learnTabs" StartTopic="@startTopic" AutoStartLesson="@autoStartLesson" />
+</div>
 
 @code {
     private Course? activeCourse;
@@ -23,15 +22,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Wait for auth to initialize
-        await AuthService.InitializeAsync();
-        
-        if (!AuthService.IsAuthenticated)
-        {
-            Nav.NavigateTo("/");
-            return;
-        }
-
+        // [Authorize] + AuthorizeRouteView guarantee an authenticated user here.
         activeCourse = await CourseService.GetActiveCourseAsync();
         
         // Set up side nav for Learn tab
