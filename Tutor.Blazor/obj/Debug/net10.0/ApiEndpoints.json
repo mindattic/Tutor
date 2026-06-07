@@ -1,0 +1,98 @@
+[
+  {
+    "ContainingType": "MindAttic.Authentication.Web.AuthEndpoints",
+    "Method": "ChangePasswordAsync",
+    "RelativePath": "_ma-auth/change-password",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MindAttic.Authentication.Web.AuthEndpoints",
+    "Method": "LoginAsync",
+    "RelativePath": "_ma-auth/login",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MindAttic.Authentication.Web.AuthEndpoints",
+    "Method": "LogoutAsync",
+    "RelativePath": "_ma-auth/logout",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MindAttic.Authentication.Web.AuthEndpoints",
+    "Method": "MfaChallengeAsync",
+    "RelativePath": "_ma-auth/mfa-challenge",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MindAttic.Authentication.Web.AuthEndpoints",
+    "Method": "ResetConfirmAsync",
+    "RelativePath": "_ma-auth/reset/confirm",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MindAttic.Authentication.Web.AuthEndpoints",
+    "Method": "ResetRequestAsync",
+    "RelativePath": "_ma-auth/reset/request",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

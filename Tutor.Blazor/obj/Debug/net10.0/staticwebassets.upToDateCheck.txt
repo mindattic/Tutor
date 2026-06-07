@@ -1,0 +1,12 @@
+wwwroot\js\user-timeout.js
+wwwroot\js\user-login.js
+wwwroot\js\user-circle.js
+wwwroot\app.css
+C:\Users\ryand\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\build\..\_framework\blazor.web.js
+C:\Users\ryand\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\build\..\_framework\blazor.server.js
+C:\Users\ryand\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\_framework\blazor.web.js
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\wwwroot\app.css
+C:\Users\ryand\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.8\_framework\blazor.server.js
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\wwwroot\js\user-circle.js
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\wwwroot\js\user-login.js
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\wwwroot\js\user-timeout.js

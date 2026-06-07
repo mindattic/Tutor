@@ -1,0 +1,626 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MindAttic.Authentication</name>
+    </assembly>
+    <members>
+        <member name="T:MindAttic.Authentication.Crypto.Argon2idPasswordHasher">
+            <summary>
+            Argon2id (Konscious) with an HMAC-SHA256 pepper pre-hash, self-describing PHC storage, transparent
+            legacy bcrypt/SHA-256 upgrade-on-verify, constant-time comparison, a decoy path for absent users
+            (no username oracle), and a concurrency gate (peak RAM = N × MemoryKiB) so Argon2 cost can't be
+            weaponized into a login-flood OOM. Pepper lives in Vault, a different trust domain than the DB.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Crypto.PasswordVerifyResult">
+            <summary>Outcome of verifying a credential.</summary>
+            <param name="Succeeded">True iff the password matched.</param>
+            <param name="NeedsRehash">True iff the stored hash should be re-hashed (legacy scheme, weaker params, or stale pepper).</param>
+        </member>
+        <member name="M:MindAttic.Authentication.Crypto.PasswordVerifyResult.#ctor(System.Boolean,System.Boolean)">
+            <summary>Outcome of verifying a credential.</summary>
+            <param name="Succeeded">True iff the password matched.</param>
+            <param name="NeedsRehash">True iff the stored hash should be re-hashed (legacy scheme, weaker params, or stale pepper).</param>
+        </member>
+        <member name="P:MindAttic.Authentication.Crypto.PasswordVerifyResult.Succeeded">
+            <summary>True iff the password matched.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Crypto.PasswordVerifyResult.NeedsRehash">
+            <summary>True iff the stored hash should be re-hashed (legacy scheme, weaker params, or stale pepper).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Crypto.PasswordHash">
+            <summary>A freshly produced hash + the pepper key id it was peppered with.</summary>
+            <param name="Phc">The PHC string to store in <c>AuthUser.PasswordHash</c>.</param>
+            <param name="PepperKeyId">Store in <c>AuthUser.PasswordPepperKeyId</c>.</param>
+        </member>
+        <member name="M:MindAttic.Authentication.Crypto.PasswordHash.#ctor(System.String,System.String)">
+            <summary>A freshly produced hash + the pepper key id it was peppered with.</summary>
+            <param name="Phc">The PHC string to store in <c>AuthUser.PasswordHash</c>.</param>
+            <param name="PepperKeyId">Store in <c>AuthUser.PasswordPepperKeyId</c>.</param>
+        </member>
+        <member name="P:MindAttic.Authentication.Crypto.PasswordHash.Phc">
+            <summary>The PHC string to store in <c>AuthUser.PasswordHash</c>.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Crypto.PasswordHash.PepperKeyId">
+            <summary>Store in <c>AuthUser.PasswordPepperKeyId</c>.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Crypto.IPasswordHasher">
+            <summary>
+            Argon2id+pepper password hashing with transparent legacy-upgrade. Verification is constant-time and
+            runs even for absent users (decoy) so it cannot be used as a username oracle.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Crypto.IPasswordHasher.Hash(System.String)">
+            <summary>Hash a new/changed password with the current params + current pepper.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Crypto.IPasswordHasher.Verify(System.String,System.String,System.String,System.String)">
+            <summary>
+            Verify against a stored hash. <paramref name="pepperKeyId"/> is the row's pepper id (null for
+            legacy rows); <paramref name="legacyScheme"/> is "bcrypt"/"sha256" until first rehash, else null.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Crypto.IPasswordHasher.VerifyDecoy(System.String)">
+            <summary>Run an equivalent-cost decoy verification for an absent/inactive user (uniform timing).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Crypto.PhcArgon2">
+            <summary>
+            PHC-string codec for Argon2id: <c>$argon2id$v=19$m=65536,t=3,p=4$&lt;b64salt&gt;$&lt;b64hash&gt;</c>
+            (base64 without padding, per the PHC spec). Self-describing so work factors can be raised over time
+            and rehash-on-login is deterministic.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Crypto.PhcArgon2.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Byte[],System.Byte[])">
+            <summary>
+            PHC-string codec for Argon2id: <c>$argon2id$v=19$m=65536,t=3,p=4$&lt;b64salt&gt;$&lt;b64hash&gt;</c>
+            (base64 without padding, per the PHC spec). Self-describing so work factors can be raised over time
+            and rehash-on-login is deterministic.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Data.AuthModel">
+            <summary>
+            Applies the canonical MindAttic.Authentication EF model (all tables in the <c>auth</c> schema, no FKs
+            into app tables). Each consuming app calls this from its <c>DbContext.OnModelCreating</c> and runs its
+            own migration. The library embeds a model fingerprint (<see cref="F:MindAttic.Authentication.Data.AuthModel.ModelFingerprint"/>) so a host can
+            fail-fast on a stale migration.
+            </summary>
+        </member>
+        <member name="F:MindAttic.Authentication.Data.AuthModel.ModelFingerprint">
+            <summary>Bumped whenever the auth EF model changes; hosts assert their migration matches.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Data.IAuthDataContext">
+            <summary>
+            The data seam the library's services operate over. A consuming app's <c>DbContext</c> implements this
+            (it already applies <c>ApplyMindAtticAuthConfiguration</c>), so the library never owns a DbContext or
+            connection string — the app keeps full control of those.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthReasonCode">
+            <summary>Server-only failure reason — NEVER surfaced to the client (enumeration safety).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthUser">
+            <summary>An account. PasswordHash is a self-describing PHC string (or a tagged legacy hash).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthUserMfa">
+            <summary>TOTP state, 1:1 with <see cref="T:MindAttic.Authentication.Entities.AuthUser"/>. Secrets are Data-Protection encrypted at rest.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthRecoveryCode">
+            <summary>Single-use recovery code; stored only as an Argon2id+pepper hash.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthSession">
+            <summary>An active session (the <c>sid</c> claim). Enables per-session revoke + global logout.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthLoginThrottle">
+            <summary>Persistent brute-force backoff, per-account AND per-IP. Replaces all in-memory lockout.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthAuditLog">
+            <summary>Every auth attempt (success + failure). Reason codes are server-only.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthPasswordHistory">
+            <summary>Password reuse prevention (keep newest N per user).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Entities.AuthPasswordResetToken">
+            <summary>A password-reset token, stored only as an HMAC-SHA256 hash (keyed by a Vault secret).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Internal.AuthKeys">
+            <summary>Canonicalization + hashing of throttle/audit keys (accounts and IPs). Never stores raw values.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.AuthKeys.NormalizeAccount(System.String)">
+            <summary>Normalize an account identifier (email/username): NFKC, trim, invariant-lower.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.AuthKeys.CanonicalizeIp(System.String)">
+            <summary>Canonical IP key: IPv4 as-is; IPv6 truncated to its /64 prefix (defeats trivial rotation).</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.AuthKeys.Hash(System.String)">
+            <summary>SHA-256 of a (canonicalized) key — 32 bytes, fixed-length, never reversible to the raw value.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.AuthKeys.HashHex(System.String)">
+            <summary>SHA-256 hex (lowercase) — for IpHash columns.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Internal.TimingFloor">
+            <summary>
+            Enforces a minimum, jittered wall-clock duration on the login endpoint so response timing never
+            reveals which factor failed (unknown user / bad password / locked / MFA). The floor is validated to
+            exceed the worst-case Argon2 verify at startup.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.TimingFloor.EnforceAsync(System.Int64,System.Int32,System.Int32)">
+            <summary>Delay until at least <c>floor + jitter</c> ms have elapsed since <paramref name="startTimestamp"/>.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Internal.UrlSafety">
+            <summary>Open-redirect-safe local-URL check for returnUrl handling.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.UrlSafety.IsLocalUrl(System.String)">
+            <summary>True only for same-site relative paths. Rejects absolute/scheme/protocol-relative/control-char URLs.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Internal.UrlSafety.LocalOrDefault(System.String,System.String)">
+            <summary>Returns <paramref name="url"/> if it's a safe local URL, else <paramref name="fallback"/>.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.MaClaims">
+            <summary>Canonical claim types issued by MindAttic.Authentication. Apps must not redefine these.</summary>
+        </member>
+        <member name="F:MindAttic.Authentication.MaClaims.Amr">
+            <summary>Authentication methods references: "pwd", "mfa".</summary>
+        </member>
+        <member name="F:MindAttic.Authentication.MaClaims.MustChangePassword">
+            <summary>"1" if the user must change their password (forced-step middleware reads this — no DB hit).</summary>
+        </member>
+        <member name="F:MindAttic.Authentication.MaClaims.MustEnrollMfa">
+            <summary>"1" if the user must enroll MFA before reaching protected surfaces.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.MaRoles">
+            <summary>Canonical roles. Apps extend with their own; never redefine these.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.MaPolicies">
+            <summary>Canonical authorization policies registered by the library.</summary>
+        </member>
+        <member name="F:MindAttic.Authentication.MaPolicies.Admin">
+            <summary>Authenticated admin who has completed MFA step-up (role + amr=mfa).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.MaSchemes">
+            <summary>Authentication scheme names.</summary>
+        </member>
+        <member name="F:MindAttic.Authentication.MaSchemes.MfaPending">
+            <summary>Short-lived scheme holding a password-verified but pre-MFA principal. Grants no app access.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Options.AuthCryptoOptions">
+            <summary>
+            Argon2id parameters + password bounds. Bound from configuration (non-secret). Defaults exceed the
+            OWASP floor (m≥19456, t≥2, p≥1). Calibrate <see cref="P:MindAttic.Authentication.Options.AuthCryptoOptions.Iterations"/> on PROD hardware to ~250–500ms
+            per verify (Konscious pure-managed is slower than native). Floors are enforced at startup, fail-closed.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthCryptoOptions.MemoryKiB">
+            <summary>Argon2 memory cost in KiB. Default 65536 (64 MiB).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthCryptoOptions.Iterations">
+            <summary>Argon2 time cost (iterations). Calibrate on prod hardware.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthCryptoOptions.Parallelism">
+            <summary>Argon2 degree of parallelism. Keep ≤ 2× physical cores.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthCryptoOptions.MaxPasswordChars">
+            <summary>Reject longer inputs BEFORE the HMAC pre-hash (Argon2 has no bcrypt 72-byte cap → DoS guard).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthCryptoOptions.CurrentPepperKeyId">
+            <summary>The pepper key id new hashes use, e.g. "v1". Older ids stay verifiable during rotation.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthCryptoOptions.MaxConcurrentHashes">
+            <summary>Cap on concurrent Argon2 hashes (peak RAM ≈ N × MemoryKiB). 0 ⇒ ProcessorCount.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Options.AuthPolicyOptions">
+            <summary>NIST 800-63B-aligned password policy + breached-password (HIBP) settings.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthPolicyOptions.CheckHibp">
+            <summary>Check candidates against Have I Been Pwned (k-anonymity range API).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthPolicyOptions.HibpFailOpen">
+            <summary>FAIL-OPEN: on HIBP error/timeout, allow (after the offline check) and audit the skip.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthPolicyOptions.HistoryDepth">
+            <summary>Reject reuse of the current + last N passwords.</summary>
+        </member>
+        <member name="F:MindAttic.Authentication.Options.AuthPolicyOptions.HibpHttpClient">
+            <summary>Named HttpClient used for HIBP.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Options.AuthResetOptions">
+            <summary>Password-reset settings.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthResetOptions.PublicBaseUrl">
+            <summary>Absolute base URL for reset links (e.g. https://ideas.mindattic.com). NEVER derived from Request.Host.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthResetOptions.ResetPath">
+            <summary>Relative path the reset link points at (token appended as ?token=...).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthResetOptions.MaxEmailsPerHour">
+            <summary>Cap reset emails per account per hour (anti-spam / enumeration amplification).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Options.AuthSessionOptions">
+            <summary>Session lifetime + cookie posture.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.AuthSessionOptions.RevalidationInterval">
+            <summary>Stamp + circuit revalidation cadence (revoked-admin window upper bound).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Options.MfaOptions">
+            <summary>TOTP + recovery-code settings (RFC 6238 pinned values).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.MfaOptions.Issuer">
+            <summary>Issuer shown in the authenticator app (otpauth label).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.MfaOptions.WindowSteps">
+            <summary>Allowed step drift on each side (±1 ⇒ 90s acceptance window).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Options.MfaOptions.RequireForAdmin">
+            <summary>If true, accounts in the Admin role must enroll MFA before reaching admin surfaces.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Options.PasswordPolicyDescriptor">
+            <summary>
+            A public, UI-facing description of the enforced password policy, so an app's forms can show
+            requirements WITHOUT reaching into the validator. Reflects the ACTUAL (NIST-aligned) policy: length +
+            breach/history checks, NO composition rules. Built from <see cref="T:MindAttic.Authentication.Options.AuthPolicyOptions"/>; injectable.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Secrets.ConfigAuthSecrets">
+            <summary>
+            <see cref="T:MindAttic.Authentication.Secrets.IAuthSecrets"/> over the MindAttic.Vault <c>Security</c> configuration section
+            (<c>MindAttic:Vault:Security:&lt;name&gt;</c>). Dev: surfaced from %APPDATA%\MindAttic\Security via
+            AddMindAtticVaultFiles. Prod: env vars / Azure Key Vault references (read-only). Resolved values are
+            cached after first read (mitigates a Key Vault blip mid-run). Fail-closed: blank ⇒ throw.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Secrets.ConfigAuthSecrets.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            <see cref="T:MindAttic.Authentication.Secrets.IAuthSecrets"/> over the MindAttic.Vault <c>Security</c> configuration section
+            (<c>MindAttic:Vault:Security:&lt;name&gt;</c>). Dev: surfaced from %APPDATA%\MindAttic\Security via
+            AddMindAtticVaultFiles. Prod: env vars / Azure Key Vault references (read-only). Resolved values are
+            cached after first read (mitigates a Key Vault blip mid-run). Fail-closed: blank ⇒ throw.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Secrets.IAuthSecrets">
+            <summary>
+            Fail-CLOSED access to auth secrets (pepper, Data-Protection KEK, reset-token key, CAPTCHA secret,
+            bootstrap token) resolved from the MindAttic.Vault <c>Security</c> bucket. A missing/blank secret
+            NEVER coerces to empty — <see cref="M:MindAttic.Authentication.Secrets.IAuthSecrets.GetRequired(System.String)"/> throws. This directly neutralizes Vault's
+            best-effort "return null on any IO/parse error" behavior (red-team mustFix #2 / verdict).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Secrets.IAuthSecrets.GetRequired(System.String)">
+            <summary>Returns the secret, or throws <see cref="T:System.InvalidOperationException"/> if absent/blank.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Secrets.IAuthSecrets.GetOptional(System.String)">
+            <summary>Returns the secret or null if absent. Use only for genuinely optional secrets.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Secrets.IAuthSecrets.GetRequiredBytes(System.String)">
+            <summary>Base64-decoded required secret bytes (e.g. a 32-byte pepper). Throws if absent/blank/invalid.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.ThrottleDecision">
+            <summary>Result of a throttle check.</summary>
+            <param name="Allowed">False ⇒ the caller is in backoff.</param>
+            <param name="RetryAfter">How long until the next attempt is allowed (when not allowed).</param>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.ThrottleDecision.#ctor(System.Boolean,System.TimeSpan)">
+            <summary>Result of a throttle check.</summary>
+            <param name="Allowed">False ⇒ the caller is in backoff.</param>
+            <param name="RetryAfter">How long until the next attempt is allowed (when not allowed).</param>
+        </member>
+        <member name="P:MindAttic.Authentication.Services.ThrottleDecision.Allowed">
+            <summary>False ⇒ the caller is in backoff.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Services.ThrottleDecision.RetryAfter">
+            <summary>How long until the next attempt is allowed (when not allowed).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.AccountLockoutService">
+            <summary>
+            Persistent (DB-backed) per-account AND per-IP brute-force defense with exponential backoff. Survives
+            restarts and is shared across instances — replaces all in-memory lockout. No hard permanent lockout
+            (DoS-safe, NIST 800-63B 5.2.2). Account counter resets only on full success.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.AccountLockoutService.#ctor(MindAttic.Authentication.Data.IAuthDataContext,System.TimeProvider)">
+            <summary>
+            Persistent (DB-backed) per-account AND per-IP brute-force defense with exponential backoff. Survives
+            restarts and is shared across instances — replaces all in-memory lockout. No hard permanent lockout
+            (DoS-safe, NIST 800-63B 5.2.2). Account counter resets only on full success.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.AuthAuditEntry">
+            <summary>One auditable auth event. Raw account/IP are hashed/canonicalized before storage.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.AuthAuditEntry.#ctor(MindAttic.Authentication.Entities.AuthEventType,MindAttic.Authentication.Entities.AuthOutcome,MindAttic.Authentication.Entities.AuthReasonCode,System.Nullable{System.Guid},System.String,System.String,System.String,System.String,System.Boolean)">
+            <summary>One auditable auth event. Raw account/IP are hashed/canonicalized before storage.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.AuthAuditWriter">
+            <summary>
+            Writes every auth attempt (success + failure) to <c>AuthAuditLog</c> on a FRESH scope, so an audit
+            write never participates in (or corrupts) the login transaction. Reason codes are server-only; the
+            user-agent is sanitized (log-injection safe). An audit-write failure is logged but never breaks auth.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.AuthAuditWriter.#ctor(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory,System.TimeProvider,Microsoft.Extensions.Logging.ILogger{MindAttic.Authentication.Services.AuthAuditWriter})">
+            <summary>
+            Writes every auth attempt (success + failure) to <c>AuthAuditLog</c> on a FRESH scope, so an audit
+            write never participates in (or corrupts) the login transaction. Reason codes are server-only; the
+            user-agent is sanitized (log-injection safe). An audit-write failure is logged but never breaks auth.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.AuthBootstrapper">
+            <summary>
+            First-run admin bootstrap. NO hardcoded default credentials: the initial admin's password is the
+            operator-provided Vault <c>Security:bootstrap-token</c> (≥12 chars), and the account is created with
+            MustChangePassword + MustEnrollMfa. Idempotent and race-safe (no-op if any user exists; a concurrent
+            double-seed is caught by the unique username index). After seeding, the operator MUST rotate the
+            bootstrap token in Vault (the app cannot write prod secrets).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.AuthBootstrapper.#ctor(MindAttic.Authentication.Data.IAuthDataContext,MindAttic.Authentication.Services.IUserStore,MindAttic.Authentication.Crypto.IPasswordHasher,MindAttic.Authentication.Secrets.IAuthSecrets,System.TimeProvider,Microsoft.Extensions.Logging.ILogger{MindAttic.Authentication.Services.AuthBootstrapper})">
+            <summary>
+            First-run admin bootstrap. NO hardcoded default credentials: the initial admin's password is the
+            operator-provided Vault <c>Security:bootstrap-token</c> (≥12 chars), and the account is created with
+            MustChangePassword + MustEnrollMfa. Idempotent and race-safe (no-op if any user exists; a concurrent
+            double-seed is caught by the unique username index). After seeding, the operator MUST rotate the
+            bootstrap token in Vault (the app cannot write prod secrets).
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.LoginResult">
+            <summary>
+            Result of a login step. On <see cref="F:MindAttic.Authentication.Services.LoginStatus.Success"/> the endpoint signs <see cref="P:MindAttic.Authentication.Services.LoginResult.Claims"/>
+            into the real cookie; on <see cref="F:MindAttic.Authentication.Services.LoginStatus.MfaRequired"/> it signs a short-lived pending principal
+            carrying only the user id and exchanges it after <c>ConfirmMfaAsync</c>.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.LoginResult.#ctor(MindAttic.Authentication.Services.LoginStatus,System.Nullable{System.Guid},System.Collections.Generic.IReadOnlyList{System.Security.Claims.Claim})">
+            <summary>
+            Result of a login step. On <see cref="F:MindAttic.Authentication.Services.LoginStatus.Success"/> the endpoint signs <see cref="P:MindAttic.Authentication.Services.LoginResult.Claims"/>
+            into the real cookie; on <see cref="F:MindAttic.Authentication.Services.LoginStatus.MfaRequired"/> it signs a short-lived pending principal
+            carrying only the user id and exchanges it after <c>ConfirmMfaAsync</c>.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.AuthenticationService">
+            <summary>
+            The login pipeline: throttle pre-filter (cheap, before any Argon2) → real/decoy verify → reset lockout
+            + rehash-on-success → MFA step-up → session creation → audit. Uniform failure (generic, decoy-costed)
+            so timing/responses never reveal which factor failed. The HTTP endpoint owns SignInAsync + the timing
+            floor; this service never touches HttpContext.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.AuthenticationService.#ctor(MindAttic.Authentication.Services.IUserStore,MindAttic.Authentication.Crypto.IPasswordHasher,MindAttic.Authentication.Services.IAccountLockoutService,MindAttic.Authentication.Services.IAuthAuditWriter,MindAttic.Authentication.Services.ITotpService,Microsoft.AspNetCore.DataProtection.IDataProtectionProvider,MindAttic.Authentication.Data.IAuthDataContext,Microsoft.Extensions.Options.IOptions{MindAttic.Authentication.Options.AuthSessionOptions},System.TimeProvider)">
+            <summary>
+            The login pipeline: throttle pre-filter (cheap, before any Argon2) → real/decoy verify → reset lockout
+            + rehash-on-success → MFA step-up → session creation → audit. Uniform failure (generic, decoy-costed)
+            so timing/responses never reveal which factor failed. The HTTP endpoint owns SignInAsync + the timing
+            floor; this service never touches HttpContext.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.IAuthEmailSender">
+            <summary>
+            Transactional auth email (reset links, security alerts). The host wires a real implementation — on
+            Windows hosts a MindAttic.Psst-backed adapter (email channel; SMS off). The library ships only the
+            logging fallback below so dev works without email configured.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.LoggingAuthEmailSender">
+            <summary>Dev/fallback sender — logs instead of sending. Replace in the host with a Psst/SMTP adapter.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.LoggingAuthEmailSender.#ctor(Microsoft.Extensions.Logging.ILogger{MindAttic.Authentication.Services.LoggingAuthEmailSender})">
+            <summary>Dev/fallback sender — logs instead of sending. Replace in the host with a Psst/SMTP adapter.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.IMfaEnrollmentService.ConfirmAsync(System.Guid,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Confirms a pending TOTP secret (with password reauth), enables MFA, returns recovery codes ONCE.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.MfaEnrollmentService">
+            <summary>
+            TOTP enrollment: verify-before-enable. The pending secret is Data-Protection-encrypted and only
+            promoted to active after a valid code AND a fresh password reauth. Enabling rotates the SecurityStamp
+            and issues single-use recovery codes (stored only as Argon2id+pepper hashes).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.MfaEnrollmentService.#ctor(MindAttic.Authentication.Services.IUserStore,MindAttic.Authentication.Data.IAuthDataContext,MindAttic.Authentication.Services.ITotpService,MindAttic.Authentication.Crypto.IPasswordHasher,Microsoft.AspNetCore.DataProtection.IDataProtectionProvider,MindAttic.Authentication.Services.IAuthAuditWriter,Microsoft.Extensions.Options.IOptions{MindAttic.Authentication.Options.MfaOptions},System.TimeProvider)">
+            <summary>
+            TOTP enrollment: verify-before-enable. The pending secret is Data-Protection-encrypted and only
+            promoted to active after a valid code AND a fresh password reauth. Enabling rotates the SecurityStamp
+            and issues single-use recovery codes (stored only as Argon2id+pepper hashes).
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.PasswordChangeService">
+            <summary>
+            Self-service password change: verify current password (constant-time) → policy check (HIBP + history)
+            → rehash → push old hash to history → rotate SecurityStamp (revokes other sessions on next revalidate).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.PasswordChangeService.#ctor(MindAttic.Authentication.Services.IUserStore,MindAttic.Authentication.Data.IAuthDataContext,MindAttic.Authentication.Crypto.IPasswordHasher,MindAttic.Authentication.Services.IPasswordPolicy,MindAttic.Authentication.Services.IAuthAuditWriter,System.TimeProvider)">
+            <summary>
+            Self-service password change: verify current password (constant-time) → policy check (HIBP + history)
+            → rehash → push old hash to history → rotate SecurityStamp (revokes other sessions on next revalidate).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.IPasswordPolicy.ValidateAsync(System.String,System.Nullable{System.Guid},System.Threading.CancellationToken)">
+            <summary>Validate a candidate (length, breach corpus, reuse history). HIBP fails OPEN.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.PasswordPolicy">
+            <summary>
+            NIST-aligned policy: length only (no composition rules / no rotation), HIBP k-anonymity breach check
+            (fail-open online + bundled offline fallback + audited skip), and reuse-history rejection.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.PasswordPolicy.#ctor(System.Net.Http.IHttpClientFactory,Microsoft.Extensions.Options.IOptions{MindAttic.Authentication.Options.AuthPolicyOptions},MindAttic.Authentication.Data.IAuthDataContext,MindAttic.Authentication.Crypto.IPasswordHasher,MindAttic.Authentication.Services.IAuthAuditWriter,Microsoft.Extensions.Logging.ILogger{MindAttic.Authentication.Services.PasswordPolicy})">
+            <summary>
+            NIST-aligned policy: length only (no composition rules / no rotation), HIBP k-anonymity breach check
+            (fail-open online + bundled offline fallback + audited skip), and reuse-history rejection.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.IPasswordResetService.RequestAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Always enumeration-safe: behaves identically whether or not the account exists.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.PasswordResetService">
+            <summary>
+            Secure password reset. Tokens are 256-bit CSPRNG, single-use, short-lived, and stored only as an
+            HMAC-SHA256 (keyed by a Vault secret) — never plaintext. Requesting a reset is enumeration-safe and
+            rate-capped; confirming rotates the SecurityStamp, invalidates other tokens, and does NOT auto-login
+            (so the next sign-in still goes through MFA).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.PasswordResetService.#ctor(MindAttic.Authentication.Services.IUserStore,MindAttic.Authentication.Data.IAuthDataContext,MindAttic.Authentication.Crypto.IPasswordHasher,MindAttic.Authentication.Services.IPasswordPolicy,MindAttic.Authentication.Secrets.IAuthSecrets,MindAttic.Authentication.Services.IAuthEmailSender,MindAttic.Authentication.Services.IAuthAuditWriter,Microsoft.Extensions.Options.IOptions{MindAttic.Authentication.Options.AuthResetOptions},System.TimeProvider)">
+            <summary>
+            Secure password reset. Tokens are 256-bit CSPRNG, single-use, short-lived, and stored only as an
+            HMAC-SHA256 (keyed by a Vault secret) — never plaintext. Requesting a reset is enumeration-safe and
+            rate-capped; confirming rotates the SecurityStamp, invalidates other tokens, and does NOT auto-login
+            (so the next sign-in still goes through MFA).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.ITotpService.GenerateSecret">
+            <summary>Generate a new 160-bit secret (raw bytes).</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.ITotpService.ToBase32(System.Byte[])">
+            <summary>Base32 (RFC 4648, no padding) for otpauth URIs / manual entry.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.ITotpService.BuildOtpAuthUri(System.Byte[],System.String)">
+            <summary>otpauth:// URI with explicit algorithm/digits/period so apps fail closed.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.ITotpService.Validate(System.Byte[],System.String,System.Int64)">
+            <summary>
+            Validate a code at the current time ±window. Returns the matched Unix step (for replay-guarding via
+            <c>AuthUserMfa.LastTotpStepUsed</c>), or null if no match / step already consumed.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.ITotpService.GenerateRecoveryCodes">
+            <summary>Generate human-formatted single-use recovery codes (plaintext, shown once).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.TotpService">
+            <summary>RFC 6238 TOTP (HMAC-SHA1) with a replay-aware validation window.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.TotpService.#ctor(Microsoft.Extensions.Options.IOptions{MindAttic.Authentication.Options.MfaOptions},System.TimeProvider)">
+            <summary>RFC 6238 TOTP (HMAC-SHA1) with a replay-aware validation window.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.AuthUserSummary">
+            <summary>A user as shown in an admin list (never exposes the password hash).</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.AuthUserSummary.#ctor(System.Guid,System.String,System.String,System.String,System.Boolean,System.Boolean,System.Boolean,System.Nullable{System.DateTime},System.DateTime)">
+            <summary>A user as shown in an admin list (never exposes the password hash).</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.IUserAdminService">
+            <summary>
+            Administrative user management over the canonical <see cref="T:MindAttic.Authentication.Entities.AuthUser"/> table — the capability the
+            library's authentication side doesn't cover. Lets each app's admin UI create/list users, change roles,
+            (de)activate, update profiles, and operator-reset passwords WITHOUT a second user store. Role and
+            active-state changes rotate the SecurityStamp (so affected sessions revalidate within ~1 min), and a
+            guard prevents removing the last active Admin.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.IUserAdminService.ResetPasswordAsync(System.Guid,System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>Operator reset (e.g. lost MFA / forgotten password). Rotates the stamp; forces change by default.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.IUserStore.ApplyRehash(MindAttic.Authentication.Entities.AuthUser,System.String,System.String)">
+            <summary>Apply a transparently-upgraded password hash (rehash-on-login). Does NOT rotate the stamp.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.IUserStore.RecordLogin(MindAttic.Authentication.Entities.AuthUser,System.DateTime)">
+            <summary>Stamp a successful login.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Services.UserStore">
+            <summary>EF-backed user lookup/update over the app's <see cref="T:MindAttic.Authentication.Data.IAuthDataContext"/>.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Services.UserStore.#ctor(MindAttic.Authentication.Data.IAuthDataContext)">
+            <summary>EF-backed user lookup/update over the app's <see cref="T:MindAttic.Authentication.Data.IAuthDataContext"/>.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.AuthEndpoints">
+            <summary>
+            The HTTP endpoints that OWN sign-in (components never call SignInAsync). All POSTs validate
+            antiforgery and apply the uniform timing floor before responding.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.CookieValidation">
+            <summary>
+            Cookie <c>OnValidatePrincipal</c>: enforces the idle timeout and re-checks the SecurityStamp on the
+            HTTP path (throttled to the revalidation interval). A revoked/disabled user or rotated stamp is
+            rejected and signed out. Complements the per-circuit revalidation for Blazor Server.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.DevAuthBypassOptions">
+            <summary>Dev-bypass knobs, populated from the app's <c>.env</c> file. Dev-only.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.DevAuthBypass">
+            <summary>
+            Wires the dev-only auto-login. Both methods are invoked automatically from the
+            library's own <c>AddMindAtticAuthentication</c> / <c>UseMindAtticAuthentication</c>,
+            so a consuming app needs ZERO code — it only drops a <c>.env</c> in its content
+            root. Present only in Debug-built packages (<c>MA_DEV_AUTH</c>).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Web.DevAuthBypass.AddDevAuthBypass(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>Reads <c>.env</c> from the content root (or CWD / app base as fallbacks) and
+            registers <see cref="T:MindAttic.Authentication.Web.DevAuthBypassOptions"/>.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Web.DevAuthBypass.UseDevAuthBypass(Microsoft.AspNetCore.Builder.IApplicationBuilder)">
+            <summary>
+            Auto-signs-in the configured dev user on a loopback request in Development,
+            by replaying the stored credentials through the real login path. No-op unless
+            all three gates pass. Insert AFTER UseAuthentication and BEFORE any forced-step.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Web.DevAuthBypass.ReadDotEnv(System.String)">
+            <summary>Minimal .env reader: KEY=VALUE per line, '#' comments, optional surrounding quotes. Missing file → empty.</summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.IMaClaimsAugmentor">
+            <summary>
+            App-implemented hook to bake EXTRA claims into the auth cookie at sign-in (resolved zero-or-many via
+            <c>GetServices</c>). Runs once, just before <c>SignInAsync</c>, so the claims live for the cookie's
+            lifetime. Because claims are NOT rebuilt on revalidation, an augmentor MUST be deterministic from the
+            identity's existing claims (role, amr, uid) — e.g. Ideas adds <c>AuthorRawMarkup</c> iff the identity
+            is an Admin with <c>amr=mfa</c>. Resolve scoped services from the supplied provider if needed.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.MaRevalidatingAuthenticationStateProvider">
+            <summary>
+            Revalidates the Blazor Server circuit's principal every <see cref="P:MindAttic.Authentication.Options.AuthSessionOptions.RevalidationInterval"/>
+            (default 1 min): reloads the user and rejects if the account is gone/inactive, the SecurityStamp changed
+            (password/role/MFA/global-logout), or the session was revoked/expired — so a revoked admin loses a live
+            circuit within ≤ the interval.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Web.MaRevalidatingAuthenticationStateProvider.#ctor(Microsoft.Extensions.Logging.ILoggerFactory,Microsoft.Extensions.DependencyInjection.IServiceScopeFactory,Microsoft.Extensions.Options.IOptions{MindAttic.Authentication.Options.AuthSessionOptions})">
+            <summary>
+            Revalidates the Blazor Server circuit's principal every <see cref="P:MindAttic.Authentication.Options.AuthSessionOptions.RevalidationInterval"/>
+            (default 1 min): reloads the user and rejects if the account is gone/inactive, the SecurityStamp changed
+            (password/role/MFA/global-logout), or the session was revoked/expired — so a revoked admin loses a live
+            circuit within ≤ the interval.
+            </summary>
+        </member>
+        <member name="F:MindAttic.Authentication.Web.MindAtticAuthAppExtensions.CspNonceItem">
+            <summary>Key under which the per-request CSP nonce is stashed for the auth components.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Web.MindAtticAuthAppExtensions.UseMindAtticAuthentication(Microsoft.AspNetCore.Builder.IApplicationBuilder)">
+            <summary>
+            Wires the auth middleware in the correct order (authentication → authorization) and applies a
+            strict per-request CSP nonce ONLY to the auth surface (/login, /mfa, /account, /_ma-auth) — so it
+            never clobbers a host app's own pages (e.g. MindAttic.Ideas' trusted inline-JS author pages).
+            Call AFTER UseForwardedHeaders and BEFORE mapping component/endpoint routes.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Authentication.Web.MindAtticAuthOptions">
+            <summary>Host-supplied wiring knobs for <see cref="M:MindAttic.Authentication.Web.MindAtticAuthExtensions.AddMindAtticAuthentication``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration,System.Action{MindAttic.Authentication.Web.MindAtticAuthOptions})"/>.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Web.MindAtticAuthOptions.AppName">
+            <summary>Per-app trust boundary: scopes the Data Protection app name so a cookie can't cross apps.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Web.MindAtticAuthOptions.ConfigureAdditionalPolicies">
+            <summary>Extra app policies (never redefine the canonical ones).</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Web.MindAtticAuthOptions.ConfigureDataProtection">
+            <summary>PROD persistence + at-rest protection of the DP key ring (Azure Blob + Key Vault). Required in prod.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Web.MindAtticAuthOptions.DevKeyRingPath">
+            <summary>Dev-only key-ring directory. Default %APPDATA%\MindAttic\DataProtection\{AppName}.</summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Web.MindAtticAuthOptions.IsProduction">
+            <summary>True in production → fail-closed if <see cref="P:MindAttic.Authentication.Web.MindAtticAuthOptions.ConfigureDataProtection"/> wasn't supplied.</summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Web.MindAtticAuthExtensions.AddMindAtticAuthentication``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration,System.Action{MindAttic.Authentication.Web.MindAtticAuthOptions})">
+            <summary>
+            Registers the full MindAttic.Authentication stack over the app's <typeparamref name="TContext"/>
+            (which implements <see cref="T:MindAttic.Authentication.Data.IAuthDataContext"/>). Secure-by-default: options are floor-validated
+            at startup (fail-closed), the cookie is <c>__Host-</c> prefixed, and Admin requires MFA.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Authentication.Components.MaLogin.Error">
+            <summary>Show the generic failure message (e.g. bound to <c>?error=1</c>).</summary>
+        </member>
+    </members>
+</doc>

@@ -39,15 +39,22 @@ public sealed class AuthUserImportService(IAppDataPathProvider paths, TutorAuthD
         {
             if (string.IsNullOrWhiteSpace(username)) continue;
             var normalized = Normalize(username);
-            if (await authDb.AuthUsers.AnyAsync(a => a.NormalizedUserName == normalized, ct)) continue;
 
             store.Profiles.TryGetValue(username, out var profile);
+            var id = Guid.TryParse(profile?.Id, out var g) ? g : Guid.NewGuid();
+
+            // Idempotent on BOTH keys: the normalized username AND the primary key. A user whose username
+            // diverged from the legacy value after a prior import (e.g. renamed to an email address) no
+            // longer matches by NormalizedUserName, but still owns the legacy Guid — skip it rather than
+            // collide on PK_AuthUsers.
+            if (await authDb.AuthUsers.AnyAsync(a => a.NormalizedUserName == normalized || a.Id == id, ct)) continue;
+
             var isAdmin = profile?.IsAdmin ?? false;
             var created = cred.CreatedAt == default ? DateTime.UtcNow : cred.CreatedAt;
 
             authDb.AuthUsers.Add(new AuthUser
             {
-                Id = Guid.TryParse(profile?.Id, out var g) ? g : Guid.NewGuid(),
+                Id = id,
                 UserName = username,
                 NormalizedUserName = normalized,
                 Email = profile?.Email,

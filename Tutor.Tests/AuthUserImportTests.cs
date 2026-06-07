@@ -109,6 +109,36 @@ public class AuthUserImportTests
     }
 
     [Test]
+    public async Task SkipsWhenIdAlreadyPresent_EvenIfUsernameDiverged()
+    {
+        // Repro of PK_AuthUsers violation: a prior import landed ryan under Id X, then the username was
+        // changed to an email. The legacy store still keys him as "ryan" (Id X). The importer must skip
+        // on the matching Id rather than insert a duplicate primary key.
+        var store = SeedStore();
+        var ryanId = Guid.NewGuid();
+        store.Profiles["ryan"].Id = ryanId.ToString();
+        WriteStore(store);
+
+        using var db = NewDb();
+        db.AuthUsers.Add(new MindAttic.Authentication.Entities.AuthUser
+        {
+            Id = ryanId,
+            UserName = "ryandebraal@mindattic.com",
+            NormalizedUserName = "RYANDEBRAAL@MINDATTIC.COM",
+            Role = MaRoles.Admin,
+            PasswordHash = "EXISTING",
+            IsActive = true,
+        });
+        await db.SaveChangesAsync();
+
+        var count = await Importer(db).ImportAsync();
+
+        Assert.That(count, Is.EqualTo(1));                                   // only erin is new
+        Assert.That(db.AuthUsers.Count(u => u.Id == ryanId), Is.EqualTo(1)); // no duplicate row
+        Assert.That(db.AuthUsers.Single(u => u.Id == ryanId).UserName, Is.EqualTo("ryandebraal@mindattic.com"));
+    }
+
+    [Test]
     public async Task NoUsersFile_ImportsZero()
     {
         using var db = NewDb();

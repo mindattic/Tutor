@@ -1,0 +1,2 @@
+D:\Projects\MindAttic\MindAttic.Authentication\src\MindAttic.Authentication\obj\Debug\net10.0\staticwebassets.build.json
+D:\Projects\MindAttic\MindAttic.Authentication\src\MindAttic.Authentication\obj\Debug\net10.0\staticwebassets.build.json

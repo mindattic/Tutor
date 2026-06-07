@@ -227,3 +227,7 @@ D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\runtimes\win\lib\net9.
 D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.runtime.json
+D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.endpoints.json
+D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\MindAttic.Authentication.pdb
+D:\Projects\MindAttic\Tutor\Tutor.Tests\bin\Debug\net10.0\MindAttic.Authentication.xml
