@@ -334,7 +334,8 @@ function Invoke-Doctor {
 # ----- digest ------------------------------------------------------------
 function Get-BibleSection ($text, $heading) {
     # Returns the body of a "## <heading>" section up to the next "## ".
-    $pattern = '(?ms)^##\s+' + [regex]::Escape($heading) + '.*?$(.*?)(?=^##\s|\Z)'
+    # The heading may carry a trailing {#anchor} tag; [^\r\n]* skips it.
+    $pattern = '(?ms)^##\s+' + [regex]::Escape($heading) + '[^\r\n]*[\r\n]+(.*?)(?=^##\s|\Z)'
     $m = [regex]::Match($text, $pattern)
     if ($m.Success) { return $m.Groups[1].Value.Trim() }
     return ''
@@ -366,10 +367,10 @@ function Invoke-Digest {
         if ($h) { $amendHead = $h.TrimStart('# ').Trim() }
     }
 
-    $sec1 = Get-BibleSection $text '1\. The one sentence'
-    $sec3 = Get-BibleSection $text '3\. What Tutor is NOT'
-    $sec5 = Get-BibleSection $text '5\. The Laws'
-    $sec9 = Get-BibleSection $text '9\. Glossary'
+    $sec1 = Get-BibleSection $text '1. The one sentence'
+    $sec3 = Get-BibleSection $text '3. What Tutor is NOT'
+    $sec5 = Get-BibleSection $text '5. The Laws'
+    $sec9 = Get-BibleSection $text '9. Glossary'
 
     $sb = New-Object System.Text.StringBuilder
     [void]$sb.AppendLine("# Tutor - Bible Digest")
