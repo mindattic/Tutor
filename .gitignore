@@ -6,6 +6,9 @@
 /bin/Debug
 /obj
 
+# Dev-only auth bypass credentials (MindAttic.Authentication). Never commit.
+.env
+
 # Landing-page renderer (README -> index.htm) -- credentials and Node deps
 scripts/cli/deploy.settings.json
 node_modules/
