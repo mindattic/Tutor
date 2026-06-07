@@ -31,3 +31,9 @@ D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\x64\tesseract50.dll
 D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\tessdata\eng.traineddata
 D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\Tutor.Core.runtimeconfig.json
 D:\Projects\MindAttic\Tutor\Tutor.Core\obj\Debug\net10.0\Tutor.Core.genruntimeconfig.cache
+D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.runtime.json
+D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.endpoints.json
+D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\MindAttic.Authentication.dll
+D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\MindAttic.Authentication.pdb
+D:\Projects\MindAttic\Tutor\Tutor.Core\bin\Debug\net10.0\MindAttic.Authentication.xml
+D:\Projects\MindAttic\Tutor\Tutor.Core\obj\Debug\net10.0\Tutor.Core.csproj.Up2Date
