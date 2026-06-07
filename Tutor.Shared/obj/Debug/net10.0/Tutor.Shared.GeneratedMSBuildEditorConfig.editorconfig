@@ -23,8 +23,8 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
-[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/AuthGuard.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBdXRoR3VhcmQucmF6b3I=
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/CertificateTab.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDZXJ0aWZpY2F0ZVRhYi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Chat.razor]
@@ -43,12 +43,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDb3Vyc2VNYW5hZ2VtZW50LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/FinalExamTab.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xGaW5hbEV4YW1UYWIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Layout/SideNavNode.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcU2lkZU5hdk5vZGUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/LearnTabs.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMZWFyblRhYnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Pages/Account.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBY2NvdW50LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Pages/ChangePassword.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDaGFuZ2VQYXNzd29yZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Pages/ConceptGraph.razor]
@@ -71,6 +83,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMZWFybi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Pages/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dpbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Pages/NotFound.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xOb3RGb3VuZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -83,8 +99,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xRdWl6VGFiLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/RedirectToLogin.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSZWRpcmVjdFRvTG9naW4ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Shared/AutoCompleteInput.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcQXV0b0NvbXBsZXRlSW5wdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/UiUx/UserCircle.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xVaVV4XFVzZXJDaXJjbGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/UiUx/UserLogin.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xVaVV4XFVzZXJMb2dpbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/UiUx/UserTimeout.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xVaVV4XFVzZXJUaW1lb3V0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/_Imports.razor]
@@ -106,3 +138,7 @@ build_metadata.AdditionalFiles.CssScope = b-602qra0wbs
 [D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Layout/TopMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcVG9wTWVudS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-oaxcoe7pt4
+
+[D:/Projects/MindAttic/Tutor/Tutor.Shared/Components/Pages/Users.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xVc2Vycy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-7dugjwb3z0

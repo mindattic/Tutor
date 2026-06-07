@@ -10,11 +10,10 @@
 using System;
 using System.Reflection;
 
-[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("mindattic-vault-shared")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tutor.Blazor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ca43b5253bbef3b6308cd2eff367e2b9fc61dc1e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b17de264daf104217a33d9bacfee465684fc923e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tutor.Blazor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tutor.Blazor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

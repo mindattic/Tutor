@@ -556,3 +556,41 @@
 :global([data-theme="Dark"]) .dropdown-divider[b-oaxcoe7pt4] {
     background: var(--border-color, #2a2a3e);
 }
+/* _content/Tutor.Shared/Components/Pages/Users.razor.rz.scp.css */
+.users-title[b-7dugjwb3z0] { margin: 1rem 0; }
+
+.users-layout[b-7dugjwb3z0] { display: flex; gap: 1.25rem; align-items: flex-start; }
+
+.users-list[b-7dugjwb3z0] { flex: 0 0 16rem; display: flex; flex-direction: column; gap: .4rem; }
+
+.users-new[b-7dugjwb3z0] {
+    padding: .55rem .8rem; border: 1px dashed #888; border-radius: 8px;
+    background: none; color: inherit; cursor: pointer; width: 100%;
+}
+
+.users-item[b-7dugjwb3z0] { padding: .5rem .7rem; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+.users-item:hover[b-7dugjwb3z0] { background: rgba(127, 127, 127, .12); }
+.users-item.active[b-7dugjwb3z0] { border-color: var(--accent, #e2231a); background: rgba(226, 35, 26, .08); }
+.users-item-name[b-7dugjwb3z0] { font-weight: 600; font-size: .9rem; }
+.users-item-sub[b-7dugjwb3z0] { font-size: .72rem; opacity: .7; }
+.users-badge[b-7dugjwb3z0] { font-size: .6rem; padding: .05rem .35rem; border-radius: 6px; background: #555; color: #fff; margin-left: .4rem; vertical-align: middle; }
+
+.users-editor[b-7dugjwb3z0] { flex: 1 1 auto; min-width: 18rem; }
+.users-editor-head[b-7dugjwb3z0] { display: flex; align-items: center; gap: .6rem; border-bottom: 1px solid rgba(127,127,127,.3); padding-bottom: .5rem; margin-bottom: .9rem; }
+.users-editor-head h2[b-7dugjwb3z0] { flex: 1 1 auto; margin: 0; font-size: 1.1rem; }
+
+.users-save[b-7dugjwb3z0] { padding: .45rem .9rem; border: none; border-radius: 8px; background: #2e7d32; color: #fff; cursor: pointer; }
+.users-deactivate[b-7dugjwb3z0] { padding: .45rem .9rem; border: none; border-radius: 8px; background: #6b2b2b; color: #fff; cursor: pointer; }
+
+.users-field[b-7dugjwb3z0] { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem; max-width: 26rem; font-size: .85rem; }
+.users-field input[b-7dugjwb3z0], .users-field select[b-7dugjwb3z0] { padding: .5rem .6rem; border-radius: 8px; border: 1px solid #555; }
+.users-field input:disabled[b-7dugjwb3z0] { opacity: .6; }
+.users-field small[b-7dugjwb3z0] { opacity: .6; font-size: .68rem; }
+
+.users-policy[b-7dugjwb3z0] { font-size: .68rem; opacity: .7; line-height: 1.5; margin-bottom: .9rem; }
+
+.users-status[b-7dugjwb3z0] { padding: .5rem .7rem; border-radius: 8px; font-size: .85rem; max-width: 26rem; }
+.users-status.ok[b-7dugjwb3z0] { background: rgba(46, 125, 50, .18); }
+.users-status.err[b-7dugjwb3z0] { background: rgba(226, 35, 26, .18); }
+
+.users-meta[b-7dugjwb3z0] { font-size: .72rem; opacity: .7; margin-top: 1rem; line-height: 1.6; }

@@ -63,17 +63,31 @@
               "target": "Package",
               "version": "[3.5.1, )"
             },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
             "Microsoft.Extensions.Http": {
               "target": "Package",
               "version": "[10.0.5, )"
             },
+            "MindAttic.Authentication": {
+              "target": "Package",
+              "version": "[1.0.0, )"
+            },
             "MindAttic.Legion": {
               "target": "Package",
-              "version": "[2.2.0, )"
+              "version": "[3.0.0, )"
             },
             "MindAttic.Vault": {
               "target": "Package",
-              "version": "[0.2.0, )"
+              "version": "[1.0.0, )"
             },
             "PdfPig": {
               "target": "Package",

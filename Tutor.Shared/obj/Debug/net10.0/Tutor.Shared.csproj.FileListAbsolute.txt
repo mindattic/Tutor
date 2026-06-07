@@ -87,8 +87,6 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\x88j4o7owe
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\6wf26tos1j-{0}-08mtdlppm0-08mtdlppm0.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\w0ndkest8f-{0}-ca434j9tb9-ca434j9tb9.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\2j9d51fijx-{0}-zutltbrm55-zutltbrm55.gz
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\azt5cd4dlq-{0}-83wdbz3za5-83wdbz3za5.gz
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5it8k5xq9a-{0}-83wdbz3za5-83wdbz3za5.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.build.json.cache
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\staticwebassets.development.json
@@ -113,3 +111,6 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x86\leptonica-1.82.0.
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x86\tesseract50.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x64\leptonica-1.82.0.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x64\tesseract50.dll
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\Components\Pages\Users.razor.rz.scp.css
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\azt5cd4dlq-{0}-9i8gfedrtk-9i8gfedrtk.gz
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5it8k5xq9a-{0}-9i8gfedrtk-9i8gfedrtk.gz
