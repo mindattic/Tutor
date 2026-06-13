@@ -1,0 +1,228 @@
+@page "/library"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication
+@using Tutor.Core.Services.Packaging
+@inject InstalledCourseRegistry Registry
+@inject CourseInstallService InstallService
+
+<PageTitle>Course Library</PageTitle>
+
+<h1 class="library-title">Course Library</h1>
+<p class="library-intro">
+    Courses installed from shared <code>.tutor</code> bundles. Unloading hides a course
+    from the learning view without destroying its data or your progress; Remove deletes it.
+</p>
+
+<div class="library-list">
+    @if (installed.Count == 0)
+    {
+        <div class="library-empty">No courses have been installed from bundles yet.</div>
+    }
+    @foreach (var row in installed)
+    {
+        <div class="library-item @(row.Enabled ? "" : "disabled")">
+            <div class="library-item-main">
+                <div class="library-item-name">
+                    @row.Name
+                    @if (!row.Enabled)
+                    {
+                        <span class="library-badge">unloaded</span>
+                    }
+                </div>
+                <div class="library-item-sub">
+                    <span class="library-key">@row.CourseKey v@(row.CourseVersion)</span>
+                    · installed @row.InstalledUtc.ToString("yyyy-MM-dd")
+                    @if (!string.IsNullOrEmpty(row.Sha256))
+                    {
+                        <span title="@row.Sha256"> · sha256 @row.Sha256[..12]…</span>
+                    }
+                </div>
+            </div>
+            <div class="library-item-actions">
+                @if (row.BlobPath != null && File.Exists(row.BlobPath))
+                {
+                    <a class="library-share" href="/api/library/@row.CourseId/bundle" target="_blank"
+                       title="Download the exact bundle this course was installed from">Share</a>
+                }
+                <AuthorizeView Policy="@MaPolicies.Admin">
+                    <button class="library-toggle" @onclick="() => ToggleAsync(row)">
+                        @(row.Enabled ? "Unload" : "Load")
+                    </button>
+                    <button class="library-remove" @onclick="() => RemoveAsync(row)">Remove</button>
+                </AuthorizeView>
+            </div>
+        </div>
+    }
+</div>
+
+<AuthorizeView Policy="@MaPolicies.Admin">
+    <div class="library-install">
+        <h2>Install a course</h2>
+        <p>Pick a <code>.tutor</code> bundle. It is validated and planned before anything is installed.</p>
+
+        <InputFile OnChange="OnBundlePicked" accept=".tutor,.tutorcourse" />
+
+        @if (preview != null)
+        {
+            <div class="library-preview">
+                @if (preview.Manifest != null)
+                {
+                    <div class="library-preview-head">
+                        <strong>@preview.Manifest.CourseName</strong>
+                        <span class="library-key">@preview.Manifest.CourseKey v@(preview.Manifest.CourseVersion)</span>
+                    </div>
+                    <div class="library-provenance">
+                        @if (!string.IsNullOrEmpty(preview.Manifest.Author)) { <div>Author: @preview.Manifest.Author</div> }
+                        @if (!string.IsNullOrEmpty(preview.Manifest.License)) { <div>License: @preview.Manifest.License</div> }
+                        @if (!string.IsNullOrEmpty(preview.Manifest.SourceAttribution)) { <div>Source: @preview.Manifest.SourceAttribution</div> }
+                        @if (!string.IsNullOrEmpty(preview.Manifest.Description)) { <div>@preview.Manifest.Description</div> }
+                        <div>@preview.Manifest.ResourceCount resources · @preview.Manifest.ChunkCount chunks
+                             @(preview.Manifest.IncludesEmbeddings ? "(embeddings included — installs without any LLM call)" : "")</div>
+                    </div>
+                }
+
+                @foreach (var error in preview.Validation.Errors)
+                {
+                    <div class="library-issue err">@error.Message</div>
+                }
+                @foreach (var warning in preview.Validation.Warnings)
+                {
+                    <div class="library-issue warn">@warning.Message</div>
+                }
+
+                @if (preview.Plan != null)
+                {
+                    <div class="library-plan">@preview.Plan.Reason</div>
+
+                    @if (preview.Plan.ShouldInstall)
+                    {
+                        <button class="library-confirm" disabled="@busy" @onclick="ConfirmInstallAsync">
+                            @(busy ? "Installing…" : "Install")
+                        </button>
+                    }
+                    else if (preview.Plan.Kind is InstallPlanKind.NoOpAlreadyInstalled or InstallPlanKind.RejectDowngrade)
+                    {
+                        <label class="library-dup">
+                            <input type="checkbox" @bind="allowDuplicate" />
+                            Install anyway as an independent duplicate
+                        </label>
+                        <button class="library-confirm" disabled="@busy" @onclick="RefreshPreviewAsync">Re-plan</button>
+                    }
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="library-status @(isError ? "err" : "ok")">@statusMessage</div>
+        }
+    </div>
+</AuthorizeView>
+
+@code {
+    private const long MaxBundleBytes = 512L * 1024 * 1024;
+
+    private List<InstalledCourse> installed = [];
+    private CourseInstallPreview? preview;
+    private string? pendingBundlePath;
+    private bool allowDuplicate;
+    private bool busy;
+    private string statusMessage = "";
+    private bool isError;
+
+    protected override async Task OnInitializedAsync() => await RefreshListAsync();
+
+    private async Task RefreshListAsync() =>
+        installed = (await Registry.GetAllAsync()).OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+    private async Task OnBundlePicked(InputFileChangeEventArgs e)
+    {
+        CleanupPendingBundle();
+        statusMessage = ""; isError = false; allowDuplicate = false;
+
+        // Buffer the upload to a temp file so the same file-path code path the
+        // CLI uses (validate -> plan -> install) handles it from here.
+        pendingBundlePath = Path.Combine(Path.GetTempPath(), $"tutor-upload-{Guid.NewGuid():N}.tutor");
+        try
+        {
+            await using (var target = File.Create(pendingBundlePath))
+            await using (var source = e.File.OpenReadStream(MaxBundleBytes))
+            {
+                await source.CopyToAsync(target);
+            }
+
+            preview = await InstallService.PreviewAsync(pendingBundlePath, allowDuplicate);
+        }
+        catch (Exception ex)
+        {
+            Fail($"Could not read the bundle: {ex.Message}");
+            CleanupPendingBundle();
+        }
+    }
+
+    private async Task RefreshPreviewAsync()
+    {
+        if (pendingBundlePath == null) return;
+        preview = await InstallService.PreviewAsync(pendingBundlePath, allowDuplicate);
+    }
+
+    private async Task ConfirmInstallAsync()
+    {
+        if (pendingBundlePath == null) return;
+        busy = true;
+        try
+        {
+            var outcome = await InstallService.InstallAsync(pendingBundlePath, overrideCourseName: null, allowDuplicate);
+            if (outcome.DidInstall)
+            {
+                statusMessage = $"Installed '{outcome.Installed!.Name}' ({outcome.Installed.CourseKey} v{outcome.Installed.CourseVersion}).";
+                isError = false;
+                preview = null;
+                CleanupPendingBundle();
+                await RefreshListAsync();
+            }
+            else
+            {
+                Fail(outcome.Preview.Plan?.Reason
+                     ?? string.Join(" ", outcome.Preview.Validation.Errors.Select(er => er.Message)));
+            }
+        }
+        catch (Exception ex)
+        {
+            Fail(ex.Message);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task ToggleAsync(InstalledCourse row)
+    {
+        if (row.Enabled)
+            await InstallService.UnloadAsync(row.CourseId);
+        else
+            await InstallService.LoadAsync(row.CourseId);
+        await RefreshListAsync();
+    }
+
+    private async Task RemoveAsync(InstalledCourse row)
+    {
+        await InstallService.RemoveAsync(row.CourseId);
+        statusMessage = $"Removed '{row.Name}' and all of its data.";
+        isError = false;
+        await RefreshListAsync();
+    }
+
+    private void Fail(string message) { statusMessage = message; isError = true; }
+
+    private void CleanupPendingBundle()
+    {
+        if (pendingBundlePath != null)
+        {
+            try { File.Delete(pendingBundlePath); } catch { }
+            pendingBundlePath = null;
+        }
+    }
+}

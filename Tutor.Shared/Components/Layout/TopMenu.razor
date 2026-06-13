@@ -28,6 +28,10 @@
                     <span class="bi bi-mortarboard-fill" aria-hidden="true"></span>
                     <span>Learn</span>
                 </NavLink>
+                <NavLink class="top-nav-link" href="library" Match="NavLinkMatch.Prefix">
+                    <span class="bi bi-box-seam" aria-hidden="true"></span>
+                    <span>Library</span>
+                </NavLink>
                 <AuthorizeView Policy="@MaPolicies.Admin" Context="adminCtx">
                     <NavLink class="top-nav-link" href="settings" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Settings)">
                         <span class="bi bi-gear-fill" aria-hidden="true"></span>

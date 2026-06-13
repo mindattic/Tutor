@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "r9QNILv2Wlw=",
+  "dgSpecHash": "EWugJHdQ4/A=",
   "success": true,
   "projectFilePath": "D:\\Projects\\MindAttic\\Tutor\\Tutor.Cli\\Tutor.Cli.csproj",
   "expectedPackageFiles": [
@@ -66,7 +66,7 @@
     "C:\\Users\\ryand\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.4\\system.security.cryptography.protecteddata.9.0.4.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\tesseract\\5.2.0\\tesseract.5.2.0.nupkg.sha512",
     "C:\\Users\\ryand\\.nuget\\packages\\versone.epub\\3.3.6\\versone.epub.3.3.6.nupkg.sha512",
-    "C:\\Users\\ryand\\.nuget\\packages\\mindattic.authentication\\1.0.0\\mindattic.authentication.1.0.0.nupkg.sha512"
+    "C:\\Users\\ryand\\.nuget\\packages\\mindattic.authentication\\2.0.0\\mindattic.authentication.2.0.0.nupkg.sha512"
   ],
   "logs": []
 }

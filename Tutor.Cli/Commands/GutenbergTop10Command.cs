@@ -1,5 +1,5 @@
-using Tutor.Cli.Export;
 using Tutor.Cli.Gutenberg;
+using Tutor.Core.Services.Packaging;
 using Tutor.Cli.Pipeline;
 using Tutor.Core.Services;
 
@@ -134,7 +134,8 @@ public sealed class GutenbergTop10Command
                 if (!string.IsNullOrWhiteSpace(exportDir) && courseId != null)
                 {
                     var outPath = Path.Combine(exportDir, SafeFileName(book.Title) + ".tutor");
-                    var manifest = await exporter.ExportAsync(courseId, outPath, ct);
+                    var manifest = await exporter.ExportAsync(courseId, outPath,
+                        new BundleExportOptions { SourceAttribution = $"Project Gutenberg #{book.Id}" }, ct);
                     exported++;
                     Console.WriteLine($"  Exported → {outPath} ({manifest.ResourceCount} resources, {manifest.ChunkCount} chunks)");
                 }

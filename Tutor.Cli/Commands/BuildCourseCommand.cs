@@ -1,5 +1,5 @@
-using Tutor.Cli.Export;
 using Tutor.Cli.Pipeline;
+using Tutor.Core.Services.Packaging;
 using Tutor.Core.Parsers;
 
 namespace Tutor.Cli.Commands;
@@ -134,7 +134,7 @@ public sealed class BuildCourseCommand
             {
                 Console.WriteLine();
                 Console.WriteLine($"Exporting → {exportPath}");
-                var bundle = await exporter.ExportAsync(result.Course.Id, exportPath, ct);
+                var bundle = await exporter.ExportAsync(result.Course.Id, exportPath, options: null, ct);
                 var size = new FileInfo(exportPath).Length;
                 Console.WriteLine($"  Bundle: {bundle.ResourceCount} resources, {bundle.ChunkCount} chunks, {size / 1024.0 / 1024.0:F2} MB");
             }

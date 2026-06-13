@@ -4,13 +4,13 @@ using MindAttic.Legion;
 using MindAttic.Vault.Configuration;
 using MindAttic.Vault.DependencyInjection;
 using Tutor.Cli.Commands;
-using Tutor.Cli.Export;
 using Tutor.Cli.Gutenberg;
 using Tutor.Cli.Pipeline;
 using Tutor.Cli.Services;
 using Tutor.Core.Parsers;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
+using Tutor.Core.Services.Packaging;
 using Tutor.Core.Services.Logging;
 using Tutor.Core.Services.Ocr;
 
@@ -131,8 +131,14 @@ services.AddSingleton<ParserRegistry>();
 services.AddHttpClient<GutenbergFetcher>();
 services.AddSingleton<CourseBuildPipeline>();
 services.AddSingleton<BookImportPipeline>();
+// Course packaging lifecycle — identical registrations to Tutor.Blazor so a
+// bundle built/installed by one front door is indistinguishable to the other.
 services.AddSingleton<CourseExporter>();
 services.AddSingleton<BundleImporter>();
+services.AddSingleton<CourseDeleteService>();
+services.AddSingleton<InstalledCourseRegistry>();
+services.AddSingleton<CourseBlobStore>();
+services.AddSingleton<CourseInstallService>();
 services.AddSingleton<ImportGutenbergCommand>();
 services.AddSingleton<GutenbergTop10Command>();
 services.AddSingleton<ImportFileCommand>();

@@ -212,7 +212,7 @@
           }
         }
       },
-      "Microsoft.AspNetCore.App.Internal.Assets/10.0.8": {
+      "Microsoft.AspNetCore.App.Internal.Assets/10.0.9": {
         "type": "package",
         "build": {
           "build/Microsoft.AspNetCore.App.Internal.Assets.props": {},
@@ -812,7 +812,7 @@
           }
         }
       },
-      "MindAttic.Authentication/1.0.0": {
+      "MindAttic.Authentication/2.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
         "dependencies": {
@@ -838,7 +838,7 @@
           "AngleSharp": "1.4.0",
           "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.8",
-          "MindAttic.Authentication": "1.0.0",
+          "MindAttic.Authentication": "2.0.0",
           "MindAttic.Legion": "3.0.0",
           "MindAttic.Vault": "1.0.0",
           "PdfPig": "0.1.14",
@@ -1161,10 +1161,10 @@
         "lib/netstandard1.3/Konscious.Security.Cryptography.Blake2.xml"
       ]
     },
-    "Microsoft.AspNetCore.App.Internal.Assets/10.0.8": {
-      "sha512": "v6KocthydFtUHBIRI29YsOHKOgsqcQubkNywVOxiYr4GSDSv+XO/AeyMJywlX+1tGUTGdydu/X7V+Tzeq4SsoA==",
+    "Microsoft.AspNetCore.App.Internal.Assets/10.0.9": {
+      "sha512": "E9Wp/LPKAYkGOVBv4lt5U5TnUA/7pov7QZAwF3eI64kK8AAXqkPDwuadEOwpL1WXEfgecYm0fccluvABp32D8g==",
       "type": "package",
-      "path": "microsoft.aspnetcore.app.internal.assets/10.0.8",
+      "path": "microsoft.aspnetcore.app.internal.assets/10.0.9",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1180,7 +1180,7 @@
         "build/Microsoft.AspNetCore.App.Internal.Assets.targets",
         "buildMultiTargeting/Microsoft.AspNetCore.App.Internal.Assets.targets",
         "buildTransitive/Microsoft.AspNetCore.App.Internal.Assets.targets",
-        "microsoft.aspnetcore.app.internal.assets.10.0.8.nupkg.sha512",
+        "microsoft.aspnetcore.app.internal.assets.10.0.9.nupkg.sha512",
         "microsoft.aspnetcore.app.internal.assets.nuspec"
       ]
     },
@@ -2031,7 +2031,7 @@
         "versone.epub.nuspec"
       ]
     },
-    "MindAttic.Authentication/1.0.0": {
+    "MindAttic.Authentication/2.0.0": {
       "type": "project",
       "path": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj",
       "msbuildProject": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj"
@@ -2052,7 +2052,7 @@
       "Azure.Extensions.AspNetCore.DataProtection.Blobs >= 1.5.3",
       "Azure.Extensions.AspNetCore.DataProtection.Keys >= 1.6.3",
       "Azure.Identity >= 1.21.0",
-      "Microsoft.AspNetCore.App.Internal.Assets >= 10.0.8",
+      "Microsoft.AspNetCore.App.Internal.Assets >= 10.0.9",
       "Tutor.Core >= 1.0.0",
       "Tutor.Shared >= 1.0.0"
     ]
@@ -2134,7 +2134,7 @@
           "Microsoft.AspNetCore.App.Internal.Assets": {
             "suppressParent": "All",
             "target": "Package",
-            "version": "[10.0.8, )",
+            "version": "[10.0.9, )",
             "autoReferenced": true
           }
         },
@@ -2157,7 +2157,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

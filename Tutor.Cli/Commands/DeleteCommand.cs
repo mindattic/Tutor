@@ -1,30 +1,23 @@
-using Tutor.Core.Services;
+using Tutor.Core.Services.Packaging;
 
 namespace Tutor.Cli.Commands;
 
 /// <summary>
-/// <c>tutor delete &lt;course-id&gt; [--dry-run]</c> — cascades the cleanup that
-/// <see cref="CourseService.DeleteCourseAsync"/> alone misses (resources, embeddings,
-/// concept maps, structures, per-course ConceptMapCollection file) so a deleted
-/// course doesn't bloat the local data store.
+/// <c>tutor delete &lt;course-id&gt; [--dry-run]</c> — the explicit hard remove:
+/// cascades resources, embeddings, concept maps, structures, the per-course
+/// ConceptMapCollection file, the installed-registry row, and the retained
+/// bundle blob. Prefer unloading (soft-disable) from the in-app course library
+/// when the goal is just to hide a course.
 /// </summary>
 public sealed class DeleteCommand
 {
-    private readonly CourseService courseService;
-    private readonly ConceptMapStorageService conceptMapStorage;
-    private readonly CourseStructureStorageService structureStorage;
-    private readonly VectorStoreService vectorStore;
+    private readonly CourseInstallService installService;
+    private readonly CourseDeleteService deleteService;
 
-    public DeleteCommand(
-        CourseService courseService,
-        ConceptMapStorageService conceptMapStorage,
-        CourseStructureStorageService structureStorage,
-        VectorStoreService vectorStore)
+    public DeleteCommand(CourseInstallService installService, CourseDeleteService deleteService)
     {
-        this.courseService = courseService;
-        this.conceptMapStorage = conceptMapStorage;
-        this.structureStorage = structureStorage;
-        this.vectorStore = vectorStore;
+        this.installService = installService;
+        this.deleteService = deleteService;
     }
 
     /// <summary>
@@ -42,61 +35,22 @@ public sealed class DeleteCommand
         var courseId = positionals[0];
         var dryRun = options.ContainsKey("dry-run");
 
-        var course = await courseService.GetCourseAsync(courseId);
-        if (course == null)
+        var plan = await deleteService.PlanAsync(courseId, ct);
+        if (plan == null)
         {
             Console.Error.WriteLine($"Course '{courseId}' not found.");
             return 1;
         }
 
-        Console.WriteLine($"{(dryRun ? "[dry-run] Would delete" : "Deleting")} course '{course.Name}' ({course.Id})");
-
-        var resources = await courseService.GetCourseResourcesAsync(course.Id);
-        var conceptMapIds = resources
-            .Where(r => !string.IsNullOrEmpty(r.ConceptMapId))
-            .Select(r => r.ConceptMapId!)
-            .Distinct()
-            .ToList();
-
-        var structure = await structureStorage.LoadByCourseIdAsync(course.Id, ct);
-        var collectionFile = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Tutor", "ConceptMaps", "collections", $"collection_{course.Id}.json");
-
-        Console.WriteLine($"  resources:                {resources.Count}");
-        Console.WriteLine($"  concept maps:             {conceptMapIds.Count}");
-        Console.WriteLine($"  course structure:         {(structure != null ? "yes" : "no")}");
-        Console.WriteLine($"  concept map collection:   {(File.Exists(collectionFile) ? "yes" : "no")}");
+        Console.WriteLine($"{(dryRun ? "[dry-run] Would delete" : "Deleting")} course '{plan.CourseName}' ({plan.CourseId})");
+        Console.WriteLine($"  resources:                {plan.ResourceCount}");
+        Console.WriteLine($"  concept maps:             {plan.ConceptMapCount}");
+        Console.WriteLine($"  course structure:         {(plan.HasStructure ? "yes" : "no")}");
+        Console.WriteLine($"  concept map collection:   {(plan.HasConceptMapCollection ? "yes" : "no")}");
 
         if (dryRun) return 0;
 
-        // Resources: removes chunks (via DeleteResourceAsync's vector store cleanup
-        // path is missing — handle chunks explicitly to be safe) and the resource row.
-        foreach (var resource in resources)
-        {
-            await vectorStore.RemoveChunksForResourceAsync(resource.Id);
-            await courseService.DeleteResourceAsync(resource.Id);
-        }
-
-        // Belt-and-braces: also strip any chunks scoped to the courseId itself.
-        await vectorStore.RemoveChunksForCurriculumAsync(course.Id);
-
-        foreach (var cmId in conceptMapIds)
-        {
-            await conceptMapStorage.DeleteAsync(cmId, ct);
-        }
-
-        if (structure != null)
-        {
-            await structureStorage.DeleteByCourseIdAsync(course.Id, ct);
-        }
-
-        if (File.Exists(collectionFile))
-        {
-            try { File.Delete(collectionFile); } catch { /* best effort */ }
-        }
-
-        await courseService.DeleteCourseAsync(course.Id);
+        await installService.RemoveAsync(courseId, ct);
 
         Console.WriteLine("Done.");
         return 0;

@@ -1,16 +1,17 @@
 using System.IO.Compression;
 using System.Text.Json;
 using Tutor.Core.Models;
-using Tutor.Core.Services;
 
-namespace Tutor.Cli.Export;
+namespace Tutor.Core.Services.Packaging;
 
 /// <summary>
-/// Inverse of <see cref="CourseExporter"/>. Reads a .tutorcourse zip, rewrites every
-/// ID with a fresh GUID (so importing the same bundle twice yields two distinct
-/// courses instead of overwriting), then persists the course/resources/conceptMaps/
-/// structure/chunks via the same Tutor.Core services the live app uses. The
-/// expensive embeddings ride along in chunks.json so re-imports are near-instant.
+/// Inverse of <see cref="CourseExporter"/>. Reads a .tutor zip, validates it
+/// (manifest shape, format gate, payload SHA-256, entry-path safety), rewrites
+/// every cross-entity ID with a fresh GUID (so importing the same bundle twice
+/// yields two distinct courses instead of overwriting), then persists the
+/// course/resources/conceptMaps/structure/chunks via the same Tutor.Core
+/// services the live app uses. The expensive embeddings ride along in
+/// chunks.json so re-imports are near-instant.
 /// </summary>
 public sealed class BundleImporter
 {
@@ -37,10 +38,43 @@ public sealed class BundleImporter
     }
 
     /// <summary>
-    /// Reads <paramref name="bundlePath"/>, rewrites the IDs, and persists the
-    /// imported course. Pass <paramref name="overrideCourseName"/> to rename on
-    /// import; set <paramref name="allowDuplicate"/> when intentionally re-importing
-    /// a name that already exists.
+    /// Reads the manifest and validates the bundle without importing anything:
+    /// the IO-free validation result plus the (possibly legacy) manifest with its
+    /// effective CourseKey back-filled. This is the "look before you install"
+    /// step the UI shows a user before asking for confirmation.
+    /// </summary>
+    public async Task<BundleInspection> InspectAsync(string bundlePath, CancellationToken ct = default)
+    {
+        if (!File.Exists(bundlePath))
+            throw new FileNotFoundException($"Bundle not found: {bundlePath}");
+
+        using var archive = ZipFile.OpenRead(bundlePath);
+        var entries = await ReadAllEntriesAsync(archive, ct);
+
+        BundleManifest? manifest = null;
+        if (entries.TryGetValue("manifest.json", out var manifestBytes))
+            manifest = DeserializeBytes<BundleManifest>(manifestBytes);
+
+        var payload = entries
+            .Where(e => e.Key != "manifest.json")
+            .Select(e => (e.Key, e.Value))
+            .ToList();
+        var computedSha = BundleArchiveSafety.ComputePayloadSha256(payload);
+
+        var validation = CourseManifestValidator.Validate(
+            manifest, entries.Keys.ToList(), BundleManifest.HostMaxFormatVersion, computedSha);
+
+        if (manifest != null && string.IsNullOrEmpty(manifest.CourseKey))
+            manifest.CourseKey = CourseExporter.DeriveCourseKey(manifest.CourseName);
+
+        return new BundleInspection(manifest, validation, computedSha);
+    }
+
+    /// <summary>
+    /// Reads <paramref name="bundlePath"/>, validates it, rewrites the IDs, and
+    /// persists the imported course. Pass <paramref name="overrideCourseName"/> to
+    /// rename on import; set <paramref name="allowDuplicate"/> when intentionally
+    /// re-importing a name that already exists.
     /// </summary>
     public async Task<ImportBundleResult> ImportAsync(
         string bundlePath,
@@ -52,40 +86,52 @@ public sealed class BundleImporter
             throw new FileNotFoundException($"Bundle not found: {bundlePath}");
 
         using var archive = ZipFile.OpenRead(bundlePath);
+        var entries = await ReadAllEntriesAsync(archive, ct);
 
-        var manifest = await ReadJsonAsync<BundleManifest>(archive, "manifest.json", ct)
-            ?? throw new InvalidOperationException("Bundle is missing manifest.json.");
-        if (manifest.FormatVersion != 1)
+        BundleManifest? manifest = null;
+        if (entries.TryGetValue("manifest.json", out var manifestBytes))
+            manifest = DeserializeBytes<BundleManifest>(manifestBytes);
+
+        var payloadEntries = entries
+            .Where(e => e.Key != "manifest.json")
+            .Select(e => (e.Key, e.Value))
+            .ToList();
+        var computedSha = BundleArchiveSafety.ComputePayloadSha256(payloadEntries);
+
+        var validation = CourseManifestValidator.Validate(
+            manifest, entries.Keys.ToList(), BundleManifest.HostMaxFormatVersion, computedSha);
+        if (!validation.IsValid)
             throw new InvalidOperationException(
-                $"Unsupported bundle format version {manifest.FormatVersion}. This CLI handles version 1.");
+                "Bundle failed validation: " + string.Join("; ", validation.Errors));
 
-        var course = await ReadJsonAsync<Course>(archive, "course.json", ct)
-            ?? throw new InvalidOperationException("Bundle is missing course.json.");
+        // Validation guarantees the manifest and course.json exist past this point.
+        var courseKey = string.IsNullOrEmpty(manifest!.CourseKey)
+            ? CourseExporter.DeriveCourseKey(manifest.CourseName)
+            : manifest.CourseKey;
+
+        var course = Deserialize<Course>(entries, "course.json")
+            ?? throw new InvalidOperationException("Bundle course.json is unreadable.");
 
         var resources = new List<CourseResource>();
-        foreach (var entry in archive.Entries.Where(e =>
-                     e.FullName.StartsWith("resources/", StringComparison.Ordinal) &&
-                     e.FullName.EndsWith(".json", StringComparison.Ordinal)))
+        foreach (var name in entries.Keys.Where(n =>
+                     n.StartsWith("resources/", StringComparison.Ordinal) &&
+                     n.EndsWith(".json", StringComparison.Ordinal)))
         {
-            var r = await ReadJsonEntryAsync<CourseResource>(entry, ct);
+            var r = Deserialize<CourseResource>(entries, name);
             if (r != null) resources.Add(r);
         }
 
         var conceptMaps = new List<ConceptMap>();
-        foreach (var entry in archive.Entries.Where(e =>
-                     e.FullName.StartsWith("conceptMaps/", StringComparison.Ordinal) &&
-                     e.FullName.EndsWith(".json", StringComparison.Ordinal)))
+        foreach (var name in entries.Keys.Where(n =>
+                     n.StartsWith("conceptMaps/", StringComparison.Ordinal) &&
+                     n.EndsWith(".json", StringComparison.Ordinal)))
         {
-            var cm = await ReadJsonEntryAsync<ConceptMap>(entry, ct);
+            var cm = Deserialize<ConceptMap>(entries, name);
             if (cm != null) conceptMaps.Add(cm);
         }
 
-        CourseStructure? structure = null;
-        var structureEntry = archive.GetEntry("courseStructure.json");
-        if (structureEntry != null)
-            structure = await ReadJsonEntryAsync<CourseStructure>(structureEntry, ct);
-
-        var chunkSet = await ReadJsonAsync<BundleChunkSet>(archive, "chunks.json", ct) ?? new BundleChunkSet();
+        var structure = Deserialize<CourseStructure>(entries, "courseStructure.json");
+        var chunkSet = Deserialize<BundleChunkSet>(entries, "chunks.json") ?? new BundleChunkSet();
 
         var newCourseName = string.IsNullOrWhiteSpace(overrideCourseName) ? course.Name : overrideCourseName;
 
@@ -199,33 +245,70 @@ public sealed class BundleImporter
 
         return new ImportBundleResult(
             Course: course,
+            CourseKey: courseKey,
+            CourseVersion: manifest.CourseVersion,
+            Sha256: manifest.Sha256,
             ResourceCount: resources.Count,
             ConceptMapCount: conceptMaps.Count,
             ChunkCount: chunkSet.Chunks.Count,
-            HasStructure: structure != null);
+            HasStructure: structure != null,
+            Warnings: validation.Warnings);
     }
 
-    private static async Task<T?> ReadJsonAsync<T>(ZipArchive archive, string entryName, CancellationToken ct)
+    /// <summary>
+    /// Buffers every archive entry as bytes (screening names through the zip-slip
+    /// guard happens in validation) so integrity hashing and deserialization read
+    /// each entry exactly once.
+    /// </summary>
+    private static async Task<Dictionary<string, byte[]>> ReadAllEntriesAsync(ZipArchive archive, CancellationToken ct)
     {
-        var entry = archive.GetEntry(entryName);
-        return entry == null ? default : await ReadJsonEntryAsync<T>(entry, ct);
+        var entries = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var entry in archive.Entries)
+        {
+            if (entry.FullName.EndsWith("/", StringComparison.Ordinal)) continue; // directory marker
+
+            using var stream = entry.Open();
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, ct);
+            entries[entry.FullName] = buffer.ToArray();
+        }
+        return entries;
     }
 
-    private static async Task<T?> ReadJsonEntryAsync<T>(ZipArchiveEntry entry, CancellationToken ct)
+    private static T? Deserialize<T>(Dictionary<string, byte[]> entries, string name) where T : class =>
+        entries.TryGetValue(name, out var bytes) ? DeserializeBytes<T>(bytes) : null;
+
+    private static T? DeserializeBytes<T>(byte[] bytes) where T : class
     {
-        using var stream = entry.Open();
-        return await JsonSerializer.DeserializeAsync<T>(stream, JsonOpts, ct);
+        // Tolerate a UTF-8 BOM — external tools that touched an entry often add one.
+        var span = bytes.AsSpan();
+        if (span.Length >= 3 && span[0] == 0xEF && span[1] == 0xBB && span[2] == 0xBF)
+            span = span[3..];
+        return JsonSerializer.Deserialize<T>(span, JsonOpts);
     }
 }
 
 /// <summary>
+/// Pre-install look at a bundle: its manifest (CourseKey back-filled for legacy
+/// bundles), the validation outcome, and the payload hash that was computed.
+/// </summary>
+public sealed record BundleInspection(
+    BundleManifest? Manifest,
+    ValidationResult Validation,
+    string ComputedSha256);
+
+/// <summary>
 /// Summary returned by <see cref="BundleImporter.ImportAsync"/> describing the
-/// rebuilt course, the number of entities restored, and whether a course structure
-/// rode along.
+/// rebuilt course, its stable identity, the number of entities restored, and
+/// whether a course structure rode along.
 /// </summary>
 public sealed record ImportBundleResult(
     Course Course,
+    string CourseKey,
+    int CourseVersion,
+    string Sha256,
     int ResourceCount,
     int ConceptMapCount,
     int ChunkCount,
-    bool HasStructure);
+    bool HasStructure,
+    List<ValidationIssue> Warnings);

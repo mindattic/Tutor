@@ -8,6 +8,7 @@
 @inject InstructionsService Instructions
 @inject SettingsService Settings
 @inject CourseService CourseService
+@inject Tutor.Core.Services.Packaging.InstalledCourseRegistry InstalledCourses
 @inject CourseStructureStorageService StructureStorage
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject DynamicConceptExpansionService ConceptExpansionService
@@ -615,7 +616,12 @@ protected override async Task OnInitializedAsync()
 
     private async Task LoadAvailableCourses()
     {
-        availableCourses = await CourseService.GetAllCoursesAsync();
+        // Unloaded (soft-disabled) courses disappear from the learning view; their
+        // data and progress stay intact until an explicit Remove in the library.
+        var disabled = await InstalledCourses.GetDisabledCourseIdsAsync();
+        availableCourses = (await CourseService.GetAllCoursesAsync())
+            .Where(c => !disabled.Contains(c.Id))
+            .ToList();
     }
 
     private async Task LoadCourseState()

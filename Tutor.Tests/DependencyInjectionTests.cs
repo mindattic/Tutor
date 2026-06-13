@@ -3,6 +3,7 @@ using MindAttic.Legion;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
+using Tutor.Core.Services.Packaging;
 using Tutor.Core.Services.Queue;
 using Tutor.Tests.Fakes;
 
@@ -109,6 +110,14 @@ public class DependencyInjectionTests
         services.AddSingleton<IQuizController, LocalQuizController>();
         services.AddSingleton<QuizService>();
 
+        // Course packaging lifecycle — registered identically by Tutor.Blazor and Tutor.Cli.
+        services.AddSingleton<CourseExporter>();
+        services.AddSingleton<BundleImporter>();
+        services.AddSingleton<CourseDeleteService>();
+        services.AddSingleton<InstalledCourseRegistry>();
+        services.AddSingleton<CourseBlobStore>();
+        services.AddSingleton<CourseInstallService>();
+
         return services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
@@ -183,6 +192,12 @@ public class DependencyInjectionTests
     [TestCase(typeof(UserStorageService))]
     [TestCase(typeof(NewsService))]
     [TestCase(typeof(QuizService))]
+    [TestCase(typeof(CourseExporter))]
+    [TestCase(typeof(BundleImporter))]
+    [TestCase(typeof(CourseDeleteService))]
+    [TestCase(typeof(InstalledCourseRegistry))]
+    [TestCase(typeof(CourseBlobStore))]
+    [TestCase(typeof(CourseInstallService))]
     public void ConcreteService_Resolves(Type serviceType)
     {
         using var sp = BuildTestContainer();

@@ -10,6 +10,7 @@ using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Auth;
 using Tutor.Core.Services.Logging;
+using Tutor.Core.Services.Packaging;
 using Tutor.Core.Services.Queue;
 using Tutor.Blazor.Components;
 using Tutor.Blazor.Services;
@@ -230,6 +231,15 @@ builder.Services.AddSingleton<QuizGenerationService>();
 builder.Services.AddSingleton<IQuizController, LocalQuizController>();
 builder.Services.AddSingleton<QuizService>();
 
+// Course packaging lifecycle — identical registrations to Tutor.Cli so a bundle
+// built/installed by one front door is indistinguishable to the other.
+builder.Services.AddSingleton<CourseExporter>();
+builder.Services.AddSingleton<BundleImporter>();
+builder.Services.AddSingleton<CourseDeleteService>();
+builder.Services.AddSingleton<InstalledCourseRegistry>();
+builder.Services.AddSingleton<CourseBlobStore>();
+builder.Services.AddSingleton<CourseInstallService>();
+
 var app = builder.Build();
 
 // --- Auth startup orchestration: migrate (dev) -> import legacy users -> seed bootstrap admin.
@@ -283,5 +293,19 @@ app.MapRazorComponents<App>()
 
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
+
+// Re-share: download the verbatim .tutor a course was installed from (the blob
+// store keeps it byte-for-byte, so what you share is exactly what you received).
+app.MapGet("/api/library/{courseId}/bundle", async (
+    string courseId,
+    InstalledCourseRegistry registry,
+    CancellationToken ct) =>
+{
+    var row = await registry.GetByCourseIdAsync(courseId, ct);
+    if (row?.BlobPath == null || !File.Exists(row.BlobPath))
+        return Results.NotFound();
+
+    return Results.File(row.BlobPath, "application/zip", $"{row.CourseKey}-v{row.CourseVersion}.tutor");
+}).RequireAuthorization();
 
 app.Run();

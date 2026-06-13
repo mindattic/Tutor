@@ -1673,7 +1673,7 @@
           }
         }
       },
-      "MindAttic.Authentication/1.0.0": {
+      "MindAttic.Authentication/2.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
         "dependencies": {
@@ -1700,7 +1700,7 @@
           "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.8",
           "Microsoft.Extensions.Http": "10.0.5",
-          "MindAttic.Authentication": "1.0.0",
+          "MindAttic.Authentication": "2.0.0",
           "MindAttic.Legion": "3.0.0",
           "MindAttic.Vault": "1.0.0",
           "PdfPig": "0.1.14",
@@ -4166,7 +4166,7 @@
         "versone.epub.nuspec"
       ]
     },
-    "MindAttic.Authentication/1.0.0": {
+    "MindAttic.Authentication/2.0.0": {
       "type": "project",
       "path": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj",
       "msbuildProject": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj"
@@ -4302,7 +4302,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

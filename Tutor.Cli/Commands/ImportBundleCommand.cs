@@ -1,24 +1,27 @@
-using Tutor.Cli.Export;
+using Tutor.Core.Services.Packaging;
 
 namespace Tutor.Cli.Commands;
 
 /// <summary>
 /// <c>tutor import-bundle &lt;file.tutor&gt; [--course "Override Name"] [--allow-duplicate]</c>
 /// (also aliased as <c>tutor install</c>) — restores a course from a .tutor bundle
-/// (legacy .tutorcourse files are also accepted). Skips the LLM pipeline entirely
-/// because the embeddings ride along in the bundle, so it's typically &lt;1s regardless
-/// of book size.
+/// (legacy .tutorcourse files are also accepted). The bundle is validated
+/// (manifest, format gate, SHA-256 integrity), planned against the installed
+/// registry (upgrade vs. no-op vs. refused downgrade), and on install the
+/// verbatim bundle is retained for re-share. Skips the LLM pipeline entirely
+/// because the embeddings ride along in the bundle, so it's typically &lt;1s
+/// regardless of book size.
 /// </summary>
 public sealed class ImportBundleCommand
 {
-    private readonly BundleImporter importer;
+    private readonly CourseInstallService installService;
 
-    public ImportBundleCommand(BundleImporter importer)
+    public ImportBundleCommand(CourseInstallService installService)
     {
-        this.importer = importer;
+        this.installService = installService;
     }
 
-    /// <summary>Returns 0 on success, 64 on usage errors.</summary>
+    /// <summary>Returns 0 on success/no-op, 1 when the bundle is invalid or refused, 64 on usage errors.</summary>
     public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         var (positionals, options) = Args.Parse(args);
@@ -35,16 +38,36 @@ public sealed class ImportBundleCommand
 
         Console.WriteLine($"Importing bundle: {bundlePath}");
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var result = await importer.ImportAsync(bundlePath, overrideName, allowDuplicate, ct);
+        var outcome = await installService.InstallAsync(bundlePath, overrideName, allowDuplicate, ct);
         sw.Stop();
 
+        foreach (var warning in outcome.Preview.Validation.Warnings)
+            Console.Error.WriteLine($"  WARN {warning}");
+
+        if (!outcome.Preview.Validation.IsValid)
+        {
+            Console.Error.WriteLine("Bundle rejected:");
+            foreach (var error in outcome.Preview.Validation.Errors)
+                Console.Error.WriteLine($"  {error}");
+            return 1;
+        }
+
+        if (!outcome.DidInstall)
+        {
+            Console.WriteLine(outcome.Preview.Plan!.Reason);
+            return outcome.Preview.Plan.Kind == InstallPlanKind.NoOpAlreadyInstalled ? 0 : 1;
+        }
+
+        var result = outcome.Result!;
         Console.WriteLine();
-        Console.WriteLine("Imported.");
+        Console.WriteLine($"Imported ({outcome.Preview.Plan!.Kind}).");
         Console.WriteLine($"  Course:        {result.Course.Name} ({result.Course.Id})");
+        Console.WriteLine($"  Identity:      {result.CourseKey} v{result.CourseVersion}");
         Console.WriteLine($"  Resources:     {result.ResourceCount}");
         Console.WriteLine($"  ConceptMaps:   {result.ConceptMapCount}");
         Console.WriteLine($"  Chunks:        {result.ChunkCount}");
         Console.WriteLine($"  Structure:     {(result.HasStructure ? "yes" : "no")}");
+        Console.WriteLine($"  Retained at:   {outcome.Installed!.BlobPath}");
         Console.WriteLine($"  Time:          {sw.Elapsed.TotalSeconds:F2}s");
         return 0;
     }
