@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -8,16 +8,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MindAttic.Legion" Version="3.0.0" />
+        <PackageReference Include="MindAttic.Legion" Version="5.0.0" />
         <PackageReference Include="MindAttic.Vault" Version="1.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
 
         <!-- Auth: the unified, Vault-backed MindAttic.Authentication engine. Tutor's FIRST SQL
-             dependency — an auth-only SQL Server DB (TutorAuthDbContext : IAuthDataContext);
+             dependency â€” an auth-only SQL Server DB (TutorAuthDbContext : IAuthDataContext);
              courses/progress stay JSON. -->
         <!-- Prod uses this clean package (dev auth bypass compiled out). In DEBUG only, the lib is ALSO
              referenced as source below; MSBuild prefers the project output, so a dev build gets the lib's
-             Debug build (MA_DEV_AUTH → localhost dev-login bypass). Never present in a release build. -->
+             Debug build (MA_DEV_AUTH â†’ localhost dev-login bypass). Never present in a release build. -->
         <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
         <ProjectReference Include="..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug'" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
@@ -29,7 +29,7 @@
         <!-- Phase A book parsers (PDF, EPUB, HTML, DOCX). All MIT/Apache, all
              pure-managed C# so we keep the cross-platform story intact.
              Note: PdfPig's package id is "PdfPig" but its root namespace is
-             "UglyToad.PdfPig" — that's intentional. -->
+             "UglyToad.PdfPig" â€” that's intentional. -->
         <PackageReference Include="PdfPig" Version="0.1.14" />
         <PackageReference Include="VersOne.Epub" Version="3.3.6" />
         <PackageReference Include="AngleSharp" Version="1.4.0" />
