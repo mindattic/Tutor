@@ -112,10 +112,11 @@ D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x86\tesseract50.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x64\leptonica-1.82.0.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\x64\tesseract50.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\Components\Pages\Users.razor.rz.scp.css
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\azt5cd4dlq-{0}-9i8gfedrtk-9i8gfedrtk.gz
-D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5it8k5xq9a-{0}-9i8gfedrtk-9i8gfedrtk.gz
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.runtime.json
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.endpoints.json
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Authentication.dll
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Authentication.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Shared\bin\Debug\net10.0\MindAttic.Authentication.xml
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\scopedcss\Components\Pages\Library.razor.rz.scp.css
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\azt5cd4dlq-{0}-50g51nu6f3-50g51nu6f3.gz
+D:\Projects\MindAttic\Tutor\Tutor.Shared\obj\Debug\net10.0\compressed\5it8k5xq9a-{0}-50g51nu6f3-50g51nu6f3.gz

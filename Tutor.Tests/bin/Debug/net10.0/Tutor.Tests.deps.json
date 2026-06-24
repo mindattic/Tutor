@@ -843,14 +843,14 @@
           }
         }
       },
-      "MindAttic.Legion/3.0.0": {
+      "MindAttic.Legion/5.0.0": {
         "dependencies": {
           "MindAttic.Vault": "1.0.0"
         },
         "runtime": {
           "lib/net10.0/MindAttic.Legion.dll": {
-            "assemblyVersion": "3.0.0.0",
-            "fileVersion": "3.0.0.0"
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.0.0"
           }
         }
       },
@@ -1025,7 +1025,7 @@
           "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.8",
           "MindAttic.Authentication": "2.0.0",
-          "MindAttic.Legion": "3.0.0",
+          "MindAttic.Legion": "5.0.0",
           "MindAttic.Vault": "1.0.0",
           "PdfPig": "0.1.14",
           "SmartReader": "0.11.0",
@@ -1299,12 +1299,12 @@
       "path": "microsoft.testplatform.testhost/17.14.1",
       "hashPath": "microsoft.testplatform.testhost.17.14.1.nupkg.sha512"
     },
-    "MindAttic.Legion/3.0.0": {
+    "MindAttic.Legion/5.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-o8XLqbEzdXgqRyjNF2LwrbYU0TBM/Vr/Y3gxy8g0sy6WnxxZPkaRAepKNRV+j1Zb+yarhB3d1NMo+UpUR6sB3w==",
-      "path": "mindattic.legion/3.0.0",
-      "hashPath": "mindattic.legion.3.0.0.nupkg.sha512"
+      "sha512": "sha512-pG2uzvSNzhPL+xwMcD/aiZHgFiwVeEjCVacE3K0N3CQ5wxQN3Q4fRWEU4QZRxToDK6qq7ZA6WJVhId4YoMan3A==",
+      "path": "mindattic.legion/5.0.0",
+      "hashPath": "mindattic.legion.5.0.0.nupkg.sha512"
     },
     "MindAttic.Vault/1.0.0": {
       "type": "package",

@@ -154,10 +154,10 @@ D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\2mfti1ep5y
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\w9aqxlgje5-{0}-sftn3bxtzd-sftn3bxtzd.gz
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\c2y6zj6irs-{0}-086g19apbv-086g19apbv.gz
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\o7bhhsun7w-{0}-2sugjdj7q7-2sugjdj7q7.gz
-D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\9a8noj3me7-{0}-nt03d30qra-nt03d30qra.gz
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.runtime.json
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Authentication.staticwebassets.endpoints.json
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Authentication.pdb
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\bin\Debug\net10.0\MindAttic.Authentication.xml
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\ndzunpl2dk-{0}-ne14ti1q68-ne14ti1q68.gz
 D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\6mnqkstwem-{0}-ig5xotzpx5-ig5xotzpx5.gz
+D:\Projects\MindAttic\Tutor\Tutor.Blazor\obj\Debug\net10.0\compressed\9a8noj3me7-{0}-bv5fw9ro73-bv5fw9ro73.gz
