@@ -1167,7 +1167,29 @@
           }
         }
       },
-      "MindAttic.Legion/7.0.0": {
+      "MindAttic.Authentication/1.0.0": {
+        "type": "package",
+        "dependencies": {
+          "BCrypt.Net-Next": "4.0.3",
+          "Konscious.Security.Cryptography.Argon2": "1.3.1",
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.8",
+          "MindAttic.Vault": "1.0.0"
+        },
+        "compile": {
+          "lib/net10.0/MindAttic.Authentication.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Authentication.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
+      },
+      "MindAttic.Legion/12.0.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
@@ -1600,25 +1622,6 @@
             "related": ".xml"
           }
         }
-      },
-      "MindAttic.Authentication/2.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v10.0",
-        "dependencies": {
-          "BCrypt.Net-Next": "4.0.3",
-          "Konscious.Security.Cryptography.Argon2": "1.3.1",
-          "Microsoft.EntityFrameworkCore.Relational": "10.0.8",
-          "MindAttic.Vault": "1.0.0"
-        },
-        "compile": {
-          "bin/placeholder/MindAttic.Authentication.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/MindAttic.Authentication.dll": {}
-        },
-        "frameworkReferences": [
-          "Microsoft.AspNetCore.App"
-        ]
       }
     }
   },
@@ -3892,16 +3895,28 @@
         "microsoft.visualstudio.solutionpersistence.nuspec"
       ]
     },
-    "MindAttic.Legion/7.0.0": {
-      "sha512": "9wwgf3piBifib3L6qfqoV6GbQepnQIZMDe6Yj+OgIHkx/RBpp4MBnYsZPeh72q2XKQKYc8veloKxB5ChcS5l/w==",
+    "MindAttic.Authentication/1.0.0": {
+      "sha512": "zJ79Zdj4MQwooHX2yU4I+elss+eemdVy3JGIC7+SlgA9ANu9YmRspBLasspVxTp82aQYyQD8ilr80TB+6FxQeA==",
       "type": "package",
-      "path": "mindattic.legion/7.0.0",
+      "path": "mindattic.authentication/1.0.0",
+      "files": [
+        ".nupkg.metadata",
+        "lib/net10.0/MindAttic.Authentication.dll",
+        "lib/net10.0/MindAttic.Authentication.xml",
+        "mindattic.authentication.1.0.0.nupkg.sha512",
+        "mindattic.authentication.nuspec"
+      ]
+    },
+    "MindAttic.Legion/12.0.0": {
+      "sha512": "bAGcQwbA7Cxa4cUv+BxY0yLcQf9L+KDMdzxFTS/wVPcTrh6ynwHA4VlxbIMoFc5OxEFZQbvTqAoy1GZrwr+xOw==",
+      "type": "package",
+      "path": "mindattic.legion/12.0.0",
       "files": [
         ".nupkg.metadata",
         "LICENSE",
         "README.md",
         "lib/net10.0/MindAttic.Legion.dll",
-        "mindattic.legion.7.0.0.nupkg.sha512",
+        "mindattic.legion.12.0.0.nupkg.sha512",
         "mindattic.legion.nuspec"
       ]
     },
@@ -4554,11 +4569,6 @@
         "versone.epub.3.3.6.nupkg.sha512",
         "versone.epub.nuspec"
       ]
-    },
-    "MindAttic.Authentication/2.0.0": {
-      "type": "project",
-      "path": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj",
-      "msbuildProject": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -4569,7 +4579,7 @@
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.8",
       "Microsoft.Extensions.Http >= 10.0.5",
       "MindAttic.Authentication >= 1.0.0",
-      "MindAttic.Legion >= 7.0.0",
+      "MindAttic.Legion >= 12.0.0",
       "MindAttic.Vault >= 1.0.0",
       "PdfPig >= 0.1.14",
       "SmartReader >= 0.11.0",
@@ -4612,11 +4622,7 @@
         "net10.0": {
           "framework": "net10.0",
           "targetAlias": "net10.0",
-          "projectReferences": {
-            "D:\\Projects\\MindAttic\\MindAttic.Authentication\\src\\MindAttic.Authentication\\MindAttic.Authentication.csproj": {
-              "projectPath": "D:\\Projects\\MindAttic\\MindAttic.Authentication\\src\\MindAttic.Authentication\\MindAttic.Authentication.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {
@@ -4664,7 +4670,7 @@
           },
           "MindAttic.Legion": {
             "target": "Package",
-            "version": "[7.0.0, )"
+            "version": "[12.0.0, )"
           },
           "MindAttic.Vault": {
             "target": "Package",
