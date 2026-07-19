@@ -16,7 +16,7 @@ public sealed class ClaudeService : ILlmService
 {
     private const string ApiKeyName = "CLAUDE_API_KEY";
     private const string ModelKeyName = "CLAUDE_MODEL";
-    private const string DefaultModel = "claude-sonnet-4-6";
+    private const string DefaultModel = "claude-sonnet-5";
 
     private readonly LegionClient legion;
     private readonly ISecurePreferences prefs;
@@ -59,7 +59,7 @@ public sealed class ClaudeService : ILlmService
         try
         {
             var text = await legion.CallChatAsync(
-                providerId: "claude",
+                providerId: "claude-api",
                 apiKey: apiKey!,
                 model: model!,
                 messages: turns,

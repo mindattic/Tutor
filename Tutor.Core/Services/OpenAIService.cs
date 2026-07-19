@@ -153,7 +153,7 @@ public sealed class OpenAIOptions
     }
 
     /// <summary>The OpenAI model to use for chat completions.</summary>
-    public string Model { get; set; } = "gpt-4.1-mini";
+    public string Model { get; set; } = "gpt-5.4-mini";
 
     /// <summary>Controls randomness (0.0 = deterministic, 2.0 = very random).</summary>
     public double Temperature { get; set; } = 0.7;

@@ -5,27 +5,29 @@ using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
 
 /// <summary>
-/// Gemini chat adapter for Tutor. Wire transport (endpoint, auth, response parsing,
-/// retries, circuit breaker) is owned by MindAttic.Legion's LegionClient. This class
-/// just resolves the API key + model from Tutor's secure prefs (with a fallback to
-/// Legion's shared store at %APPDATA%/MindAttic/LLM) and adapts the call.
+/// Kimi (Moonshot AI) chat adapter for Tutor. Wire transport (endpoint, auth,
+/// response parsing, retries, circuit breaker) is owned by MindAttic.Legion's
+/// LegionClient. This class resolves the API key + model from Tutor's secure
+/// prefs (with a fallback to Legion's shared store at %APPDATA%/MindAttic/LLM)
+/// and adapts the call. Kimi is OpenAI-compatible, so the wire shape is identical
+/// to other bearer-token providers.
 /// </summary>
-public sealed class GeminiService : ILlmService
+public sealed class KimiService : ILlmService
 {
-    private const string ApiKeyName = "GEMINI_API_KEY";
-    private const string ModelKeyName = "GEMINI_MODEL";
-    private const string DefaultModel = "gemini-3.5-flash";
+    private const string ApiKeyName = "KIMI_API_KEY";
+    private const string ModelKeyName = "KIMI_MODEL";
+    private const string DefaultModel = "kimi-k2";
 
     private readonly LegionClient legion;
     private readonly ISecurePreferences prefs;
 
-    public string ProviderName => "Gemini";
+    public string ProviderName => "Kimi";
 
-    public GeminiService(LegionClient legion, ISecurePreferences prefs)
+    public KimiService(LegionClient legion, ISecurePreferences prefs)
     {
         this.legion = legion;
         this.prefs  = prefs;
-        Log.Debug("GeminiService initialized (delegating wire transport to MindAttic.Legion)");
+        Log.Debug("KimiService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
     public async Task<bool> IsConfiguredAsync()
@@ -39,25 +41,25 @@ public sealed class GeminiService : ILlmService
         string? instructions = null,
         CancellationToken ct = default)
     {
-        Log.Info("Gemini: Getting chat reply via Legion...");
+        Log.Info("Kimi: Getting chat reply via Legion...");
 
         var apiKey = await prefs.GetAsync(ApiKeyName);
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            Log.Error("Gemini: API key is missing");
-            throw new InvalidOperationException("Gemini API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
+            Log.Error("Kimi: API key is missing");
+            throw new InvalidOperationException("Kimi API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
         }
 
         var model = await prefs.GetAsync(ModelKeyName);
         if (string.IsNullOrWhiteSpace(model)) model = DefaultModel;
 
         var turns = messages.Select(m => new ChatTurn(m.Role, m.Text)).ToList();
-        Log.Debug($"Gemini: Sending {turns.Count} message(s), model={model}");
+        Log.Debug($"Kimi: Sending {turns.Count} message(s), model={model}");
 
         try
         {
             var text = await legion.CallChatAsync(
-                providerId: "gemini",
+                providerId: "kimi",
                 apiKey: apiKey!,
                 model: model!,
                 messages: turns,
@@ -68,22 +70,22 @@ public sealed class GeminiService : ILlmService
 
             var diagnostic = JsonSerializer.Serialize(new
             {
-                provider = "gemini",
+                provider = "kimi",
                 model,
                 text,
             }, new JsonSerializerOptions { WriteIndented = true });
 
-            Log.Info($"Gemini: Reply received ({text.Length} chars)");
+            Log.Info($"Kimi: Reply received ({text.Length} chars)");
             return new ChatReply(text, diagnostic);
         }
         catch (HttpRequestException ex)
         {
-            Log.Error($"Gemini: HTTP error - {ex.Message}", ex);
-            throw new InvalidOperationException($"Gemini HTTP {(int?)ex.StatusCode}: {ex.Message}", ex);
+            Log.Error($"Kimi: HTTP error - {ex.Message}", ex);
+            throw new InvalidOperationException($"Kimi HTTP {(int?)ex.StatusCode}: {ex.Message}", ex);
         }
         catch (CircuitBreakerOpenException ex)
         {
-            Log.Warn($"Gemini: circuit breaker open - {ex.Message}");
+            Log.Warn($"Kimi: circuit breaker open - {ex.Message}");
             throw new InvalidOperationException(ex.Message, ex);
         }
     }

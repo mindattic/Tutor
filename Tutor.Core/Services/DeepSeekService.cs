@@ -14,7 +14,7 @@ public sealed class DeepSeekService : ILlmService
 {
     private const string ApiKeyName = "DEEPSEEK_API_KEY";
     private const string ModelKeyName = "DEEPSEEK_MODEL";
-    private const string DefaultModel = "deepseek-chat";
+    private const string DefaultModel = "deepseek-v4-flash";
 
     private readonly LegionClient legion;
     private readonly ISecurePreferences prefs;
