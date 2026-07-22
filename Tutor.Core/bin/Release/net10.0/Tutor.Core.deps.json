@@ -12,8 +12,8 @@
           "DocumentFormat.OpenXml": "3.5.1",
           "Microsoft.EntityFrameworkCore.Design": "10.0.8",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.8",
-          "MindAttic.Authentication": "1.0.0",
-          "MindAttic.Legion": "12.0.0",
+          "MindAttic.Authentication": "2.0.0",
+          "MindAttic.Legion": "21.0.0",
           "MindAttic.Vault": "1.0.0",
           "PdfPig": "0.1.14",
           "SmartReader": "0.11.0",
@@ -675,7 +675,7 @@
           }
         }
       },
-      "MindAttic.Authentication/1.0.0": {
+      "MindAttic.Authentication/2.0.0": {
         "dependencies": {
           "BCrypt.Net-Next": "4.0.3",
           "Konscious.Security.Cryptography.Argon2": "1.3.1",
@@ -684,19 +684,19 @@
         },
         "runtime": {
           "lib/net10.0/MindAttic.Authentication.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
           }
         }
       },
-      "MindAttic.Legion/12.0.0": {
+      "MindAttic.Legion/21.0.0": {
         "dependencies": {
           "MindAttic.Vault": "1.0.0"
         },
         "runtime": {
           "lib/net10.0/MindAttic.Legion.dll": {
-            "assemblyVersion": "12.0.0.0",
-            "fileVersion": "12.0.0.0"
+            "assemblyVersion": "21.0.0.0",
+            "fileVersion": "21.0.0.0"
           }
         }
       },
@@ -1165,19 +1165,19 @@
       "path": "microsoft.visualstudio.solutionpersistence/1.0.52",
       "hashPath": "microsoft.visualstudio.solutionpersistence.1.0.52.nupkg.sha512"
     },
-    "MindAttic.Authentication/1.0.0": {
+    "MindAttic.Authentication/2.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-zJ79Zdj4MQwooHX2yU4I+elss+eemdVy3JGIC7+SlgA9ANu9YmRspBLasspVxTp82aQYyQD8ilr80TB+6FxQeA==",
-      "path": "mindattic.authentication/1.0.0",
-      "hashPath": "mindattic.authentication.1.0.0.nupkg.sha512"
+      "sha512": "sha512-lQGNrqQduPe51ZvAooOhujF+0Mum2eqNCxk+dNJfTk9gMz7xRFh06mVVA/Y5zcHasOpqc96zmPbo4cOPtHnIDw==",
+      "path": "mindattic.authentication/2.0.0",
+      "hashPath": "mindattic.authentication.2.0.0.nupkg.sha512"
     },
-    "MindAttic.Legion/12.0.0": {
+    "MindAttic.Legion/21.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-bAGcQwbA7Cxa4cUv+BxY0yLcQf9L+KDMdzxFTS/wVPcTrh6ynwHA4VlxbIMoFc5OxEFZQbvTqAoy1GZrwr+xOw==",
-      "path": "mindattic.legion/12.0.0",
-      "hashPath": "mindattic.legion.12.0.0.nupkg.sha512"
+      "sha512": "sha512-jv0EVapXgzK8ql9vYI+G0Bruw/BGpdEs6jADoKA6SmX/VSYSZusFspmIGTAbh+exjKI11ifGWmI/GuXPELHUWA==",
+      "path": "mindattic.legion/21.0.0",
+      "hashPath": "mindattic.legion.21.0.0.nupkg.sha512"
     },
     "MindAttic.Vault/1.0.0": {
       "type": "package",

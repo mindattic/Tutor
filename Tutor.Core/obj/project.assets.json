@@ -1167,7 +1167,7 @@
           }
         }
       },
-      "MindAttic.Legion/19.0.0": {
+      "MindAttic.Legion/22.0.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
@@ -3892,16 +3892,16 @@
         "microsoft.visualstudio.solutionpersistence.nuspec"
       ]
     },
-    "MindAttic.Legion/19.0.0": {
-      "sha512": "r49BZsJXcEJvKZi5/FA/NoR+kgJ6csaIjvn58p9O3Q6VC9oMW+at2RCwsjZ+HK0EfxYC9oEuCrf3AM0QINaY2g==",
+    "MindAttic.Legion/22.0.0": {
+      "sha512": "+QQSLGNMj59J1JIfPBmwqfWqCb3iRZM57S44UejlZxIzssMRFdi+/vNvto39stQ0viQXMoPy35RRuyFeYz1DRg==",
       "type": "package",
-      "path": "mindattic.legion/19.0.0",
+      "path": "mindattic.legion/22.0.0",
       "files": [
         ".nupkg.metadata",
         "LICENSE",
         "README.md",
         "lib/net10.0/MindAttic.Legion.dll",
-        "mindattic.legion.19.0.0.nupkg.sha512",
+        "mindattic.legion.22.0.0.nupkg.sha512",
         "mindattic.legion.nuspec"
       ]
     },
@@ -4568,8 +4568,8 @@
       "Microsoft.EntityFrameworkCore.Design >= 10.0.8",
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.8",
       "Microsoft.Extensions.Http >= 10.0.5",
-      "MindAttic.Authentication >= 1.0.0",
-      "MindAttic.Legion >= 19.0.0",
+      "MindAttic.Authentication >= 2.0.0",
+      "MindAttic.Legion >= 22.0.0",
       "MindAttic.Vault >= 1.0.0",
       "PdfPig >= 0.1.14",
       "SmartReader >= 0.11.0",
@@ -4660,11 +4660,11 @@
           },
           "MindAttic.Authentication": {
             "target": "Package",
-            "version": "[1.0.0, )"
+            "version": "[2.0.0, )"
           },
           "MindAttic.Legion": {
             "target": "Package",
-            "version": "[19.0.0, )"
+            "version": "[22.0.0, )"
           },
           "MindAttic.Vault": {
             "target": "Package",
