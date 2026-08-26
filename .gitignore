@@ -1,4 +1,4 @@
-################################################################################
+﻿################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
@@ -16,4 +16,4 @@ package-lock.json
 
 # Generated course bundles + CLI run artifacts (.tutor zips carry embeddings; large)
 dist/
-.claude/checkpoint.md
+.claude/quicksave.md
