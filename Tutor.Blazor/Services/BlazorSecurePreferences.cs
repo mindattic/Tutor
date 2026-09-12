@@ -5,11 +5,13 @@ using Tutor.Core.Services.Abstractions;
 namespace Tutor.Blazor.Services;
 
 /// <summary>
-/// File-backed preferences store for Tutor. LLM credentials are NOT stored in-app —
-/// they resolve (read-only) through MindAttic.Vault's <see cref="LlmCredentialResolver"/>
-/// (User Secrets / env / App Service / Key Vault → the shared
-/// <c>%APPDATA%\MindAttic\LLM\providers.json</c>). Keys are fixed in one place and every
-/// MindAttic app picks them up; the app never writes credentials.
+/// File-backed preferences store for Tutor. LLM API keys are NOT stored in the local
+/// preferences file — a key entered in Settings writes into MindAttic.Vault under Tutor's OWN
+/// provider id (an <see cref="AppScopedCredentialStore"/> scoped to <c>"tutor"</c>), so it never
+/// changes what another MindAttic app resolves. Reading falls back to the shared cross-app id
+/// (User Secrets / env / App Service / Key Vault / <c>%APPDATA%\MindAttic\LLM\providers.json</c>,
+/// via <see cref="LlmCredentialResolver"/>) only when Tutor has none of its own. Model-name
+/// fields stay read-only from the shared id, unchanged.
 ///
 /// Ordinary preferences (theme, SELECTED_MODEL, ENTER_TO_SEND, …) continue to live in
 /// the local <c>secure-preferences.json</c>.
@@ -18,6 +20,7 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
 {
     private readonly string filePath;
     private readonly LlmCredentialResolver vault;
+    private readonly CompositeCredentialStore keys;
     private Dictionary<string, string> store = new();
     private readonly SemaphoreSlim @lock = new(1, 1);
 
@@ -39,6 +42,7 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     public BlazorSecurePreferences(LlmCredentialResolver vault)
     {
         this.vault = vault;
+        keys = new CompositeCredentialStore(new AppScopedCredentialStore("tutor", vault), vault);
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Tutor", "Settings");
@@ -58,12 +62,17 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     }
 
     /// <summary>
-    /// Writes a preference. LLM-mapped keys are read-only (managed in Vault) and ignored —
-    /// only ordinary preferences are persisted to the local store.
+    /// Writes a preference. An LLM API key writes into Vault under Tutor's own provider id
+    /// (never the shared one); a model-name field is still Vault-managed/read-only and ignored;
+    /// everything else is an ordinary local preference.
     /// </summary>
     public async Task SetAsync(string key, string value)
     {
-        if (LlmKeyMap.ContainsKey(key)) return; // credentials are Vault-managed; in-app writes are a no-op
+        if (LlmKeyMap.TryGetValue(key, out var map))
+        {
+            if (map.IsApiKey) keys.SetKey(map.Provider, value);
+            return;
+        }
 
         await @lock.WaitAsync();
         try
@@ -77,10 +86,15 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    /// <summary>Removes a preference. LLM-mapped keys are Vault-managed and ignored.</summary>
+    /// <summary>Removes a preference. An LLM API key clears Tutor's own Vault override (the
+    /// shared default, if any, takes back over); a model-name field stays Vault-managed/ignored.</summary>
     public void Remove(string key)
     {
-        if (LlmKeyMap.ContainsKey(key)) return;
+        if (LlmKeyMap.TryGetValue(key, out var map))
+        {
+            if (map.IsApiKey) keys.SetKey(map.Provider, "");
+            return;
+        }
 
         @lock.Wait();
         try
@@ -94,14 +108,15 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    // apiKey → resolver.GetKey; model → the provider's "model" field from the raw record.
+    // apiKey → this app's own Vault override, falling back to the shared cross-app key;
+    // model → the shared provider's "model" field from the raw record (unchanged).
     private string? ReadFromVault(string provider, bool isApiKey)
     {
         try
         {
             if (isApiKey)
             {
-                var key = vault.GetKey(provider);
+                var key = keys.GetKey(provider);
                 return string.IsNullOrWhiteSpace(key) ? null : key;
             }
             if (vault.LoadAllRaw().TryGetValue(provider, out var raw) && !string.IsNullOrWhiteSpace(raw))

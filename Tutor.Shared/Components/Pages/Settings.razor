@@ -550,12 +550,49 @@ else
             <div class="settings-section">
                 <h4>API Keys</h4>
                 <p>
-                    API keys are <strong>managed centrally in MindAttic Vault</strong> — there is no in-app
-                    key entry. Every MindAttic application reads the same keys, so a key only ever needs to be
-                    set or rotated in one place.
+                    Bring your own key for any provider below — it's used by Tutor only and never changes
+                    what another MindAttic application resolves. Leave a field blank to fall back to the
+                    shared default, if one is configured on this machine.
                 </p>
+
+                <div class="settings-row" style="margin-top: 16px;">
+                    <label for="claude-key-input">Claude</label>
+                    <input id="claude-key-input" type="password" class="settings-input small"
+                           @bind="claudeKeyInput" placeholder="sk-ant-..." />
+                    <button class="settings-btn small" type="button" @onclick="@(() => SaveProviderKeyAsync(ClaudeApiKeyName, claudeKeyInput))">Save</button>
+                    <button class="settings-btn danger small" type="button" @onclick="@(() => ClearProviderKeyAsync(ClaudeApiKeyName))">Clear</button>
+                </div>
+                <p class="hint">@claudeKeyStatus</p>
+
+                <div class="settings-row" style="margin-top: 16px;">
+                    <label for="openai-key-input">OpenAI</label>
+                    <input id="openai-key-input" type="password" class="settings-input small"
+                           @bind="openaiKeyInput" placeholder="sk-..." />
+                    <button class="settings-btn small" type="button" @onclick="@(() => SaveProviderKeyAsync(OpenAiApiKeyName, openaiKeyInput))">Save</button>
+                    <button class="settings-btn danger small" type="button" @onclick="@(() => ClearProviderKeyAsync(OpenAiApiKeyName))">Clear</button>
+                </div>
+                <p class="hint">@openaiKeyStatus</p>
+
+                <div class="settings-row" style="margin-top: 16px;">
+                    <label for="gemini-key-input">Gemini</label>
+                    <input id="gemini-key-input" type="password" class="settings-input small"
+                           @bind="geminiKeyInput" placeholder="AIza..." />
+                    <button class="settings-btn small" type="button" @onclick="@(() => SaveProviderKeyAsync(GeminiApiKeyName, geminiKeyInput))">Save</button>
+                    <button class="settings-btn danger small" type="button" @onclick="@(() => ClearProviderKeyAsync(GeminiApiKeyName))">Clear</button>
+                </div>
+                <p class="hint">@geminiKeyStatus</p>
+
+                <div class="settings-row" style="margin-top: 16px;">
+                    <label for="deepseek-key-input">DeepSeek</label>
+                    <input id="deepseek-key-input" type="password" class="settings-input small"
+                           @bind="deepseekKeyInput" placeholder="sk-..." />
+                    <button class="settings-btn small" type="button" @onclick="@(() => SaveProviderKeyAsync(DeepSeekApiKeyName, deepseekKeyInput))">Save</button>
+                    <button class="settings-btn danger small" type="button" @onclick="@(() => ClearProviderKeyAsync(DeepSeekApiKeyName))">Clear</button>
+                </div>
+                <p class="hint">@deepseekKeyStatus</p>
+
                 <p class="hint">
-                    Keys resolve from your environment, User Secrets, or the shared file
+                    A blank field falls back to your environment, User Secrets, or the shared file
                     <code>%APPDATA%\MindAttic\LLM\providers.json</code> (whichever is present, in that order).
                     Choose which provider acts as the teacher on the <strong>General</strong> tab under
                     "Active AI Model".
@@ -698,6 +735,21 @@ else
     private const string SelectedModelKey = "SELECTED_MODEL";
     private const string EnterToSendKey = "ENTER_TO_SEND";
 
+    // Matches BlazorSecurePreferences/CliSecurePreferences's LlmKeyMap keys.
+    private const string ClaudeApiKeyName = "CLAUDE_API_KEY";
+    private const string OpenAiApiKeyName = "OPENAI_API_KEY";
+    private const string GeminiApiKeyName = "GEMINI_API_KEY";
+    private const string DeepSeekApiKeyName = "DEEPSEEK_API_KEY";
+
+    private string claudeKeyInput = "";
+    private string openaiKeyInput = "";
+    private string geminiKeyInput = "";
+    private string deepseekKeyInput = "";
+    private string claudeKeyStatus = "";
+    private string openaiKeyStatus = "";
+    private string geminiKeyStatus = "";
+    private string deepseekKeyStatus = "";
+
     private string activeTab = "General";
     private string selectedTheme = "Light";
     private string selectedModel = "ChatGPT";
@@ -811,6 +863,7 @@ else
         await LoadLogLevelSettingsAsync();
         LoadStorageSettings();
         await LoadConceptMapSettingsAsync();
+        await LoadCredentialStatusAsync();
         LoadLogs();
 
         // Subscribe to log updates
@@ -1224,6 +1277,77 @@ else
         catch (Exception ex)
         {
             status = "Failed to save selection: " + ex.Message;
+        }
+    }
+
+    /// <summary>Just "configured"/"not configured" — GetAsync resolves either Tutor's own key or
+    /// the shared default, and cannot tell which without expanding ISecurePreferences; the actual
+    /// key is never redisplayed once saved.</summary>
+    private async Task LoadCredentialStatusAsync()
+    {
+        claudeKeyStatus = await CredentialStatusAsync(ClaudeApiKeyName);
+        openaiKeyStatus = await CredentialStatusAsync(OpenAiApiKeyName);
+        geminiKeyStatus = await CredentialStatusAsync(GeminiApiKeyName);
+        deepseekKeyStatus = await CredentialStatusAsync(DeepSeekApiKeyName);
+    }
+
+    private async Task<string> CredentialStatusAsync(string keyName)
+    {
+        try
+        {
+            var value = await SecurePreferences.GetAsync(keyName);
+            return string.IsNullOrWhiteSpace(value) ? "Not configured." : "Configured.";
+        }
+        catch
+        {
+            return "Not configured.";
+        }
+    }
+
+    private async Task SaveProviderKeyAsync(string keyName, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            status = "Enter a key before saving.";
+            return;
+        }
+        try
+        {
+            await SecurePreferences.SetAsync(keyName, value);
+            status = $"{keyName} saved — used by Tutor from now on.";
+        }
+        catch (Exception ex)
+        {
+            status = "Failed to save key: " + ex.Message;
+        }
+        finally
+        {
+            // Never left sitting in a bound field once it's saved.
+            switch (keyName)
+            {
+                case ClaudeApiKeyName: claudeKeyInput = ""; break;
+                case OpenAiApiKeyName: openaiKeyInput = ""; break;
+                case GeminiApiKeyName: geminiKeyInput = ""; break;
+                case DeepSeekApiKeyName: deepseekKeyInput = ""; break;
+            }
+            await LoadCredentialStatusAsync();
+        }
+    }
+
+    private async Task ClearProviderKeyAsync(string keyName)
+    {
+        try
+        {
+            SecurePreferences.Remove(keyName);
+            status = $"{keyName} cleared — falling back to the shared default, if any.";
+        }
+        catch (Exception ex)
+        {
+            status = "Failed to clear key: " + ex.Message;
+        }
+        finally
+        {
+            await LoadCredentialStatusAsync();
         }
     }
 
