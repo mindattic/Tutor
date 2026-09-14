@@ -30,8 +30,8 @@ public sealed class GeminiService : ILlmService
 
     public async Task<bool> IsConfiguredAsync()
     {
-        var key = await prefs.GetAsync(ApiKeyName);
-        return !string.IsNullOrWhiteSpace(key);
+        var keys = await prefs.GetApiKeysAsync(ApiKeyName);
+        return keys.Count > 0;
     }
 
     public async Task<ChatReply> GetReplyAsync(
@@ -41,8 +41,8 @@ public sealed class GeminiService : ILlmService
     {
         Log.Info("Gemini: Getting chat reply via Legion...");
 
-        var apiKey = await prefs.GetAsync(ApiKeyName);
-        if (string.IsNullOrWhiteSpace(apiKey))
+        var apiKeys = await prefs.GetApiKeysAsync(ApiKeyName);
+        if (apiKeys.Count == 0)
         {
             Log.Error("Gemini: API key is missing");
             throw new InvalidOperationException("Gemini API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
@@ -56,15 +56,18 @@ public sealed class GeminiService : ILlmService
 
         try
         {
-            var text = await legion.CallChatAsync(
+            // More than one key configured (a rotation/failover pool): the first key is used
+            // until it fails with an auth/rate-limit/server/network error, then the next is
+            // tried (KeyPoolFailover). A single key behaves exactly as before.
+            var text = await KeyPoolFailover.ExecuteAsync(apiKeys, ct, apiKey => legion.CallChatAsync(
                 providerId: "gemini",
-                apiKey: apiKey!,
+                apiKey: apiKey,
                 model: model!,
                 messages: turns,
                 systemPrompt: instructions,
                 maxTokens: 4096,
                 temperature: 0.7,
-                ct: ct);
+                ct: ct));
 
             var diagnostic = JsonSerializer.Serialize(new
             {

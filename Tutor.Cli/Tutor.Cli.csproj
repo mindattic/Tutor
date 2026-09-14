@@ -7,6 +7,11 @@
         <AssemblyName>tutor</AssemblyName>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <!-- Explicit (not just a publish-time flag): Tutor.Mcp references this project (another
+             Exe) to reuse CliSecurePreferences. Publishing framework-dependent for win-x64 fails
+             with NETSDK1151 unless both ends of an Exe-to-Exe project reference agree on this
+             in-project, not just on the command line. -->
+        <SelfContained>false</SelfContained>
     </PropertyGroup>
 
     <ItemGroup>

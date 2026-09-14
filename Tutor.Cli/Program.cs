@@ -79,6 +79,8 @@ services.AddSingleton<DeepSeekService>();
 services.AddSingleton<GeminiService>();
 services.AddSingleton<LlmServiceRouter>();
 services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
+services.AddSingleton<ApiKeyPoolService>();
+services.AddSingleton<KeysCommand>();
 
 // Pipeline services — must mirror Blazor wiring so the CLI produces courses
 // that the Blazor UI can read without translation.
@@ -192,6 +194,7 @@ try
         "build-course"  => await provider.GetRequiredService<BuildCourseCommand>().RunAsync(rest),
         "export"        => await provider.GetRequiredService<ExportCommand>().RunAsync(rest),
         "import-bundle" or "install" => await provider.GetRequiredService<ImportBundleCommand>().RunAsync(rest),
+        "keys"          => await provider.GetRequiredService<KeysCommand>().RunAsync(rest),
         "list"          => await provider.GetRequiredService<ListCommand>().RunAsync(rest),
         "delete"        => await provider.GetRequiredService<DeleteCommand>().RunAsync(rest),
         "fetch"         => await provider.GetRequiredService<FetchOnlyCommand>().RunAsync(rest),
@@ -262,6 +265,15 @@ static int PrintHelp()
 
           tutor list
               List all courses on this machine.
+
+          tutor keys --provider claude|openai|gemini|deepseek
+              (--list | --set-key <key> [--set-key <key> ...] | --add-key <key> | --remove-key <key> | --clear)
+              Manage the BYO API-key pool for one provider. Several keys are tried in
+              order, failing over to the next on an auth/rate-limit/server error.
+              One or more --set-key flags replace the whole pool; --add-key/--remove-key
+              edit it incrementally; --list shows what's configured (masked); --clear
+              falls back to the shared default (if one is configured).
+              Example: tutor keys --provider claude --set-key sk-ant-one --set-key sk-ant-two
 
           tutor delete <course-id> [--dry-run]
               Remove a course and cascade-delete its resources, concept maps,

@@ -48,8 +48,8 @@ public sealed class OpenAIService : ILlmService
 
     public async Task<bool> IsConfiguredAsync()
     {
-        var key = await opt.GetApiKeyAsync();
-        return !string.IsNullOrWhiteSpace(key);
+        var keys = await opt.GetApiKeysAsync();
+        return keys.Count > 0;
     }
 
     public async Task<ChatReply> AskAsync(string question, CancellationToken ct = default)
@@ -94,8 +94,8 @@ public sealed class OpenAIService : ILlmService
     {
         Log.Info("OpenAI: Getting chat reply via Legion...");
 
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
+        var apiKeys = await opt.GetApiKeysAsync();
+        if (apiKeys.Count == 0)
         {
             Log.Error("OpenAI: API key is missing");
             throw new InvalidOperationException("OpenAI API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
@@ -107,15 +107,18 @@ public sealed class OpenAIService : ILlmService
 
         try
         {
-            var text = await legion.CallChatAsync(
+            // More than one key configured (a rotation/failover pool): the first key is used
+            // until it fails with an auth/rate-limit/server/network error, then the next is
+            // tried (KeyPoolFailover). A single key behaves exactly as before.
+            var text = await KeyPoolFailover.ExecuteAsync(apiKeys, ct, apiKey => legion.CallChatAsync(
                 providerId: "openai",
-                apiKey: apiKey!,
+                apiKey: apiKey,
                 model: model,
                 messages: turns,
                 systemPrompt: instructions,
                 maxTokens: opt.MaxTokens,
                 temperature: opt.Temperature,
-                ct: ct);
+                ct: ct));
 
             var diagnostic = JsonSerializer.Serialize(new
             {
@@ -166,6 +169,14 @@ public sealed class OpenAIOptions
     {
         try { return await securePreferences.GetAsync("OPENAI_API_KEY"); }
         catch { return null; }
+    }
+
+    /// <summary>Gets every key configured for OpenAI, in priority order (a rotation/failover
+    /// pool when more than one is configured).</summary>
+    public async Task<IReadOnlyList<string>> GetApiKeysAsync()
+    {
+        try { return await securePreferences.GetApiKeysAsync("OPENAI_API_KEY"); }
+        catch { return Array.Empty<string>(); }
     }
 
     /// <summary>

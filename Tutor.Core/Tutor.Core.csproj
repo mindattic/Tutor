@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MindAttic.Legion" Version="22.0.0" />
-        <PackageReference Include="MindAttic.Vault" Version="4.0.0" />
+        <PackageReference Include="MindAttic.Legion" Version="25.0.0" />
+        <PackageReference Include="MindAttic.Vault" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
 
         <!-- Auth: the unified, Vault-backed MindAttic.Authentication engine. Tutor's FIRST SQL

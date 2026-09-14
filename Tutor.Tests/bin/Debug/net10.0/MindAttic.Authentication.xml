@@ -262,18 +262,40 @@
         <member name="T:MindAttic.Authentication.Secrets.ConfigAuthSecrets">
             <summary>
             <see cref="T:MindAttic.Authentication.Secrets.IAuthSecrets"/> over the MindAttic.Vault <c>Security</c> configuration section
-            (<c>MindAttic:Vault:Security:&lt;name&gt;</c>). Dev: surfaced from %APPDATA%\MindAttic\Security via
-            AddMindAtticVaultFiles. Prod: env vars / Azure Key Vault references (read-only). Resolved values are
-            cached after first read (mitigates a Key Vault blip mid-run). Fail-closed: blank ⇒ throw.
+            (<c>MindAttic:Vault:Security:&lt;name&gt;</c>). Dev: surfaced from the Vault roaming store via
+            AddMindAtticVaultFiles. Prod: env vars / Azure Key Vault references (read-only). Resolved values
+            are cached after first read (mitigates a Key Vault blip mid-run). Fail-closed: blank ⇒ throw.
             </summary>
         </member>
         <member name="M:MindAttic.Authentication.Secrets.ConfigAuthSecrets.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
             <summary>
             <see cref="T:MindAttic.Authentication.Secrets.IAuthSecrets"/> over the MindAttic.Vault <c>Security</c> configuration section
-            (<c>MindAttic:Vault:Security:&lt;name&gt;</c>). Dev: surfaced from %APPDATA%\MindAttic\Security via
-            AddMindAtticVaultFiles. Prod: env vars / Azure Key Vault references (read-only). Resolved values are
-            cached after first read (mitigates a Key Vault blip mid-run). Fail-closed: blank ⇒ throw.
+            (<c>MindAttic:Vault:Security:&lt;name&gt;</c>). Dev: surfaced from the Vault roaming store via
+            AddMindAtticVaultFiles. Prod: env vars / Azure Key Vault references (read-only). Resolved values
+            are cached after first read (mitigates a Key Vault blip mid-run). Fail-closed: blank ⇒ throw.
             </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Secrets.ConfigAuthSecrets.FindByRelaxedName(System.String)">
+            <summary>
+            Second chance for a secret whose key survived the trip to production with a different spelling.
+            <para>
+            Azure App Service on <b>Linux</b> rewrites application-setting names when it injects them as
+            environment variables: separators that are illegal in a POSIX variable name are removed or
+            replaced. <c>pepper.v1</c> arrives as <c>pepper_v1</c> and <c>bootstrap-token</c> as
+            <c>bootstraptoken</c>, so an exact lookup finds nothing and auth fail-closes on a secret the
+            operator did provision. Windows hosts pass the name through untouched, which is why this only
+            ever bites after a Linux deploy.
+            </para>
+            <para>
+            The mangling is not invertible — you cannot tell where a hyphen used to be — so the match runs
+            the other way: both sides are reduced to letters and digits and compared case-insensitively.
+            A collision would need two secrets differing only in punctuation, which the ambiguity check
+            below refuses rather than guesses at.
+            </para>
+            </summary>
+        </member>
+        <member name="M:MindAttic.Authentication.Secrets.ConfigAuthSecrets.Relax(System.String)">
+            <summary>Reduces a key to letters and digits, so punctuation differences stop mattering.</summary>
         </member>
         <member name="T:MindAttic.Authentication.Secrets.IAuthSecrets">
             <summary>
@@ -493,7 +515,7 @@
         <member name="T:MindAttic.Authentication.Services.AuthUserSummary">
             <summary>A user as shown in an admin list (never exposes the password hash).</summary>
         </member>
-        <member name="M:MindAttic.Authentication.Services.AuthUserSummary.#ctor(System.Guid,System.String,System.String,System.String,System.Boolean,System.Boolean,System.Boolean,System.Nullable{System.DateTime},System.DateTime)">
+        <member name="M:MindAttic.Authentication.Services.AuthUserSummary.#ctor(System.Guid,System.String,System.String,System.String,System.String,System.Boolean,System.Boolean,System.Boolean,System.Nullable{System.DateTime},System.DateTime)">
             <summary>A user as shown in an admin list (never exposes the password hash).</summary>
         </member>
         <member name="T:MindAttic.Authentication.Services.IUserAdminService">

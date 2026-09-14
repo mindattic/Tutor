@@ -108,6 +108,26 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
+    /// <summary>Every key configured for an LLM API-key preference, in priority order (Tutor's
+    /// own Vault override first, then the shared cross-app pool).</summary>
+    public Task<IReadOnlyList<string>> GetApiKeysAsync(string key)
+    {
+        if (!LlmKeyMap.TryGetValue(key, out var map) || !map.IsApiKey)
+            throw new NotSupportedException($"'{key}' is not an LLM API-key preference.");
+        IReadOnlyList<string> result = keys.GetKeys(map.Provider).Select(k => k.Key).ToList();
+        return Task.FromResult(result);
+    }
+
+    /// <summary>Replaces the whole key pool for an LLM API-key preference, writing into Vault
+    /// under Tutor's own provider id (never the shared one).</summary>
+    public Task SetApiKeysAsync(string key, IReadOnlyList<string> apiKeys)
+    {
+        if (!LlmKeyMap.TryGetValue(key, out var map) || !map.IsApiKey)
+            throw new NotSupportedException($"'{key}' is not an LLM API-key preference.");
+        keys.SetKeys(map.Provider, apiKeys.Select(k => new CredentialPoolEntry(k)).ToList());
+        return Task.CompletedTask;
+    }
+
     // apiKey → this app's own Vault override, falling back to the shared cross-app key;
     // model → the shared provider's "model" field from the raw record (unchanged).
     private string? ReadFromVault(string provider, bool isApiKey)

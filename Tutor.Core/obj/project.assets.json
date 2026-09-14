@@ -1167,7 +1167,7 @@
           }
         }
       },
-      "MindAttic.Legion/22.0.0": {
+      "MindAttic.Legion/25.0.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
@@ -1182,7 +1182,7 @@
           "lib/net10.0/MindAttic.Legion.dll": {}
         }
       },
-      "MindAttic.Vault/1.0.0": {
+      "MindAttic.Vault/4.0.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "9.0.0",
@@ -1601,7 +1601,7 @@
           }
         }
       },
-      "MindAttic.Authentication/2.0.0": {
+      "MindAttic.Authentication/4.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
         "dependencies": {
@@ -3892,23 +3892,23 @@
         "microsoft.visualstudio.solutionpersistence.nuspec"
       ]
     },
-    "MindAttic.Legion/22.0.0": {
-      "sha512": "+QQSLGNMj59J1JIfPBmwqfWqCb3iRZM57S44UejlZxIzssMRFdi+/vNvto39stQ0viQXMoPy35RRuyFeYz1DRg==",
+    "MindAttic.Legion/25.0.0": {
+      "sha512": "kC07oCkyXlt6s6EphiMkKAXhoKjsTMuxoMjQLcXGokrbqm9YxxU2Lt+VhkabMNiqCDU66Hu1xWrwPa70r/lHQw==",
       "type": "package",
-      "path": "mindattic.legion/22.0.0",
+      "path": "mindattic.legion/25.0.0",
       "files": [
         ".nupkg.metadata",
         "LICENSE",
         "README.md",
         "lib/net10.0/MindAttic.Legion.dll",
-        "mindattic.legion.22.0.0.nupkg.sha512",
+        "mindattic.legion.25.0.0.nupkg.sha512",
         "mindattic.legion.nuspec"
       ]
     },
-    "MindAttic.Vault/1.0.0": {
-      "sha512": "tN/Casi1NGGOzuHcuQyeCp5foGYGiUR6wGZYCffxetGDiOCT5O7aQuBcfTrPxzeXMk3mf3vYctEEI8Wn6nOypQ==",
+    "MindAttic.Vault/4.0.0": {
+      "sha512": "k0Kkw6XGC3b8qSYwfljnCfZM35xQN3zSA+e+Kdm7X09nlw2j2GyxQo48sY7UwunSYlCFUVEVNsHbZ5uSGAw/SQ==",
       "type": "package",
-      "path": "mindattic.vault/1.0.0",
+      "path": "mindattic.vault/4.0.0",
       "files": [
         ".nupkg.metadata",
         "LICENSE",
@@ -3917,7 +3917,7 @@
         "lib/net10.0/MindAttic.Vault.xml",
         "lib/net9.0/MindAttic.Vault.dll",
         "lib/net9.0/MindAttic.Vault.xml",
-        "mindattic.vault.1.0.0.nupkg.sha512",
+        "mindattic.vault.4.0.0.nupkg.sha512",
         "mindattic.vault.nuspec"
       ]
     },
@@ -4555,7 +4555,7 @@
         "versone.epub.nuspec"
       ]
     },
-    "MindAttic.Authentication/2.0.0": {
+    "MindAttic.Authentication/4.0.0": {
       "type": "project",
       "path": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj",
       "msbuildProject": "../../MindAttic.Authentication/src/MindAttic.Authentication/MindAttic.Authentication.csproj"
@@ -4569,8 +4569,8 @@
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.8",
       "Microsoft.Extensions.Http >= 10.0.5",
       "MindAttic.Authentication >= 2.0.0",
-      "MindAttic.Legion >= 22.0.0",
-      "MindAttic.Vault >= 1.0.0",
+      "MindAttic.Legion >= 25.0.0",
+      "MindAttic.Vault >= 4.0.0",
       "PdfPig >= 0.1.14",
       "SmartReader >= 0.11.0",
       "Tesseract >= 5.2.0",
@@ -4629,7 +4629,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.300"
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net10.0": {
@@ -4664,11 +4664,11 @@
           },
           "MindAttic.Legion": {
             "target": "Package",
-            "version": "[22.0.0, )"
+            "version": "[25.0.0, )"
           },
           "MindAttic.Vault": {
             "target": "Package",
-            "version": "[1.0.0, )"
+            "version": "[4.0.0, )"
           },
           "PdfPig": {
             "target": "Package",
@@ -4703,7 +4703,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
