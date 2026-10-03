@@ -4,21 +4,20 @@ project: Tutor
 code: TUT
 layer: stories
 status: living
-updated: 2026-06-07
+updated: 2026-10-03
 ---
 
 # Tutor — User Stories
 
 > Acceptance‑level requirements, grouped by epic. Status legend:
 > **✅ Done** (shipped & tested) · **🟡 Partial** (works, gaps noted) ·
-> **⬜ Planned** (designed, not built) · **🗑️ Cut**. Every ✅ cites the test that
-> proves it. IDs are stable (`TUT-US-<Epic><n>`); never reference line numbers.
+> **⬜ Planned** (designed, not built). Every ✅ cites the test that proves it. IDs are stable (`TUT-US-<Epic><n>`); never reference line numbers.
 
 Personas:
 
-- **Author/Operator** — builds and curates courses (CLI today; admin in‑app).
+- **Author/Operator** — builds and curates courses (CLI; admin in‑app).
 - **Learner/Student** — consumes courses, takes quizzes, earns certificates.
-- **Admin** — manages users and (planned) the course library.
+- **Admin** — manages users and the course library.
 - **Sharer/Recipient** — passes a `.tutor` file to someone, or receives one.
 
 ---
@@ -27,7 +26,7 @@ Personas:
 
 - **TUT-US-A1 🟡** As an Author, I can ingest a single source file (PDF, EPUB,
   HTML, DOCX) so it becomes a course resource.
-  *Given* a supported file, *when* I run `tutor import file <path>`, *then* it is
+  *Given* a supported file, *when* I run `tutor import <path> --course "Name"`, *then* it is
   parsed, chunked, embedded, and a concept map is produced.
   *Verified in part by parser tests* (`TxtBookParserTests`, `HtmlBookParserTests`,
   `ParserRegistryTests`, `ExtractedBookTests`) *and* `ChunkingServiceTests`; the
@@ -38,7 +37,7 @@ Personas:
   (requires LibreOffice/Calibre on the box); downstream parsing is covered by the
   parser tests above.
 - **TUT-US-A3 🟡** As an Author, I can pull a Project Gutenberg work by ID, and
-  seed a starter library with `tutor gutenberg top10`. *Gap:* the fetch path hits
+  seed a starter library with `tutor gutenberg-top10`. *Gap:* the fetch path hits
   a live network and is not automated.
 - **TUT-US-A4 🟡** As an Author, the system extracts concepts, correlates them
   into one knowledge graph across resources, and reattaches orphan concepts.
@@ -74,12 +73,12 @@ Personas:
   id from `AuthenticationState`. *(TODO in `QuizService.cs`; see
   [BIBLE §6.3](BIBLE.md#TUT-§6).)*
 
-## Epic C — Authentication & Accounts  *(verified: clean build, 81/81 auth‑subset tests)* {#TUT-EPIC-C}
+## Epic C — Authentication & Accounts {#TUT-EPIC-C}
 
 - **TUT-US-C1 ✅** As a Learner, I must log in; visiting `/courses`, `/learn`, or
   `/settings` while logged out redirects me to login. *(verified by `auth.cy.ts`.)*
 - **TUT-US-C2 ✅** As a user, my password is stored with Argon2id + pepper
-  (SQL‑backed), not the retired SHA‑256 JSON file. *(verified by `AuthUserImportTests`
+  (SQL‑backed). *(verified by `AuthUserImportTests`
   — legacy SHA‑256 accounts import into the SQL `AuthUsers` store and upgrade on
   first login; Argon2id hashing itself is owned and tested by
   MindAttic.Authentication.)*
@@ -100,61 +99,81 @@ Personas:
   policy. *(enforced by `[Authorize(Policy = MaPolicies.Admin)]`; redirect‑guard
   behavior covered by `auth.cy.ts`.)*
 
-## Epic D — Course Packaging  *(foundation built in production code; not yet test‑pinned)* {#TUT-EPIC-D}
+## Epic D — Course Packaging {#TUT-EPIC-D}
+
+> Built in `Tutor.Core/Services/Packaging` ([BIBLE §4.4](BIBLE.md#TUT-§4)). Each
+> story names its covering test; they stay 🟡 until the suite compiles and a
+> green run is recorded ([BIBLE §6](BIBLE.md#TUT-§6)).
 
 - **TUT-US-D1 🟡** As an Author, I can export a course to a self‑contained
   `.tutor` bundle that includes pre‑computed embeddings, so re‑import skips the
-  LLM pipeline. *Built:* `CourseExporter` + `BundleManifest.IncludesEmbeddings`
-  (11 bundles shipped in `Courses/`). *Gap:* no automated export test in
-  `Tutor.Tests` — pinned only by manual use and the shipped bundles.
+  LLM pipeline. *(covered by
+  `BundleRoundTripTests.Import_RoundTrips_ContentStructureAndEmbeddings`.)*
 - **TUT-US-D2 🟡** As a Recipient, I can install a bundle with `tutor install
-  <file>`, and installing the same bundle twice yields two independent courses
-  (all IDs remapped). *Built:* `BundleImporter` (`Tutor.Cli/Commands/ImportBundleCommand.cs`).
-  *Gap:* the ID‑remap independence is not yet pinned by an automated test.
+  <file>`; installing an explicit duplicate yields two independent courses (all
+  IDs remapped). *(covered by
+  `BundleRoundTripTests.ImportingTwice_YieldsTwoIndependentCourses` and
+  `CourseLifecycleRegistryTests.ExplicitDuplicate_InstallsSideBySide_AsIndependentCourse`.)*
 - **TUT-US-D3 🟡** As an Author, I can remove a course and all its derivatives
   with `tutor delete <id>` (cascades resources, structure, concept maps,
-  embeddings). *Built* in the CLI delete command. *Gap:* the cascade is not
-  pinned by an automated test.
-- **TUT-US-D4 ⬜** As a Recipient, a bundle carries a **stable course key +
-  whole‑number version**, so the system recognizes "you already have *Dracula*"
-  and offers *upgrade vs. duplicate* instead of blindly duplicating.
-  *(Add `CourseKey`/`CourseVersion` to the manifest; `CourseInstallResolver`.)*
-- **TUT-US-D5 ⬜** As a Recipient, a corrupted or tampered `.tutor` is rejected up
-  front with a clear reason, via a **SHA‑256 integrity check** and a **validation
-  pass** (manifest‑first, IO‑free, explicit error codes). *(`CourseManifestValidator`.)*
-- **TUT-US-D6 ⬜** As an Author on a newer build, I can still read **older** bundle
-  formats; only formats *newer than my build* are refused. *(Replace
-  `FormatVersion != 1` with `> HostMax`; add an `Extra` round‑trip dict.)*
+  embeddings, registry row and retained blob). *(covered by
+  `CourseLifecycleRegistryTests.Remove_HardCascades_DataRegistryRowAndBlob` and
+  `DeleteService_DryRunPlan_DoesNotDeleteAnything`.)*
+- **TUT-US-D4 🟡** As a Recipient, a bundle carries a **stable course key +
+  whole‑number version**, so the system recognizes "you already have *Dracula*":
+  same version is a no‑op, a newer one upgrades, an older one is refused unless I
+  ask for a duplicate. *(covered by `CourseInstallResolverTests` and
+  `CourseLifecycleRegistryTests.ReinstallingSameVersion_NoOps_WithoutDuplicating`,
+  `NewerVersion_InstallsAsUpgrade`, `Downgrade_IsRefused`.)*
+- **TUT-US-D5 🟡** As a Recipient, a corrupted or tampered `.tutor` is rejected up
+  front with a clear reason, via a **SHA‑256 integrity check** and a manifest‑first,
+  IO‑free **validation pass** with explicit error codes. *(covered by
+  `CourseManifestValidatorTests`,
+  `BundleRoundTripTests.TamperedBundle_IsRejected_WithShaMismatch` and
+  `CourseLifecycleRegistryTests.InvalidBundle_NeverTouchesRegistryOrStore`.)*
+- **TUT-US-D6 🟡** As an Author on a newer build, I can still read **older** bundle
+  formats; only formats *newer than my build* are refused, and unknown manifest
+  fields round‑trip. *(covered by `BundleRoundTripTests.FormatNewerThanBuild_IsRefused`,
+  `LegacyBundle_WithoutKeyShaOrNewFields_StillImports`,
+  `UnknownManifestFields_RoundTripThroughExtra`.)*
 
-## Epic E — Load / Unload & Sharing  *(the headline goal — planned)* {#TUT-EPIC-E}
+## Epic E — Load / Unload & Sharing {#TUT-EPIC-E}
 
-- **TUT-US-E1 ⬜** As a Learner/Admin, I can **load** a course from a `.tutor`
-  file **in the Blazor app** (upload → validate → plan → confirm → install), not
-  only from the CLI. *(New Courses library page, behind `[Authorize]`.)*
-- **TUT-US-E2 ⬜** As a Learner/Admin, I can **unload** a course so it disappears
-  from my learning view **without destroying** its data or my progress
-  (soft‑disable, `InstalledCourse.Enabled = false`) — mirroring the no‑hard‑delete
-  rule auth already follows ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)).
-  A separate explicit "Remove" performs the hard cascade.
-- **TUT-US-E3 ⬜** As an Admin, I can see **what is installed** — name, key,
-  version, install date, integrity hash, enabled state — in one list.
-  *(`InstalledCourse` registry.)*
-- **TUT-US-E4 ⬜** As a Sharer, I can **re‑share** exactly the bundle I installed,
-  because the verbatim `.tutor` is retained in a blob store.
-  *(`%APPDATA%\Tutor\courses\{key}\{version}.tutor`.)*
-- **TUT-US-E5 ⬜** As a Recipient receiving a shared course, I see its
-  **provenance** before installing — author, license, source attribution,
-  description. *(Provenance fields on `BundleManifest`.)*
-- **TUT-US-E6 ⬜** As an Operator, when a course bundle extracts binary assets to
-  disk, the extractor rejects unsafe entry paths (rooted, drive‑letter, `..`
-  escape) to prevent zip‑slip. *(Port `IdeaArchiveReader.IsSafeEntryPath` — only
-  needed once bundles carry extracted assets.)*
+- **TUT-US-E1 🟡** As an Admin, I can **load** a course from a `.tutor` file **in
+  the Blazor app** at `/library` (upload → validate → plan → confirm → install).
+  *Gap:* no automated UI test; the shared install path is covered by
+  `CourseLifecycleRegistryTests`.
+- **TUT-US-E2 🟡** As an Admin, I can **unload** a course so it disappears from the
+  learning view **without destroying** its data or progress (soft‑disable,
+  `InstalledCourse.Enabled = false`), per
+  [HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2); a separate explicit
+  "Remove" performs the hard cascade. *(covered by
+  `CourseLifecycleRegistryTests.Unload_SoftDisables_WithoutDestroyingDataOrProgress`.)*
+- **TUT-US-E3 🟡** As a signed‑in user, I can see **what is installed** — name, key,
+  version, install date, integrity hash, enabled state — in one list on `/library`.
+  *(registry covered by
+  `CourseLifecycleRegistryTests.Install_RecordsRegistryRow_AndRetainsVerbatimBlob`;
+  the list UI is not automated.)*
+- **TUT-US-E4 🟡** As a Sharer, I can **re‑share** exactly the bundle I installed,
+  because the verbatim `.tutor` is retained at
+  `{AppData}\courses\{key}\{version}.tutor` in the Tutor data folder and downloadable from `/library`.
+  *(covered by
+  `CourseLifecycleRegistryTests.Install_RecordsRegistryRow_AndRetainsVerbatimBlob`.)*
+- **TUT-US-E5 🟡** As a Recipient, I see a course's **provenance** before
+  installing — author, license, source attribution, description. *(manifest fields
+  covered by `BundleRoundTripTests.Export_WritesManifest_WithIdentityIntegrityAndProvenance`;
+  the `/library` preview is not automated.)*
+- **TUT-US-E6 🟡** As an Operator, a bundle with unsafe entry paths (rooted,
+  drive‑letter, `..` escape) is rejected before install, preventing zip‑slip.
+  *(covered by `BundleArchiveSafetyTests.UnsafePaths_AreRejected` and
+  `CourseManifestValidatorTests.UnsafeEntryPath_FailsWithUnsafeEntryPath`.)*
 
 ## Epic F — Cross‑cutting quality (always‑on constraints)
 
-- **TUT-US-F1 ✅** As any contributor, the solution builds clean
+- **TUT-US-F1 🟡** As any contributor, the solution builds clean
   (`dotnet build Tutor.slnx`) and `Tutor.Tests` is green before merge.
-  *(verified 2026-06-07: `dotnet test Tutor.Tests` → 380 passed, 0 failed.)*
+  *Gap:* HEAD does not compile (see [BIBLE §6](BIBLE.md#TUT-§6)); last green run
+  2026-06-07, 380 passed.
 - **TUT-US-F2 ✅** As any contributor, no code path hard‑codes an LLM vendor; all
   calls route through `LlmServiceRouter` over Legion. *(verified by
   `LlmServiceRouterTests`; see [TUT-LAW](BIBLE.md#TUT-§5) /
@@ -172,44 +191,9 @@ Personas:
 
 ## Priority backlog (toward the "share learning" goal)
 
-The user‑facing ask — *load and unload courses so learning can be shared* — is
-**Epic E**, which depends on **D4–D6**. Recommended order:
-
-1. **TUT-US-D4 + D5 + D6** (identity, integrity, forgiving version gate) —
-   additive, low‑risk, fully unit‑testable.
-2. **TUT-US-E3 + E2** (installed registry + soft unload) — turns "delete" into
-   "load/unload."
-3. **TUT-US-E1 + E4 + E5** (in‑app library, re‑share, provenance) — the visible
-   payoff.
-4. **TUT-US-B5** (real per‑user quiz attribution) and **TUT-US-E6** (zip‑slip
-   guard, when assets are bundled) as they become relevant.
-
-See **[RFC 0001 — Course Packaging & Sharing](rfc/0001-course-packaging.md)** for
-the phased implementation plan and the MindAttic.Ideas comparison.
-
----
-
-### Audit log
-
-Stories whose **status changed** during the 2026-06-07 Codex conform pass. The
-original ask is preserved verbatim; only the *status* and the *test citation* were
-corrected to match what an automated test in `Tutor.Tests` actually proves (per
-[HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8), `✅` requires a verifying
-test). No requirement wording was changed.
-
-- **A1–A5** were marked **✅**; downgraded to **🟡** because the end‑to‑end LLM
-  pipeline (paid/non‑deterministic) is not automated. The deterministic
-  primitives (parsers, chunking, LSH/SimHash, structure shape) *are* tested and
-  are now cited. *(original spec — audit log: A1–A5 stated ✅ "shipped & tested".)*
-- **B2** kept **✅**; test citation added (`QuizGenerationServiceTests` +
-  `quiz.cy.ts`) where the original named none.
-- **C2** kept **✅**; clarified that Argon2id hashing is owned/tested by
-  MindAttic.Authentication and the import path is pinned by `AuthUserImportTests`.
-- **C4** was marked **✅**; downgraded to **🟡** because no in‑repo automated test
-  pins the idle‑timeout modal behavior. *(original spec — audit log: C4 stated ✅
-  "(`UserTimeout` + `user-timeout.js`)".)*
-- **D1, D2, D3** were marked **✅**; downgraded to **🟡** because no test in
-  `Tutor.Tests` pins course export/import/delete — the originals cited class names
-  (`CourseExporter`, `BundleImporter`, `BundleManifest.IncludesEmbeddings`), not
-  tests. *(original spec — audit log: D1 "✅ … `CourseExporter`;
-  `BundleManifest.IncludesEmbeddings`", D2 "✅ … `BundleImporter`", D3 "✅ … cascade".)*
+1. **TUT-US-F1** — fix the compile errors and record a green `Tutor.Tests` run;
+   that promotes D1–D6, E2, E4 and E6 to ✅.
+2. **TUT-US-E1 / E3 / E5** — automated UI coverage for `/library`.
+3. **TUT-US-B5** — real per‑user quiz attribution.
+4. **TUT-US-C4** — automated test for the idle‑timeout modal.
+5. **TUT-US-A6** — in‑app course building and monitoring.

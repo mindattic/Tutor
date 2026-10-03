@@ -93,8 +93,7 @@ public class DependencyInjectionTests
         services.AddSingleton<ConceptMapBuildTaskHandler>();
         services.AddSingleton<CourseStructureBuildTaskHandler>();
 
-        // Auth — the in-memory LocalAuthController/AuthenticationService singletons were retired for
-        // MindAttic.Authentication. QuizService now reads identity from IHttpContextAccessor; the full
+        // Auth comes from MindAttic.Authentication. QuizService reads identity from IHttpContextAccessor; the full
         // auth stack (AddMindAtticAuthentication) is exercised by the importer/admin NUnit tests, not
         // this lightweight container check.
         services.AddHttpContextAccessor();

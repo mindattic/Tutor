@@ -2,7 +2,7 @@
 
 Blazor Server app and CLI that turn books and documents into structured courses: a multi-LLM pipeline builds a knowledge graph, then lessons, grounded quizzes and progress tracking from it.
 
-[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/) [![Blazor Server](https://img.shields.io/badge/Blazor-Server-5C2D91)](https://learn.microsoft.com/aspnet/core/blazor/) [![C#](https://img.shields.io/badge/language-C%23-239120)](https://learn.microsoft.com/dotnet/csharp/) [![Tests](https://img.shields.io/badge/NUnit-380%20passing-2E7D32)](docs/BIBLE.md) [![License](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](#license)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/) [![Blazor Server](https://img.shields.io/badge/Blazor-Server-5C2D91)](https://learn.microsoft.com/aspnet/core/blazor/) [![C#](https://img.shields.io/badge/language-C%23-239120)](https://learn.microsoft.com/dotnet/csharp/) [![Tests](https://img.shields.io/badge/tests-NUnit-2E7D32)](docs/BIBLE.md) [![License](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](#license)
 
 ```text
   Moby Dick.epub ---+
@@ -64,7 +64,8 @@ Tutor runs locally; there is no hosted demo. Ten ready-made courses ship in [Cou
 ### Portable courses
 
 - `tutor export` writes a course with its resources, concept maps, structure and embeddings to one `.tutor` file.
-- `tutor install` restores it without re-running the LLM pipeline and rewrites every ID, so installing twice gives two distinct courses.
+- `tutor install` validates the bundle (format version, SHA-256, safe entry paths), plans the install against what is already there, and restores it without re-running the LLM pipeline. The same key and version is a no-op, a newer version upgrades, an older one is refused, and `--allow-duplicate` installs an independent copy with every ID rewritten.
+- The `/library` page lists installed courses and offers a re-share download of the exact bundle each was installed from; admins can upload and install a bundle there, and unload (hide without deleting), load or remove a course.
 - Bundles are independent and never merged (`TUT-LAW-3`).
 
 ### Pluggable LLMs
@@ -191,7 +192,7 @@ tutor gutenberg-top10 --export-dir Courses --quiz-mode both
 tutor build-course <dir-or-zip> --export "Courses/My Course.tutor"
 ```
 
-[RFC 0001, Course Packaging and Sharing](docs/rfc/0001-course-packaging.md) documents the archive layout (`manifest.json`, `course.json`, `courseStructure.json`, per-resource JSON and text, concept maps, `chunks.json`) and the roadmap toward an in-app load and unload library.
+[BIBLE §4.4](docs/BIBLE.md#TUT-§4) documents the archive layout (`manifest.json`, `course.json`, `courseStructure.json`, per-resource JSON and text, concept maps, `chunks.json`) and the install, load, unload and remove lifecycle.
 
 ## Configuration
 
@@ -210,7 +211,7 @@ tutor build-course <dir-or-zip> --export "Courses/My Course.tutor"
 dotnet test Tutor.Tests
 ```
 
-`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. Last recorded run (docs/BIBLE.md, 2026-06-07): 380 passed, 0 failed, 0 skipped. The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
+`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. The last green run on record (2026-06-07) was 380 passed, 0 failed, 0 skipped. At HEAD the suite does not compile; [BIBLE §6](docs/BIBLE.md#TUT-§6) lists the errors. The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
 
 End-to-end tests need the app running on `http://localhost:5200` first:
 
@@ -249,7 +250,7 @@ A feature is done when `dotnet build Tutor.slnx` is clean, `Tutor.Tests` is gree
 | `docs/` | Codex documentation canon. |
 | `tools/` | `codex.ps1` (docs digest and doctor) and `build-readme.ps1` (README.md to README.htm). |
 | `Export.ps1` | Source-export utility, see below. |
-| `index.htm` | Old static landing page from the retired mindattic.com pipeline; not the same file as `README.htm`. |
+| `index.htm` | A static HTML page that no build, deploy or test uses; not the same file as `README.htm`. |
 
 ### Export.ps1
 
@@ -270,17 +271,15 @@ powershell -File Export.ps1
 - Single host: Blazor Server with SQL-backed auth, not built for scale-out or per-tenant isolation.
 - `KimiService` exists but is not wired into `LlmServiceRouter` or the key pools.
 - Debug builds reference a sibling `MindAttic.Authentication` checkout, so a Debug build expects the MindAttic workspace layout.
-- `package.json` still has `build` and `deploy` scripts for the retired landing page; `scripts/cli/` holds no scripts.
+- `package.json` (`tutor-landing`) points its `build` and `deploy` scripts at `scripts/cli/`, which is empty, so neither script runs.
 
 ## Documentation
 
 Tutor follows the MindAttic Codex standard: each fact lives in one layer, linked by a stable ID.
 
 - [docs/BIBLE.md](docs/BIBLE.md) - what Tutor is and is not, architecture, the Laws (`TUT-LAW-n`), verified state, glossary. Where this README and the Bible disagree, the Bible wins.
-- [docs/AMENDMENTS.md](docs/AMENDMENTS.md) - append-only change log (`TUT-A<n>`); an amendment wins over the Bible.
+- [docs/AMENDMENTS.md](docs/AMENDMENTS.md) - pending decisions not yet folded into the Bible; normally empty.
 - [User stories](docs/USER_STORIES.md) - acceptance stories `TUT-US-<Epic><n>`, each done story citing its test.
-- [docs/rfc/0001-course-packaging.md](docs/rfc/0001-course-packaging.md) - course load, unload and share roadmap.
-- [Course packaging design](docs/COURSE%5FPACKAGING%5FDESIGN.md) - design notes behind the `.tutor` bundle format.
 - [docs/BIBLE.digest.md](docs/BIBLE.digest.md) - generated by `tools/codex.ps1 digest`; never hand-edit.
 - [AGENTS.md](AGENTS.md) - instructions for coding agents working in this repo.
 

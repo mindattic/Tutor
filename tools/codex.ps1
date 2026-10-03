@@ -9,7 +9,7 @@
                 schemas, test citations, cited paths, digest freshness).
                 Exits non-zero on any hard error.
       digest  - regenerate docs/BIBLE.digest.md from BIBLE.md (sections 1, 3, 5,
-                9) + a status index + the latest amendment head.
+                9) + a status index + any pending decisions.
 
 .EXAMPLE
     pwsh tools/codex.ps1 doctor
@@ -40,7 +40,6 @@ $Digest   = Join-Path $DocsDir 'BIBLE.digest.md'
 $EMO_DONE    = [char]::ConvertFromUtf32(0x2705)
 $EMO_PARTIAL = [char]::ConvertFromUtf32(0x1F7E1)
 $EMO_PLANNED = [char]::ConvertFromUtf32(0x2B1C)
-$EMO_CUT     = [char]::ConvertFromUtf32(0x1F5D1)
 
 $script:Errors   = New-Object System.Collections.Generic.List[string]
 $script:Warnings = New-Object System.Collections.Generic.List[string]
@@ -346,7 +345,7 @@ function Invoke-Digest {
     $text = Get-Content -LiteralPath $Bible -Encoding UTF8 -Raw
 
     # status index from USER_STORIES
-    $done = 0; $partial = 0; $planned = 0; $cut = 0
+    $done = 0; $partial = 0; $planned = 0
     if (Test-Path $Stories) {
         $s = Get-Content -LiteralPath $Stories -Encoding UTF8
         foreach ($l in $s) {
@@ -354,17 +353,15 @@ function Invoke-Digest {
                 if     ($l -match [regex]::Escape($EMO_DONE))    { $done++ }
                 elseif ($l -match [regex]::Escape($EMO_PARTIAL)) { $partial++ }
                 elseif ($l -match [regex]::Escape($EMO_PLANNED)) { $planned++ }
-                elseif ($l -match [regex]::Escape($EMO_CUT))     { $cut++ }
             }
         }
     }
 
-    # latest amendment head
-    $amendHead = "_No amendments (epoch 0)._"
+    # pending decisions (only listed when AMENDMENTS.md has entries)
+    $pending = @()
     if (Test-Path $Amend) {
         $am = Get-Content -LiteralPath $Amend -Encoding UTF8
-        $h = $am | Where-Object { $_ -match '^##\s+TUT-A\d+' } | Select-Object -Last 1
-        if ($h) { $amendHead = $h.TrimStart('# ').Trim() }
+        $pending = @($am | Where-Object { $_ -match '^##\s+TUT-A\d+' } | ForEach-Object { $_.TrimStart('# ').Trim() })
     }
 
     $sec1 = Get-BibleSection $text '1. The one sentence'
@@ -394,13 +391,14 @@ function Invoke-Digest {
     [void]$sb.AppendLine("- done: $done")
     [void]$sb.AppendLine("- partial: $partial")
     [void]$sb.AppendLine("- planned: $planned")
-    [void]$sb.AppendLine("- cut: $cut")
-    [void]$sb.AppendLine("")
-    [void]$sb.AppendLine("## Latest amendment")
-    [void]$sb.AppendLine($amendHead)
+    if ($pending.Count -gt 0) {
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("## Pending decisions")
+        foreach ($h in $pending) { [void]$sb.AppendLine("- $h") }
+    }
 
     Set-Content -LiteralPath $Digest -Value $sb.ToString() -Encoding UTF8
-    Write-Host "Wrote docs/BIBLE.digest.md (done:$done partial:$partial planned:$planned cut:$cut)" -ForegroundColor Green
+    Write-Host "Wrote docs/BIBLE.digest.md (done:$done partial:$partial planned:$planned)" -ForegroundColor Green
 }
 
 switch ($Command) {

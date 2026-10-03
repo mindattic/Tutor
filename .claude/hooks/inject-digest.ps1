@@ -23,7 +23,7 @@ $preamble = @"
 The following is the AUTHORITATIVE Tutor project digest, generated from docs/BIBLE.md.
 Treat it as the source of truth for what Tutor IS, is NOT, and its Laws. When this
 digest and your assumptions disagree, the digest wins. Full detail lives in
-docs/BIBLE.md; user stories in docs/USER_STORIES.md; design notes in docs/rfc/.
+docs/BIBLE.md; user stories in docs/USER_STORIES.md.
 
 "@
 
