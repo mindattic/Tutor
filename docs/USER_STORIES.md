@@ -98,6 +98,12 @@ Personas:
 - **TUT-US-C6 ✅** As an Admin, the Users page is reachable only with the Admin
   policy. *(enforced by `[Authorize(Policy = MaPolicies.Admin)]`; redirect‑guard
   behavior covered by `auth.cy.ts`.)*
+- **TUT-US-C7 ✅** As a user who forgot my password, I follow "Forgot password?" on `/login`, get an
+  emailed link to `https://localhost:7200/account/reset` (`MindAttic:Auth:Reset:PublicBaseUrl` in
+  `Tutor.Blazor/appsettings.json` + the library's `ResetPath`), and setting a new password there replaces
+  the old one. Mail is sent only when the Vault `Notifications` SMTP settings are configured. *(verified by
+  `PasswordResetFlowTests.RequestReset_EmailsAnAbsoluteLinkToTheResetPage_WhichResetsThePassword` and
+  `PasswordResetFlowTests.ResetAndForgotPages_AreAnonymousStaticPages`.)*
 
 ## Epic D — Course Packaging {#TUT-EPIC-D}
 

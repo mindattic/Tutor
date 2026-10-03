@@ -215,13 +215,13 @@ messages and the plan before asking to confirm.
 > ✅ verified · 🟡 partial · ⬜ planned.
 
 **Build/test evidence (2026-10-03):** `dotnet build Tutor.slnx` → 0 errors (Debug and
-Release); `dotnet test Tutor.Tests` → **Passed: 448, Failed: 0, Skipped: 0**, including the
+Release); `dotnet test Tutor.Tests` → **Passed: 450, Failed: 0, Skipped: 0**, including the
 packaging tests in `Tutor.Tests/Packaging`.
 
 ### 6.1 Authentication canon ✅
 
 Tutor authenticates through **MindAttic.Authentication**
-([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), package 5.0.0 (Debug
+([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), package 6.0.0 (Debug
 builds also reference the sibling source project). The shape:
 
 - **Storage:** SQL Server (`TutorAuthDbContext`). `AuthUsers` (Argon2id + pepper)
@@ -235,17 +235,21 @@ builds also reference the sibling source project). The shape:
   login, weak dev seeds flagged `MustChangePassword`) →
   `AuthBootstrapper.SeedAdminAsync` (operator‑provided Vault
   `Security:bootstrap-token`, fail‑closed).
-- **Auth email:** the library delivers reset and security-alert mail over SMTP when the
-  Vault `Notifications` bucket (`MindAttic:Vault:Notifications:email`, loaded by
-  `Tutor.Blazor/Program.cs`) is complete; otherwise it logs a startup warning and sends
-  nothing. Tutor sets no `MindAttic:Auth:Reset:PublicBaseUrl` and hosts no reset page, so
-  self-service reset mail is not sent; admins reset passwords on `/users`.
+- **Auth email:** the library delivers reset links and security alerts (password changed or
+  reset, two-step verification on, recovery code used, repeated failed sign-ins, new-device
+  sign-in, email changed, account deactivated) over SMTP when the Vault `Notifications` bucket
+  (`MindAttic:Vault:Notifications:email`, loaded by `Tutor.Blazor/Program.cs`) is complete;
+  otherwise it logs a startup warning and sends nothing.
+- **Self-service reset:** `/login` links to `/forgot-password` (`MaForgotPassword`); the emailed
+  link opens `/account/reset` (`MaResetPassword`, the library's `ResetPath`). Both pages are
+  anonymous static SSR in `Tutor.Shared`. Links use `MindAttic:Auth:Reset:PublicBaseUrl` =
+  `https://localhost:7200` (`Tutor.Blazor/appsettings.json`). Admins can still reset on `/users`.
 - **UI:** shared `UserCircle` (avatar/role menu + logout), `UserTimeout`
   (idle‑logout modal), `UserLogin` (styles `MaLogin`). Admin **Users** page at
   `/users` behind `[Authorize(Policy = MaPolicies.Admin)]` — create / edit role /
   reset password / **soft‑disable** (no hard delete).
 - **Verified by:** `AuthUserImportTests`, `UsersAdminContractTests`,
-  `auth.cy.ts`. See [stories C1–C6](USER_STORIES.md#TUT-EPIC-C).
+  `PasswordResetFlowTests`, `auth.cy.ts`. See [stories C1–C7](USER_STORIES.md#TUT-EPIC-C).
 
 ### 6.2 Course lifecycle ✅
 

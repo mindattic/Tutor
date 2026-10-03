@@ -32,6 +32,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Tutor.Core\Tutor.Core.csproj" />
+        <!-- Page routes/attributes for the password-reset flow test (PasswordResetFlowTests). -->
+        <ProjectReference Include="..\Tutor.Shared\Tutor.Shared.csproj" />
     </ItemGroup>
 
 </Project>
