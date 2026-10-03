@@ -154,8 +154,11 @@ Both front doors go through one code path, `CourseInstallService`:
 
 The Blazor `/library` page (`[Authorize]`) lists installed courses with a
 re‑share download (`/api/library/{courseId}/bundle`); install, load/unload and
-remove are admin‑only. Install previews the manifest, provenance, validation
-messages and the plan before asking to confirm.
+remove are admin‑only. The page only hides those controls from non‑admins; the
+handlers themselves run through `LibraryAdminActions` (`Tutor.Shared/Services`),
+which authorizes the circuit's user against `MaPolicies.Admin` on the server and
+refuses anyone else before anything changes. Install previews the manifest,
+provenance, validation messages and the plan before asking to confirm.
 
 ---
 
@@ -263,7 +266,8 @@ Build → lock → unlock by mastery → final exam → certificate → unload, 
 The lifecycle in [§4.4](#TUT-§4) is built and covered by `BundleRoundTripTests`,
 `CourseManifestValidatorTests`, `CourseInstallResolverTests`,
 `CourseLifecycleRegistryTests` and `BundleArchiveSafetyTests`, all green in the
-2026-10-03 run. The `/library` page has no automated UI test.
+2026-10-03 run. The `/library` actions' server-side admin check is covered by
+`LibraryAdminActionsTests`; the page itself has no automated UI test.
 See [Epic D](USER_STORIES.md#TUT-EPIC-D) and [Epic E](USER_STORIES.md#TUT-EPIC-E).
 
 ### 6.4 Known limitation 🟡

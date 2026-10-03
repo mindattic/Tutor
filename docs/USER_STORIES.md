@@ -154,6 +154,13 @@ Personas:
   [HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2); a separate explicit
   "Remove" performs the hard cascade. *(verified by
   `CourseLifecycleRegistryTests.Unload_SoftDisables_WithoutDestroyingDataOrProgress`.)*
+- **TUT-US-E7 ✅** As an Operator, only an Admin can install, load, unload or remove a
+  course on `/library`: the server checks the Admin policy on every one of those
+  actions, so a non‑admin (or anonymous) call is refused and changes nothing, even
+  though the page also hides the controls. *(verified by
+  `LibraryAdminActionsTests.NonAdmin_LoadUnloadRemove_AreRefused_AndChangeNothing`,
+  `NonAdmin_PreviewAndInstall_AreRefused_AndInstallNothing`,
+  `Admin_CanUnloadLoadAndRemove`.)*
 - **TUT-US-E3 🟡** As a signed‑in user, I can see **what is installed** — name, key,
   version, install date, integrity hash, enabled state — in one list on `/library`.
   *(registry covered by
@@ -177,7 +184,7 @@ Personas:
 
 - **TUT-US-F1 ✅** As any contributor, the solution builds clean
   (`dotnet build Tutor.slnx`) and `Tutor.Tests` is green before merge.
-  *(verified 2026-10-03: build 0 errors; `dotnet test Tutor.Tests` 448 passed, 0 failed;
+  *(verified 2026-10-03: build 0 errors; `dotnet test Tutor.Tests` 454 passed, 0 failed;
   see [BIBLE §6](BIBLE.md#TUT-§6).)*
 - **TUT-US-F2 ✅** As any contributor, no code path hard‑codes an LLM vendor; all
   calls route through `LlmServiceRouter` over Legion. *(verified by

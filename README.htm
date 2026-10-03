@@ -200,7 +200,7 @@ pre:hover .cpbtn{opacity:1}
 <ul>
 <li><code>tutor export</code> writes a course with its resources, concept maps, structure and embeddings to one <code>.tutor</code> file.</li>
 <li><code>tutor install</code> validates the bundle (format version, SHA-256, safe entry paths), plans the install against what is already there, and restores it without re-running the LLM pipeline. The same key and version is a no-op, a newer version upgrades, an older one is refused, and <code>--allow-duplicate</code> installs an independent copy with every ID rewritten.</li>
-<li>The <code>/library</code> page lists installed courses and offers a re-share download of the exact bundle each was installed from; admins can upload and install a bundle there, and unload (hide without deleting), load or remove a course.</li>
+<li>The <code>/library</code> page lists installed courses and offers a re-share download of the exact bundle each was installed from; admins can upload and install a bundle there, and unload (hide without deleting), load or remove a course. Those actions are authorized against the Admin policy on the server, not only hidden in the UI (<code>LibraryAdminActions</code>).</li>
 <li>Bundles are independent and never merged (<code>TUT-LAW-3</code>).</li>
 </ul>
 <h3 id="pluggable-llms">Pluggable LLMs</h3>
@@ -419,7 +419,7 @@ tutor build-course &lt;dir-or-zip&gt; --export "Courses/My Course.tutor"</code><
 <p><code>Tutor.Mcp</code> is a stdio Model Context Protocol server that exposes the key-pool operations (list, set, add, remove, clear, per provider) as tools, so an assistant can rotate Tutor's keys without a human running <code>tutor keys</code>. It is not part of <code>Tutor.slnx</code>; run it with <code>dotnet run --project Tutor.Mcp</code> from an MCP client.</p>
 <h2 id="testing">Testing</h2>
 <pre><code class="language-powershell">dotnet test Tutor.Tests</code></pre>
-<p><code>Tutor.Tests</code> (NUnit) is organised into <code>Fakes</code>, <code>Models</code>, <code>Packaging</code>, <code>Parsers</code> and <code>Services</code>. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in <code>FullCourseLifecycleTests</code>. The 2026-10-03 run: 450 passed, 0 failed, 0 skipped (<a href="docs/BIBLE.md#TUT-§6">BIBLE §6</a>). The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in <a href="docs/USER%5FSTORIES.md">docs/USER%5FSTORIES.md</a>.</p>
+<p><code>Tutor.Tests</code> (NUnit) is organised into <code>Fakes</code>, <code>Models</code>, <code>Packaging</code>, <code>Parsers</code> and <code>Services</code>. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in <code>FullCourseLifecycleTests</code>. The 2026-10-03 run: 454 passed, 0 failed, 0 skipped (<a href="docs/BIBLE.md#TUT-§6">BIBLE §6</a>). The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in <a href="docs/USER%5FSTORIES.md">docs/USER%5FSTORIES.md</a>.</p>
 <p>End-to-end tests need the app running on <code>http://localhost:5200</code> first:</p>
 <pre><code class="language-powershell">cd Tutor.Cypress
 npm install
@@ -508,10 +508,6 @@ npm run cypress:run</code></pre>
 <td><code>Export.ps1</code></td>
 <td>Source-export utility, see below.</td>
 </tr>
-<tr>
-<td><code>index.htm</code></td>
-<td>A static HTML page that no build, deploy or test uses; not the same file as <code>README.htm</code>.</td>
-</tr>
 </tbody></table>
 <h3 id="exportps1">Export.ps1</h3>
 <p><code>Export.ps1</code> is a generic source-bundling script (its header still describes a Unity export). It walks the tree, collects <code>.cs</code> files, skips <code>.git</code>, <code>.vs</code>, <code>obj</code>, <code>bin</code> and similar folders, and writes <code>ExportedScripts.txt</code>: a JSON manifest (path, SHA-256, size, line count) followed by every file between <code>&lt;&lt;&lt;FILE START&gt;&gt;&gt;</code> and <code>&lt;&lt;&lt;FILE END&gt;&gt;&gt;</code> markers. <code>ExportedScripts.txt</code> in the repo is its latest output.</p>
@@ -527,7 +523,6 @@ npm run cypress:run</code></pre>
 <li>Single host: Blazor Server with SQL-backed auth, not built for scale-out or per-tenant isolation.</li>
 <li><code>KimiService</code> exists but is not wired into <code>LlmServiceRouter</code> or the key pools.</li>
 <li>Debug builds reference a sibling <code>MindAttic.Authentication</code> checkout, so a Debug build expects the MindAttic workspace layout.</li>
-<li><code>package.json</code> (<code>tutor-landing</code>) points its <code>build</code> and <code>deploy</code> scripts at <code>scripts/cli/</code>, which is empty, so neither script runs.</li>
 </ul>
 <h2 id="documentation">Documentation</h2>
 <p>Tutor follows the MindAttic Codex standard: each fact lives in one layer, linked by a stable ID.</p>

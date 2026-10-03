@@ -88,7 +88,7 @@ shared, loaded, and unloaded.
 | **Vault** | `MindAttic.Vault` — credential resolution library. |
 
 ## Status index
-- done: 24
+- done: 25
 - partial: 11
 - planned: 0
 

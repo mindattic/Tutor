@@ -4,8 +4,9 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MindAttic.Authentication
 @using Tutor.Core.Services.Packaging
+@using Tutor.Shared.Services
 @inject InstalledCourseRegistry Registry
-@inject CourseInstallService InstallService
+@inject LibraryAdminActions AdminActions
 
 <PageTitle>Course Library</PageTitle>
 
@@ -132,7 +133,28 @@
     private string statusMessage = "";
     private bool isError;
 
+    // Every state-changing handler below goes through LibraryAdminActions, which authorizes the circuit's
+    // principal against the Admin policy on the server. The AuthorizeView blocks only hide the controls.
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
     protected override async Task OnInitializedAsync() => await RefreshListAsync();
+
+    private async Task<System.Security.Claims.ClaimsPrincipal> UserAsync() => (await AuthState).User;
+
+    /// <summary>Runs an admin action; a refused authorization is shown, never swallowed silently.</summary>
+    private async Task<bool> AsAdminAsync(Func<System.Security.Claims.ClaimsPrincipal, Task> action)
+    {
+        try
+        {
+            await action(await UserAsync());
+            return true;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Fail(ex.Message);
+            return false;
+        }
+    }
 
     private async Task RefreshListAsync() =>
         installed = (await Registry.GetAllAsync()).OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ToList();
@@ -141,6 +163,8 @@
     {
         CleanupPendingBundle();
         statusMessage = ""; isError = false; allowDuplicate = false;
+        var user = await UserAsync();
+        if (!await AdminActions.IsAdminAsync(user)) { Fail("Only an admin can change the course library."); return; }
 
         // Buffer the upload to a temp file so the same file-path code path the
         // CLI uses (validate -> plan -> install) handles it from here.
@@ -153,7 +177,7 @@
                 await source.CopyToAsync(target);
             }
 
-            preview = await InstallService.PreviewAsync(pendingBundlePath, allowDuplicate);
+            preview = await AdminActions.PreviewAsync(user, pendingBundlePath, allowDuplicate);
         }
         catch (Exception ex)
         {
@@ -165,7 +189,8 @@
     private async Task RefreshPreviewAsync()
     {
         if (pendingBundlePath == null) return;
-        preview = await InstallService.PreviewAsync(pendingBundlePath, allowDuplicate);
+        var path = pendingBundlePath;
+        await AsAdminAsync(async user => preview = await AdminActions.PreviewAsync(user, path, allowDuplicate));
     }
 
     private async Task ConfirmInstallAsync()
@@ -174,7 +199,7 @@
         busy = true;
         try
         {
-            var outcome = await InstallService.InstallAsync(pendingBundlePath, overrideCourseName: null, allowDuplicate);
+            var outcome = await AdminActions.InstallAsync(await UserAsync(), pendingBundlePath, allowDuplicate);
             if (outcome.DidInstall)
             {
                 statusMessage = $"Installed '{outcome.Installed!.Name}' ({outcome.Installed.CourseKey} v{outcome.Installed.CourseVersion}).";
@@ -201,16 +226,15 @@
 
     private async Task ToggleAsync(InstalledCourse row)
     {
-        if (row.Enabled)
-            await InstallService.UnloadAsync(row.CourseId);
-        else
-            await InstallService.LoadAsync(row.CourseId);
+        await AsAdminAsync(user => row.Enabled
+            ? AdminActions.UnloadAsync(user, row.CourseId)
+            : AdminActions.LoadAsync(user, row.CourseId));
         await RefreshListAsync();
     }
 
     private async Task RemoveAsync(InstalledCourse row)
     {
-        await InstallService.RemoveAsync(row.CourseId);
+        if (!await AsAdminAsync(user => AdminActions.RemoveAsync(user, row.CourseId))) return;
         statusMessage = $"Removed '{row.Name}' and all of its data.";
         isError = false;
         await RefreshListAsync();

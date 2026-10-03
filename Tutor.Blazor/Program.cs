@@ -241,6 +241,8 @@ builder.Services.AddSingleton<CourseDeleteService>();
 builder.Services.AddSingleton<InstalledCourseRegistry>();
 builder.Services.AddSingleton<CourseBlobStore>();
 builder.Services.AddSingleton<CourseInstallService>();
+// Library page actions, authorized against the Admin policy on the server (per circuit user).
+builder.Services.AddScoped<Tutor.Shared.Services.LibraryAdminActions>();
 
 var app = builder.Build();
 

@@ -65,7 +65,7 @@ Tutor runs locally; there is no hosted demo. Ten ready-made courses ship in [Cou
 
 - `tutor export` writes a course with its resources, concept maps, structure and embeddings to one `.tutor` file.
 - `tutor install` validates the bundle (format version, SHA-256, safe entry paths), plans the install against what is already there, and restores it without re-running the LLM pipeline. The same key and version is a no-op, a newer version upgrades, an older one is refused, and `--allow-duplicate` installs an independent copy with every ID rewritten.
-- The `/library` page lists installed courses and offers a re-share download of the exact bundle each was installed from; admins can upload and install a bundle there, and unload (hide without deleting), load or remove a course.
+- The `/library` page lists installed courses and offers a re-share download of the exact bundle each was installed from; admins can upload and install a bundle there, and unload (hide without deleting), load or remove a course. Those actions are authorized against the Admin policy on the server, not only hidden in the UI (`LibraryAdminActions`).
 - Bundles are independent and never merged (`TUT-LAW-3`).
 
 ### Pluggable LLMs
@@ -211,7 +211,7 @@ tutor build-course <dir-or-zip> --export "Courses/My Course.tutor"
 dotnet test Tutor.Tests
 ```
 
-`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. The 2026-10-03 run: 450 passed, 0 failed, 0 skipped ([BIBLE §6](docs/BIBLE.md#TUT-§6)). The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
+`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. The 2026-10-03 run: 454 passed, 0 failed, 0 skipped ([BIBLE §6](docs/BIBLE.md#TUT-§6)). The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
 
 End-to-end tests need the app running on `http://localhost:5200` first:
 
@@ -250,7 +250,6 @@ A feature is done when `dotnet build Tutor.slnx` is clean, `Tutor.Tests` is gree
 | `docs/` | Codex documentation canon. |
 | `tools/` | `codex.ps1` (docs digest and doctor) and `build-readme.ps1` (README.md to README.htm). |
 | `Export.ps1` | Source-export utility, see below. |
-| `index.htm` | A static HTML page that no build, deploy or test uses; not the same file as `README.htm`. |
 
 ### Export.ps1
 
@@ -271,7 +270,6 @@ powershell -File Export.ps1
 - Single host: Blazor Server with SQL-backed auth, not built for scale-out or per-tenant isolation.
 - `KimiService` exists but is not wired into `LlmServiceRouter` or the key pools.
 - Debug builds reference a sibling `MindAttic.Authentication` checkout, so a Debug build expects the MindAttic workspace layout.
-- `package.json` (`tutor-landing`) points its `build` and `deploy` scripts at `scripts/cli/`, which is empty, so neither script runs.
 
 ## Documentation
 
