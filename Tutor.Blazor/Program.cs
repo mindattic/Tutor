@@ -25,9 +25,11 @@ var builder = WebApplication.CreateBuilder(args);
 //     and Azure Key Vault references in production.
 // "Security" is the MindAttic.Authentication trust domain (pepper, bootstrap-token,
 // reset-token-key); it is NOT in the default bucket list, so it must be named explicitly
-// or the auth secrets never bind and AuthBootstrapper fail-closes.
+// or the auth secrets never bind and AuthBootstrapper fail-closes. "Notifications" carries the SMTP
+// settings (email:{smtpHost,smtpPort,username,password,from}) the auth library uses to deliver
+// password-reset/security-alert email; without them it logs a startup warning and mail is not sent.
 builder.Configuration
-    .AddMindAtticVaultFiles(o => o.Buckets = new[] { "LLM", "Security" });
+    .AddMindAtticVaultFiles(o => o.Buckets = new[] { "LLM", "Security", "Notifications" });
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

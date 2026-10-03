@@ -214,26 +214,14 @@ messages and the plan before asking to confirm.
 > What's proven working, with the build/test evidence. Status legend:
 > ✅ verified · 🟡 partial · ⬜ planned.
 
-**Build/test evidence:** the last green run on record is `dotnet test Tutor.Tests`
-→ **Passed: 380, Failed: 0, Skipped: 0** (2026-06-07). The packaging tests in
-`Tutor.Tests/Packaging` were added after that run and have no green run on record.
-
-**Current build: broken (checked 2026-10-03).** `dotnet test Tutor.Tests` does not
-compile at HEAD:
-
-- `ClaudeService`, `DeepSeekService`, `GeminiService` and `OpenAIService` are
-  declared in the global namespace and call `KeyPoolFailover`, which lives in
-  `Tutor.Core.Services`, without a `using` (CS0103).
-- `Tutor.Tests/Fakes/FakeSecurePreferences.cs` does not implement
-  `ISecurePreferences.GetApiKeysAsync` / `SetApiKeysAsync` (CS0535).
-
-Until the suite compiles again, ✅ stories rest on the 2026‑06‑07 run and the
-packaging stories stay 🟡.
+**Build/test evidence (2026-10-03):** `dotnet build Tutor.slnx` → 0 errors (Debug and
+Release); `dotnet test Tutor.Tests` → **Passed: 448, Failed: 0, Skipped: 0**, including the
+packaging tests in `Tutor.Tests/Packaging`.
 
 ### 6.1 Authentication canon ✅
 
 Tutor authenticates through **MindAttic.Authentication**
-([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), package 2.0.0 (Debug
+([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), package 5.0.0 (Debug
 builds also reference the sibling source project). The shape:
 
 - **Storage:** SQL Server (`TutorAuthDbContext`). `AuthUsers` (Argon2id + pepper)
@@ -247,6 +235,11 @@ builds also reference the sibling source project). The shape:
   login, weak dev seeds flagged `MustChangePassword`) →
   `AuthBootstrapper.SeedAdminAsync` (operator‑provided Vault
   `Security:bootstrap-token`, fail‑closed).
+- **Auth email:** the library delivers reset and security-alert mail over SMTP when the
+  Vault `Notifications` bucket (`MindAttic:Vault:Notifications:email`, loaded by
+  `Tutor.Blazor/Program.cs`) is complete; otherwise it logs a startup warning and sends
+  nothing. Tutor sets no `MindAttic:Auth:Reset:PublicBaseUrl` and hosts no reset page, so
+  self-service reset mail is not sent; admins reset passwords on `/users`.
 - **UI:** shared `UserCircle` (avatar/role menu + logout), `UserTimeout`
   (idle‑logout modal), `UserLogin` (styles `MaLogin`). Admin **Users** page at
   `/users` behind `[Authorize(Policy = MaPolicies.Admin)]` — create / edit role /
@@ -265,8 +258,8 @@ Build → lock → unlock by mastery → final exam → certificate → unload, 
 
 The lifecycle in [§4.4](#TUT-§4) is built and covered by `BundleRoundTripTests`,
 `CourseManifestValidatorTests`, `CourseInstallResolverTests`,
-`CourseLifecycleRegistryTests` and `BundleArchiveSafetyTests`, none of which has a
-green run on record (see above). The `/library` page has no automated UI test.
+`CourseLifecycleRegistryTests` and `BundleArchiveSafetyTests`, all green in the
+2026-10-03 run. The `/library` page has no automated UI test.
 See [Epic D](USER_STORIES.md#TUT-EPIC-D) and [Epic E](USER_STORIES.md#TUT-EPIC-E).
 
 ### 6.4 Known limitation 🟡

@@ -14,6 +14,7 @@
 using System.Text.Json;
 using MindAttic.Legion;
 using Tutor.Core.Models;
+using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
 

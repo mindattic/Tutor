@@ -102,38 +102,37 @@ Personas:
 ## Epic D — Course Packaging {#TUT-EPIC-D}
 
 > Built in `Tutor.Core/Services/Packaging` ([BIBLE §4.4](BIBLE.md#TUT-§4)). Each
-> story names its covering test; they stay 🟡 until the suite compiles and a
-> green run is recorded ([BIBLE §6](BIBLE.md#TUT-§6)).
+> story names its covering test; the suite is green ([BIBLE §6](BIBLE.md#TUT-§6)).
 
-- **TUT-US-D1 🟡** As an Author, I can export a course to a self‑contained
+- **TUT-US-D1 ✅** As an Author, I can export a course to a self‑contained
   `.tutor` bundle that includes pre‑computed embeddings, so re‑import skips the
-  LLM pipeline. *(covered by
+  LLM pipeline. *(verified by
   `BundleRoundTripTests.Import_RoundTrips_ContentStructureAndEmbeddings`.)*
-- **TUT-US-D2 🟡** As a Recipient, I can install a bundle with `tutor install
+- **TUT-US-D2 ✅** As a Recipient, I can install a bundle with `tutor install
   <file>`; installing an explicit duplicate yields two independent courses (all
-  IDs remapped). *(covered by
+  IDs remapped). *(verified by
   `BundleRoundTripTests.ImportingTwice_YieldsTwoIndependentCourses` and
   `CourseLifecycleRegistryTests.ExplicitDuplicate_InstallsSideBySide_AsIndependentCourse`.)*
-- **TUT-US-D3 🟡** As an Author, I can remove a course and all its derivatives
+- **TUT-US-D3 ✅** As an Author, I can remove a course and all its derivatives
   with `tutor delete <id>` (cascades resources, structure, concept maps,
-  embeddings, registry row and retained blob). *(covered by
+  embeddings, registry row and retained blob). *(verified by
   `CourseLifecycleRegistryTests.Remove_HardCascades_DataRegistryRowAndBlob` and
   `DeleteService_DryRunPlan_DoesNotDeleteAnything`.)*
-- **TUT-US-D4 🟡** As a Recipient, a bundle carries a **stable course key +
+- **TUT-US-D4 ✅** As a Recipient, a bundle carries a **stable course key +
   whole‑number version**, so the system recognizes "you already have *Dracula*":
   same version is a no‑op, a newer one upgrades, an older one is refused unless I
-  ask for a duplicate. *(covered by `CourseInstallResolverTests` and
+  ask for a duplicate. *(verified by `CourseInstallResolverTests` and
   `CourseLifecycleRegistryTests.ReinstallingSameVersion_NoOps_WithoutDuplicating`,
   `NewerVersion_InstallsAsUpgrade`, `Downgrade_IsRefused`.)*
-- **TUT-US-D5 🟡** As a Recipient, a corrupted or tampered `.tutor` is rejected up
+- **TUT-US-D5 ✅** As a Recipient, a corrupted or tampered `.tutor` is rejected up
   front with a clear reason, via a **SHA‑256 integrity check** and a manifest‑first,
-  IO‑free **validation pass** with explicit error codes. *(covered by
+  IO‑free **validation pass** with explicit error codes. *(verified by
   `CourseManifestValidatorTests`,
   `BundleRoundTripTests.TamperedBundle_IsRejected_WithShaMismatch` and
   `CourseLifecycleRegistryTests.InvalidBundle_NeverTouchesRegistryOrStore`.)*
-- **TUT-US-D6 🟡** As an Author on a newer build, I can still read **older** bundle
+- **TUT-US-D6 ✅** As an Author on a newer build, I can still read **older** bundle
   formats; only formats *newer than my build* are refused, and unknown manifest
-  fields round‑trip. *(covered by `BundleRoundTripTests.FormatNewerThanBuild_IsRefused`,
+  fields round‑trip. *(verified by `BundleRoundTripTests.FormatNewerThanBuild_IsRefused`,
   `LegacyBundle_WithoutKeyShaOrNewFields_StillImports`,
   `UnknownManifestFields_RoundTripThroughExtra`.)*
 
@@ -143,37 +142,37 @@ Personas:
   the Blazor app** at `/library` (upload → validate → plan → confirm → install).
   *Gap:* no automated UI test; the shared install path is covered by
   `CourseLifecycleRegistryTests`.
-- **TUT-US-E2 🟡** As an Admin, I can **unload** a course so it disappears from the
+- **TUT-US-E2 ✅** As an Admin, I can **unload** a course so it disappears from the
   learning view **without destroying** its data or progress (soft‑disable,
   `InstalledCourse.Enabled = false`), per
   [HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2); a separate explicit
-  "Remove" performs the hard cascade. *(covered by
+  "Remove" performs the hard cascade. *(verified by
   `CourseLifecycleRegistryTests.Unload_SoftDisables_WithoutDestroyingDataOrProgress`.)*
 - **TUT-US-E3 🟡** As a signed‑in user, I can see **what is installed** — name, key,
   version, install date, integrity hash, enabled state — in one list on `/library`.
   *(registry covered by
   `CourseLifecycleRegistryTests.Install_RecordsRegistryRow_AndRetainsVerbatimBlob`;
   the list UI is not automated.)*
-- **TUT-US-E4 🟡** As a Sharer, I can **re‑share** exactly the bundle I installed,
+- **TUT-US-E4 ✅** As a Sharer, I can **re‑share** exactly the bundle I installed,
   because the verbatim `.tutor` is retained at
   `{AppData}\courses\{key}\{version}.tutor` in the Tutor data folder and downloadable from `/library`.
-  *(covered by
+  *(verified by
   `CourseLifecycleRegistryTests.Install_RecordsRegistryRow_AndRetainsVerbatimBlob`.)*
 - **TUT-US-E5 🟡** As a Recipient, I see a course's **provenance** before
   installing — author, license, source attribution, description. *(manifest fields
   covered by `BundleRoundTripTests.Export_WritesManifest_WithIdentityIntegrityAndProvenance`;
   the `/library` preview is not automated.)*
-- **TUT-US-E6 🟡** As an Operator, a bundle with unsafe entry paths (rooted,
+- **TUT-US-E6 ✅** As an Operator, a bundle with unsafe entry paths (rooted,
   drive‑letter, `..` escape) is rejected before install, preventing zip‑slip.
-  *(covered by `BundleArchiveSafetyTests.UnsafePaths_AreRejected` and
+  *(verified by `BundleArchiveSafetyTests.UnsafePaths_AreRejected` and
   `CourseManifestValidatorTests.UnsafeEntryPath_FailsWithUnsafeEntryPath`.)*
 
 ## Epic F — Cross‑cutting quality (always‑on constraints)
 
-- **TUT-US-F1 🟡** As any contributor, the solution builds clean
+- **TUT-US-F1 ✅** As any contributor, the solution builds clean
   (`dotnet build Tutor.slnx`) and `Tutor.Tests` is green before merge.
-  *Gap:* HEAD does not compile (see [BIBLE §6](BIBLE.md#TUT-§6)); last green run
-  2026-06-07, 380 passed.
+  *(verified 2026-10-03: build 0 errors; `dotnet test Tutor.Tests` 448 passed, 0 failed;
+  see [BIBLE §6](BIBLE.md#TUT-§6).)*
 - **TUT-US-F2 ✅** As any contributor, no code path hard‑codes an LLM vendor; all
   calls route through `LlmServiceRouter` over Legion. *(verified by
   `LlmServiceRouterTests`; see [TUT-LAW](BIBLE.md#TUT-§5) /

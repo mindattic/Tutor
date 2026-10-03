@@ -130,7 +130,7 @@ A `Course` never embeds content. Content lives in resources, structure, concept 
 | Parsing | PdfPig, VersOne.Epub, AngleSharp, SmartReader, DocumentFormat.OpenXml, plus LibreOffice and Calibre |
 | OCR | Tesseract 5.2.0, trained data in `Tutor.Core/tessdata` |
 | RAG | In-process vector store plus LSH and SimHash |
-| Auth | MindAttic.Authentication 2.0.0 on SQL Server (`TutorAuthDbContext`) |
+| Auth | MindAttic.Authentication 5.0.0 on SQL Server (`TutorAuthDbContext`); auth email over SMTP from the Vault `Notifications` bucket when configured |
 | Tests | NUnit (`Tutor.Tests`) and Cypress (`Tutor.Cypress`) |
 
 ## CLI reference
@@ -211,7 +211,7 @@ tutor build-course <dir-or-zip> --export "Courses/My Course.tutor"
 dotnet test Tutor.Tests
 ```
 
-`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. The last green run on record (2026-06-07) was 380 passed, 0 failed, 0 skipped. At HEAD the suite does not compile; [BIBLE §6](docs/BIBLE.md#TUT-§6) lists the errors. The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
+`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. The 2026-10-03 run: 448 passed, 0 failed, 0 skipped ([BIBLE §6](docs/BIBLE.md#TUT-§6)). The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
 
 End-to-end tests need the app running on `http://localhost:5200` first:
 
