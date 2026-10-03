@@ -1,155 +1,167 @@
 # Tutor
 
-**Drop a book in. Get a course out.**
+Blazor Server app and CLI that turn books and documents into structured courses: a multi-LLM pipeline builds a knowledge graph, then lessons, grounded quizzes and progress tracking from it.
 
-Tutor turns books, papers, and documents into structured, navigable courses with quizzes and progress tracking. Hand it a PDF, EPUB, DOCX, or a Project Gutenberg ID — a multi-LLM pipeline extracts concepts, correlates them into a knowledge graph, and writes the learning path on the other side. RAG retrieval keeps every quiz and section grounded in the actual source material.
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/) [![Blazor Server](https://img.shields.io/badge/Blazor-Server-5C2D91)](https://learn.microsoft.com/aspnet/core/blazor/) [![C#](https://img.shields.io/badge/language-C%23-239120)](https://learn.microsoft.com/dotnet/csharp/) [![Tests](https://img.shields.io/badge/NUnit-380%20passing-2E7D32)](docs/BIBLE.md) [![License](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](#license)
 
-Full architecture rationale, invariants, and the non-negotiable rules live in [`docs/BIBLE.md`](docs/BIBLE.md) — this file is the practical "how to build, run, and use it" tour. Where the two disagree, the bible wins.
+```text
+  Moby Dick.epub ---+
+  lecture.pdf ------+--> PARSE --> CHUNK --> EMBED --> EXTRACT CONCEPTS --> CONCEPT MAP
+  Gutenberg #2701 --+                                                          |
+                                         KNOWLEDGE GRAPH <-- CORRELATE <-------+
+                                                |
+                                    COURSE STRUCTURE (lessons > sections > concepts)
+                                                |
+                     quizzes + final exam + certificate, grounded by RAG on the source
+                                                |
+                                    "Moby Dick.tutor" bundle  (share / install / delete)
+```
 
----
+Tutor runs locally; there is no hosted demo. Ten ready-made courses ship in [Courses/](Courses).
 
-## Table of contents
+## Why
 
-- [What it does](#what-it-does)
-- [How it works](#how-it-works)
-- [Stack](#stack)
-- [Project layout](#project-layout)
-- [Domain model](#domain-model)
-- [Getting started](#getting-started)
-- [CLI reference (`Tutor.Cli`)](#cli-reference-tutorcli)
-- [The `Courses/` content model](#the-courses-content-model)
-- [Configuration](#configuration)
-- [Export.ps1](#exportps1)
-- [Tests](#tests)
-- [Documentation canon (`docs/`)](#documentation-canon-docs)
-- [Code style](#code-style)
-- [Known limitations](#known-limitations)
+- Drop a book in, get a course out: no manual authoring between the PDF and the first lesson.
+- Learn from what the book says, not what a model imagines: every section and quiz is retrieved from the source through embeddings and RAG.
+- Move at your own pace: lessons unlock as you show mastery, and a final exam ends in a certificate.
+- Pay for the LLM pipeline once: a finished course is a `.tutor` bundle with its embeddings inside, and it installs on another machine in about a second.
+- Script it or click it: the CLI and the Blazor app share one engine, so a course built in one opens in the other.
+- Pick your model: Claude by default, or OpenAI, DeepSeek or Gemini for a single run.
 
----
+## Features
 
-## What it does
+### Ingest almost anything
 
-1. **You bring the source. Tutor builds the course.** A PDF, EPUB, DOCX, HTML, legacy `.doc`/`.rtf`/`.odt`, `.mobi`/`.azw`/`.azw3`, or a Project Gutenberg ID goes in; a hierarchical course (Lessons → Sections → concepts, with quizzes) comes out. No manual authoring required.
-2. **The knowledge graph is the product, not the source bytes.** Concepts are extracted per chunk, correlated across resources into one graph, and the course is generated *from* the graph. The source is retained for grounding, never replayed verbatim.
-3. **Answers are grounded.** Every quiz prompt and section fill is retrieved from the actual source via embeddings + RAG — Tutor does not invent content that isn't on the page.
-4. **Courses travel.** A finished course is a self-contained `.tutor` bundle — structure, concepts, quizzes, and pre-computed embeddings — that installs without re-running the (slow, paid) LLM pipeline.
-5. **Same engine, two front doors.** `Tutor.Cli` and `Tutor.Blazor` register the identical service graph, so anything the CLI builds, the Blazor app can read with zero translation, and vice versa.
+| Parser | Extensions | Notes |
+| --- | --- | --- |
+| `TxtBookParser` | `.txt`, `.md`, `.markdown`, `.text`, `.log` | Managed |
+| `HtmlBookParser` | `.html`, `.htm`, `.xhtml` | AngleSharp, SmartReader |
+| `EpubBookParser` | `.epub` | VersOne.Epub |
+| `PdfBookParser` | `.pdf` | PdfPig, with Tesseract OCR fallback for scanned pages |
+| `DocxBookParser` | `.docx` | DocumentFormat.OpenXml |
+| `LibreOfficeBookParser` | `.doc`, `.rtf`, `.odt` | Needs LibreOffice installed |
+| `MobiBookParser` | `.mobi`, `.azw`, `.azw3`, `.prc` | Needs Calibre's `ebook-convert` |
+
+- Project Gutenberg works can be fetched by ID straight from the CLI.
+- The shell-out parsers fail cleanly with install instructions when LibreOffice or Calibre is missing.
+- `TesseractPdfOcrService` reads scanned PDFs; if the native libraries or trained data are missing it falls back to text-only extraction instead of crashing.
+
+### A knowledge graph, then a course
+
+- `ConceptExtractionService` and `ConceptMapService` extract a concept map per chunk.
+- `ConceptCorrelationService` and `KnowledgeGraphService` correlate concepts across resources with LSH and SimHash; `OrphanConceptLinkerService` reattaches strays; `DynamicConceptExpansionService` and `ConceptMergeService` refine the graph.
+- `CourseStructureService` generates the learning path from the graph: ordered lessons, hierarchical sections, concept IDs and baked quiz questions.
+- `EmbeddingService` and `VectorStoreService` give semantic search over content chunks for grounding.
+
+### Learning
+
+- Per-user progress with mastery-gated lesson unlocking (`UserProgressService`, `LearningPathService`).
+- Section quizzes, either pre-generated and bundled or generated live from the concept maps (`QuizGenerationService`, `QuizService`).
+- A final exam and a course certificate (`FinalExamService`, `CertificateService`).
+- Pages for the library, courses, learning view, concept graph, settings, users, account and login (`Tutor.Shared/Components/Pages`).
+- Sign-in through MindAttic.Authentication: SQL Server user store, Argon2id hashing with a pepper, idle and absolute session expiry.
+
+### Portable courses
+
+- `tutor export` writes a course with its resources, concept maps, structure and embeddings to one `.tutor` file.
+- `tutor install` restores it without re-running the LLM pipeline and rewrites every ID, so installing twice gives two distinct courses.
+- Bundles are independent and never merged (`TUT-LAW-3`).
+
+### Pluggable LLMs
+
+- `LlmServiceRouter` sends chat and reasoning calls to Claude, OpenAI, DeepSeek or Gemini based on the shared `SELECTED_MODEL` preference. The CLI defaults to Claude.
+- Embeddings always use OpenAI, whatever chat provider is selected.
+- Transport, auth, retries and circuit breaking belong to MindAttic.Legion; pipeline code never references a vendor SDK.
+- Each provider can hold a pool of your own keys, tried in order with failover on auth, rate-limit or server errors (`ApiKeyPoolService`).
+
+## Quick start
+
+Prerequisites: the .NET 10 SDK, SQL Server LocalDB for sign-in (or another SQL Server via `ConnectionStrings:TutorAuth`), and at least one LLM API key. OpenAI is needed for embeddings. LibreOffice and Calibre are optional.
+
+```powershell
+git clone https://github.com/mindattic/Tutor.git
+cd Tutor
+dotnet build Tutor.slnx
+dotnet run --project Tutor.Blazor
+```
+
+The app listens on `https://localhost:7200` and `http://localhost:5200` (from `Tutor.Blazor/Properties/launchSettings.json`).
+
+Install a bundled course and list it from the CLI:
+
+```powershell
+dotnet run --project Tutor.Cli -- install "Courses/Treasure Island.tutor"
+dotnet run --project Tutor.Cli -- list
+```
+
+The course appears in the Blazor app's library right away, because the CLI and the app share the same data folder.
 
 ## How it works
 
-```
-SOURCE FILE -> PARSE -> CHUNK -> EMBED -> EXTRACT CONCEPTS -> CONCEPT MAP
-                                                               |
-                           KNOWLEDGE GRAPH <- CORRELATE <------+
-                                                               |
-                                       COURSE STRUCTURE <------+
-                                                               |
-                                       .tutor BUNDLE <---------+   (share / load / unload)
-```
+The engine lives in `Tutor.Core`. Two front doors, `Tutor.Blazor` and `Tutor.Cli`, register the same service graph, so anything one builds the other reads without translation.
 
-- **Eight input formats.** Phase A (managed C#, NuGet-based): `.txt`, `.md`, `.html`/`.htm`, `.epub`, `.pdf`, `.docx`. Phase B (shell-out): `.doc`/`.rtf`/`.odt` via LibreOffice; `.mobi`/`.azw`/`.azw3` via Calibre's `ebook-convert`. Each Phase B parser fails cleanly with install instructions if the external tool isn't on the machine.
-- **OCR fallback.** `TesseractPdfOcrService` handles scanned PDFs; if the native Tesseract libs or trained data aren't available it goes silent and falls back to text-only extraction rather than crashing the run.
-- **Pluggable LLMs.** `LlmServiceRouter` routes chat/reasoning calls to `OpenAIService`, `ClaudeService`, `DeepSeekService`, or `GeminiService` based on a `SELECTED_MODEL` preference (default `Claude`, overridable per CLI invocation with `--llm`). Embeddings always go through OpenAI regardless of the selected chat provider. Transport (auth, retry, circuit breaker) is owned by `MindAttic.Legion`; no pipeline code may reference a vendor SDK directly. A `KimiService` also exists in `Tutor.Core/Services/KimiService.cs` but is not currently wired into `LlmServiceRouter`'s switch.
-- **Knowledge graph.** `ConceptExtractionService`/`ConceptMapService` extract a concept JSON per chunk; `ConceptCorrelationService` + `KnowledgeGraphService` correlate concepts across resources via LSH + SimHash; `OrphanConceptLinkerService` reattaches strays; `DynamicConceptExpansionService` and `ConceptMergeService` refine the graph further. The course is generated *from* the graph, not authored by hand.
-- **RAG.** `EmbeddingService` + `VectorStoreService` provide semantic search over `ContentChunk`s; `SimHashService` + `LSHService` do near-duplicate detection.
-- **Progress and quizzes.** `UserProgressService` and `LearningPathService` drive per-user mastery-gated lesson unlocking; `QuizGenerationService`/`QuizService` back an LLM-generated (or pre-baked) quiz controller; `FinalExamService` + `CertificateService`/`CertificateAuthority` handle course completion.
+### Domain model
 
-## Stack
-
-| Layer | Technology |
-| --- | --- |
-| Host | ASP.NET Core Blazor Server (`net10.0`) |
-| Headless | `tutor` CLI (`Tutor.Cli`) — same DI graph as the Blazor host |
-| LLM transport | `MindAttic.Legion` (OpenAI / Claude / DeepSeek / Gemini) |
-| Credentials | `MindAttic.Vault` — `%APPDATA%\MindAttic\LLM\providers.json` |
-| Parsing | UglyToad.PdfPig (PDF), VersOne.Epub (EPUB), AngleSharp (HTML), Open-XML (DOCX) + LibreOffice / Calibre shell-outs |
-| OCR | Tesseract (`TesseractPdfOcrService`), trained data downloaded to `Tutor.Core/tessdata` on first build |
-| RAG | In-process vector store (`VectorStoreService`) + LSH/SimHash |
-| Auth | `MindAttic.Authentication` v1.0.0 — SQL Server (`TutorAuthDbContext`), Argon2id + pepper, idle/absolute session expiry |
-| Tests | NUnit (`Tutor.Tests`) + Cypress (`Tutor.Cypress`) |
-
-## Project layout
-
-| Project / folder | Purpose |
-| --- | --- |
-| `Tutor.Core` | Parsers, the full pipeline, domain models, storage services. Everything substantive lives here. |
-| `Tutor.Shared` | Razor components shared by the host — layout, pages (`Home`, `Library`, `Learn`, `Courses`, `ConceptGraph`, `Settings`, `Users`, `Login`, …), quiz/exam/certificate tabs, chat. |
-| `Tutor.Blazor` | Blazor Server host. Composition root (`Program.cs`), DI wiring, middleware, `appsettings.json`. |
-| `Tutor.Cli` | `tutor` headless binary. Mirrors Blazor's DI graph; owns bundle export/import and Gutenberg fetch. |
-| `Tutor.Tests` | NUnit unit/component suite (parsers, services, packaging, models — see [Tests](#tests)). |
-| `Tutor.Cypress` | End-to-end browser tests (sibling Node project, not part of `Tutor.slnx`). |
-| `Courses/` | Pre-built `.tutor` bundles shipped with the repo — see [content model](#the-courses-content-model). |
-| `dist/` | Local scratch output from CLI runs (smoke tests, batch logs, exported bundles) — not part of the build. |
-| `docs/` | Codex documentation canon — see [below](#documentation-canon-docs). |
-| `tools/` | `codex.ps1` (docs digest/doctor) and `build-readme.ps1` (README → README.htm renderer, see below). |
-| `scripts/` | Landing-page build scripts referenced by `package.json` (see [note](#exportps1) — currently empty; kept for the npm script wiring). |
-| `Export.ps1` | Ad-hoc source-export utility — see [below](#exportps1). |
-| `index.htm` | The `mindattic.com/tutor` landing page (built separately from README.md; **do not confuse with `README.htm`**). |
-
-`Tutor.Core` references `MindAttic.Legion` (`..\..\MindAttic.Legion\MindAttic.Legion`) and `MindAttic.Vault` as sibling-repo project references — Tutor is not standalone-buildable outside the `MindAttic` workspace layout.
-
-## Domain model
-
-The nouns the pipeline and storage layer operate on ([`Tutor.Core/Models`](Tutor.Core/Models)):
+The nouns in [Tutor.Core/Models](Tutor.Core/Models):
 
 | Model | Meaning |
 | --- | --- |
-| `CourseResource` | One ingested source (book/paper/doc). Has original + AI-formatted content. Produces exactly one `ConceptMap` (1:1). |
-| `ConceptMap` | Concepts + relationships + complexity ordering for a single resource. |
-| `ConceptMapCollection` | The aggregated graph across all of a course's resources (`collection_{courseId}`). |
-| `Course` | Lightweight metadata + **references only** — resource IDs, the collection ID, the structure ID. Carries no content directly. |
-| `CourseStructure` | The learning path: ordered `Lesson`s → hierarchical `Section`s → concept IDs, plus baked `PreGeneratedQuestions` (quiz). |
-| `ContentChunk` | A text snippet + its embedding + LSH/SimHash signatures. The RAG substrate. |
-| `UserProgress` | Per-user, per-course mastery state driving lesson gating. |
-| `CourseCertificate` | Issued on passing the final exam. |
+| `CourseResource` | One ingested source with original and AI-formatted content. Produces exactly one `ConceptMap`. |
+| `ConceptMap` | Concepts, relationships and complexity ordering for one resource. |
+| `ConceptMapCollection` | The combined graph across all of a course's resources. |
+| `Course` | Metadata and references only: resource IDs, the collection ID, the structure ID. |
+| `CourseStructure` | The learning path: ordered lessons, hierarchical sections, concept IDs and pre-generated quiz questions. |
+| `ContentChunk` | A text snippet with its embedding and LSH and SimHash signatures. The RAG substrate. |
+| `UserProgress` | Per-user, per-course mastery state that drives lesson gating. |
+| `CourseCertificate` | Issued when the final exam is passed. |
 
-> **Invariant:** a `Course` never embeds content. Content lives in resources, structure, concept maps, and chunks; the course just points at them — this keeps bundles composable and storage deduplicated (see [`docs/BIBLE.md` §4.2](docs/BIBLE.md#TUT-§4)).
+A `Course` never embeds content. Content lives in resources, structure, concept maps and chunks, and the course points at them, which keeps bundles composable and storage deduplicated.
 
-## Getting started
+### Stack
 
-Prerequisites: .NET 10 SDK. Optional: LibreOffice (`.doc`/`.rtf`/`.odt`) and Calibre (`.mobi`/`.azw`/`.azw3`). At least one LLM provider API key registered with `MindAttic.Vault`.
+| Layer | Technology |
+| --- | --- |
+| Host | ASP.NET Core Blazor Server, net10.0 |
+| Headless | `tutor` CLI (`Tutor.Cli`), same DI graph as the host |
+| Agent tools | `Tutor.Mcp`, a stdio Model Context Protocol server |
+| LLM transport | MindAttic.Legion 25.0.0 |
+| Credentials | MindAttic.Vault 5.0.0 |
+| Parsing | PdfPig, VersOne.Epub, AngleSharp, SmartReader, DocumentFormat.OpenXml, plus LibreOffice and Calibre |
+| OCR | Tesseract 5.2.0, trained data in `Tutor.Core/tessdata` |
+| RAG | In-process vector store plus LSH and SimHash |
+| Auth | MindAttic.Authentication 2.0.0 on SQL Server (`TutorAuthDbContext`) |
+| Tests | NUnit (`Tutor.Tests`) and Cypress (`Tutor.Cypress`) |
 
-```powershell
-dotnet build Tutor.slnx
+## CLI reference
 
-dotnet run --project Tutor.Blazor
-# -> https://localhost:7200 (HTTPS) or http://localhost:5200 (HTTP)
-# see Tutor.Blazor/Properties/launchSettings.json
-
-dotnet run --project Tutor.Cli -- help
-```
-
-LLM API keys resolve through `MindAttic.Vault`'s standard chain: `%APPDATA%\MindAttic\LLM\providers.json`, layered under environment variables, so the CLI uses the same working keys as every other MindAttic app. Configure them from the Blazor UI's Settings page before running the CLI.
-
-## CLI reference (`Tutor.Cli`)
-
-The `tutor` binary shares Tutor.Core's full DI graph with the Blazor host, so a course built by one is readable by the other with zero translation. Verbs are dispatched in [`Tutor.Cli/Program.cs`](Tutor.Cli/Program.cs); each is backed by a class under [`Tutor.Cli/Commands/`](Tutor.Cli/Commands).
+`Tutor.Cli` builds the `tutor` command. Verbs are dispatched in [Tutor.Cli/Program.cs](Tutor.Cli/Program.cs) and implemented under [Tutor.Cli/Commands](Tutor.Cli/Commands). From the repo you can run any of them as `dotnet run --project Tutor.Cli -- <verb>`.
 
 | Command | What it does |
 | --- | --- |
 | `tutor gutenberg <book-id> [--course "Name"] [--description "..."] [--allow-duplicate]` | Download a Project Gutenberg work by ID and import it as a new course. |
-| `tutor gutenberg-top10 [--dry-run] [--allow-duplicate] [--export-dir <dir>] [--quiz-mode baked\|dynamic\|both]` | Drive the curated top-10 (Moby Dick, Pride and Prejudice, Frankenstein, Sherlock Holmes, Alice, Dorian Gray, Tom Sawyer, Treasure Island, Gulliver's Travels, Dracula) sequentially. Skips books whose course name already exists, so a re-run after a partial failure resumes naturally. With `--export-dir`, writes each course to `<dir>/<Title>.tutor`. Long-running: roughly 2 hours per book and meaningful API spend. |
-| `tutor import <path> --course "Name" [--description "..."] [--author "..."] [--title "..."] [--quiz-mode ...] [--allow-duplicate]` | Import one local file as a new course. Parser is picked from the file extension. |
-| `tutor build-course <dir-or-zip> [--course "Override Name"] [--quiz-mode ...] [--export <out.tutor>] [--allow-duplicate]` | Build **one** course out of **many** source files in a single command — the headless equivalent of adding each resource in the UI and clicking "Build Course". Point it at a directory or `.zip` containing a `manifest.json` plus the files it lists (see shape below). With `--export`, also writes the redistributable `.tutor` bundle. |
-| `tutor export <course-id> <output.tutor>` | Export a course (resources, concept map, structure, embeddings) to a single shareable `.tutor` bundle. |
-| `tutor import-bundle <file.tutor> [--course "Override Name"] [--allow-duplicate]` / `tutor install <file.tutor> [...]` | Restore a course from a `.tutor` bundle (alias: `install`). Legacy `.tutorcourse` files are also accepted. All IDs are rewritten so a re-import never collides with existing data. Skips the LLM pipeline entirely (embeddings ride along) — typically under 1 second regardless of book size. |
-| `tutor list` | List all courses on this machine. |
-| `tutor delete <course-id> [--dry-run]` | Remove a course and cascade-delete its resources, concept maps, course structure, embeddings, and `ConceptMapCollection` file. `--dry-run` prints what would be removed without touching anything. |
-| `tutor fetch <...>` | `FetchOnlyCommand` — download a remote source without parsing it. |
-| `tutor parse <...>` | `ParseOnlyCommand` — parse a source without running the LLM pipeline. |
-| `tutor diag-keys` | Print masked LLM key/preference diagnostics (Vault-resolved key lengths/suffixes, current `SELECTED_MODEL`). |
-| `tutor help` | Show CLI usage. |
+| `tutor gutenberg-top10 [--dry-run] [--allow-duplicate] [--export-dir <dir>] [--quiz-mode <mode>]` | Build the curated top ten (Moby Dick, Pride and Prejudice, Frankenstein, Sherlock Holmes, Alice, Dorian Gray, Tom Sawyer, Treasure Island, Gulliver's Travels, Dracula) one after another. Skips existing course names, so a re-run resumes. With `--export-dir`, writes `<dir>/<Title>.tutor`. Roughly two hours per book and real API spend. |
+| `tutor import <path> --course "Name" [--description "..."] [--author "..."] [--title "..."] [--quiz-mode <mode>] [--allow-duplicate]` | Import one local file as a new course; the parser is chosen by extension. |
+| `tutor build-course <dir-or-zip> [--course "Override Name"] [--quiz-mode <mode>] [--export <out.tutor>] [--allow-duplicate]` | Build one course from many files listed in a `manifest.json`, the headless version of adding resources in the UI and clicking Build Course. `--export` also writes the bundle. |
+| `tutor export <course-id> <output.tutor>` | Export a course to a shareable `.tutor` bundle. |
+| `tutor import-bundle <file.tutor> [--course "Override Name"] [--allow-duplicate]` | Install a course from a bundle (alias `tutor install`). Accepts legacy `.tutorcourse` files, rewrites all IDs, skips the LLM pipeline, typically under a second. |
+| `tutor list` | List the courses on this machine. |
+| `tutor delete <course-id> [--dry-run]` | Remove a course and its resources, concept maps, structure, embeddings and collection file. `--dry-run` only prints what would go. |
+| `tutor keys --provider <provider> <action>` | Manage the key pool for claude, openai, gemini or deepseek. Actions: `--list`, one or more `--set-key <key>`, `--add-key <key>`, `--remove-key <key>`, `--clear`. |
+| `tutor fetch` | Download a remote source without parsing it (`FetchOnlyCommand`). |
+| `tutor parse` | Parse a source without running the LLM pipeline (`ParseOnlyCommand`). |
+| `tutor diag-keys` | Print masked key and `SELECTED_MODEL` diagnostics. |
+| `tutor help` | Show usage. |
 
-Global flags (stripped before the verb dispatch, so any command accepts them):
+Global flags, accepted by every verb:
 
 | Flag | Effect |
 | --- | --- |
-| `--verbose` | Turns on `Tutor.Core`'s trace-level logging, forwarded to stderr as `[LEVEL] message`. |
-| `--llm <openai\|claude\|deepseek\|gemini>` | Overrides the chat/reasoning provider for this run (default `claude`). Embeddings always use OpenAI regardless. Persisted to the shared `SELECTED_MODEL` preference that `LlmServiceRouter` reads. |
-| `--quiz-mode baked\|dynamic\|both` | Controls section quizzes: `baked`/`both` (default) pre-generate and bundle questions for offline play; `dynamic` skips pre-generation and lets the runtime generate them live from the bundled concept maps. |
-| `--allow-duplicate` | By default a duplicate-name course is rejected; pass this to intentionally create a second copy (e.g. a different translation/printing). |
+| `--verbose` | Trace-level `Tutor.Core` logging to stderr as `[LEVEL] message`. |
+| `--llm <provider>` | Chat provider for this run: openai, claude, deepseek or gemini (default claude). Written to the shared `SELECTED_MODEL` preference. Embeddings still use OpenAI. |
+| `--quiz-mode <mode>` | `baked` or `both` (default) pre-generate and bundle section quizzes; `dynamic` generates them live from the bundled concept maps. |
+| `--allow-duplicate` | Allow a second course with an existing name, for example a different translation. |
 
-`build-course`'s `manifest.json` shape:
+The `build-course` manifest:
 
 ```json
 {
@@ -162,124 +174,126 @@ Global flags (stripped before the verb dispatch, so any command accepts them):
 }
 ```
 
-Course data is stored at `%LocalAppData%\Tutor\...` and shared with the Blazor UI — anything imported via the CLI shows up there immediately.
+## Courses
 
-> **Note on drift:** the CLI verbs above (`gutenberg-top10`, `import`, `build-course`, `fetch`, `parse`, `diag-keys`) are read directly from `Program.cs`'s verb switch and its embedded `PrintHelp()` text. If you edit `Program.cs`'s command surface, update this table in the same change.
-
-## The `Courses/` content model
-
-[`Courses/`](Courses) ships ten pre-built `.tutor` bundles — self-contained zips carrying course metadata, the learning structure (lessons → topics → sections), concept maps, baked quiz questions, and RAG embeddings, so they install without re-running the (slow, paid) LLM pipeline. One file per course; bundles are independent and are **never** merged ([`TUT-LAW-3`](docs/BIBLE.md#TUT-LAW-3)).
-
-Included (all Project Gutenberg sources): *Alice's Adventures in Wonderland*, *Dracula*, *Frankenstein*, *Gulliver's Travels*, *Moby Dick; Or, The Whale*, *Pride and Prejudice*, *The Adventures of Sherlock Holmes*, *The Adventures of Tom Sawyer*, *The Picture of Dorian Gray*, *Treasure Island*. See [`Courses/README.md`](Courses/README.md) for the authoritative list.
-
-**Install a bundled course:**
+[Courses/](Courses) ships ten pre-built bundles, all from Project Gutenberg: Alice's Adventures in Wonderland, Dracula, Frankenstein, Gulliver's Travels, Moby Dick; Or, The Whale, Pride and Prejudice, The Adventures of Sherlock Holmes, The Adventures of Tom Sawyer, The Picture of Dorian Gray and Treasure Island. Each is a zip with course metadata, the learning structure, concept maps, baked quiz questions and embeddings, between about 1 MB and 10.5 MB. [Courses/README.md](Courses/README.md) is the authoritative list.
 
 ```powershell
 tutor install "Courses/Moby Dick; Or, The Whale.tutor"
-```
-
-(`tutor install` is an alias of `tutor import-bundle`.) All IDs are rewritten on import, so installing the same bundle twice yields two distinct courses rather than overwriting one. Once installed, the course appears in the Tutor Blazor UI automatically.
-
-**Remove a course:**
-
-```powershell
 tutor list                 # find the course id
 tutor delete <course-id>   # cascades resources, structure, concept maps, embeddings
 ```
 
-**Add a new bundle to `Courses/`** — build it with the CLI, then commit the resulting `.tutor` file:
+To add a bundle, build it with the CLI and commit the `.tutor` file:
 
 ```powershell
 tutor gutenberg-top10 --export-dir Courses --quiz-mode both
-# or, for an arbitrary source directory/zip:
 tutor build-course <dir-or-zip> --export "Courses/My Course.tutor"
 ```
 
-Bundles carry embeddings and can be several MB each; they are committed to the repo so courses travel with it. See [RFC 0001 — Course Packaging & Sharing](docs/rfc/0001-course-packaging.md) for the archive's internal layout (`manifest.json`, `course.json`, `courseStructure.json`, per-resource JSON/text, concept maps, `chunks.json`) and the roadmap toward an in-app load/unload library.
+[RFC 0001, Course Packaging and Sharing](docs/rfc/0001-course-packaging.md) documents the archive layout (`manifest.json`, `course.json`, `courseStructure.json`, per-resource JSON and text, concept maps, `chunks.json`) and the roadmap toward an in-app load and unload library.
 
 ## Configuration
 
-Connection string resolution priority (Tutor.Blazor's data store):
+- Course data is file-based under `%LocalAppData%\Tutor` (concept maps, knowledge graphs, vector store, LSH, course structures, logs). Individual folders can be redirected through `data-storage.settings.json` (`DataStorageSettings`). The CLI and the Blazor app share this folder.
+- The sign-in database connection string is read from `ConnectionStrings:TutorAuth` in configuration, then the `ConnectionStrings__TutorAuth` environment variable, then falls back to LocalDB (`(localdb)\MSSQLLocalDB`, database `TutorAuth`).
+- LLM keys resolve through MindAttic.Vault: `%APPDATA%\MindAttic\LLM\providers.json` layered under environment variables (`MindAttic:Vault:LLM:*`), so the CLI uses the same keys as every other MindAttic app. Per-provider key pools are managed with `tutor keys`, the MCP server, or the Settings page.
+- In production the host stores Data Protection keys in Azure Blob Storage protected by Key Vault and requires `DataProtection:BlobUri` and `DataProtection:KeyVaultKeyId`.
 
-1. `ConnectionStrings__Tutor` environment variable
-2. `ConnectionStrings:Tutor` in `appsettings.json`
-3. LocalDB fallback
+## MCP server
 
-The auth database (`TutorAuthDbContext`) resolves its own connection string the same way, keyed `TutorAuth` (`ConnectionStrings__TutorAuth` env var, else `ConnectionStrings:TutorAuth`, else LocalDB).
+`Tutor.Mcp` is a stdio Model Context Protocol server that exposes the key-pool operations (list, set, add, remove, clear, per provider) as tools, so an assistant can rotate Tutor's keys without a human running `tutor keys`. It is not part of `Tutor.slnx`; run it with `dotnet run --project Tutor.Mcp` from an MCP client.
 
-LLM credentials follow `MindAttic.Vault`'s standard resolution chain — `%APPDATA%\MindAttic\LLM\providers.json` or `MindAttic:Vault:LLM:*` in `IConfiguration`.
-
-## Export.ps1
-
-`Export.ps1` at the repo root is a generic **source-bundling utility**, not Tutor-specific tooling — its header comments describe a Unity project export ("Export Unity project sources... Default: ONLY .cs files") and it does not reference any Tutor concept. In this repo it walks the tree from wherever it's invoked, collects `.cs` files (extra extensions like `.prefab`/`.meta`/`.unity` are commented out and unused here), skips noisy directories (`.git`, `.vs`, `obj`, `bin`, etc.), and writes a single `ExportedScripts.txt` containing a JSON manifest (path/SHA-256/size/line count per file) followed by the full text of every file, delimited by `<<<FILE START>>>` / `<<<FILE END>>>` markers. It appears to be a shared personal script reused across repos (including non-.NET ones) rather than a maintained part of the Tutor build. Run it with:
-
-```powershell
-powershell -File Export.ps1
-```
-
-`ExportedScripts.txt` (checked into the repo, ~860 KB) is its most recent output.
-
-## Tests
+## Testing
 
 ```powershell
 dotnet test Tutor.Tests
 ```
 
-`Tutor.Tests` (NUnit) is organized into `Fakes/`, `Models/`, `Packaging/`, `Parsers/`, and `Services/` subfolders, covering parsers, the concept-map JSON shape, packaging (export/import round-trips), auth import/admin contracts, and the full course lifecycle (lock → unlock → final exam → certificate → unload) via `FullCourseLifecycleTests`. As of the last recorded bible update (2026-06-07): **380 passed, 0 failed, 0 skipped**, build clean. The end-to-end LLM pipeline itself (extraction, section fill) is deliberately *not* automated — it's paid and non-deterministic — so those stories are marked 🟡 partial in [`docs/USER_STORIES.md`](docs/USER_STORIES.md) even though the surrounding primitives are pinned.
+`Tutor.Tests` (NUnit) is organised into `Fakes`, `Models`, `Packaging`, `Parsers` and `Services`. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in `FullCourseLifecycleTests`. Last recorded run (docs/BIBLE.md, 2026-06-07): 380 passed, 0 failed, 0 skipped. The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in [docs/USER%5FSTORIES.md](docs/USER%5FSTORIES.md).
+
+End-to-end tests need the app running on `http://localhost:5200` first:
 
 ```powershell
 cd Tutor.Cypress
 npm install
-npm run cypress:run    # headless; Tutor.Blazor must be running first
-# or: npm run cypress:open   (interactive runner)
+npm run cypress:run
 ```
 
-Tutor.Blazor must be reachable at `http://localhost:5200` (default) before running Cypress — start it with `dotnet run --project Tutor.Blazor`. Override the base URL with `$env:CYPRESS_BASE_URL = "https://localhost:7200"`. Authenticated specs use a `cy.login()` custom command; provide credentials via `$env:CYPRESS_username` / `$env:CYPRESS_password`.
-
-Specs in [`Tutor.Cypress/e2e/`](Tutor.Cypress/e2e):
+Use `npm run cypress:open` for the interactive runner. Override the address with `$env:CYPRESS_BASE_URL = "https://localhost:7200"`. Authenticated specs use a `cy.login()` command; supply credentials through `$env:CYPRESS_username` and `$env:CYPRESS_password`.
 
 | Spec | Covers |
 | --- | --- |
-| `smoke.cy.ts` | Basic app-is-alive check. |
-| `auth.cy.ts` | Login/redirect guards. |
-| `courses.cy.ts` | Course library listing/navigation. |
-| `course-flow.cy.ts` | Deterministic course-flow wiring (lock/unlock, navigation). |
+| `smoke.cy.ts` | The app is alive. |
+| `auth.cy.ts` | Login and redirect guards. |
+| `courses.cy.ts` | Course library listing and navigation. |
+| `course-flow.cy.ts` | Deterministic course flow: lock, unlock, navigation. |
 | `concept-graph.cy.ts` | Concept graph page rendering. |
-| `quiz.cy.ts` | Quiz UI wiring (not the LLM-generated content itself — that's pinned by `FullCourseLifecycleTests` instead). |
+| `quiz.cy.ts` | Quiz UI wiring (the generated content is pinned by `FullCourseLifecycleTests`). |
 
-**Definition of done for a feature:** clean `dotnet build Tutor.slnx`, green `Tutor.Tests`, and — for anything user-facing — a Cypress guard or a lifecycle assertion. No vendor lock-in introduced; whole-number versioning respected ([HOUSE-LAW-8](../MindAttic.HouseRules.md#HOUSE-LAW-8)).
+A feature is done when `dotnet build Tutor.slnx` is clean, `Tutor.Tests` is green and, for anything user-facing, a Cypress guard or lifecycle assertion covers it.
 
-## Documentation canon (`docs/`)
+## Project layout
 
-Tutor has adopted the MindAttic "Codex" documentation standard — a fact lives in exactly one layer, linked by stable ID, never by line number:
+| Project or folder | Purpose |
+| --- | --- |
+| `Tutor.Core` | Parsers, the pipeline, domain models and storage services. |
+| `Tutor.Shared` | Razor components: layout, pages, quiz, exam and certificate tabs, chat. |
+| `Tutor.Blazor` | Blazor Server host: `Program.cs` composition root, middleware, `appsettings.json`. |
+| `Tutor.Cli` | The `tutor` command; mirrors the host's DI graph and owns bundle export, import and Gutenberg fetch. |
+| `Tutor.Mcp` | MCP server for key-pool management (outside the solution). |
+| `Tutor.Tests` | NUnit suite. |
+| `Tutor.Cypress` | Cypress end-to-end tests (separate Node project). |
+| `Courses/` | The ten shipped `.tutor` bundles. |
+| `dist/` | Local scratch output from CLI runs; not part of the build. |
+| `docs/` | Codex documentation canon. |
+| `tools/` | `codex.ps1` (docs digest and doctor) and `build-readme.ps1` (README.md to README.htm). |
+| `Export.ps1` | Source-export utility, see below. |
+| `index.htm` | Old static landing page from the retired mindattic.com pipeline; not the same file as `README.htm`. |
 
-| Layer | File | Role |
-| --- | --- | --- |
-| L0 | [`docs/BIBLE.md`](docs/BIBLE.md) | What Tutor **is**/is not, architecture canon, the Laws (`{#TUT-LAW-n}`), verified state, active frontier, glossary. |
-| L1 | [`docs/AMENDMENTS.md`](docs/AMENDMENTS.md) | Append-only change log (`TUT-A<n>`); an amendment **wins** over the bible. Currently empty — bible is epoch 0. |
-| L2 | [`docs/USER_STORIES.md`](docs/USER_STORIES.md) | Acceptance stories (`TUT-US-<Epic><n>`), each `✅` citing its verifying test. |
-| rfc | [`docs/rfc/0001-course-packaging.md`](docs/rfc/0001-course-packaging.md) | Design note for the in-app course load/unload/share roadmap — compares `.tutor` to `MindAttic.Ideas`'s `.idea` packaging and lays out the upgrade path. |
-| generated | [`docs/BIBLE.digest.md`](docs/BIBLE.digest.md) | Produced by `tools/codex.ps1 digest`; injected as session context. **Never hand-edit.** |
+### Export.ps1
 
-Org-wide rules (whole-number versioning, soft-disable-never-delete, credentials-through-Vault, provider-agnostic LLMs, guarded-zip packaging, one-engine-many-front-doors, MindAttic.Authentication, verified-not-asserted done) live once in `../MindAttic.HouseRules.md` and are inherited by reference from [`docs/BIBLE.md` §5](docs/BIBLE.md#TUT-§5) — see that section for how each maps onto Tutor specifically.
-
-Before editing anything under `docs/`, run `pwsh tools/codex.ps1 doctor` (must pass); run `pwsh tools/codex.ps1 digest` after touching `BIBLE.md`.
-
-**Regenerating this file as HTML:** `tools/build-readme.ps1` renders this `README.md` to `README.htm` at the repo root, using the shared engine at `../codex-standard/build-readme.ps1` (one engine for every MindAttic repo, so every `README.htm` looks and behaves identically). Run it with:
+`Export.ps1` is a generic source-bundling script (its header still describes a Unity export). It walks the tree, collects `.cs` files, skips `.git`, `.vs`, `obj`, `bin` and similar folders, and writes `ExportedScripts.txt`: a JSON manifest (path, SHA-256, size, line count) followed by every file between `<<<FILE START>>>` and `<<<FILE END>>>` markers. `ExportedScripts.txt` in the repo is its latest output.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-readme.ps1
+powershell -File Export.ps1
 ```
 
-`README.htm` is a separate artifact from `index.htm` at the repo root — `index.htm` is the `mindattic.com` landing page (built by a different, currently-retired pipeline; see the note under [Project layout](#project-layout)) and should not be confused with, or overwritten by, the README renderer.
+### Code style
 
-## Code style
+- Private fields are `camelCase` with no underscore prefix.
+- Constructors use `this.x = x` to disambiguate.
 
-- Private fields: `camelCase` without underscore prefix.
-- Constructors: `this.x = x` to disambiguate.
+## Limitations
 
-## Known limitations
+- Quiz attribution: `QuizService` reads the user ID from `IHttpContextAccessor`, which is null after the first Blazor Server render, so quizzes started mid-circuit are attributed to "anonymous". Tracked as a TODO in [QuizService.cs](Tutor.Core/Services/Quiz/QuizService.cs) and as story B5.
+- Single host: Blazor Server with SQL-backed auth, not built for scale-out or per-tenant isolation.
+- `KimiService` exists but is not wired into `LlmServiceRouter` or the key pools.
+- Debug builds reference a sibling `MindAttic.Authentication` checkout, so a Debug build expects the MindAttic workspace layout.
+- `package.json` still has `build` and `deploy` scripts for the retired landing page; `scripts/cli/` holds no scripts.
 
-- **Quiz attribution during mid-circuit starts.** `QuizService` reads the user ID from `IHttpContextAccessor`, which is `null` after the initial Blazor Server render, so mid-circuit quiz starts attribute to `"anonymous"`. Tracked as a TODO in [`Tutor.Core/Services/Quiz/QuizService.cs`](Tutor.Core/Services/Quiz/QuizService.cs) and as [story B5](docs/USER_STORIES.md#TUT-EPIC-B). Fix is to thread the ID from `AuthenticationState` instead.
-- **Not multi-tenant.** Single-host Blazor Server app with SQL-backed auth; designs should not assume horizontal scale-out or per-tenant isolation ([`docs/BIBLE.md` §3](docs/BIBLE.md#TUT-§3)).
-- **Landing-page build scripts are stale.** `package.json`'s `build`/`deploy` npm scripts point at `scripts/cli/build-html.js` and `scripts/cli/deploy.ps1`, but that directory is currently empty — the local FTP landing-page machinery was retired in favor of routing `/deploy` through `MindAttic.Deploy` (see git history on `scripts/cli`). The npm script entries were left in place but do not currently resolve to files in this repo.
+## Documentation
+
+Tutor follows the MindAttic Codex standard: each fact lives in one layer, linked by a stable ID.
+
+- [docs/BIBLE.md](docs/BIBLE.md) - what Tutor is and is not, architecture, the Laws (`TUT-LAW-n`), verified state, glossary. Where this README and the Bible disagree, the Bible wins.
+- [docs/AMENDMENTS.md](docs/AMENDMENTS.md) - append-only change log (`TUT-A<n>`); an amendment wins over the Bible.
+- [User stories](docs/USER_STORIES.md) - acceptance stories `TUT-US-<Epic><n>`, each done story citing its test.
+- [docs/rfc/0001-course-packaging.md](docs/rfc/0001-course-packaging.md) - course load, unload and share roadmap.
+- [Course packaging design](docs/COURSE%5FPACKAGING%5FDESIGN.md) - design notes behind the `.tutor` bundle format.
+- [docs/BIBLE.digest.md](docs/BIBLE.digest.md) - generated by `tools/codex.ps1 digest`; never hand-edit.
+- [AGENTS.md](AGENTS.md) - instructions for coding agents working in this repo.
+
+```powershell
+powershell -File tools/codex.ps1 doctor    # must pass before editing docs/
+powershell -File tools/codex.ps1 digest    # after touching BIBLE.md
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-readme.ps1    # README.md to README.htm
+```
+
+## License
+
+This repository has no LICENSE file. All rights reserved. The bundled courses are built from public-domain Project Gutenberg texts.
+
+---
+
+Part of [MindAttic](https://mindattic.com) — see more projects at [github.com/mindattic](https://github.com/mindattic). Related: [MindAttic.Legion](https://github.com/mindattic/MindAttic.Legion) (LLM transport), [MindAttic.Vault](https://github.com/mindattic/MindAttic.Vault) (credentials), [MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication) (sign-in).

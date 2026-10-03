@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tutor</title>
-<meta name="description" content="Drop a book in. Get a course out.">
+<meta name="description" content="Blazor Server app and CLI that turn books and documents into structured courses: a multi-LLM pipeline builds a knowledge graph, then lessons, grounded quizzes and progress tracking from it.">
 <meta name="generator" content="MindAttic Codex build-readme.ps1">
-<meta name="generated" content="2026-08-14">
+<meta name="generated" content="2026-10-03">
 <style>:root{
   --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;
   --border:#30363d;
@@ -111,205 +111,205 @@ pre:hover .cpbtn{opacity:1}
   </nav>
   <main id="content">
 <h1 id="tutor">Tutor</h1>
-<p><strong>Drop a book in. Get a course out.</strong></p>
-<p>Tutor turns books, papers, and documents into structured, navigable courses with quizzes and progress tracking. Hand it a PDF, EPUB, DOCX, or a Project Gutenberg ID — a multi-LLM pipeline extracts concepts, correlates them into a knowledge graph, and writes the learning path on the other side. RAG retrieval keeps every quiz and section grounded in the actual source material.</p>
-<p>Full architecture rationale, invariants, and the non-negotiable rules live in <a href="docs/BIBLE.md"><code>docs/BIBLE.md</code></a> — this file is the practical "how to build, run, and use it" tour. Where the two disagree, the bible wins.</p>
-<hr>
-<h2 id="table-of-contents">Table of contents</h2>
+<p>Blazor Server app and CLI that turn books and documents into structured courses: a multi-LLM pipeline builds a knowledge graph, then lessons, grounded quizzes and progress tracking from it.</p>
+<p><a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10"></a> <a href="https://learn.microsoft.com/aspnet/core/blazor/"><img src="https://img.shields.io/badge/Blazor-Server-5C2D91" alt="Blazor Server"></a> <a href="https://learn.microsoft.com/dotnet/csharp/"><img src="https://img.shields.io/badge/language-C%23-239120" alt="C#"></a> <a href="docs/BIBLE.md"><img src="https://img.shields.io/badge/NUnit-380%20passing-2E7D32" alt="Tests"></a> <a href="#license"><img src="https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey" alt="License"></a></p>
+<pre><code class="language-text">  Moby Dick.epub ---+
+  lecture.pdf ------+--&gt; PARSE --&gt; CHUNK --&gt; EMBED --&gt; EXTRACT CONCEPTS --&gt; CONCEPT MAP
+  Gutenberg #2701 --+                                                          |
+                                         KNOWLEDGE GRAPH &lt;-- CORRELATE &lt;-------+
+                                                |
+                                    COURSE STRUCTURE (lessons &gt; sections &gt; concepts)
+                                                |
+                     quizzes + final exam + certificate, grounded by RAG on the source
+                                                |
+                                    "Moby Dick.tutor" bundle  (share / install / delete)</code></pre>
+<p>Tutor runs locally; there is no hosted demo. Ten ready-made courses ship in <a href="Courses">Courses/</a>.</p>
+<h2 id="why">Why</h2>
 <ul>
-<li><a href="#what-it-does">What it does</a></li>
-<li><a href="#how-it-works">How it works</a></li>
-<li><a href="#stack">Stack</a></li>
-<li><a href="#project-layout">Project layout</a></li>
-<li><a href="#domain-model">Domain model</a></li>
-<li><a href="#getting-started">Getting started</a></li>
-<li><a href="#cli-reference-tutorcli">CLI reference (<code>Tutor.Cli</code>)</a></li>
-<li><a href="#the-courses-content-model">The <code>Courses/</code> content model</a></li>
-<li><a href="#configuration">Configuration</a></li>
-<li><a href="#exportps1">Export.ps1</a></li>
-<li><a href="#tests">Tests</a></li>
-<li><a href="#documentation-canon-docs">Documentation canon (<code>docs/</code>)</a></li>
-<li><a href="#code-style">Code style</a></li>
-<li><a href="#known-limitations">Known limitations</a></li>
+<li>Drop a book in, get a course out: no manual authoring between the PDF and the first lesson.</li>
+<li>Learn from what the book says, not what a model imagines: every section and quiz is retrieved from the source through embeddings and RAG.</li>
+<li>Move at your own pace: lessons unlock as you show mastery, and a final exam ends in a certificate.</li>
+<li>Pay for the LLM pipeline once: a finished course is a <code>.tutor</code> bundle with its embeddings inside, and it installs on another machine in about a second.</li>
+<li>Script it or click it: the CLI and the Blazor app share one engine, so a course built in one opens in the other.</li>
+<li>Pick your model: Claude by default, or OpenAI, DeepSeek or Gemini for a single run.</li>
 </ul>
-<hr>
-<h2 id="what-it-does">What it does</h2>
-<ol>
-<li><strong>You bring the source. Tutor builds the course.</strong> A PDF, EPUB, DOCX, HTML, legacy <code>.doc</code>/<code>.rtf</code>/<code>.odt</code>, <code>.mobi</code>/<code>.azw</code>/<code>.azw3</code>, or a Project Gutenberg ID goes in; a hierarchical course (Lessons → Sections → concepts, with quizzes) comes out. No manual authoring required.</li>
-<li><strong>The knowledge graph is the product, not the source bytes.</strong> Concepts are extracted per chunk, correlated across resources into one graph, and the course is generated <em>from</em> the graph. The source is retained for grounding, never replayed verbatim.</li>
-<li><strong>Answers are grounded.</strong> Every quiz prompt and section fill is retrieved from the actual source via embeddings + RAG — Tutor does not invent content that isn't on the page.</li>
-<li><strong>Courses travel.</strong> A finished course is a self-contained <code>.tutor</code> bundle — structure, concepts, quizzes, and pre-computed embeddings — that installs without re-running the (slow, paid) LLM pipeline.</li>
-<li><strong>Same engine, two front doors.</strong> <code>Tutor.Cli</code> and <code>Tutor.Blazor</code> register the identical service graph, so anything the CLI builds, the Blazor app can read with zero translation, and vice versa.</li>
-</ol>
+<h2 id="features">Features</h2>
+<h3 id="ingest-almost-anything">Ingest almost anything</h3>
+<table><thead><tr>
+<th>Parser</th>
+<th>Extensions</th>
+<th>Notes</th>
+</tr></thead><tbody>
+<tr>
+<td><code>TxtBookParser</code></td>
+<td><code>.txt</code>, <code>.md</code>, <code>.markdown</code>, <code>.text</code>, <code>.log</code></td>
+<td>Managed</td>
+</tr>
+<tr>
+<td><code>HtmlBookParser</code></td>
+<td><code>.html</code>, <code>.htm</code>, <code>.xhtml</code></td>
+<td>AngleSharp, SmartReader</td>
+</tr>
+<tr>
+<td><code>EpubBookParser</code></td>
+<td><code>.epub</code></td>
+<td>VersOne.Epub</td>
+</tr>
+<tr>
+<td><code>PdfBookParser</code></td>
+<td><code>.pdf</code></td>
+<td>PdfPig, with Tesseract OCR fallback for scanned pages</td>
+</tr>
+<tr>
+<td><code>DocxBookParser</code></td>
+<td><code>.docx</code></td>
+<td>DocumentFormat.OpenXml</td>
+</tr>
+<tr>
+<td><code>LibreOfficeBookParser</code></td>
+<td><code>.doc</code>, <code>.rtf</code>, <code>.odt</code></td>
+<td>Needs LibreOffice installed</td>
+</tr>
+<tr>
+<td><code>MobiBookParser</code></td>
+<td><code>.mobi</code>, <code>.azw</code>, <code>.azw3</code>, <code>.prc</code></td>
+<td>Needs Calibre's <code>ebook-convert</code></td>
+</tr>
+</tbody></table>
+<ul>
+<li>Project Gutenberg works can be fetched by ID straight from the CLI.</li>
+<li>The shell-out parsers fail cleanly with install instructions when LibreOffice or Calibre is missing.</li>
+<li><code>TesseractPdfOcrService</code> reads scanned PDFs; if the native libraries or trained data are missing it falls back to text-only extraction instead of crashing.</li>
+</ul>
+<h3 id="a-knowledge-graph-then-a-course">A knowledge graph, then a course</h3>
+<ul>
+<li><code>ConceptExtractionService</code> and <code>ConceptMapService</code> extract a concept map per chunk.</li>
+<li><code>ConceptCorrelationService</code> and <code>KnowledgeGraphService</code> correlate concepts across resources with LSH and SimHash; <code>OrphanConceptLinkerService</code> reattaches strays; <code>DynamicConceptExpansionService</code> and <code>ConceptMergeService</code> refine the graph.</li>
+<li><code>CourseStructureService</code> generates the learning path from the graph: ordered lessons, hierarchical sections, concept IDs and baked quiz questions.</li>
+<li><code>EmbeddingService</code> and <code>VectorStoreService</code> give semantic search over content chunks for grounding.</li>
+</ul>
+<h3 id="learning">Learning</h3>
+<ul>
+<li>Per-user progress with mastery-gated lesson unlocking (<code>UserProgressService</code>, <code>LearningPathService</code>).</li>
+<li>Section quizzes, either pre-generated and bundled or generated live from the concept maps (<code>QuizGenerationService</code>, <code>QuizService</code>).</li>
+<li>A final exam and a course certificate (<code>FinalExamService</code>, <code>CertificateService</code>).</li>
+<li>Pages for the library, courses, learning view, concept graph, settings, users, account and login (<code>Tutor.Shared/Components/Pages</code>).</li>
+<li>Sign-in through MindAttic.Authentication: SQL Server user store, Argon2id hashing with a pepper, idle and absolute session expiry.</li>
+</ul>
+<h3 id="portable-courses">Portable courses</h3>
+<ul>
+<li><code>tutor export</code> writes a course with its resources, concept maps, structure and embeddings to one <code>.tutor</code> file.</li>
+<li><code>tutor install</code> restores it without re-running the LLM pipeline and rewrites every ID, so installing twice gives two distinct courses.</li>
+<li>Bundles are independent and never merged (<code>TUT-LAW-3</code>).</li>
+</ul>
+<h3 id="pluggable-llms">Pluggable LLMs</h3>
+<ul>
+<li><code>LlmServiceRouter</code> sends chat and reasoning calls to Claude, OpenAI, DeepSeek or Gemini based on the shared <code>SELECTED_MODEL</code> preference. The CLI defaults to Claude.</li>
+<li>Embeddings always use OpenAI, whatever chat provider is selected.</li>
+<li>Transport, auth, retries and circuit breaking belong to MindAttic.Legion; pipeline code never references a vendor SDK.</li>
+<li>Each provider can hold a pool of your own keys, tried in order with failover on auth, rate-limit or server errors (<code>ApiKeyPoolService</code>).</li>
+</ul>
+<h2 id="quick-start">Quick start</h2>
+<p>Prerequisites: the .NET 10 SDK, SQL Server LocalDB for sign-in (or another SQL Server via <code>ConnectionStrings:TutorAuth</code>), and at least one LLM API key. OpenAI is needed for embeddings. LibreOffice and Calibre are optional.</p>
+<pre><code class="language-powershell">git clone https://github.com/mindattic/Tutor.git
+cd Tutor
+dotnet build Tutor.slnx
+dotnet run --project Tutor.Blazor</code></pre>
+<p>The app listens on <code>https://localhost:7200</code> and <code>http://localhost:5200</code> (from <code>Tutor.Blazor/Properties/launchSettings.json</code>).</p>
+<p>Install a bundled course and list it from the CLI:</p>
+<pre><code class="language-powershell">dotnet run --project Tutor.Cli -- install "Courses/Treasure Island.tutor"
+dotnet run --project Tutor.Cli -- list</code></pre>
+<p>The course appears in the Blazor app's library right away, because the CLI and the app share the same data folder.</p>
 <h2 id="how-it-works">How it works</h2>
-<pre><code>SOURCE FILE -&gt; PARSE -&gt; CHUNK -&gt; EMBED -&gt; EXTRACT CONCEPTS -&gt; CONCEPT MAP
-                                                               |
-                           KNOWLEDGE GRAPH &lt;- CORRELATE &lt;------+
-                                                               |
-                                       COURSE STRUCTURE &lt;------+
-                                                               |
-                                       .tutor BUNDLE &lt;---------+   (share / load / unload)</code></pre>
-<ul>
-<li><strong>Eight input formats.</strong> Phase A (managed C#, NuGet-based): <code>.txt</code>, <code>.md</code>, <code>.html</code>/<code>.htm</code>, <code>.epub</code>, <code>.pdf</code>, <code>.docx</code>. Phase B (shell-out): <code>.doc</code>/<code>.rtf</code>/<code>.odt</code> via LibreOffice; <code>.mobi</code>/<code>.azw</code>/<code>.azw3</code> via Calibre's <code>ebook-convert</code>. Each Phase B parser fails cleanly with install instructions if the external tool isn't on the machine.</li>
-<li><strong>OCR fallback.</strong> <code>TesseractPdfOcrService</code> handles scanned PDFs; if the native Tesseract libs or trained data aren't available it goes silent and falls back to text-only extraction rather than crashing the run.</li>
-<li><strong>Pluggable LLMs.</strong> <code>LlmServiceRouter</code> routes chat/reasoning calls to <code>OpenAIService</code>, <code>ClaudeService</code>, <code>DeepSeekService</code>, or <code>GeminiService</code> based on a <code>SELECTED_MODEL</code> preference (default <code>Claude</code>, overridable per CLI invocation with <code>--llm</code>). Embeddings always go through OpenAI regardless of the selected chat provider. Transport (auth, retry, circuit breaker) is owned by <code>MindAttic.Legion</code>; no pipeline code may reference a vendor SDK directly. A <code>KimiService</code> also exists in <code>Tutor.Core/Services/KimiService.cs</code> but is not currently wired into <code>LlmServiceRouter</code>'s switch.</li>
-<li><strong>Knowledge graph.</strong> <code>ConceptExtractionService</code>/<code>ConceptMapService</code> extract a concept JSON per chunk; <code>ConceptCorrelationService</code> + <code>KnowledgeGraphService</code> correlate concepts across resources via LSH + SimHash; <code>OrphanConceptLinkerService</code> reattaches strays; <code>DynamicConceptExpansionService</code> and <code>ConceptMergeService</code> refine the graph further. The course is generated <em>from</em> the graph, not authored by hand.</li>
-<li><strong>RAG.</strong> <code>EmbeddingService</code> + <code>VectorStoreService</code> provide semantic search over <code>ContentChunk</code>s; <code>SimHashService</code> + <code>LSHService</code> do near-duplicate detection.</li>
-<li><strong>Progress and quizzes.</strong> <code>UserProgressService</code> and <code>LearningPathService</code> drive per-user mastery-gated lesson unlocking; <code>QuizGenerationService</code>/<code>QuizService</code> back an LLM-generated (or pre-baked) quiz controller; <code>FinalExamService</code> + <code>CertificateService</code>/<code>CertificateAuthority</code> handle course completion.</li>
-</ul>
-<h2 id="stack">Stack</h2>
-<table><thead><tr>
-<th>Layer</th>
-<th>Technology</th>
-</tr></thead><tbody>
-<tr>
-<td>Host</td>
-<td>ASP.NET Core Blazor Server (<code>net10.0</code>)</td>
-</tr>
-<tr>
-<td>Headless</td>
-<td><code>tutor</code> CLI (<code>Tutor.Cli</code>) — same DI graph as the Blazor host</td>
-</tr>
-<tr>
-<td>LLM transport</td>
-<td><code>MindAttic.Legion</code> (OpenAI / Claude / DeepSeek / Gemini)</td>
-</tr>
-<tr>
-<td>Credentials</td>
-<td><code>MindAttic.Vault</code> — <code>%APPDATA%\MindAttic\LLM\providers.json</code></td>
-</tr>
-<tr>
-<td>Parsing</td>
-<td>UglyToad.PdfPig (PDF), VersOne.Epub (EPUB), AngleSharp (HTML), Open-XML (DOCX) + LibreOffice / Calibre shell-outs</td>
-</tr>
-<tr>
-<td>OCR</td>
-<td>Tesseract (<code>TesseractPdfOcrService</code>), trained data downloaded to <code>Tutor.Core/tessdata</code> on first build</td>
-</tr>
-<tr>
-<td>RAG</td>
-<td>In-process vector store (<code>VectorStoreService</code>) + LSH/SimHash</td>
-</tr>
-<tr>
-<td>Auth</td>
-<td><code>MindAttic.Authentication</code> v1.0.0 — SQL Server (<code>TutorAuthDbContext</code>), Argon2id + pepper, idle/absolute session expiry</td>
-</tr>
-<tr>
-<td>Tests</td>
-<td>NUnit (<code>Tutor.Tests</code>) + Cypress (<code>Tutor.Cypress</code>)</td>
-</tr>
-</tbody></table>
-<h2 id="project-layout">Project layout</h2>
-<table><thead><tr>
-<th>Project / folder</th>
-<th>Purpose</th>
-</tr></thead><tbody>
-<tr>
-<td><code>Tutor.Core</code></td>
-<td>Parsers, the full pipeline, domain models, storage services. Everything substantive lives here.</td>
-</tr>
-<tr>
-<td><code>Tutor.Shared</code></td>
-<td>Razor components shared by the host — layout, pages (<code>Home</code>, <code>Library</code>, <code>Learn</code>, <code>Courses</code>, <code>ConceptGraph</code>, <code>Settings</code>, <code>Users</code>, <code>Login</code>, …), quiz/exam/certificate tabs, chat.</td>
-</tr>
-<tr>
-<td><code>Tutor.Blazor</code></td>
-<td>Blazor Server host. Composition root (<code>Program.cs</code>), DI wiring, middleware, <code>appsettings.json</code>.</td>
-</tr>
-<tr>
-<td><code>Tutor.Cli</code></td>
-<td><code>tutor</code> headless binary. Mirrors Blazor's DI graph; owns bundle export/import and Gutenberg fetch.</td>
-</tr>
-<tr>
-<td><code>Tutor.Tests</code></td>
-<td>NUnit unit/component suite (parsers, services, packaging, models — see <a href="#tests">Tests</a>).</td>
-</tr>
-<tr>
-<td><code>Tutor.Cypress</code></td>
-<td>End-to-end browser tests (sibling Node project, not part of <code>Tutor.slnx</code>).</td>
-</tr>
-<tr>
-<td><code>Courses/</code></td>
-<td>Pre-built <code>.tutor</code> bundles shipped with the repo — see <a href="#the-courses-content-model">content model</a>.</td>
-</tr>
-<tr>
-<td><code>dist/</code></td>
-<td>Local scratch output from CLI runs (smoke tests, batch logs, exported bundles) — not part of the build.</td>
-</tr>
-<tr>
-<td><code>docs/</code></td>
-<td>Codex documentation canon — see <a href="#documentation-canon-docs">below</a>.</td>
-</tr>
-<tr>
-<td><code>tools/</code></td>
-<td><code>codex.ps1</code> (docs digest/doctor) and <code>build-readme.ps1</code> (README → README.htm renderer, see below).</td>
-</tr>
-<tr>
-<td><code>scripts/</code></td>
-<td>Landing-page build scripts referenced by <code>package.json</code> (see <a href="#exportps1">note</a> — currently empty; kept for the npm script wiring).</td>
-</tr>
-<tr>
-<td><code>Export.ps1</code></td>
-<td>Ad-hoc source-export utility — see <a href="#exportps1">below</a>.</td>
-</tr>
-<tr>
-<td><code>index.htm</code></td>
-<td>The <code>mindattic.com/tutor</code> landing page (built separately from README.md; <strong>do not confuse with <code>README.htm</code></strong>).</td>
-</tr>
-</tbody></table>
-<p><code>Tutor.Core</code> references <code>MindAttic.Legion</code> (<code>..\..\MindAttic.Legion\MindAttic.Legion</code>) and <code>MindAttic.Vault</code> as sibling-repo project references — Tutor is not standalone-buildable outside the <code>MindAttic</code> workspace layout.</p>
-<h2 id="domain-model">Domain model</h2>
-<p>The nouns the pipeline and storage layer operate on (<a href="Tutor.Core/Models"><code>Tutor.Core/Models</code></a>):</p>
+<p>The engine lives in <code>Tutor.Core</code>. Two front doors, <code>Tutor.Blazor</code> and <code>Tutor.Cli</code>, register the same service graph, so anything one builds the other reads without translation.</p>
+<h3 id="domain-model">Domain model</h3>
+<p>The nouns in <a href="Tutor.Core/Models">Tutor.Core/Models</a>:</p>
 <table><thead><tr>
 <th>Model</th>
 <th>Meaning</th>
 </tr></thead><tbody>
 <tr>
 <td><code>CourseResource</code></td>
-<td>One ingested source (book/paper/doc). Has original + AI-formatted content. Produces exactly one <code>ConceptMap</code> (1:1).</td>
+<td>One ingested source with original and AI-formatted content. Produces exactly one <code>ConceptMap</code>.</td>
 </tr>
 <tr>
 <td><code>ConceptMap</code></td>
-<td>Concepts + relationships + complexity ordering for a single resource.</td>
+<td>Concepts, relationships and complexity ordering for one resource.</td>
 </tr>
 <tr>
 <td><code>ConceptMapCollection</code></td>
-<td>The aggregated graph across all of a course's resources (<code>collection_{courseId}</code>).</td>
+<td>The combined graph across all of a course's resources.</td>
 </tr>
 <tr>
 <td><code>Course</code></td>
-<td>Lightweight metadata + <strong>references only</strong> — resource IDs, the collection ID, the structure ID. Carries no content directly.</td>
+<td>Metadata and references only: resource IDs, the collection ID, the structure ID.</td>
 </tr>
 <tr>
 <td><code>CourseStructure</code></td>
-<td>The learning path: ordered <code>Lesson</code>s → hierarchical <code>Section</code>s → concept IDs, plus baked <code>PreGeneratedQuestions</code> (quiz).</td>
+<td>The learning path: ordered lessons, hierarchical sections, concept IDs and pre-generated quiz questions.</td>
 </tr>
 <tr>
 <td><code>ContentChunk</code></td>
-<td>A text snippet + its embedding + LSH/SimHash signatures. The RAG substrate.</td>
+<td>A text snippet with its embedding and LSH and SimHash signatures. The RAG substrate.</td>
 </tr>
 <tr>
 <td><code>UserProgress</code></td>
-<td>Per-user, per-course mastery state driving lesson gating.</td>
+<td>Per-user, per-course mastery state that drives lesson gating.</td>
 </tr>
 <tr>
 <td><code>CourseCertificate</code></td>
-<td>Issued on passing the final exam.</td>
+<td>Issued when the final exam is passed.</td>
 </tr>
 </tbody></table>
-<blockquote><p><strong>Invariant:</strong> a <code>Course</code> never embeds content. Content lives in resources, structure, concept maps, and chunks; the course just points at them — this keeps bundles composable and storage deduplicated (see <a href="docs/BIBLE.md#TUT-§4"><code>docs/BIBLE.md</code> §4.2</a>).</p></blockquote>
-<h2 id="getting-started">Getting started</h2>
-<p>Prerequisites: .NET 10 SDK. Optional: LibreOffice (<code>.doc</code>/<code>.rtf</code>/<code>.odt</code>) and Calibre (<code>.mobi</code>/<code>.azw</code>/<code>.azw3</code>). At least one LLM provider API key registered with <code>MindAttic.Vault</code>.</p>
-<pre><code class="language-powershell">dotnet build Tutor.slnx
-
-dotnet run --project Tutor.Blazor
-# -&gt; https://localhost:7200 (HTTPS) or http://localhost:5200 (HTTP)
-# see Tutor.Blazor/Properties/launchSettings.json
-
-dotnet run --project Tutor.Cli -- help</code></pre>
-<p>LLM API keys resolve through <code>MindAttic.Vault</code>'s standard chain: <code>%APPDATA%\MindAttic\LLM\providers.json</code>, layered under environment variables, so the CLI uses the same working keys as every other MindAttic app. Configure them from the Blazor UI's Settings page before running the CLI.</p>
-<h2 id="cli-reference-tutorcli">CLI reference (<code>Tutor.Cli</code>)</h2>
-<p>The <code>tutor</code> binary shares Tutor.Core's full DI graph with the Blazor host, so a course built by one is readable by the other with zero translation. Verbs are dispatched in <a href="Tutor.Cli/Program.cs"><code>Tutor.Cli/Program.cs</code></a>; each is backed by a class under <a href="Tutor.Cli/Commands"><code>Tutor.Cli/Commands/</code></a>.</p>
+<p>A <code>Course</code> never embeds content. Content lives in resources, structure, concept maps and chunks, and the course points at them, which keeps bundles composable and storage deduplicated.</p>
+<h3 id="stack">Stack</h3>
+<table><thead><tr>
+<th>Layer</th>
+<th>Technology</th>
+</tr></thead><tbody>
+<tr>
+<td>Host</td>
+<td>ASP.NET Core Blazor Server, net10.0</td>
+</tr>
+<tr>
+<td>Headless</td>
+<td><code>tutor</code> CLI (<code>Tutor.Cli</code>), same DI graph as the host</td>
+</tr>
+<tr>
+<td>Agent tools</td>
+<td><code>Tutor.Mcp</code>, a stdio Model Context Protocol server</td>
+</tr>
+<tr>
+<td>LLM transport</td>
+<td>MindAttic.Legion 25.0.0</td>
+</tr>
+<tr>
+<td>Credentials</td>
+<td>MindAttic.Vault 5.0.0</td>
+</tr>
+<tr>
+<td>Parsing</td>
+<td>PdfPig, VersOne.Epub, AngleSharp, SmartReader, DocumentFormat.OpenXml, plus LibreOffice and Calibre</td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>Tesseract 5.2.0, trained data in <code>Tutor.Core/tessdata</code></td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>In-process vector store plus LSH and SimHash</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td>MindAttic.Authentication 2.0.0 on SQL Server (<code>TutorAuthDbContext</code>)</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td>NUnit (<code>Tutor.Tests</code>) and Cypress (<code>Tutor.Cypress</code>)</td>
+</tr>
+</tbody></table>
+<h2 id="cli-reference">CLI reference</h2>
+<p><code>Tutor.Cli</code> builds the <code>tutor</code> command. Verbs are dispatched in <a href="Tutor.Cli/Program.cs">Tutor.Cli/Program.cs</a> and implemented under <a href="Tutor.Cli/Commands">Tutor.Cli/Commands</a>. From the repo you can run any of them as <code>dotnet run --project Tutor.Cli -- &lt;verb&gt;</code>.</p>
 <table><thead><tr>
 <th>Command</th>
 <th>What it does</th>
@@ -319,80 +319,77 @@ dotnet run --project Tutor.Cli -- help</code></pre>
 <td>Download a Project Gutenberg work by ID and import it as a new course.</td>
 </tr>
 <tr>
-<td>`tutor gutenberg-top10 [--dry-run] [--allow-duplicate] [--export-dir &lt;dir&gt;] [--quiz-mode baked\</td>
-<td>dynamic\</td>
-<td>both]`</td>
-<td>Drive the curated top-10 (Moby Dick, Pride and Prejudice, Frankenstein, Sherlock Holmes, Alice, Dorian Gray, Tom Sawyer, Treasure Island, Gulliver's Travels, Dracula) sequentially. Skips books whose course name already exists, so a re-run after a partial failure resumes naturally. With <code>--export-dir</code>, writes each course to <code>&lt;dir&gt;/&lt;Title&gt;.tutor</code>. Long-running: roughly 2 hours per book and meaningful API spend.</td>
+<td><code>tutor gutenberg-top10 [--dry-run] [--allow-duplicate] [--export-dir &lt;dir&gt;] [--quiz-mode &lt;mode&gt;]</code></td>
+<td>Build the curated top ten (Moby Dick, Pride and Prejudice, Frankenstein, Sherlock Holmes, Alice, Dorian Gray, Tom Sawyer, Treasure Island, Gulliver's Travels, Dracula) one after another. Skips existing course names, so a re-run resumes. With <code>--export-dir</code>, writes <code>&lt;dir&gt;/&lt;Title&gt;.tutor</code>. Roughly two hours per book and real API spend.</td>
 </tr>
 <tr>
-<td><code>tutor import &lt;path&gt; --course "Name" [--description "..."] [--author "..."] [--title "..."] [--quiz-mode ...] [--allow-duplicate]</code></td>
-<td>Import one local file as a new course. Parser is picked from the file extension.</td>
+<td><code>tutor import &lt;path&gt; --course "Name" [--description "..."] [--author "..."] [--title "..."] [--quiz-mode &lt;mode&gt;] [--allow-duplicate]</code></td>
+<td>Import one local file as a new course; the parser is chosen by extension.</td>
 </tr>
 <tr>
-<td><code>tutor build-course &lt;dir-or-zip&gt; [--course "Override Name"] [--quiz-mode ...] [--export &lt;out.tutor&gt;] [--allow-duplicate]</code></td>
-<td>Build <strong>one</strong> course out of <strong>many</strong> source files in a single command — the headless equivalent of adding each resource in the UI and clicking "Build Course". Point it at a directory or <code>.zip</code> containing a <code>manifest.json</code> plus the files it lists (see shape below). With <code>--export</code>, also writes the redistributable <code>.tutor</code> bundle.</td>
+<td><code>tutor build-course &lt;dir-or-zip&gt; [--course "Override Name"] [--quiz-mode &lt;mode&gt;] [--export &lt;out.tutor&gt;] [--allow-duplicate]</code></td>
+<td>Build one course from many files listed in a <code>manifest.json</code>, the headless version of adding resources in the UI and clicking Build Course. <code>--export</code> also writes the bundle.</td>
 </tr>
 <tr>
 <td><code>tutor export &lt;course-id&gt; &lt;output.tutor&gt;</code></td>
-<td>Export a course (resources, concept map, structure, embeddings) to a single shareable <code>.tutor</code> bundle.</td>
+<td>Export a course to a shareable <code>.tutor</code> bundle.</td>
 </tr>
 <tr>
-<td><code>tutor import-bundle &lt;file.tutor&gt; [--course "Override Name"] [--allow-duplicate]</code> / <code>tutor install &lt;file.tutor&gt; [...]</code></td>
-<td>Restore a course from a <code>.tutor</code> bundle (alias: <code>install</code>). Legacy <code>.tutorcourse</code> files are also accepted. All IDs are rewritten so a re-import never collides with existing data. Skips the LLM pipeline entirely (embeddings ride along) — typically under 1 second regardless of book size.</td>
+<td><code>tutor import-bundle &lt;file.tutor&gt; [--course "Override Name"] [--allow-duplicate]</code></td>
+<td>Install a course from a bundle (alias <code>tutor install</code>). Accepts legacy <code>.tutorcourse</code> files, rewrites all IDs, skips the LLM pipeline, typically under a second.</td>
 </tr>
 <tr>
 <td><code>tutor list</code></td>
-<td>List all courses on this machine.</td>
+<td>List the courses on this machine.</td>
 </tr>
 <tr>
 <td><code>tutor delete &lt;course-id&gt; [--dry-run]</code></td>
-<td>Remove a course and cascade-delete its resources, concept maps, course structure, embeddings, and <code>ConceptMapCollection</code> file. <code>--dry-run</code> prints what would be removed without touching anything.</td>
+<td>Remove a course and its resources, concept maps, structure, embeddings and collection file. <code>--dry-run</code> only prints what would go.</td>
 </tr>
 <tr>
-<td><code>tutor fetch &lt;...&gt;</code></td>
-<td><code>FetchOnlyCommand</code> — download a remote source without parsing it.</td>
+<td><code>tutor keys --provider &lt;provider&gt; &lt;action&gt;</code></td>
+<td>Manage the key pool for claude, openai, gemini or deepseek. Actions: <code>--list</code>, one or more <code>--set-key &lt;key&gt;</code>, <code>--add-key &lt;key&gt;</code>, <code>--remove-key &lt;key&gt;</code>, <code>--clear</code>.</td>
 </tr>
 <tr>
-<td><code>tutor parse &lt;...&gt;</code></td>
-<td><code>ParseOnlyCommand</code> — parse a source without running the LLM pipeline.</td>
+<td><code>tutor fetch</code></td>
+<td>Download a remote source without parsing it (<code>FetchOnlyCommand</code>).</td>
+</tr>
+<tr>
+<td><code>tutor parse</code></td>
+<td>Parse a source without running the LLM pipeline (<code>ParseOnlyCommand</code>).</td>
 </tr>
 <tr>
 <td><code>tutor diag-keys</code></td>
-<td>Print masked LLM key/preference diagnostics (Vault-resolved key lengths/suffixes, current <code>SELECTED_MODEL</code>).</td>
+<td>Print masked key and <code>SELECTED_MODEL</code> diagnostics.</td>
 </tr>
 <tr>
 <td><code>tutor help</code></td>
-<td>Show CLI usage.</td>
+<td>Show usage.</td>
 </tr>
 </tbody></table>
-<p>Global flags (stripped before the verb dispatch, so any command accepts them):</p>
+<p>Global flags, accepted by every verb:</p>
 <table><thead><tr>
 <th>Flag</th>
 <th>Effect</th>
 </tr></thead><tbody>
 <tr>
 <td><code>--verbose</code></td>
-<td>Turns on <code>Tutor.Core</code>'s trace-level logging, forwarded to stderr as <code>[LEVEL] message</code>.</td>
+<td>Trace-level <code>Tutor.Core</code> logging to stderr as <code>[LEVEL] message</code>.</td>
 </tr>
 <tr>
-<td>`--llm &lt;openai\</td>
-<td>claude\</td>
-<td>deepseek\</td>
-<td>gemini&gt;`</td>
-<td>Overrides the chat/reasoning provider for this run (default <code>claude</code>). Embeddings always use OpenAI regardless. Persisted to the shared <code>SELECTED_MODEL</code> preference that <code>LlmServiceRouter</code> reads.</td>
+<td><code>--llm &lt;provider&gt;</code></td>
+<td>Chat provider for this run: openai, claude, deepseek or gemini (default claude). Written to the shared <code>SELECTED_MODEL</code> preference. Embeddings still use OpenAI.</td>
 </tr>
 <tr>
-<td>`--quiz-mode baked\</td>
-<td>dynamic\</td>
-<td>both`</td>
-<td>Controls section quizzes: <code>baked</code>/<code>both</code> (default) pre-generate and bundle questions for offline play; <code>dynamic</code> skips pre-generation and lets the runtime generate them live from the bundled concept maps.</td>
+<td><code>--quiz-mode &lt;mode&gt;</code></td>
+<td><code>baked</code> or <code>both</code> (default) pre-generate and bundle section quizzes; <code>dynamic</code> generates them live from the bundled concept maps.</td>
 </tr>
 <tr>
 <td><code>--allow-duplicate</code></td>
-<td>By default a duplicate-name course is rejected; pass this to intentionally create a second copy (e.g. a different translation/printing).</td>
+<td>Allow a second course with an existing name, for example a different translation.</td>
 </tr>
 </tbody></table>
-<p><code>build-course</code>'s <code>manifest.json</code> shape:</p>
+<p>The <code>build-course</code> manifest:</p>
 <pre><code class="language-json">{
   "name": "...",
   "description": "...",
@@ -401,63 +398,51 @@ dotnet run --project Tutor.Cli -- help</code></pre>
     { "file": "ch1.epub", "title": "...", "author": "..." }
   ]
 }</code></pre>
-<p>Course data is stored at <code>%LocalAppData%\Tutor\...</code> and shared with the Blazor UI — anything imported via the CLI shows up there immediately.</p>
-<blockquote><p><strong>Note on drift:</strong> the CLI verbs above (<code>gutenberg-top10</code>, <code>import</code>, <code>build-course</code>, <code>fetch</code>, <code>parse</code>, <code>diag-keys</code>) are read directly from <code>Program.cs</code>'s verb switch and its embedded <code>PrintHelp()</code> text. If you edit <code>Program.cs</code>'s command surface, update this table in the same change.</p></blockquote>
-<h2 id="the-courses-content-model">The <code>Courses/</code> content model</h2>
-<p><a href="Courses"><code>Courses/</code></a> ships ten pre-built <code>.tutor</code> bundles — self-contained zips carrying course metadata, the learning structure (lessons → topics → sections), concept maps, baked quiz questions, and RAG embeddings, so they install without re-running the (slow, paid) LLM pipeline. One file per course; bundles are independent and are <strong>never</strong> merged (<a href="docs/BIBLE.md#TUT-LAW-3"><code>TUT-LAW-3</code></a>).</p>
-<p>Included (all Project Gutenberg sources): <em>Alice's Adventures in Wonderland</em>, <em>Dracula</em>, <em>Frankenstein</em>, <em>Gulliver's Travels</em>, <em>Moby Dick; Or, The Whale</em>, <em>Pride and Prejudice</em>, <em>The Adventures of Sherlock Holmes</em>, <em>The Adventures of Tom Sawyer</em>, <em>The Picture of Dorian Gray</em>, <em>Treasure Island</em>. See <a href="Courses/README.md"><code>Courses/README.md</code></a> for the authoritative list.</p>
-<p><strong>Install a bundled course:</strong></p>
-<pre><code class="language-powershell">tutor install "Courses/Moby Dick; Or, The Whale.tutor"</code></pre>
-<p>(<code>tutor install</code> is an alias of <code>tutor import-bundle</code>.) All IDs are rewritten on import, so installing the same bundle twice yields two distinct courses rather than overwriting one. Once installed, the course appears in the Tutor Blazor UI automatically.</p>
-<p><strong>Remove a course:</strong></p>
-<pre><code class="language-powershell">tutor list                 # find the course id
+<h2 id="courses">Courses</h2>
+<p><a href="Courses">Courses/</a> ships ten pre-built bundles, all from Project Gutenberg: Alice's Adventures in Wonderland, Dracula, Frankenstein, Gulliver's Travels, Moby Dick; Or, The Whale, Pride and Prejudice, The Adventures of Sherlock Holmes, The Adventures of Tom Sawyer, The Picture of Dorian Gray and Treasure Island. Each is a zip with course metadata, the learning structure, concept maps, baked quiz questions and embeddings, between about 1 MB and 10.5 MB. <a href="Courses/README.md">Courses/README.md</a> is the authoritative list.</p>
+<pre><code class="language-powershell">tutor install "Courses/Moby Dick; Or, The Whale.tutor"
+tutor list                 # find the course id
 tutor delete &lt;course-id&gt;   # cascades resources, structure, concept maps, embeddings</code></pre>
-<p><strong>Add a new bundle to <code>Courses/</code></strong> — build it with the CLI, then commit the resulting <code>.tutor</code> file:</p>
+<p>To add a bundle, build it with the CLI and commit the <code>.tutor</code> file:</p>
 <pre><code class="language-powershell">tutor gutenberg-top10 --export-dir Courses --quiz-mode both
-# or, for an arbitrary source directory/zip:
 tutor build-course &lt;dir-or-zip&gt; --export "Courses/My Course.tutor"</code></pre>
-<p>Bundles carry embeddings and can be several MB each; they are committed to the repo so courses travel with it. See <a href="docs/rfc/0001-course-packaging.md">RFC 0001 — Course Packaging &amp; Sharing</a> for the archive's internal layout (<code>manifest.json</code>, <code>course.json</code>, <code>courseStructure.json</code>, per-resource JSON/text, concept maps, <code>chunks.json</code>) and the roadmap toward an in-app load/unload library.</p>
+<p><a href="docs/rfc/0001-course-packaging.md">RFC 0001, Course Packaging and Sharing</a> documents the archive layout (<code>manifest.json</code>, <code>course.json</code>, <code>courseStructure.json</code>, per-resource JSON and text, concept maps, <code>chunks.json</code>) and the roadmap toward an in-app load and unload library.</p>
 <h2 id="configuration">Configuration</h2>
-<p>Connection string resolution priority (Tutor.Blazor's data store):</p>
-<ol>
-<li><code>ConnectionStrings__Tutor</code> environment variable</li>
-<li><code>ConnectionStrings:Tutor</code> in <code>appsettings.json</code></li>
-<li>LocalDB fallback</li>
-</ol>
-<p>The auth database (<code>TutorAuthDbContext</code>) resolves its own connection string the same way, keyed <code>TutorAuth</code> (<code>ConnectionStrings__TutorAuth</code> env var, else <code>ConnectionStrings:TutorAuth</code>, else LocalDB).</p>
-<p>LLM credentials follow <code>MindAttic.Vault</code>'s standard resolution chain — <code>%APPDATA%\MindAttic\LLM\providers.json</code> or <code>MindAttic:Vault:LLM:*</code> in <code>IConfiguration</code>.</p>
-<h2 id="exportps1">Export.ps1</h2>
-<p><code>Export.ps1</code> at the repo root is a generic <strong>source-bundling utility</strong>, not Tutor-specific tooling — its header comments describe a Unity project export ("Export Unity project sources... Default: ONLY .cs files") and it does not reference any Tutor concept. In this repo it walks the tree from wherever it's invoked, collects <code>.cs</code> files (extra extensions like <code>.prefab</code>/<code>.meta</code>/<code>.unity</code> are commented out and unused here), skips noisy directories (<code>.git</code>, <code>.vs</code>, <code>obj</code>, <code>bin</code>, etc.), and writes a single <code>ExportedScripts.txt</code> containing a JSON manifest (path/SHA-256/size/line count per file) followed by the full text of every file, delimited by <code>&lt;&lt;&lt;FILE START&gt;&gt;&gt;</code> / <code>&lt;&lt;&lt;FILE END&gt;&gt;&gt;</code> markers. It appears to be a shared personal script reused across repos (including non-.NET ones) rather than a maintained part of the Tutor build. Run it with:</p>
-<pre><code class="language-powershell">powershell -File Export.ps1</code></pre>
-<p><code>ExportedScripts.txt</code> (checked into the repo, ~860 KB) is its most recent output.</p>
-<h2 id="tests">Tests</h2>
+<ul>
+<li>Course data is file-based under <code>%LocalAppData%\Tutor</code> (concept maps, knowledge graphs, vector store, LSH, course structures, logs). Individual folders can be redirected through <code>data-storage.settings.json</code> (<code>DataStorageSettings</code>). The CLI and the Blazor app share this folder.</li>
+<li>The sign-in database connection string is read from <code>ConnectionStrings:TutorAuth</code> in configuration, then the <code>ConnectionStrings__TutorAuth</code> environment variable, then falls back to LocalDB (<code>(localdb)\MSSQLLocalDB</code>, database <code>TutorAuth</code>).</li>
+<li>LLM keys resolve through MindAttic.Vault: <code>%APPDATA%\MindAttic\LLM\providers.json</code> layered under environment variables (<code>MindAttic:Vault:LLM:*</code>), so the CLI uses the same keys as every other MindAttic app. Per-provider key pools are managed with <code>tutor keys</code>, the MCP server, or the Settings page.</li>
+<li>In production the host stores Data Protection keys in Azure Blob Storage protected by Key Vault and requires <code>DataProtection:BlobUri</code> and <code>DataProtection:KeyVaultKeyId</code>.</li>
+</ul>
+<h2 id="mcp-server">MCP server</h2>
+<p><code>Tutor.Mcp</code> is a stdio Model Context Protocol server that exposes the key-pool operations (list, set, add, remove, clear, per provider) as tools, so an assistant can rotate Tutor's keys without a human running <code>tutor keys</code>. It is not part of <code>Tutor.slnx</code>; run it with <code>dotnet run --project Tutor.Mcp</code> from an MCP client.</p>
+<h2 id="testing">Testing</h2>
 <pre><code class="language-powershell">dotnet test Tutor.Tests</code></pre>
-<p><code>Tutor.Tests</code> (NUnit) is organized into <code>Fakes/</code>, <code>Models/</code>, <code>Packaging/</code>, <code>Parsers/</code>, and <code>Services/</code> subfolders, covering parsers, the concept-map JSON shape, packaging (export/import round-trips), auth import/admin contracts, and the full course lifecycle (lock → unlock → final exam → certificate → unload) via <code>FullCourseLifecycleTests</code>. As of the last recorded bible update (2026-06-07): <strong>380 passed, 0 failed, 0 skipped</strong>, build clean. The end-to-end LLM pipeline itself (extraction, section fill) is deliberately <em>not</em> automated — it's paid and non-deterministic — so those stories are marked 🟡 partial in <a href="docs/USER_STORIES.md"><code>docs/USER_STORIES.md</code></a> even though the surrounding primitives are pinned.</p>
+<p><code>Tutor.Tests</code> (NUnit) is organised into <code>Fakes</code>, <code>Models</code>, <code>Packaging</code>, <code>Parsers</code> and <code>Services</code>. It covers the parsers, the concept-map JSON shape, export and import round-trips, auth import and admin contracts, and the full course lifecycle (lock, unlock, final exam, certificate, unload) in <code>FullCourseLifecycleTests</code>. Last recorded run (docs/BIBLE.md, 2026-06-07): 380 passed, 0 failed, 0 skipped. The paid, non-deterministic LLM pipeline itself is deliberately not automated, so those stories are marked partial in <a href="docs/USER%5FSTORIES.md">docs/USER%5FSTORIES.md</a>.</p>
+<p>End-to-end tests need the app running on <code>http://localhost:5200</code> first:</p>
 <pre><code class="language-powershell">cd Tutor.Cypress
 npm install
-npm run cypress:run    # headless; Tutor.Blazor must be running first
-# or: npm run cypress:open   (interactive runner)</code></pre>
-<p>Tutor.Blazor must be reachable at <code>http://localhost:5200</code> (default) before running Cypress — start it with <code>dotnet run --project Tutor.Blazor</code>. Override the base URL with <code>$env:CYPRESS_BASE_URL = "https://localhost:7200"</code>. Authenticated specs use a <code>cy.login()</code> custom command; provide credentials via <code>$env:CYPRESS_username</code> / <code>$env:CYPRESS_password</code>.</p>
-<p>Specs in <a href="Tutor.Cypress/e2e"><code>Tutor.Cypress/e2e/</code></a>:</p>
+npm run cypress:run</code></pre>
+<p>Use <code>npm run cypress:open</code> for the interactive runner. Override the address with <code>$env:CYPRESS_BASE_URL = "https://localhost:7200"</code>. Authenticated specs use a <code>cy.login()</code> command; supply credentials through <code>$env:CYPRESS_username</code> and <code>$env:CYPRESS_password</code>.</p>
 <table><thead><tr>
 <th>Spec</th>
 <th>Covers</th>
 </tr></thead><tbody>
 <tr>
 <td><code>smoke.cy.ts</code></td>
-<td>Basic app-is-alive check.</td>
+<td>The app is alive.</td>
 </tr>
 <tr>
 <td><code>auth.cy.ts</code></td>
-<td>Login/redirect guards.</td>
+<td>Login and redirect guards.</td>
 </tr>
 <tr>
 <td><code>courses.cy.ts</code></td>
-<td>Course library listing/navigation.</td>
+<td>Course library listing and navigation.</td>
 </tr>
 <tr>
 <td><code>course-flow.cy.ts</code></td>
-<td>Deterministic course-flow wiring (lock/unlock, navigation).</td>
+<td>Deterministic course flow: lock, unlock, navigation.</td>
 </tr>
 <tr>
 <td><code>concept-graph.cy.ts</code></td>
@@ -465,61 +450,104 @@ npm run cypress:run    # headless; Tutor.Blazor must be running first
 </tr>
 <tr>
 <td><code>quiz.cy.ts</code></td>
-<td>Quiz UI wiring (not the LLM-generated content itself — that's pinned by <code>FullCourseLifecycleTests</code> instead).</td>
+<td>Quiz UI wiring (the generated content is pinned by <code>FullCourseLifecycleTests</code>).</td>
 </tr>
 </tbody></table>
-<p><strong>Definition of done for a feature:</strong> clean <code>dotnet build Tutor.slnx</code>, green <code>Tutor.Tests</code>, and — for anything user-facing — a Cypress guard or a lifecycle assertion. No vendor lock-in introduced; whole-number versioning respected (<a href="../MindAttic.HouseRules.md#HOUSE-LAW-8">HOUSE-LAW-8</a>).</p>
-<h2 id="documentation-canon-docs">Documentation canon (<code>docs/</code>)</h2>
-<p>Tutor has adopted the MindAttic "Codex" documentation standard — a fact lives in exactly one layer, linked by stable ID, never by line number:</p>
+<p>A feature is done when <code>dotnet build Tutor.slnx</code> is clean, <code>Tutor.Tests</code> is green and, for anything user-facing, a Cypress guard or lifecycle assertion covers it.</p>
+<h2 id="project-layout">Project layout</h2>
 <table><thead><tr>
-<th>Layer</th>
-<th>File</th>
-<th>Role</th>
+<th>Project or folder</th>
+<th>Purpose</th>
 </tr></thead><tbody>
 <tr>
-<td>L0</td>
-<td><a href="docs/BIBLE.md"><code>docs/BIBLE.md</code></a></td>
-<td>What Tutor <strong>is</strong>/is not, architecture canon, the Laws (<code>{#TUT-LAW-n}</code>), verified state, active frontier, glossary.</td>
+<td><code>Tutor.Core</code></td>
+<td>Parsers, the pipeline, domain models and storage services.</td>
 </tr>
 <tr>
-<td>L1</td>
-<td><a href="docs/AMENDMENTS.md"><code>docs/AMENDMENTS.md</code></a></td>
-<td>Append-only change log (<code>TUT-A&lt;n&gt;</code>); an amendment <strong>wins</strong> over the bible. Currently empty — bible is epoch 0.</td>
+<td><code>Tutor.Shared</code></td>
+<td>Razor components: layout, pages, quiz, exam and certificate tabs, chat.</td>
 </tr>
 <tr>
-<td>L2</td>
-<td><a href="docs/USER_STORIES.md"><code>docs/USER_STORIES.md</code></a></td>
-<td>Acceptance stories (<code>TUT-US-&lt;Epic&gt;&lt;n&gt;</code>), each <code>✅</code> citing its verifying test.</td>
+<td><code>Tutor.Blazor</code></td>
+<td>Blazor Server host: <code>Program.cs</code> composition root, middleware, <code>appsettings.json</code>.</td>
 </tr>
 <tr>
-<td>rfc</td>
-<td><a href="docs/rfc/0001-course-packaging.md"><code>docs/rfc/0001-course-packaging.md</code></a></td>
-<td>Design note for the in-app course load/unload/share roadmap — compares <code>.tutor</code> to <code>MindAttic.Ideas</code>'s <code>.idea</code> packaging and lays out the upgrade path.</td>
+<td><code>Tutor.Cli</code></td>
+<td>The <code>tutor</code> command; mirrors the host's DI graph and owns bundle export, import and Gutenberg fetch.</td>
 </tr>
 <tr>
-<td>generated</td>
-<td><a href="docs/BIBLE.digest.md"><code>docs/BIBLE.digest.md</code></a></td>
-<td>Produced by <code>tools/codex.ps1 digest</code>; injected as session context. <strong>Never hand-edit.</strong></td>
+<td><code>Tutor.Mcp</code></td>
+<td>MCP server for key-pool management (outside the solution).</td>
+</tr>
+<tr>
+<td><code>Tutor.Tests</code></td>
+<td>NUnit suite.</td>
+</tr>
+<tr>
+<td><code>Tutor.Cypress</code></td>
+<td>Cypress end-to-end tests (separate Node project).</td>
+</tr>
+<tr>
+<td><code>Courses/</code></td>
+<td>The ten shipped <code>.tutor</code> bundles.</td>
+</tr>
+<tr>
+<td><code>dist/</code></td>
+<td>Local scratch output from CLI runs; not part of the build.</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>Codex documentation canon.</td>
+</tr>
+<tr>
+<td><code>tools/</code></td>
+<td><code>codex.ps1</code> (docs digest and doctor) and <code>build-readme.ps1</code> (README.md to README.htm).</td>
+</tr>
+<tr>
+<td><code>Export.ps1</code></td>
+<td>Source-export utility, see below.</td>
+</tr>
+<tr>
+<td><code>index.htm</code></td>
+<td>Old static landing page from the retired mindattic.com pipeline; not the same file as <code>README.htm</code>.</td>
 </tr>
 </tbody></table>
-<p>Org-wide rules (whole-number versioning, soft-disable-never-delete, credentials-through-Vault, provider-agnostic LLMs, guarded-zip packaging, one-engine-many-front-doors, MindAttic.Authentication, verified-not-asserted done) live once in <code>../MindAttic.HouseRules.md</code> and are inherited by reference from <a href="docs/BIBLE.md#TUT-§5"><code>docs/BIBLE.md</code> §5</a> — see that section for how each maps onto Tutor specifically.</p>
-<p>Before editing anything under <code>docs/</code>, run <code>pwsh tools/codex.ps1 doctor</code> (must pass); run <code>pwsh tools/codex.ps1 digest</code> after touching <code>BIBLE.md</code>.</p>
-<p><strong>Regenerating this file as HTML:</strong> <code>tools/build-readme.ps1</code> renders this <code>README.md</code> to <code>README.htm</code> at the repo root, using the shared engine at <code>../codex-standard/build-readme.ps1</code> (one engine for every MindAttic repo, so every <code>README.htm</code> looks and behaves identically). Run it with:</p>
-<pre><code class="language-powershell">powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-readme.ps1</code></pre>
-<p><code>README.htm</code> is a separate artifact from <code>index.htm</code> at the repo root — <code>index.htm</code> is the <code>mindattic.com</code> landing page (built by a different, currently-retired pipeline; see the note under <a href="#project-layout">Project layout</a>) and should not be confused with, or overwritten by, the README renderer.</p>
-<h2 id="code-style">Code style</h2>
+<h3 id="exportps1">Export.ps1</h3>
+<p><code>Export.ps1</code> is a generic source-bundling script (its header still describes a Unity export). It walks the tree, collects <code>.cs</code> files, skips <code>.git</code>, <code>.vs</code>, <code>obj</code>, <code>bin</code> and similar folders, and writes <code>ExportedScripts.txt</code>: a JSON manifest (path, SHA-256, size, line count) followed by every file between <code>&lt;&lt;&lt;FILE START&gt;&gt;&gt;</code> and <code>&lt;&lt;&lt;FILE END&gt;&gt;&gt;</code> markers. <code>ExportedScripts.txt</code> in the repo is its latest output.</p>
+<pre><code class="language-powershell">powershell -File Export.ps1</code></pre>
+<h3 id="code-style">Code style</h3>
 <ul>
-<li>Private fields: <code>camelCase</code> without underscore prefix.</li>
-<li>Constructors: <code>this.x = x</code> to disambiguate.</li>
+<li>Private fields are <code>camelCase</code> with no underscore prefix.</li>
+<li>Constructors use <code>this.x = x</code> to disambiguate.</li>
 </ul>
-<h2 id="known-limitations">Known limitations</h2>
+<h2 id="limitations">Limitations</h2>
 <ul>
-<li><strong>Quiz attribution during mid-circuit starts.</strong> <code>QuizService</code> reads the user ID from <code>IHttpContextAccessor</code>, which is <code>null</code> after the initial Blazor Server render, so mid-circuit quiz starts attribute to <code>"anonymous"</code>. Tracked as a TODO in <a href="Tutor.Core/Services/Quiz/QuizService.cs"><code>Tutor.Core/Services/Quiz/QuizService.cs</code></a> and as <a href="docs/USER_STORIES.md#TUT-EPIC-B">story B5</a>. Fix is to thread the ID from <code>AuthenticationState</code> instead.</li>
-<li><strong>Not multi-tenant.</strong> Single-host Blazor Server app with SQL-backed auth; designs should not assume horizontal scale-out or per-tenant isolation (<a href="docs/BIBLE.md#TUT-§3"><code>docs/BIBLE.md</code> §3</a>).</li>
-<li><strong>Landing-page build scripts are stale.</strong> <code>package.json</code>'s <code>build</code>/<code>deploy</code> npm scripts point at <code>scripts/cli/build-html.js</code> and <code>scripts/cli/deploy.ps1</code>, but that directory is currently empty — the local FTP landing-page machinery was retired in favor of routing <code>/deploy</code> through <code>MindAttic.Deploy</code> (see git history on <code>scripts/cli</code>). The npm script entries were left in place but do not currently resolve to files in this repo.</li>
+<li>Quiz attribution: <code>QuizService</code> reads the user ID from <code>IHttpContextAccessor</code>, which is null after the first Blazor Server render, so quizzes started mid-circuit are attributed to "anonymous". Tracked as a TODO in <a href="Tutor.Core/Services/Quiz/QuizService.cs">QuizService.cs</a> and as story B5.</li>
+<li>Single host: Blazor Server with SQL-backed auth, not built for scale-out or per-tenant isolation.</li>
+<li><code>KimiService</code> exists but is not wired into <code>LlmServiceRouter</code> or the key pools.</li>
+<li>Debug builds reference a sibling <code>MindAttic.Authentication</code> checkout, so a Debug build expects the MindAttic workspace layout.</li>
+<li><code>package.json</code> still has <code>build</code> and <code>deploy</code> scripts for the retired landing page; <code>scripts/cli/</code> holds no scripts.</li>
 </ul>
+<h2 id="documentation">Documentation</h2>
+<p>Tutor follows the MindAttic Codex standard: each fact lives in one layer, linked by a stable ID.</p>
+<ul>
+<li><a href="docs/BIBLE.md">docs/BIBLE.md</a> - what Tutor is and is not, architecture, the Laws (<code>TUT-LAW-n</code>), verified state, glossary. Where this README and the Bible disagree, the Bible wins.</li>
+<li><a href="docs/AMENDMENTS.md">docs/AMENDMENTS.md</a> - append-only change log (<code>TUT-A&lt;n&gt;</code>); an amendment wins over the Bible.</li>
+<li><a href="docs/USER_STORIES.md">User stories</a> - acceptance stories <code>TUT-US-&lt;Epic&gt;&lt;n&gt;</code>, each done story citing its test.</li>
+<li><a href="docs/rfc/0001-course-packaging.md">docs/rfc/0001-course-packaging.md</a> - course load, unload and share roadmap.</li>
+<li><a href="docs/COURSE%5FPACKAGING%5FDESIGN.md">Course packaging design</a> - design notes behind the <code>.tutor</code> bundle format.</li>
+<li><a href="docs/BIBLE.digest.md">docs/BIBLE.digest.md</a> - generated by <code>tools/codex.ps1 digest</code>; never hand-edit.</li>
+<li><a href="AGENTS.md">AGENTS.md</a> - instructions for coding agents working in this repo.</li>
+</ul>
+<pre><code class="language-powershell">powershell -File tools/codex.ps1 doctor    # must pass before editing docs/
+powershell -File tools/codex.ps1 digest    # after touching BIBLE.md
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-readme.ps1    # README.md to README.htm</code></pre>
+<h2 id="license">License</h2>
+<p>This repository has no LICENSE file. All rights reserved. The bundled courses are built from public-domain Project Gutenberg texts.</p>
+<hr>
+<p>Part of <a href="https://mindattic.com">MindAttic</a> — see more projects at <a href="https://github.com/mindattic">github.com/mindattic</a>. Related: <a href="https://github.com/mindattic/MindAttic.Legion">MindAttic.Legion</a> (LLM transport), <a href="https://github.com/mindattic/MindAttic.Vault">MindAttic.Vault</a> (credentials), <a href="https://github.com/mindattic/MindAttic.Authentication">MindAttic.Authentication</a> (sign-in).</p>
 
-    <p class="codex-footer">Generated 2026-08-14 by the shared MindAttic Codex engine (<code>codex-standard/build-readme.ps1</code>) from <code>README.md</code>. Edit the Markdown source, not this file.</p>
+    <p class="codex-footer">Generated 2026-10-03 by the shared MindAttic Codex engine (<code>codex-standard/build-readme.ps1</code>) from <code>README.md</code>. Edit the Markdown source, not this file.</p>
   </main>
 </div>
 <script>(function(){
