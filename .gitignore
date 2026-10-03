@@ -16,3 +16,7 @@ package-lock.json
 # Generated course bundles + CLI run artifacts (.tutor zips carry embeddings; large)
 dist/
 .claude/quicksave.md
+
+# .NET build output (never commit)
+[Bb]in/
+[Oo]bj/
