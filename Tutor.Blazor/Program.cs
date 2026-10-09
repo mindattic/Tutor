@@ -183,6 +183,10 @@ builder.Services.AddSingleton<KnowledgeGraphBuildService>();
 // Logging storage service (persists logs to file)
 builder.Services.AddSingleton<LogStorageService>();
 
+// Bridges Log.Info/Warn/Error/... (unchanged call sites) into the shared MindAttic.Log pipeline
+// alongside the existing JSON persistence above — see MindAtticLogBridge's own doc comment.
+builder.Services.AddSingleton<MindAtticLogBridge>();
+
 // Background queue services
 builder.Services.AddSingleton<BackgroundQueueStorageService>();
 builder.Services.AddSingleton<ResourceUploadTaskHandler>();
@@ -262,6 +266,9 @@ using (var scope = app.Services.CreateScope())
 // Initialize services that need startup initialization
 var logStorage = app.Services.GetRequiredService<LogStorageService>();
 logStorage.Initialize();
+
+// Starts bridging Log.* calls into MindAttic.Log from this point on (constructor subscribes).
+_ = app.Services.GetRequiredService<MindAtticLogBridge>();
 
 var settings = app.Services.GetRequiredService<SettingsService>();
 _ = settings.LoadLogSettingsAsync();
