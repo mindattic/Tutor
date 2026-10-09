@@ -1,4 +1,5 @@
 using System.Text;
+using MindAttic.Export.Artifacts;
 using System.Text.Json;
 using Tutor.Core.Models;
 using Tutor.Core.Services.Logging;
@@ -313,10 +314,9 @@ public sealed class ConceptMapStorageService
         {
             StorageSettings.Load();
             var cmDir = Path.Combine(StorageSettings.GetResolvedDirectory(), "ConceptMaps");
-            Directory.CreateDirectory(cmDir);
 
             var safeFileName = SanitizeFileName(conceptMap.Name);
-            var filePath = Path.Combine(cmDir, $"{safeFileName}_concept-map.md");
+            var fileName = $"{safeFileName}_concept-map.md";
 
             var sb = new StringBuilder();
             
@@ -460,7 +460,10 @@ public sealed class ConceptMapStorageService
                 }
             }
 
-            await File.WriteAllTextAsync(filePath, sb.ToString(), ct);
+            // Regenerated on every save: overwrite in place, keep Tutor's own file naming,
+            // UTF-8 without BOM (as File.WriteAllTextAsync wrote it).
+            var filePath = await ArtifactWriter.WriteTextAsync(cmDir, fileName, sb.ToString(),
+                new ArtifactOptions { Existing = ExistingArtifact.Overwrite, SanitizeName = false }, ct);
             Log.Debug($"ConceptMapStorage: Saved human-readable export to {filePath}");
         }
         catch (Exception ex)

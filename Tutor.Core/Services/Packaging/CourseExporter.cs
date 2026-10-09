@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using MindAttic.Export.Artifacts;
 using Tutor.Core.Models;
 
 namespace Tutor.Core.Services.Packaging;
@@ -119,21 +120,24 @@ public sealed class CourseExporter
 
         manifest.Sha256 = BundleArchiveSafety.ComputePayloadSha256(payload);
 
-        var dir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!string.IsNullOrEmpty(dir))
-            Directory.CreateDirectory(dir);
+        // The .tutor layout (entry names, order, Optimal compression, manifest last) is the
+        // import contract (HOUSE-LAW-5) and stays here; ArtifactWriter owns creating the folder
+        // and placing the file atomically. The caller names the exact path and an existing
+        // bundle is replaced, as before.
+        var fullPath = Path.GetFullPath(outputPath);
+        await ArtifactWriter.WriteZipAsync(
+            Path.GetDirectoryName(fullPath)!,
+            Path.GetFileName(fullPath),
+            async (archive, c) =>
+            {
+                foreach (var (name, content) in payload)
+                    await WriteEntryAsync(archive, name, content, c);
 
-        if (File.Exists(outputPath)) File.Delete(outputPath);
-
-        using (var zipStream = File.Create(outputPath))
-        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
-        {
-            foreach (var (name, content) in payload)
-                await WriteEntryAsync(archive, name, content, ct);
-
-            // Manifest written last so reading it doesn't require the rest to be present.
-            await WriteEntryAsync(archive, "manifest.json", ToJsonBytes(manifest), ct);
-        }
+                // Manifest written last so reading it doesn't require the rest to be present.
+                await WriteEntryAsync(archive, "manifest.json", ToJsonBytes(manifest), c);
+            },
+            new ArtifactOptions { Existing = ExistingArtifact.Overwrite, SanitizeName = false },
+            ct);
 
         return manifest;
     }
