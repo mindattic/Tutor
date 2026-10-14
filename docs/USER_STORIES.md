@@ -209,3 +209,13 @@ Personas:
 3. **TUT-US-B5** — real per‑user quiz attribution.
 4. **TUT-US-C4** — automated test for the idle‑timeout modal.
 5. **TUT-US-A6** — in‑app course building and monitoring.
+
+## Tickets
+> Permanent log of every change and fix — this repo's ticket system. Rows are append-only: never
+> delete or reword one; only move its Status (open → closed / wont-do) and fill in Ref. Status is
+> a word, not a glyph, so tickets don't count toward the story index. Keep this section last.
+
+| ID | Date | Type | Status | Summary | Ref |
+|---|---|---|---|---|---|
+| TUT-T1 | 2026-10-12 | docs | closed | Start the permanent ticket log in USER_STORIES.md | — |
+| TUT-T2 | 2026-10-12 | chore | closed | /commit now logs every commit as a ticket in this table | `.claude/skills/commit/SKILL.md` |
