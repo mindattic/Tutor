@@ -1,6 +1,6 @@
 ﻿# Tutor - Bible Digest
 > AUTHORITATIVE - full detail in docs/BIBLE.md
-> generatedFrom: docs/BIBLE.md  -  generated: 2026-10-03
+> generatedFrom: docs/BIBLE.md  -  generated: 2026-10-15
 > Do not hand-edit; regenerate with `tools/codex.ps1 digest`.
 
 ## One sentence
