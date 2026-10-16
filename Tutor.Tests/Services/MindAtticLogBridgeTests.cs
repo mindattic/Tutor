@@ -9,7 +9,7 @@ namespace Tutor.Tests.Services;
 /// Proves MindAtticLogBridge actually bridges Tutor's existing Log.Info/Warn/Error/... call
 /// sites (unchanged) into the shared MindAttic.Log pipeline's standalone database, and that the
 /// existing LogStore stays untouched for the live in-app viewer — not just that the package
-/// reference compiles. Redirects Vault's roaming root via its env-var override (VLT-LAW-6) so this
+/// reference compiles. Redirects Vault's roaming root via its env-var override (M.VALT-LAW-6) so this
 /// never touches the real %APPDATA%.
 /// </summary>
 public class MindAtticLogBridgeTests
