@@ -234,3 +234,4 @@ Personas:
 | TUT-T14 | 2026-10-14 | chore | open | NUnit tests for log storage: LogStore Add trimming to MaxEntries oldest-first, Clear, GetFiltered by severity set, GetAllDescending newest-first, LoadEntries respecting MaxEntries, and LogStorageService save/load round-trip, corrupt or missing log file tolerance and ClearPersistedLogs using a temp app-data path; only the MindAttic log bridge touches LogStore today | — |
 | TUT-T15 | 2026-10-14 | chore | open | Tutor.Mcp logs only to stderr; bridge it to MindAttic.Log like Tutor.Blazor (MindAtticLogBridge) | — |
 | TUT-T16 | 2026-10-15 | chore | closed | Remove duplicate command copies (/quickload, /quicksave) now centralized at the user level (~/.claude/commands) | M.FLOW-T14 |
+| TUT-T17 | 2026-10-16 | chore | closed | install.ps1 adds this repo's 8 .prose/commands stubs for the shared global commands, so any LLM client finds them | mindattic-agent-standard/install.ps1 run 2026-10-16 |
