@@ -17,6 +17,15 @@ using Tutor.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// LAMP (TUT-T31): `--write-settings-manifest` seeds Tutor's Vault settings (importing today's values
+// once, including any MindAttic:Auth options still in configuration) and writes the manifest
+// MindAttic.Vault.Desktop renders, then exits without starting the server.
+if (args.Any(a => string.Equals(a, MindAttic.Vault.Settings.Manifest.SettingsManifestCommand.Switch, StringComparison.OrdinalIgnoreCase)))
+{
+    TutorSettingsSource.Open(builder.Configuration);
+    if (MindAttic.Vault.Settings.Manifest.SettingsManifestCommand.TryRun<TutorSettings>(args)) return;
+}
+
 // Cloud-native configuration chain. Layered so existing dev workflows keep working:
 //   AddJsonFile (already added by WebApplicationBuilder for appsettings.json).
 //   AddMindAtticVaultFiles surfaces %APPDATA%\MindAttic\LLM\providers.json on dev
@@ -34,10 +43,24 @@ builder.Configuration
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// All LLM credentials resolve (read-only) through MindAttic.Vault's
-// LlmCredentialResolver: IConfiguration (User Secrets / env / App Service / Key Vault)
-// → the shared %APPDATA%\MindAttic\LLM\providers.json. The app never stores keys itself.
+// MindAttic.Vault's resolver still supplies the optional per-provider model names; keys go through
+// TutorKeys (KeySelector over configuration, then the shared %APPDATA%\MindAttic\LLM lists).
 builder.Services.AddMindAtticVault(builder.Configuration);
+
+// LAMP (TUT-T31): Tutor's app-level settings live in MindAttic Vault (edited only in
+// MindAttic.Vault.Desktop). A deployed host reads MindAttic:Settings:Tutor from configuration
+// (App Configuration); on this machine the Vault file is used, importing today's values from the old
+// secure-preferences.json / storage.settings.json once. Keys come from Vault's shared named lists;
+// a per-app "tutor-*" key copy left from before moves into the shared list as Tutor's active key.
+var tutorSettings = TutorSettingsSource.Open(builder.Configuration);
+// After the one-time import: every Vault settings file and named key as one IConfiguration tree
+// (MindAttic:Settings:Tutor:*), reloaded when Vault.Desktop saves, so the auth stack below binds its
+// options from Tutor's Vault tab. A deployed host gets the same names from App Configuration.
+builder.Configuration.AddMindAtticVaultConfiguration(o => o.ReloadOnChange = true);
+StorageSettings.Source = tutorSettings;
+MindAttic.Vault.Credentials.KeyImporter.ImportAppScopedFor(TutorSettings.AppId);
+builder.Services.AddSingleton(tutorSettings);
+builder.Services.AddSingleton(new TutorKeys(builder.Configuration.CreateKeySelector(TutorKeys.ClassifyLegionFailure)));
 
 // MindAttic.Legion — universal LLM-call client. Owns endpoints, auth headers,
 // retry/backoff, and circuit breaker for every supported provider. Tutor's
@@ -205,6 +228,7 @@ builder.Services.AddDbContext<TutorAuthDbContext>(o => o.UseSqlServer(authConnec
 builder.Services.AddMindAtticAuthentication<TutorAuthDbContext>(builder.Configuration, o =>
 {
     o.AppName = "Tutor";                                   // per-app Data Protection trust boundary
+    o.SettingsSection = TutorSettings.AuthSettingsSection;  // LAMP: auth options from Tutor's Vault tab
     o.IsProduction = !builder.Environment.IsDevelopment();
     if (o.IsProduction)
     {

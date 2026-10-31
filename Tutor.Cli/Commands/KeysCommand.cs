@@ -3,98 +3,61 @@ using Tutor.Core.Services;
 namespace Tutor.Cli.Commands;
 
 /// <summary>
-/// <c>tutor keys --provider claude|openai|gemini|deepseek
-///   (--list | --set-key &lt;key&gt; [--set-key &lt;key&gt; ...] | --add-key &lt;key&gt; | --remove-key &lt;key&gt; | --clear)</c>
-/// — manages the BYO API-key pool each LLM service (<see cref="Tutor.Core.Services.ClaudeService"/> and
-/// its siblings) tries in order, failing over key-to-key on an auth/rate-limit/server error
-/// (<see cref="KeyPoolFailover"/>). One or more <c>--set-key</c> flags REPLACE the whole pool;
-/// <c>--add-key</c>/<c>--remove-key</c> edit it incrementally; <c>--list</c> shows what's configured
-/// (masked) without changing anything. Backed by <see cref="ApiKeyPoolService"/>, the same CRUD
-/// surface the MCP tools use, so either front door sees the other's writes immediately.
+/// <c>tutor keys [--provider claude|openai|gemini|deepseek|kimi] [--open]</c> — shows which keys Tutor
+/// would use, by name only (never the values), in the order it tries them. Keys are added, changed and
+/// assigned only in MindAttic.Vault.Desktop (LAMP, TUT-T31); <c>--open</c> opens Vault at Tutor's tab.
+/// The old <c>--set-key/--add-key/--remove-key/--clear</c> editing switches are gone.
 /// </summary>
 public sealed class KeysCommand
 {
-    private readonly ApiKeyPoolService pool;
+    /// <summary>Providers Tutor calls.</summary>
+    public static readonly string[] Providers = ["claude", "openai", "gemini", "deepseek", "kimi"];
 
-    public KeysCommand(ApiKeyPoolService pool)
+    private static readonly string[] EditSwitches = ["--set-key", "--add-key", "--remove-key", "--clear"];
+
+    private readonly TutorKeys keys;
+
+    public KeysCommand(TutorKeys keys)
     {
-        this.pool = pool;
+        this.keys = keys;
     }
 
-    public async Task<int> RunAsync(string[] args, CancellationToken ct = default)
+    public Task<int> RunAsync(string[] args, CancellationToken ct = default)
     {
         string? provider = null;
-        var setKeys = new List<string>();
-        string? addKey = null, removeKey = null;
-        var clear = false;
-        var list = false;
-
+        var open = false;
         for (var i = 0; i < args.Length; i++)
         {
-            switch (args[i])
+            if (args[i] == "--provider" && i + 1 < args.Length) provider = args[++i].ToLowerInvariant();
+            else if (args[i] == "--open") open = true;
+            else if (EditSwitches.Contains(args[i]))
             {
-                case "--provider":   if (i + 1 < args.Length) provider = args[++i].ToLowerInvariant(); break;
-                case "--set-key":    if (i + 1 < args.Length) setKeys.Add(args[++i]); break;
-                case "--add-key":    if (i + 1 < args.Length) addKey = args[++i]; break;
-                case "--remove-key": if (i + 1 < args.Length) removeKey = args[++i]; break;
-                case "--clear":      clear = true; break;
-                case "--list":       list = true; break;
+                Console.Error.WriteLine("Keys are edited in MindAttic Vault now (Keys tab, and Tutor's tab for which keys Tutor uses). " +
+                                        "Run `tutor keys --open` to open it.");
+                return Task.FromResult(64);
             }
         }
 
-        if (provider is null || !ApiKeyPoolService.IsSupportedProvider(provider))
+        if (provider is not null && !Providers.Contains(provider))
         {
-            Console.Error.WriteLine(
-                $"Usage: tutor keys --provider {string.Join("|", ApiKeyPoolService.Providers)} " +
-                "(--list | --set-key <key> [--set-key <key> ...] | --add-key <key> | --remove-key <key> | --clear)");
-            return 64;
+            Console.Error.WriteLine($"Usage: tutor keys [--provider {string.Join("|", Providers)}] [--open]");
+            return Task.FromResult(64);
         }
 
-        if (list)
+        if (open)
         {
-            var current = await pool.GetPoolAsync(provider);
-            Console.WriteLine(current.Count == 0
-                ? $"{provider}: no BYO key configured — using the shared default, if one is configured."
-                : $"{provider}: {current.Count} key(s), tried in order:\n" +
-                  string.Join("\n", current.Select((k, idx) => $"  {idx + 1}. {Mask(k)}")));
-            return 0;
+            var result = SettingsCog.Open();
+            (result.Opened ? Console.Out : Console.Error).WriteLine(result.Message);
+            return Task.FromResult(result.Opened ? 0 : 1);
         }
 
-        if (clear)
+        foreach (var p in provider is null ? Providers : new[] { provider })
         {
-            await pool.ClearAsync(provider);
-            Console.WriteLine($"{provider}: key pool cleared — falling back to the shared default.");
-            return 0;
+            var names = keys.KeyNames(p);
+            Console.WriteLine(names.Count == 0
+                ? $"{p}: no usable key — add one in MindAttic Vault."
+                : $"{p}: {names.Count} key(s), tried in order: {string.Join(", ", names)}");
         }
-
-        if (addKey is not null)
-        {
-            var count = await pool.AddKeyAsync(provider, addKey);
-            Console.WriteLine($"{provider}: added {Mask(addKey)} — pool now has {count} key(s).");
-            return 0;
-        }
-
-        if (removeKey is not null)
-        {
-            var (removed, remaining) = await pool.RemoveKeyAsync(provider, removeKey);
-            Console.WriteLine(removed
-                ? $"{provider}: removed {Mask(removeKey)} — pool now has {remaining} key(s)."
-                : $"{provider}: {Mask(removeKey)} was not in the pool — nothing changed.");
-            return removed ? 0 : 1;
-        }
-
-        if (setKeys.Count == 0)
-        {
-            Console.Error.WriteLine("One of --list, --set-key <key> (repeatable), --add-key, --remove-key, or --clear is required.");
-            return 64;
-        }
-
-        await pool.SetPoolAsync(provider, setKeys);
-        Console.WriteLine(setKeys.Count == 1
-            ? $"{provider}: BYO key saved."
-            : $"{provider}: BYO key pool saved ({setKeys.Count} keys) — tried in order, failing over on error.");
-        return 0;
+        return Task.FromResult(0);
     }
-
-    private static string Mask(string key) => key.Length >= 4 ? "…" + key[^4..] : "(short key)";
 }

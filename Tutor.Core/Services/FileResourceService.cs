@@ -14,7 +14,6 @@ public sealed class FileResourceService
     /// </summary>
     public async Task SaveOriginalFileAsync(string fileName, string content)
     {
-        StorageSettings.Load();
         var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Original");
         Directory.CreateDirectory(dir);
 
@@ -27,7 +26,6 @@ public sealed class FileResourceService
     /// </summary>
     public async Task SaveFormattedFileAsync(string title, string content, string? originalFileName = null)
     {
-        StorageSettings.Load();
         var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Formatted");
         Directory.CreateDirectory(dir);
 
@@ -57,7 +55,6 @@ public sealed class FileResourceService
     /// </summary>
     public async Task SaveResourceToFilesAsync(CourseResource resource, string? formattedContent = null)
     {
-        StorageSettings.Load();
 
         // Save original content
         if (!string.IsNullOrEmpty(resource.Content) && StorageSettings.PreserveOriginalFiles)
@@ -81,7 +78,6 @@ public sealed class FileResourceService
     /// </summary>
     public async Task SaveCourseAsync(Course course, List<CourseResource> resources)
     {
-        StorageSettings.Load();
         var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Courses");
         Directory.CreateDirectory(dir);
 
@@ -115,7 +111,6 @@ public sealed class FileResourceService
     /// </summary>
     public List<string> GetFormattedFiles()
     {
-        StorageSettings.Load();
         var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Formatted");
         
         if (!Directory.Exists(dir))
@@ -129,7 +124,6 @@ public sealed class FileResourceService
     /// </summary>
     public List<string> GetOriginalFiles()
     {
-        StorageSettings.Load();
         var dir = Path.Combine(StorageSettings.GetResolvedDirectory(), "Original");
         
         if (!Directory.Exists(dir))
@@ -165,7 +159,6 @@ public sealed class FileResourceService
     /// </summary>
     public string GetResourcesDirectory()
     {
-        StorageSettings.Load();
         return StorageSettings.GetResolvedDirectory();
     }
 

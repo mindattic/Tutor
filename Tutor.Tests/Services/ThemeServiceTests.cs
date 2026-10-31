@@ -1,5 +1,4 @@
 using Tutor.Core.Services;
-using Tutor.Tests.Fakes;
 
 namespace Tutor.Tests.Services;
 
@@ -8,28 +7,22 @@ public class ThemeServiceTests
     [Test]
     public void Constructor_DoesNotThrow()
     {
-        var prefs = new FakeSecurePreferences();
-        var sut = new ThemeService(prefs);
+        var sut = new ThemeService(TestLamp.Settings());
         Assert.That(sut, Is.Not.Null);
     }
 
     [Test]
-    public async Task GetThemeAsync_DefaultIsNotEmpty()
+    public async Task GetThemeAsync_DefaultIsLight()
     {
-        var prefs = new FakeSecurePreferences();
-        var sut = new ThemeService(prefs);
-        var theme = await sut.GetThemeAsync();
-        Assert.That(string.IsNullOrEmpty(theme), Is.False);
+        var sut = new ThemeService(TestLamp.Settings());
+        Assert.That(await sut.GetThemeAsync(), Is.EqualTo("Light"));
     }
 
     [Test]
-    public async Task SetAndGet_Theme_Roundtrips()
+    public async Task GetThemeAsync_ReadsTheVaultSetting()
     {
-        var prefs = new FakeSecurePreferences();
-        var sut = new ThemeService(prefs);
-
-        await sut.SetThemeAsync("Summer");
-        var result = await sut.GetThemeAsync();
-        Assert.That(result, Is.EqualTo("Summer"));
+        var sut = new ThemeService(TestLamp.Settings(s => s.Theme = "Summer"));
+        await sut.InitializeAsync();
+        Assert.That(sut.CurrentTheme, Is.EqualTo("Summer"));
     }
 }

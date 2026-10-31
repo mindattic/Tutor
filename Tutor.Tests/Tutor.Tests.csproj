@@ -34,6 +34,8 @@
         <ProjectReference Include="..\Tutor.Core\Tutor.Core.csproj" />
         <!-- Page routes/attributes for the password-reset flow test (PasswordResetFlowTests). -->
         <ProjectReference Include="..\Tutor.Shared\Tutor.Shared.csproj" />
+        <!-- LAMP (TUT-T31): `tutor keys` no longer edits keys (TutorLampTests). -->
+        <ProjectReference Include="..\Tutor.Cli\Tutor.Cli.csproj" />
     </ItemGroup>
 
 </Project>

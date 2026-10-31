@@ -46,7 +46,7 @@ public class ClaudeServiceTests
     public void ProviderName_IsClaude()
     {
         var prefs = new FakeSecurePreferences();
-        var svc = new ClaudeService(legion, prefs);
+        var svc = new ClaudeService(legion, prefs, TestLamp.Keys());
         Assert.That(svc.ProviderName, Is.EqualTo("Claude"));
     }
 
@@ -54,16 +54,15 @@ public class ClaudeServiceTests
     public async Task IsConfiguredAsync_NoKey_False()
     {
         var prefs = new FakeSecurePreferences();
-        var svc = new ClaudeService(legion, prefs);
+        var svc = new ClaudeService(legion, prefs, TestLamp.Keys());
         Assert.That(await svc.IsConfiguredAsync(), Is.False);
     }
 
     [Test]
-    public async Task IsConfiguredAsync_PrefsKey_True()
+    public async Task IsConfiguredAsync_VaultKey_True()
     {
         var prefs = new FakeSecurePreferences();
-        await prefs.SetAsync("CLAUDE_API_KEY", "sk-ant-test");
-        var svc = new ClaudeService(legion, prefs);
+        var svc = new ClaudeService(legion, prefs, TestLamp.KeysWith(("claude", "sk-ant-test")));
 
         Assert.That(await svc.IsConfiguredAsync(), Is.True);
     }
@@ -86,8 +85,7 @@ public class ClaudeServiceTests
         var directLegion = new LegionClient(new HttpClient(handler), null);
 
         var prefs = new FakeSecurePreferences();
-        await prefs.SetAsync("CLAUDE_API_KEY", "sk-ant-test-key");
-        var svc = new ClaudeService(directLegion, prefs);
+        var svc = new ClaudeService(directLegion, prefs, TestLamp.KeysWith(("claude", "sk-ant-test-key")));
 
         var messages = new[] { new ChatMessage("user", "hi", "hi") };
         var reply = await svc.GetReplyAsync(messages);

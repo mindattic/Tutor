@@ -33,9 +33,19 @@
                     <span>Library</span>
                 </NavLink>
                 <AuthorizeView Policy="@MaPolicies.Admin" Context="adminCtx">
-                    <NavLink class="top-nav-link" href="settings" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Settings)">
+                    @* LAMP (TUT-T31): settings are edited only in MindAttic Vault. The cog opens Vault at
+                       Tutor's tab from the server (which runs on the user's machine); the small link is
+                       the mindattic-vault:// fallback for a browser on another machine. *@
+                    <button class="top-nav-link" type="button" @onclick="OpenSettings" title="Open Tutor's settings in MindAttic Vault">
                         <span class="bi bi-gear-fill" aria-hidden="true"></span>
                         <span>Settings</span>
+                    </button>
+                    <a class="top-nav-link vault-link" href="@SettingsCog.Link()" title="Open Tutor's settings in MindAttic Vault (link)" aria-label="Open Tutor's settings in MindAttic Vault (link)">
+                        <span class="bi bi-box-arrow-up-right" aria-hidden="true"></span>
+                    </a>
+                    <NavLink class="top-nav-link" href="maintenance" Match="NavLinkMatch.Prefix">
+                        <span class="bi bi-tools" aria-hidden="true"></span>
+                        <span>Maintenance</span>
                     </NavLink>
                     <NavLink class="top-nav-link" href="users" Match="NavLinkMatch.Prefix">
                         <span class="bi bi-people-fill" aria-hidden="true"></span>
@@ -45,6 +55,13 @@
             </Authorized>
         </AuthorizeView>
     </nav>
+
+    @if (!string.IsNullOrEmpty(settingsMessage))
+    {
+        <div class="top-menu-status" role="status" aria-live="polite">
+            @settingsMessage <a href="@SettingsCog.Link()">Open Vault</a>
+        </div>
+    }
 
     <div class="profile-menu">
         @* Shared MindAttic.UiUx avatar + sign-out (renders only when authenticated; logout is a
@@ -66,7 +83,7 @@
             var p when p.StartsWith("courses") => TopTab.Courses,
             var p when p.StartsWith("knowledge-bases") => TopTab.KnowledgeGraph,
             var p when p.StartsWith("knowledge-graph") => TopTab.KnowledgeGraph,
-            var p when p.StartsWith("settings") => TopTab.Settings,
+            var p when p.StartsWith("maintenance") => TopTab.Settings,
             _ => TopTab.Learn
         };
 
@@ -74,4 +91,13 @@
     }
 
     private void OnTabSelected(TopTab tab) => UiState.SetActiveTab(tab);
+
+    private string? settingsMessage;
+
+    /// <summary>The Settings cog: opens MindAttic Vault at Tutor's tab (no settings editor in Tutor).</summary>
+    private void OpenSettings()
+    {
+        var result = SettingsCog.Open();
+        settingsMessage = result.Opened ? null : result.Message;
+    }
 }

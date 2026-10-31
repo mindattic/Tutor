@@ -30,11 +30,13 @@ public class LlmServiceRouterTests
         try { Directory.Delete(sandbox, recursive: true); } catch { }
     }
 
-    private static (LlmServiceRouter Router, FakeSecurePreferences Prefs) CreateRouter()
+    private static (LlmServiceRouter Router, TutorSettingsSource Settings) CreateRouter()
     {
         var prefs = new FakeSecurePreferences();
+        var settings = TestLamp.Settings();
         var services = new ServiceCollection();
         services.AddSingleton<ISecurePreferences>(prefs);
+        services.AddTestLamp(settings);
         services.AddSingleton(sp => new OpenAIOptions(sp.GetRequiredService<ISecurePreferences>()) { Model = "gpt-4.1-mini" });
         services.AddLegionClient();
         services.AddSingleton<OpenAIService>();
@@ -42,8 +44,8 @@ public class LlmServiceRouterTests
         services.AddSingleton<DeepSeekService>();
         services.AddSingleton<GeminiService>();
         var sp = services.BuildServiceProvider();
-        var router = new LlmServiceRouter(prefs, sp);
-        return (router, prefs);
+        var router = new LlmServiceRouter(settings, sp);
+        return (router, settings);
     }
 
     [Test]
@@ -72,8 +74,8 @@ public class LlmServiceRouterTests
     [Test]
     public async Task DefaultProvider_IsOpenAI()
     {
-        var (router, prefs) = CreateRouter();
-        // No SELECTED_MODEL set — should default to OpenAI
+        var (router, _) = CreateRouter();
+        // No activeModel saved — should default to OpenAI
         var configured = await router.IsConfiguredAsync();
         // Just verify it doesn't throw — routing to OpenAI is the default
         Assert.That(configured, Is.False); // No API key set
@@ -85,8 +87,8 @@ public class LlmServiceRouterTests
     [TestCase("UnknownProvider")]
     public async Task RoutesToProvider_WithoutError(string providerName)
     {
-        var (router, prefs) = CreateRouter();
-        await prefs.SetAsync("SELECTED_MODEL", providerName);
+        var (router, settings) = CreateRouter();
+        settings.Update(s => s.ActiveModel = providerName);
         // Should not throw — just verify routing works
         var configured = await router.IsConfiguredAsync();
         Assert.That(configured, Is.False); // No API key

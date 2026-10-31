@@ -37,6 +37,9 @@ public class DependencyInjectionTests
         // MindAttic.Legion — universal LLM client (used by OpenAIService + ClaudeService)
         services.AddLegionClient();
 
+        // LAMP: settings from a temp Vault folder, keys from an empty temp key store.
+        services.AddTestLamp();
+
         // HTTP-based services — register with HttpClient factory
         services.AddSingleton<OpenAIService>();
         services.AddSingleton<ClaudeService>();

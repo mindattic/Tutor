@@ -13,27 +13,25 @@ using Tutor.Core.Services.Logging;
 /// </summary>
 public sealed class GeminiService : ILlmService
 {
-    private const string ApiKeyName = "GEMINI_API_KEY";
     private const string ModelKeyName = "GEMINI_MODEL";
     private const string DefaultModel = "gemini-3.5-flash";
 
     private readonly LegionClient legion;
     private readonly ISecurePreferences prefs;
+    private readonly TutorKeys keys;
 
     public string ProviderName => "Gemini";
 
-    public GeminiService(LegionClient legion, ISecurePreferences prefs)
+    public GeminiService(LegionClient legion, ISecurePreferences prefs, TutorKeys keys)
     {
         this.legion = legion;
         this.prefs  = prefs;
+        this.keys   = keys;
         Log.Debug("GeminiService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
-    public async Task<bool> IsConfiguredAsync()
-    {
-        var keys = await prefs.GetApiKeysAsync(ApiKeyName);
-        return keys.Count > 0;
-    }
+    /// <summary>True when Vault has a usable Gemini key for Tutor (shared list or Tutor's assignment).</summary>
+    public Task<bool> IsConfiguredAsync() => Task.FromResult(keys.HasKey("gemini"));
 
     public async Task<ChatReply> GetReplyAsync(
         IEnumerable<ChatMessage> messages,
@@ -41,13 +39,6 @@ public sealed class GeminiService : ILlmService
         CancellationToken ct = default)
     {
         Log.Info("Gemini: Getting chat reply via Legion...");
-
-        var apiKeys = await prefs.GetApiKeysAsync(ApiKeyName);
-        if (apiKeys.Count == 0)
-        {
-            Log.Error("Gemini: API key is missing");
-            throw new InvalidOperationException("Gemini API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
-        }
 
         var model = await prefs.GetAsync(ModelKeyName);
         if (string.IsNullOrWhiteSpace(model)) model = DefaultModel;
@@ -57,10 +48,9 @@ public sealed class GeminiService : ILlmService
 
         try
         {
-            // More than one key configured (a rotation/failover pool): the first key is used
-            // until it fails with an auth/rate-limit/server/network error, then the next is
-            // tried (KeyPoolFailover). A single key behaves exactly as before.
-            var text = await KeyPoolFailover.ExecuteAsync(apiKeys, ct, apiKey => legion.CallChatAsync(
+            // Keys come from Vault's shared named lists (LAMP): Tutor's assigned key first, then the
+            // next one whenever a key is refused (401/403/quota/429); the refused key is flagged in Vault.
+            var text = await keys.ExecuteAsync("gemini", (apiKey, callCt) => legion.CallChatAsync(
                 providerId: "gemini",
                 apiKey: apiKey,
                 model: model!,
@@ -68,7 +58,7 @@ public sealed class GeminiService : ILlmService
                 systemPrompt: instructions,
                 maxTokens: 4096,
                 temperature: 0.7,
-                ct: ct));
+                ct: callCt), ct);
 
             var diagnostic = JsonSerializer.Serialize(new
             {

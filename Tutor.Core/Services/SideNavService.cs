@@ -510,67 +510,6 @@ public sealed class SideNavService
     }
 
     /// <summary>
-    /// Populates the side nav with settings sections.
-    /// </summary>
-    public void PopulateSettingsNav()
-    {
-        var nodes = new List<NavNode>
-        {
-            new()
-            {
-                Id = "settings-general",
-                Title = "General",
-                Icon = "bi-gear"
-            },
-            new()
-            {
-                Id = "settings-courses",
-                Title = "Courses",
-                Icon = "bi-book"
-            },
-            new()
-            {
-                Id = "settings-appearance",
-                Title = "Appearance",
-                Icon = "bi-palette"
-            },
-            new()
-            {
-                Id = "settings-storage",
-                Title = "Storage",
-                Icon = "bi-hdd"
-            },
-            new()
-            {
-                Id = "settings-quiz",
-                Title = "Quiz",
-                Icon = "bi-question-circle"
-            },
-            new()
-            {
-                Id = "settings-ai",
-                Title = "AI Models",
-                Icon = "bi-robot",
-                IsExpanded = false,
-                Children =
-                [
-                    new NavNode { Id = "settings-chatgpt", Title = "ChatGPT", Icon = "bi-chat" },
-                    new NavNode { Id = "settings-claude", Title = "Claude", Icon = "bi-chat" },
-                    new NavNode { Id = "settings-gemini", Title = "Gemini", Icon = "bi-chat" }
-                ]
-            },
-            new()
-            {
-                Id = "settings-about",
-                Title = "About",
-                Icon = "bi-info-circle"
-            }
-        };
-
-        uiState.SetSideNavNodes(nodes);
-    }
-
-    /// <summary>
     /// Clears the side nav.
     /// </summary>
     public void ClearSideNav()

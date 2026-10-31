@@ -46,6 +46,7 @@ public sealed class PackagingTestHost : IDisposable
         services.AddSingleton<IFilePickerService, FakeFilePickerService>();
         services.AddSingleton(sp => new OpenAIOptions(sp.GetRequiredService<ISecurePreferences>()));
         services.AddLegionClient();
+        services.AddTestLamp();
         services.AddSingleton<OpenAIService>();
         services.AddSingleton<ClaudeService>();
         services.AddSingleton<DeepSeekService>();

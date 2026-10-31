@@ -36,22 +36,21 @@ public sealed class OpenAIService : ILlmService
 {
     private readonly LegionClient legion;
     private readonly OpenAIOptions opt;
+    private readonly TutorKeys keys;
     private readonly List<ChatMessageDto> conversationHistory = [];
 
     public string ProviderName => "ChatGPT";
 
-    public OpenAIService(LegionClient legion, OpenAIOptions opt)
+    public OpenAIService(LegionClient legion, OpenAIOptions opt, TutorKeys keys)
     {
         this.legion = legion;
         this.opt = opt;
+        this.keys = keys;
         Log.Debug("OpenAIService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
-    public async Task<bool> IsConfiguredAsync()
-    {
-        var keys = await opt.GetApiKeysAsync();
-        return keys.Count > 0;
-    }
+    /// <summary>True when Vault has a usable OpenAI key for Tutor.</summary>
+    public Task<bool> IsConfiguredAsync() => Task.FromResult(keys.HasKey("openai"));
 
     public async Task<ChatReply> AskAsync(string question, CancellationToken ct = default)
     {
@@ -95,23 +94,15 @@ public sealed class OpenAIService : ILlmService
     {
         Log.Info("OpenAI: Getting chat reply via Legion...");
 
-        var apiKeys = await opt.GetApiKeysAsync();
-        if (apiKeys.Count == 0)
-        {
-            Log.Error("OpenAI: API key is missing");
-            throw new InvalidOperationException("OpenAI API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
-        }
-
         var model = await opt.GetModelAsync();
         var turns = messages.Select(m => new ChatTurn(m.Role, m.Text)).ToList();
         Log.Debug($"OpenAI: Sending {turns.Count} message(s), model={model}");
 
         try
         {
-            // More than one key configured (a rotation/failover pool): the first key is used
-            // until it fails with an auth/rate-limit/server/network error, then the next is
-            // tried (KeyPoolFailover). A single key behaves exactly as before.
-            var text = await KeyPoolFailover.ExecuteAsync(apiKeys, ct, apiKey => legion.CallChatAsync(
+            // Keys come from Vault's shared named lists (LAMP): Tutor's assigned key first, then the
+            // next one whenever a key is refused (401/403/quota/429); the refused key is flagged in Vault.
+            var text = await keys.ExecuteAsync("openai", (apiKey, callCt) => legion.CallChatAsync(
                 providerId: "openai",
                 apiKey: apiKey,
                 model: model,
@@ -119,7 +110,7 @@ public sealed class OpenAIService : ILlmService
                 systemPrompt: instructions,
                 maxTokens: opt.MaxTokens,
                 temperature: opt.Temperature,
-                ct: ct));
+                ct: callCt), ct);
 
             var diagnostic = JsonSerializer.Serialize(new
             {
@@ -145,7 +136,8 @@ public sealed class OpenAIService : ILlmService
 }
 
 /// <summary>
-/// Configuration options for OpenAI API.
+/// Configuration options for OpenAI API (model, temperature, token cap). The key comes from
+/// Vault through <see cref="TutorKeys"/>, never from here.
 /// </summary>
 public sealed class OpenAIOptions
 {
@@ -165,21 +157,6 @@ public sealed class OpenAIOptions
     /// <summary>Maximum tokens in the response.</summary>
     public int MaxTokens { get; set; } = 2000;
 
-    /// <summary>Gets the API key from secure storage.</summary>
-    public async Task<string?> GetApiKeyAsync()
-    {
-        try { return await securePreferences.GetAsync("OPENAI_API_KEY"); }
-        catch { return null; }
-    }
-
-    /// <summary>Gets every key configured for OpenAI, in priority order (a rotation/failover
-    /// pool when more than one is configured).</summary>
-    public async Task<IReadOnlyList<string>> GetApiKeysAsync()
-    {
-        try { return await securePreferences.GetApiKeysAsync("OPENAI_API_KEY"); }
-        catch { return Array.Empty<string>(); }
-    }
-
     /// <summary>
     /// Resolves the model at request time: secure storage (CHATGPT_MODEL) falls
     /// back to the <see cref="Model"/> default.
@@ -193,10 +170,4 @@ public sealed class OpenAIOptions
         }
         catch { return Model; }
     }
-
-    public async Task SetApiKeyAsync(string apiKey) =>
-        await securePreferences.SetAsync("OPENAI_API_KEY", apiKey);
-
-    public void ClearApiKey() =>
-        securePreferences.Remove("OPENAI_API_KEY");
 }

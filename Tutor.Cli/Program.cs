@@ -14,6 +14,14 @@ using Tutor.Core.Services.Packaging;
 using Tutor.Core.Services.Logging;
 using Tutor.Core.Services.Ocr;
 
+// LAMP (TUT-T31): `--write-settings-manifest` seeds Tutor's Vault settings (importing today's values
+// once) and writes the manifest MindAttic.Vault.Desktop renders, then exits.
+if (args.Any(a => string.Equals(a, MindAttic.Vault.Settings.Manifest.SettingsManifestCommand.Switch, StringComparison.OrdinalIgnoreCase)))
+{
+    TutorSettingsSource.Open();
+    if (MindAttic.Vault.Settings.Manifest.SettingsManifestCommand.TryRun<TutorSettings>(args)) return 0;
+}
+
 // Forward Tutor.Core's Log.* output to stderr so the CLI shows progress and
 // failures live. Trace is gated by the --verbose flag below.
 var verbose = args.Contains("--verbose");
@@ -56,6 +64,15 @@ var configuration = new ConfigurationBuilder()
     .Build();
 services.AddMindAtticVault(configuration);
 
+// LAMP (TUT-T31): app-level settings come from Vault (imported once from the old files), and keys
+// from Vault's shared named lists; a per-app "tutor-*" key copy left from before moves into the
+// shared list as Tutor's active key.
+var tutorSettings = TutorSettingsSource.Open();
+StorageSettings.Source = tutorSettings;
+MindAttic.Vault.Credentials.KeyImporter.ImportAppScopedFor(TutorSettings.AppId);
+services.AddSingleton(tutorSettings);
+services.AddSingleton(TutorKeys.ForCurrentUser());
+
 services.AddLegionClient();
 
 // Platform abstractions — CLI variants of the Blazor implementations.
@@ -79,7 +96,6 @@ services.AddSingleton<DeepSeekService>();
 services.AddSingleton<GeminiService>();
 services.AddSingleton<LlmServiceRouter>();
 services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
-services.AddSingleton<ApiKeyPoolService>();
 services.AddSingleton<KeysCommand>();
 
 // Pipeline services — must mirror Blazor wiring so the CLI produces courses
@@ -156,13 +172,12 @@ using var provider = services.BuildServiceProvider();
 
 // Default the chat LLM to Claude (overridable with --llm). Embeddings always use
 // OpenAI regardless — only the reasoning/generation provider is switched here.
-// Written through the shared preference the LlmServiceRouter reads (SELECTED_MODEL).
+// Written through the settings store to the setting the LlmServiceRouter reads (activeModel),
+// exactly as the CLI wrote SELECTED_MODEL before LAMP.
 var desiredModel = MapLlm(llmOverride ?? "claude");
-var prefs = provider.GetRequiredService<ISecurePreferences>();
-var currentModel = await prefs.GetAsync("SELECTED_MODEL");
-if (!string.Equals(currentModel, desiredModel, StringComparison.Ordinal))
+if (!string.Equals(tutorSettings.Current.ActiveModel, desiredModel, StringComparison.Ordinal))
 {
-    await prefs.SetAsync("SELECTED_MODEL", desiredModel);
+    tutorSettings.Update(s => s.ActiveModel = desiredModel);
     Console.Error.WriteLine($"  [LLM] Chat provider set to {desiredModel} (embeddings use OpenAI).");
 }
 
@@ -173,16 +188,14 @@ try
 {
     if (verb == "diag-keys")
     {
-        var resolver = provider.GetRequiredService<MindAttic.Vault.Credentials.LlmCredentialResolver>();
-        static string Mask(string? s) => string.IsNullOrEmpty(s) ? "(empty)" : $"len={s.Length} …{s[Math.Max(0, s.Length - 4)..]}";
+        // Key names only (never values), in the order Tutor tries them.
+        var tutorKeys = provider.GetRequiredService<TutorKeys>();
         foreach (var p in new[] { "openai", "claude", "gemini" })
         {
-            Console.WriteLine($"  vault.GetKey({p,-7}) = {Mask(resolver.GetKey(p))}");
+            var names = tutorKeys.KeyNames(p);
+            Console.WriteLine($"  keys({p,-7}) = {(names.Count == 0 ? "(none)" : string.Join(", ", names))}");
         }
-        foreach (var k in new[] { "OPENAI_API_KEY", "CLAUDE_API_KEY", "SELECTED_MODEL" })
-        {
-            Console.WriteLine($"  prefs[{k,-15}]  = {Mask(await prefs.GetAsync(k))}");
-        }
+        Console.WriteLine($"  activeModel     = {tutorSettings.Current.ActiveModel}");
         return 0;
     }
 
@@ -266,14 +279,14 @@ static int PrintHelp()
           tutor list
               List all courses on this machine.
 
-          tutor keys --provider claude|openai|gemini|deepseek
-              (--list | --set-key <key> [--set-key <key> ...] | --add-key <key> | --remove-key <key> | --clear)
-              Manage the BYO API-key pool for one provider. Several keys are tried in
-              order, failing over to the next on an auth/rate-limit/server error.
-              One or more --set-key flags replace the whole pool; --add-key/--remove-key
-              edit it incrementally; --list shows what's configured (masked); --clear
-              falls back to the shared default (if one is configured).
-              Example: tutor keys --provider claude --set-key sk-ant-one --set-key sk-ant-two
+          tutor keys [--provider claude|openai|gemini|deepseek|kimi] [--open]
+              Show which keys Tutor uses, by name, in the order it tries them (failing
+              over to the next when one is refused). Keys are added and assigned only in
+              MindAttic Vault; --open opens Vault at Tutor's tab.
+
+          tutor --write-settings-manifest
+              Seed Tutor's settings in MindAttic Vault (importing today's values once) and
+              write the manifest Vault shows, then exit.
 
           tutor delete <course-id> [--dry-run]
               Remove a course and cascade-delete its resources, concept maps,
@@ -286,17 +299,16 @@ static int PrintHelp()
         NOTES
           - Course data is stored at %LocalAppData%\Tutor\... and is shared with the
             Blazor UI, so anything imported via the CLI shows up there immediately.
-          - LLM credentials come from the shared MindAttic credential store at
-            %APPDATA%\MindAttic\LLM\. Configure them in the Blazor UI's settings page
-            before running the CLI.
+          - Settings and LLM keys are edited in MindAttic Vault (Tutor's tab and the
+            Keys tab); the CLI reads the same values as the Blazor UI.
         """);
     return 0;
 }
 
-// Normalizes a --llm value to the token LlmServiceRouter expects in SELECTED_MODEL.
+// Normalizes a --llm value to the activeModel choice LlmServiceRouter expects.
 static string MapLlm(string s) => s.Trim().ToLowerInvariant() switch
 {
-    "openai" or "gpt" or "chatgpt" => "OpenAI",
+    "openai" or "gpt" or "chatgpt" => "ChatGPT",
     "gemini" or "google"           => "Gemini",
     "deepseek"                     => "DeepSeek",
     _                              => "Claude",

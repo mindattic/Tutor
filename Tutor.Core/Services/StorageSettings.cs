@@ -1,127 +1,50 @@
 using System.Runtime.Versioning;
-using System.Text.Json;
 using Tutor.Core.Services.Logging;
 
 namespace Tutor.Core.Services;
 
 /// <summary>
-/// Manages storage settings including the learning resources directory.
-/// Settings are persisted to a local JSON file.
+/// The storage options in effect (LAMP, TUT-T31): read from <see cref="TutorSettings"/>
+/// (<c>learningResourcesDirectory</c>, <c>saveFormattedAsMarkdown</c>, <c>preserveOriginalFiles</c>),
+/// edited only in MindAttic.Vault.Desktop. The pre-LAMP <c>storage.settings.json</c> is imported once
+/// by <see cref="TutorSettings.Load"/> and never written again.
 /// </summary>
 public static class StorageSettings
 {
-    private static readonly string SettingsDirectory = StoragePaths.SettingsDirectory;
-    private static readonly string SettingsFilePath = StoragePaths.StorageSettingsPath;
-
-    private static readonly object lockObj = new();
-    private static bool isLoaded = false;
+    private static TutorSettingsSource? source;
 
     /// <summary>
-    /// Directory where learning resources are stored.
-    /// Defaults to the LearningResources folder in the project.
+    /// The settings source every static read goes through. Hosts set it at startup to the one they
+    /// opened; when unset, the Vault file for this machine (or the test roots) is read.
     /// </summary>
-    public static string LearningResourcesDirectory { get; set; } = "";
-
-    /// <summary>
-    /// Whether to save formatted resources as separate .md files.
-    /// </summary>
-    public static bool SaveFormattedAsMarkdown { get; set; } = true;
-
-    /// <summary>
-    /// Whether to preserve original uploaded files.
-    /// </summary>
-    public static bool PreserveOriginalFiles { get; set; } = true;
-
-    private sealed class Data
+    public static TutorSettingsSource Source
     {
-        public string? LearningResourcesDirectory { get; set; }
-        public bool SaveFormattedAsMarkdown { get; set; } = true;
-        public bool PreserveOriginalFiles { get; set; } = true;
-    }
-
-    public static void Load()
-    {
-        lock (lockObj)
-        {
-            if (isLoaded) return;
-            isLoaded = true; // Set early to prevent recursion
-            
-            try
-            {
-                if (File.Exists(SettingsFilePath))
-                {
-                    var json = File.ReadAllText(SettingsFilePath);
-                    var data = JsonSerializer.Deserialize<Data>(json);
-                    if (data != null)
-                    {
-                        LearningResourcesDirectory = data.LearningResourcesDirectory ?? GetDefaultDirectory();
-                        SaveFormattedAsMarkdown = data.SaveFormattedAsMarkdown;
-                        PreserveOriginalFiles = data.PreserveOriginalFiles;
-                    }
-                    else
-                    {
-                        LearningResourcesDirectory = GetDefaultDirectory();
-                    }
-                }
-                else
-                {
-                    // Use default and create settings file
-                    LearningResourcesDirectory = GetDefaultDirectory();
-                    Save();
-                }
-
-                // Ensure the directory exists
-                EnsureDirectoryExists();
-            }
-            catch
-            {
-                if (string.IsNullOrEmpty(LearningResourcesDirectory))
-                {
-                    LearningResourcesDirectory = GetDefaultDirectory();
-                }
-            }
-        }
-    }
-
-    public static void Save()
-    {
-        lock (lockObj)
-        {
-            try
-            {
-                Directory.CreateDirectory(SettingsDirectory);
-                var json = JsonSerializer.Serialize(new Data
-                {
-                    LearningResourcesDirectory = LearningResourcesDirectory,
-                    SaveFormattedAsMarkdown = SaveFormattedAsMarkdown,
-                    PreserveOriginalFiles = PreserveOriginalFiles
-                }, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(SettingsFilePath, json);
-            }
-            catch
-            {
-                // Silently fail if we can't save settings
-            }
-        }
+        get => source ??= new TutorSettingsSource(MindAttic.Vault.Settings.JsonSettingsStore<TutorSettings>.ForSettingsApp());
+        set => source = value;
     }
 
     /// <summary>
-    /// Gets the resolved learning resources directory path.
+    /// Directory where learning resources are stored: the setting, or the project's Resources
+    /// folder (else <c>%LOCALAPPDATA%\Tutor\Resources</c>) when it is empty.
+    /// </summary>
+    public static string LearningResourcesDirectory =>
+        Source.Current.LearningResourcesDirectory is { Length: > 0 } dir ? dir : GetDefaultDirectory();
+
+    /// <summary>Whether to save formatted resources as separate .md files.</summary>
+    public static bool SaveFormattedAsMarkdown => Source.Current.SaveFormattedAsMarkdown;
+
+    /// <summary>Whether to preserve original uploaded files.</summary>
+    public static bool PreserveOriginalFiles => Source.Current.PreserveOriginalFiles;
+
+    /// <summary>
+    /// Gets the resolved learning resources directory path, creating it (and its Original,
+    /// Formatted and Courses subfolders) when missing.
     /// </summary>
     public static string GetResolvedDirectory()
     {
-        Load();
-        return Path.GetFullPath(LearningResourcesDirectory);
-    }
-
-    /// <summary>
-    /// Sets a custom learning resources directory.
-    /// </summary>
-    public static void SetDirectory(string path)
-    {
-        LearningResourcesDirectory = path;
-        EnsureDirectoryExists();
-        Save();
+        var dir = Path.GetFullPath(LearningResourcesDirectory);
+        EnsureDirectoryExists(dir);
+        return dir;
     }
 
     private static string GetDefaultDirectory()
@@ -150,12 +73,10 @@ public static class StorageSettings
             "Tutor", "Resources");
     }
 
-    private static void EnsureDirectoryExists()
+    private static void EnsureDirectoryExists(string dir)
     {
         try
         {
-            // Use the property directly to avoid recursion
-            var dir = Path.GetFullPath(LearningResourcesDirectory);
             if (!Directory.Exists(dir))
             {
                 Directory.CreateDirectory(dir);

@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using MindAttic.Authentication
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="" aria-label="Tutor home">Tutor</a>
     </div>
@@ -38,11 +41,29 @@
                 <span>Knowledge Graph</span>
             </NavLink>
         </div>
+        <AuthorizeView Policy="@MaPolicies.Admin">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
+            @* LAMP (TUT-T31): settings open in MindAttic Vault, never in Tutor (admins only, as the old page was). *@
+            <button class="nav-link" type="button" @onclick="OpenSettings" title="Open Tutor's settings in MindAttic Vault">
                 <span class="bi bi-gear-fill" aria-hidden="true"></span>
                 <span>Settings</span>
-            </NavLink>
+            </button>
+            @if (!string.IsNullOrEmpty(settingsMessage))
+            {
+                <p class="nav-status" role="status">@settingsMessage <a href="@Tutor.Core.Services.SettingsCog.Link()">Open Vault</a></p>
+            }
         </div>
+        </AuthorizeView>
     </nav>
 </div>
+
+@code {
+    private string? settingsMessage;
+
+    /// <summary>The Settings cog: opens MindAttic Vault at Tutor's tab (no settings editor in Tutor).</summary>
+    private void OpenSettings()
+    {
+        var result = Tutor.Core.Services.SettingsCog.Open();
+        settingsMessage = result.Opened ? null : result.Message;
+    }
+}

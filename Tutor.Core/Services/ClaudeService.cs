@@ -15,27 +15,25 @@ using Tutor.Core.Services.Logging;
 /// </summary>
 public sealed class ClaudeService : ILlmService
 {
-    private const string ApiKeyName = "CLAUDE_API_KEY";
     private const string ModelKeyName = "CLAUDE_MODEL";
     private const string DefaultModel = "claude-sonnet-5";
 
     private readonly LegionClient legion;
     private readonly ISecurePreferences prefs;
+    private readonly TutorKeys keys;
 
     public string ProviderName => "Claude";
 
-    public ClaudeService(LegionClient legion, ISecurePreferences prefs)
+    public ClaudeService(LegionClient legion, ISecurePreferences prefs, TutorKeys keys)
     {
         this.legion = legion;
         this.prefs  = prefs;
+        this.keys   = keys;
         Log.Debug("ClaudeService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
-    public async Task<bool> IsConfiguredAsync()
-    {
-        var keys = await prefs.GetApiKeysAsync(ApiKeyName);
-        return keys.Count > 0;
-    }
+    /// <summary>True when Vault has a usable Claude key for Tutor (shared list or Tutor's assignment).</summary>
+    public Task<bool> IsConfiguredAsync() => Task.FromResult(keys.HasKey("claude"));
 
     public async Task<ChatReply> GetReplyAsync(
         IEnumerable<ChatMessage> messages,
@@ -43,13 +41,6 @@ public sealed class ClaudeService : ILlmService
         CancellationToken ct = default)
     {
         Log.Info("Claude: Getting chat reply via Legion...");
-
-        var apiKeys = await prefs.GetApiKeysAsync(ApiKeyName);
-        if (apiKeys.Count == 0)
-        {
-            Log.Error("Claude: API key is missing");
-            throw new InvalidOperationException("Claude API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
-        }
 
         var model = await prefs.GetAsync(ModelKeyName);
         if (string.IsNullOrWhiteSpace(model)) model = DefaultModel;
@@ -59,10 +50,9 @@ public sealed class ClaudeService : ILlmService
 
         try
         {
-            // More than one key configured (a rotation/failover pool): the first key is used
-            // until it fails with an auth/rate-limit/server/network error, then the next is
-            // tried (KeyPoolFailover). A single key behaves exactly as before.
-            var text = await KeyPoolFailover.ExecuteAsync(apiKeys, ct, apiKey => legion.CallChatAsync(
+            // Keys come from Vault's shared named lists (LAMP): Tutor's assigned key first, then the
+            // next one whenever a key is refused (401/403/quota/429); the refused key is flagged in Vault.
+            var text = await keys.ExecuteAsync("claude", (apiKey, callCt) => legion.CallChatAsync(
                 providerId: "claude",
                 apiKey: apiKey,
                 model: model!,
@@ -70,7 +60,7 @@ public sealed class ClaudeService : ILlmService
                 systemPrompt: instructions,
                 maxTokens: 4096,
                 temperature: 0.7,
-                ct: ct));
+                ct: callCt), ct);
 
             // Synthesize a minimal JSON payload for Tutor's diagnostic "View" button.
             var diagnostic = JsonSerializer.Serialize(new

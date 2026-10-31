@@ -1,18 +1,19 @@
-using Tutor.Core.Services.Abstractions;
+using Tutor.Core.Services;
 
+/// <summary>
+/// The color theme in effect: <see cref="TutorSettings.Theme"/>, edited in MindAttic.Vault.Desktop (LAMP, TUT-T31).
+/// </summary>
 public sealed class ThemeService
 {
-    private const string ThemeKey = "APP_THEME";
-
-    private readonly ISecurePreferences securePreferences;
+    private readonly TutorSettingsSource settings;
 
     public static readonly string[] AvailableThemes = ["Light", "Dark", "Summer", "Winter", "Autumn", "Spring"];
 
     public string CurrentTheme { get; private set; } = "Light";
 
-    public ThemeService(ISecurePreferences securePreferences)
+    public ThemeService(TutorSettingsSource settings)
     {
-        this.securePreferences = securePreferences;
+        this.settings = settings;
     }
 
     public async Task InitializeAsync()
@@ -20,32 +21,16 @@ public sealed class ThemeService
         CurrentTheme = await GetThemeAsync();
     }
 
-    public async Task<string> GetThemeAsync()
+    public Task<string> GetThemeAsync()
     {
         try
         {
-            var theme = await securePreferences.GetAsync(ThemeKey);
-            return string.IsNullOrEmpty(theme) ? "Light" : theme;
+            var theme = settings.Current.Theme;
+            return Task.FromResult(string.IsNullOrEmpty(theme) ? "Light" : theme);
         }
         catch
         {
-            return "Light";
-        }
-    }
-
-    public async Task SetThemeAsync(string theme)
-    {
-        if (!AvailableThemes.Contains(theme))
-            theme = "Light";
-            
-        try
-        {
-            await securePreferences.SetAsync(ThemeKey, theme);
-            CurrentTheme = theme;
-        }
-        catch
-        {
-            // Ignore errors
+            return Task.FromResult("Light");
         }
     }
 }

@@ -19,12 +19,13 @@ public class ContentFormatterServiceTests
         services.AddSingleton<ISecurePreferences>(prefs);
         services.AddSingleton(sp => new OpenAIOptions(sp.GetRequiredService<ISecurePreferences>()) { Model = "gpt-4.1-mini" });
         services.AddLegionClient();
+        services.AddTestLamp();
         services.AddSingleton<OpenAIService>();
         services.AddSingleton<ClaudeService>();
         services.AddSingleton<DeepSeekService>();
         services.AddSingleton<GeminiService>();
         var sp = services.BuildServiceProvider();
-        var router = new LlmServiceRouter(prefs, sp);
+        var router = new LlmServiceRouter(sp.GetRequiredService<TutorSettingsSource>(), sp);
         return new ContentFormatterService(router);
     }
 

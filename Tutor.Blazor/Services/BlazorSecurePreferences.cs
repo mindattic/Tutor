@@ -5,44 +5,32 @@ using Tutor.Core.Services.Abstractions;
 namespace Tutor.Blazor.Services;
 
 /// <summary>
-/// File-backed preferences store for Tutor. LLM API keys are NOT stored in the local
-/// preferences file — a key entered in Settings writes into MindAttic.Vault under Tutor's OWN
-/// provider id (an <see cref="AppScopedCredentialStore"/> scoped to <c>"tutor"</c>), so it never
-/// changes what another MindAttic app resolves. Reading falls back to the shared cross-app id
-/// (User Secrets / env / App Service / Key Vault / <c>%APPDATA%\MindAttic\LLM\providers.json</c>,
-/// via <see cref="LlmCredentialResolver"/>) only when Tutor has none of its own. Model-name
-/// fields stay read-only from the shared id, unchanged.
-///
-/// Ordinary preferences (theme, SELECTED_MODEL, ENTER_TO_SEND, …) continue to live in
-/// the local <c>secure-preferences.json</c>.
+/// Tutor's per-user / content preferences file (<c>%LocalAppData%\Tutor\Settings\secure-preferences.json</c>:
+/// the signed-in user, course lists, lesson state), shared by Tutor.Blazor and Tutor.Cli. App-level settings
+/// live in <see cref="Tutor.Core.Services.TutorSettings"/> and API keys in Vault's shared named lists (LAMP,
+/// TUT-T31), so neither is read or written here; the old settings entries in this file are left in place
+/// as the rollback. The <c>*_MODEL</c> names still read the shared provider record's optional <c>model</c> field.
 /// </summary>
 public class BlazorSecurePreferences : ISecurePreferences, IDisposable
 {
     private readonly string filePath;
     private readonly LlmCredentialResolver vault;
-    private readonly CompositeCredentialStore keys;
     private Dictionary<string, string> store = new();
     private readonly SemaphoreSlim @lock = new(1, 1);
 
-    // Tutor's ISecurePreferences keys → (provider, isApiKey) resolved from Vault.
-    // Provider IDs follow the MindAttic cross-app convention (claude/openai/gemini/deepseek).
-    private static readonly Dictionary<string, (string Provider, bool IsApiKey)> LlmKeyMap = new(StringComparer.OrdinalIgnoreCase)
+    // Model-name preferences read (never written) from the shared provider record's "model" field.
+    private static readonly Dictionary<string, string> ModelKeyMap = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["OPENAI_API_KEY"]    = ("openai",   true),
-        ["CHATGPT_MODEL"]     = ("openai",   false),
-        ["CLAUDE_API_KEY"]    = ("claude",   true),
-        ["CLAUDE_MODEL"]      = ("claude",   false),
-        ["GEMINI_API_KEY"]    = ("gemini",   true),
-        ["GEMINI_MODEL"]      = ("gemini",   false),
-        ["DEEPSEEK_API_KEY"]  = ("deepseek", true),
-        ["DEEPSEEK_MODEL"]    = ("deepseek", false),
+        ["CHATGPT_MODEL"]  = "openai",
+        ["CLAUDE_MODEL"]   = "claude",
+        ["GEMINI_MODEL"]   = "gemini",
+        ["DEEPSEEK_MODEL"] = "deepseek",
     };
 
     /// <summary>Loads local (non-secret) preferences; LLM keys are read from Vault on demand.</summary>
     public BlazorSecurePreferences(LlmCredentialResolver vault)
     {
         this.vault = vault;
-        keys = new CompositeCredentialStore(new AppScopedCredentialStore("tutor", vault), vault);
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Tutor", "Settings");
@@ -51,28 +39,20 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         Load();
     }
 
-    /// <summary>Reads a preference. LLM-mapped keys resolve from Vault; everything else from local prefs.</summary>
+    /// <summary>Reads a preference. Model names resolve from the shared provider record; everything else from local prefs.</summary>
     public Task<string?> GetAsync(string key)
     {
-        if (LlmKeyMap.TryGetValue(key, out var map))
-            return Task.FromResult(ReadFromVault(map.Provider, map.IsApiKey));
+        if (ModelKeyMap.TryGetValue(key, out var provider))
+            return Task.FromResult(ReadModel(provider));
 
         store.TryGetValue(key, out var value);
         return Task.FromResult<string?>(value);
     }
 
-    /// <summary>
-    /// Writes a preference. An LLM API key writes into Vault under Tutor's own provider id
-    /// (never the shared one); a model-name field is still Vault-managed/read-only and ignored;
-    /// everything else is an ordinary local preference.
-    /// </summary>
+    /// <summary>Writes a preference. A model-name field is Vault-managed/read-only and ignored.</summary>
     public async Task SetAsync(string key, string value)
     {
-        if (LlmKeyMap.TryGetValue(key, out var map))
-        {
-            if (map.IsApiKey) keys.SetKey(map.Provider, value);
-            return;
-        }
+        if (ModelKeyMap.ContainsKey(key)) return;
 
         await @lock.WaitAsync();
         try
@@ -86,15 +66,10 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    /// <summary>Removes a preference. An LLM API key clears Tutor's own Vault override (the
-    /// shared default, if any, takes back over); a model-name field stays Vault-managed/ignored.</summary>
+    /// <summary>Removes a preference. A model-name field is Vault-managed/read-only and ignored.</summary>
     public void Remove(string key)
     {
-        if (LlmKeyMap.TryGetValue(key, out var map))
-        {
-            if (map.IsApiKey) keys.SetKey(map.Provider, "");
-            return;
-        }
+        if (ModelKeyMap.ContainsKey(key)) return;
 
         @lock.Wait();
         try
@@ -108,37 +83,11 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         }
     }
 
-    /// <summary>Every key configured for an LLM API-key preference, in priority order (Tutor's
-    /// own Vault override first, then the shared cross-app pool).</summary>
-    public Task<IReadOnlyList<string>> GetApiKeysAsync(string key)
-    {
-        if (!LlmKeyMap.TryGetValue(key, out var map) || !map.IsApiKey)
-            throw new NotSupportedException($"'{key}' is not an LLM API-key preference.");
-        IReadOnlyList<string> result = keys.GetKeys(map.Provider).Select(k => k.Key).ToList();
-        return Task.FromResult(result);
-    }
-
-    /// <summary>Replaces the whole key pool for an LLM API-key preference, writing into Vault
-    /// under Tutor's own provider id (never the shared one).</summary>
-    public Task SetApiKeysAsync(string key, IReadOnlyList<string> apiKeys)
-    {
-        if (!LlmKeyMap.TryGetValue(key, out var map) || !map.IsApiKey)
-            throw new NotSupportedException($"'{key}' is not an LLM API-key preference.");
-        keys.SetKeys(map.Provider, apiKeys.Select(k => new CredentialPoolEntry(k)).ToList());
-        return Task.CompletedTask;
-    }
-
-    // apiKey → this app's own Vault override, falling back to the shared cross-app key;
-    // model → the shared provider's "model" field from the raw record (unchanged).
-    private string? ReadFromVault(string provider, bool isApiKey)
+    // The shared provider's optional "model" field from the raw record (unchanged by LAMP).
+    private string? ReadModel(string provider)
     {
         try
         {
-            if (isApiKey)
-            {
-                var key = keys.GetKey(provider);
-                return string.IsNullOrWhiteSpace(key) ? null : key;
-            }
             if (vault.LoadAllRaw().TryGetValue(provider, out var raw) && !string.IsNullOrWhiteSpace(raw))
             {
                 using var doc = JsonDocument.Parse(raw);

@@ -1,0 +1,231 @@
+@page "/maintenance"
+@using Tutor.Core.Services
+@using Tutor.Core.Services.Logging
+@inject FileResourceService FileResourceService
+@inject LogStorageService LogStorageService
+@inject ConceptMapStorageService ConceptMapStorageService
+@implements IDisposable
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication
+
+@* LAMP (TUT-T31): Tutor's settings are edited only in MindAttic Vault (the Settings cog). This page keeps
+   the admin tools that were on the old settings screen but aren't settings: the data folders, the concept
+   maps on disk, and the log viewer. *@
+
+<section class="settings-page" aria-labelledby="maintenance-heading">
+    <h1 id="maintenance-heading" class="sr-only">Maintenance</h1>
+
+    <div class="tab-content">
+        <div class="settings-section">
+            <h4 id="resources-dir-heading">Learning Resources Folder</h4>
+            <div class="path-input-row">
+                <label for="resources-dir-path" class="sr-only">Learning resources folder</label>
+                <input id="resources-dir-path" type="text" class="settings-input path-input" value="@learningResourcesPath" readonly aria-readonly="true" />
+                <button class="settings-btn" type="button" @onclick="OpenResourcesFolder" title="Open folder" aria-label="Open learning resources folder">
+                    <span class="bi bi-folder2-open" aria-hidden="true"></span>
+                </button>
+            </div>
+            <p class="settings-hint">The folder and the storage options are settings, changed in MindAttic Vault (Settings cog).</p>
+            <div class="folder-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Original files:</span>
+                    <span class="stat-value">@originalFileCount</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Formatted files:</span>
+                    <span class="stat-value">@formattedFileCount</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h4 id="conceptmaps-dir-heading">Concept Maps</h4>
+            <div class="path-input-row">
+                <label for="conceptmaps-dir-path" class="sr-only">Concept maps folder</label>
+                <input id="conceptmaps-dir-path" type="text" class="settings-input path-input" value="@conceptMapsPath" readonly aria-readonly="true" />
+            </div>
+            <div class="folder-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Concept maps:</span>
+                    <span class="stat-value">@conceptMaps.Count</span>
+                </div>
+            </div>
+            @if (conceptMaps.Count > 0)
+            {
+                <div class="kb-list" style="margin-top: 15px;">
+                    <table class="kb-table">
+                        <caption class="sr-only">Concept maps on this machine</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Concepts</th>
+                                <th scope="col">Relations</th>
+                                <th scope="col">Status</th>
+                                <th scope="col"><span class="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cm in conceptMaps)
+                            {
+                                <tr>
+                                    <td>@cm.Name</td>
+                                    <td>@cm.ConceptCount</td>
+                                    <td>@cm.RelationCount</td>
+                                    <td><span class="kb-status @cm.Status.ToString().ToLower()">@cm.Status</span></td>
+                                    <td>
+                                        <button class="btn-icon-small danger" type="button" @onclick="() => DeleteConceptMapAsync(cm.Id)" title="Delete" aria-label="@($"Delete concept map {cm.Name}")">
+                                            <span class="bi bi-trash" aria-hidden="true"></span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="settings-section">
+            <h4>Log Viewer</h4>
+            <p class="settings-hint">Which levels are captured is a setting, changed in MindAttic Vault (Settings cog).</p>
+            <div class="log-controls">
+                <div class="log-filters">
+                    <span class="filter-label">Display Filter:</span>
+                    @foreach (var severity in Enum.GetValues<LogSeverity>())
+                    {
+                        <label class="filter-checkbox">
+                            <input type="checkbox"
+                                   checked="@logFilters.Contains(severity)"
+                                   @onchange="@(e => ToggleLogFilter(severity, (bool)(e.Value ?? false)))" />
+                            <span class="severity-badge @severity.ToString().ToLower()">@severity</span>
+                        </label>
+                    }
+                </div>
+                <div class="log-actions">
+                    <button class="settings-btn small" type="button" @onclick="RefreshLogs">
+                        <span class="bi bi-arrow-clockwise" aria-hidden="true"></span> Refresh
+                    </button>
+                    <button class="settings-btn danger small" type="button" @onclick="ClearLogs">
+                        <span class="bi bi-trash" aria-hidden="true"></span> Clear All
+                    </button>
+                </div>
+            </div>
+            <p class="log-count">Showing @filteredLogs.Count of @totalLogCount entries</p>
+        </div>
+
+        <div class="log-viewer">
+            @if (filteredLogs.Count == 0)
+            {
+                <div class="log-empty">
+                    <span class="bi bi-journal-text" aria-hidden="true"></span>
+                    <p>No log entries to display.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var entry in filteredLogs)
+                {
+                    <div class="log-entry @entry.SeverityCssClass">
+                        <div class="log-entry-header">
+                            <span class="log-severity">
+                                <span class="bi @entry.SeverityIcon" aria-hidden="true"></span>
+                                @entry.Severity
+                            </span>
+                            <span class="log-timestamp">@entry.TimestampDisplay</span>
+                        </div>
+                        <div class="log-message">@entry.Message</div>
+                        @if (!string.IsNullOrEmpty(entry.SourceDisplay))
+                        {
+                            <div class="log-source">@entry.SourceDisplay</div>
+                        }
+                        @if (entry.Exception != null)
+                        {
+                            <div class="log-exception">
+                                <strong>@entry.Exception.GetType().Name:</strong> @entry.Exception.Message
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(status))
+    {
+        <p style="color: var(--text-secondary); margin-top: 16px;" role="status" aria-live="polite" aria-atomic="true">@status</p>
+    }
+</section>
+
+@code {
+    private string status = "";
+    private string learningResourcesPath = "";
+    private int originalFileCount;
+    private int formattedFileCount;
+    private string conceptMapsPath = "";
+    private List<ConceptMapSummary> conceptMaps = [];
+    private HashSet<LogSeverity> logFilters = [LogSeverity.Information, LogSeverity.Warning, LogSeverity.Error, LogSeverity.Critical];
+    private List<LogEntry> filteredLogs = [];
+    private int totalLogCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        learningResourcesPath = StorageSettings.GetResolvedDirectory();
+        originalFileCount = FileResourceService.GetOriginalFiles().Count;
+        formattedFileCount = FileResourceService.GetFormattedFiles().Count;
+        await LoadConceptMapsAsync();
+        LoadLogs();
+        Log.Store.EntryAdded += OnLogEntryAdded;
+        Log.Store.EntriesCleared += OnLogsCleared;
+    }
+
+    public void Dispose()
+    {
+        Log.Store.EntryAdded -= OnLogEntryAdded;
+        Log.Store.EntriesCleared -= OnLogsCleared;
+    }
+
+    private async Task LoadConceptMapsAsync()
+    {
+        conceptMapsPath = DataStorageSettings.GetKnowledgeBasesDirectory();
+        conceptMaps = await ConceptMapStorageService.GetSummariesAsync();
+    }
+
+    private async Task DeleteConceptMapAsync(string id)
+    {
+        await ConceptMapStorageService.DeleteAsync(id);
+        await LoadConceptMapsAsync();
+        status = "Concept map deleted.";
+    }
+
+    private void OpenResourcesFolder() => FileResourceService.OpenResourcesDirectory();
+
+    private void OnLogEntryAdded(object? sender, LogEntry entry) => InvokeAsync(() => { LoadLogs(); StateHasChanged(); });
+
+    private void OnLogsCleared(object? sender, EventArgs e) => InvokeAsync(() => { LoadLogs(); StateHasChanged(); });
+
+    private void LoadLogs()
+    {
+        totalLogCount = Log.Store.Count;
+        filteredLogs = Log.Store.GetFiltered(logFilters).ToList();
+    }
+
+    private void RefreshLogs()
+    {
+        LoadLogs();
+        status = $"Logs refreshed. {filteredLogs.Count} entries displayed.";
+    }
+
+    private void ToggleLogFilter(LogSeverity severity, bool included)
+    {
+        if (included) logFilters.Add(severity);
+        else logFilters.Remove(severity);
+        LoadLogs();
+    }
+
+    private void ClearLogs()
+    {
+        LogStorageService.ClearPersistedLogs();
+        status = "All logs cleared.";
+    }
+}

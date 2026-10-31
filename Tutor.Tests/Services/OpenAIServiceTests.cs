@@ -47,7 +47,7 @@ public class OpenAIServiceTests
     {
         var prefs = new FakeSecurePreferences();
         var opt = new OpenAIOptions(prefs);
-        var svc = new OpenAIService(legion, opt);
+        var svc = new OpenAIService(legion, opt, TestLamp.Keys());
         return (svc, prefs, opt);
     }
 
@@ -66,10 +66,9 @@ public class OpenAIServiceTests
     }
 
     [Test]
-    public async Task IsConfiguredAsync_PrefsKeySet_True()
+    public async Task IsConfiguredAsync_VaultKeySet_True()
     {
-        var (svc, prefs, _) = Build();
-        await prefs.SetAsync("OPENAI_API_KEY", "sk-test");
+        var svc = new OpenAIService(legion, new OpenAIOptions(new FakeSecurePreferences()), TestLamp.KeysWith(("openai", "sk-test")));
 
         Assert.That(await svc.IsConfiguredAsync(), Is.True);
     }
@@ -103,35 +102,6 @@ public class OpenAIServiceTests
         var (svc, _, _) = Build();
         svc.ClearHistory();
         Assert.That(svc.GetHistory(), Is.Empty);
-    }
-
-    [Test]
-    public async Task Options_GetApiKeyAsync_ReadsFromPrefs()
-    {
-        var (_, prefs, opt) = Build();
-        await prefs.SetAsync("OPENAI_API_KEY", "abc");
-
-        Assert.That(await opt.GetApiKeyAsync(), Is.EqualTo("abc"));
-    }
-
-    [Test]
-    public async Task Options_SetApiKeyAsync_WritesToPrefs()
-    {
-        var (_, prefs, opt) = Build();
-        await opt.SetApiKeyAsync("xyz");
-
-        Assert.That(await prefs.GetAsync("OPENAI_API_KEY"), Is.EqualTo("xyz"));
-    }
-
-    [Test]
-    public async Task Options_ClearApiKey_RemovesFromPrefs()
-    {
-        var (_, prefs, opt) = Build();
-        await opt.SetApiKeyAsync("xyz");
-
-        opt.ClearApiKey();
-
-        Assert.That(prefs.ContainsKey("OPENAI_API_KEY"), Is.False);
     }
 
     [Test]

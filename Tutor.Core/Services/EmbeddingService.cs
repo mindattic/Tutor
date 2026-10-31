@@ -12,7 +12,7 @@ namespace Tutor.Core.Services;
 public sealed class EmbeddingService
 {
     private readonly LegionClient legion;
-    private readonly OpenAIOptions opt;
+    private readonly TutorKeys keys;
 
     private const string EmbeddingModel = "text-embedding-3-small";
     private const int EmbeddingDimensions = 1536;
@@ -27,10 +27,10 @@ public sealed class EmbeddingService
     // Rough estimate: 1 token ≈ 4 characters for English text
     private const int CharsPerToken = 4;
 
-    public EmbeddingService(LegionClient legion, OpenAIOptions opt)
+    public EmbeddingService(LegionClient legion, TutorKeys keys)
     {
         this.legion = legion;
-        this.opt = opt;
+        this.keys = keys;
         Log.Debug("EmbeddingService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
@@ -66,13 +66,6 @@ public sealed class EmbeddingService
         var batches = CreateBatches(validTexts);
         Log.Debug($"EmbeddingService: Processing {validTexts.Count} text(s) in {batches.Count} batch(es)");
 
-        var apiKey = await opt.GetApiKeyAsync();
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            Log.Error("EmbeddingService: API key is missing");
-            throw new InvalidOperationException("OpenAI API key is missing. Configure it in MindAttic Vault (%APPDATA%\\MindAttic\\LLM\\providers.json).");
-        }
-
         var allEmbeddings = new List<float[]>();
         if (batches.Count > 1)
             Log.Info($"EmbeddingService: Large document — processing {validTexts.Count} texts in {batches.Count} batches");
@@ -90,13 +83,14 @@ public sealed class EmbeddingService
             IReadOnlyList<float[]> batchEmbeddings;
             try
             {
-                batchEmbeddings = await legion.EmbedAsync(
+                // Keys from Vault's shared named lists (LAMP), failing over when one is refused.
+                batchEmbeddings = await keys.ExecuteAsync("openai", (apiKey, callCt) => legion.EmbedAsync(
                     providerId: "openai",
-                    apiKey: apiKey!,
+                    apiKey: apiKey,
                     model: EmbeddingModel,
                     inputs: batch,
                     dimensions: EmbeddingDimensions,
-                    ct: ct);
+                    ct: callCt), ct);
             }
             catch (CircuitBreakerOpenException ex)
             {

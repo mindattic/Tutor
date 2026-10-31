@@ -312,7 +312,6 @@ public sealed class ConceptMapStorageService
 
         try
         {
-            StorageSettings.Load();
             var cmDir = Path.Combine(StorageSettings.GetResolvedDirectory(), "ConceptMaps");
 
             var safeFileName = SanitizeFileName(conceptMap.Name);

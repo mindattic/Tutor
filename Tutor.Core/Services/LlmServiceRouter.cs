@@ -1,47 +1,46 @@
 using Microsoft.Extensions.DependencyInjection;
 using Tutor.Core.Models;
+using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Logging;
 
 /// <summary>
-/// Routes LLM requests to the appropriate service based on the user's selected model.
+/// Routes LLM requests to the appropriate service based on <see cref="TutorSettings.ActiveModel"/>.
 /// Resolves services from the DI container on each call to avoid captive dependency issues.
 /// </summary>
 public sealed class LlmServiceRouter : ILlmService
 {
-    private readonly ISecurePreferences prefs;
+    private readonly TutorSettingsSource settings;
     private readonly IServiceProvider serviceProvider;
-
-    private const string SelectedModelKey = "SELECTED_MODEL";
 
     public string ProviderName => "Router";
 
-    public LlmServiceRouter(ISecurePreferences prefs, IServiceProvider serviceProvider)
+    public LlmServiceRouter(TutorSettingsSource settings, IServiceProvider serviceProvider)
     {
-        this.prefs = prefs;
+        this.settings = settings;
         this.serviceProvider = serviceProvider;
         Log.Debug("LlmServiceRouter initialized");
     }
 
     public async Task<bool> IsConfiguredAsync()
     {
-        var service = await GetCurrentServiceAsync();
+        var service = GetCurrentService();
         return await service.IsConfiguredAsync();
     }
 
     public async Task<ChatReply> GetReplyAsync(IEnumerable<ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
     {
-        var service = await GetCurrentServiceAsync();
+        var service = GetCurrentService();
         Log.Info($"LlmRouter: Routing to {service.ProviderName}");
         return await service.GetReplyAsync(messages, instructions, ct);
     }
 
-    private async Task<ILlmService> GetCurrentServiceAsync()
+    /// <summary>The service the active model setting selects (OpenAI for ChatGPT or anything unknown).</summary>
+    public ILlmService GetCurrentService()
     {
         try
         {
-            var selected = await prefs.GetAsync(SelectedModelKey);
-            return ResolveService(selected);
+            return ResolveService(settings.Current.ActiveModel);
         }
         catch
         {

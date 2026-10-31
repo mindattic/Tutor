@@ -6,30 +6,39 @@ namespace Tutor.Tests.Services;
 public class SettingsServiceTests
 {
     [Test]
-    public void Constructor_AcceptsSecurePreferences()
+    public void Constructor_AcceptsSettingsAndPreferences()
     {
-        var prefs = new FakeSecurePreferences();
-        var sut = new SettingsService(prefs);
+        var sut = new SettingsService(TestLamp.Settings(), new FakeSecurePreferences());
         Assert.That(sut, Is.Not.Null);
     }
 
     [Test]
     public async Task GetEnterToSendAsync_DefaultsToTrue()
     {
-        var prefs = new FakeSecurePreferences();
-        var sut = new SettingsService(prefs);
-        var value = await sut.GetEnterToSendAsync();
-        Assert.That(value, Is.True);
+        var sut = new SettingsService(TestLamp.Settings(), new FakeSecurePreferences());
+        Assert.That(await sut.GetEnterToSendAsync(), Is.True);
     }
 
     [Test]
-    public async Task SetAndGet_EnterToSend_Roundtrips()
+    public async Task EnterToSend_ReadsTheVaultSettingOnEveryCall()
+    {
+        var settings = TestLamp.Settings();
+        var sut = new SettingsService(settings, new FakeSecurePreferences());
+
+        settings.Store.Update(s => s.EnterToSend = false);   // as Vault.Desktop would save it
+
+        Assert.That(await sut.GetEnterToSendAsync(), Is.False);
+    }
+
+    [Test]
+    public async Task LessonState_StaysInSecurePreferences()
     {
         var prefs = new FakeSecurePreferences();
-        var sut = new SettingsService(prefs);
+        var sut = new SettingsService(TestLamp.Settings(), prefs);
 
-        await sut.SetEnterToSendAsync(false);
-        var result = await sut.GetEnterToSendAsync();
-        Assert.That(result, Is.False);
+        await sut.SaveLessonStateAsync(new LessonState { CurriculumId = "c1", CurrentLessonIndex = 2 });
+
+        Assert.That(prefs.ContainsKey("LESSON_STATE"), Is.True);
+        Assert.That((await sut.GetLessonStateAsync())!.CurriculumId, Is.EqualTo("c1"));
     }
 }

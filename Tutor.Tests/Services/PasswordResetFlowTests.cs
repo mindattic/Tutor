@@ -14,7 +14,7 @@ using Tutor.Core.Data;
 namespace Tutor.Tests.Services;
 
 /// <summary>
-/// Self-service password reset over Tutor's own pieces: the PublicBaseUrl in Tutor.Blazor/appsettings.json,
+/// Self-service password reset over Tutor's own pieces: the PublicBaseUrl in Tutor's Vault settings (Auth group),
 /// the reset page at the library's ResetPath (Tutor.Shared), and TutorAuthDbContext as the auth store.
 /// A capturing sender stands in for SMTP — nothing is sent.
 /// </summary>
@@ -54,13 +54,8 @@ public class PasswordResetFlowTests
         Assembly.Load("Tutor.Shared").GetTypes()
             .Single(t => t.GetCustomAttributes<RouteAttribute>().Any(r => r.Template == route));
 
-    private static AuthResetOptions AppResetOptions()
-    {
-        var config = new ConfigurationBuilder()
-            .AddJsonFile(Path.Combine(RepoRoot().FullName, "Tutor.Blazor", "appsettings.json"))
-            .Build();
-        return config.GetSection("MindAttic:Auth:Reset").Get<AuthResetOptions>() ?? new AuthResetOptions();
-    }
+    // LAMP (TUT-T31): Tutor's reset options are its Vault settings' Auth group (first-run defaults here).
+    private static AuthResetOptions AppResetOptions() => new Tutor.Core.Services.TutorSettings().Auth.Reset;
 
     [Test]
     public void ResetAndForgotPages_AreAnonymousStaticPages()
