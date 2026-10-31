@@ -29,6 +29,9 @@
 
             var borderRadius = await SettingsService.GetBorderRadiusAsync();
             await JS.InvokeVoidAsync("setBorderRadius", borderRadius);
+
+            var paragraphSpacing = await SettingsService.GetParagraphSpacingAsync();
+            await JS.InvokeVoidAsync("setParagraphSpacing", paragraphSpacing);
         }
     }
 }
