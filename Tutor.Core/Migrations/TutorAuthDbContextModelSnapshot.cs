@@ -276,6 +276,10 @@ namespace Tutor.Core.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -301,6 +305,10 @@ namespace Tutor.Core.Migrations
 
                     b.Property<bool>("MustEnrollMfa")
                         .HasColumnType("bit");
+
+                    b.Property<string>("NormalizedDisplayName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -344,6 +352,10 @@ namespace Tutor.Core.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NormalizedDisplayName")
+                        .IsUnique()
+                        .HasFilter("[NormalizedDisplayName] IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail");
 
