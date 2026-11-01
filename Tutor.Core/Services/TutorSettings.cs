@@ -315,7 +315,10 @@ public sealed class TutorSettingsSource
     public TutorSettingsSource(ISettingsStore<TutorSettings> store, IConfiguration? configuration = null)
     {
         this.store = store ?? throw new ArgumentNullException(nameof(store));
-        this.configuration = configuration;
+        // Deployed or not is decided now: a host that later adds AddMindAtticVaultConfiguration() projects this
+        // machine's own Vault file under the same name, and that must not turn the local file into
+        // read-only "deployed" config (TUT-T34): the store is then re-read on every access and Update works.
+        this.configuration = TutorSettings.FromConfiguration(configuration) is not null ? configuration : null;
     }
 
     /// <summary>The settings in effect now.</summary>

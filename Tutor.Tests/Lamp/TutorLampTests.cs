@@ -191,6 +191,23 @@ public class TutorLampTests
         Assert.That(store.Load().Theme, Is.EqualTo("Dark"), "deployed values are read-only (M.VALT-LAW-4)");
     }
 
+    [Test]
+    public void Local_Vault_file_projected_into_configuration_later_stays_the_live_editable_source()
+    {
+        // TUT-T34: Program.cs opens the source with builder.Configuration, then adds AddMindAtticVaultConfiguration(),
+        // which projects this same file as MindAttic:Settings:Tutor:*. That is not deployed config.
+        var store = TestLamp.Store();
+        store.Save(new TutorSettings { Theme = "Light" });
+        var config = new ConfigurationManager();
+        var source = new TutorSettingsSource(store, config);
+        config.AddInMemoryCollection(new Dictionary<string, string?> { [$"{Prefix}:theme"] = "Light" });
+
+        store.Save(new TutorSettings { Theme = "Dark" }); // an edit saved in Vault.Desktop
+        Assert.That(source.Current.Theme, Is.EqualTo("Dark"), "the Vault file is re-read on every access");
+        source.Update(s => s.Theme = "Winter");
+        Assert.That(store.Load().Theme, Is.EqualTo("Winter"), "a local source accepts Tutor.Cli's run-control writes");
+    }
+
     // ---- Keys ------------------------------------------------------------------------------
 
     /// <summary>Answers Anthropic's endpoint by key: "sk-bad" gets 401, anything else 200.</summary>
