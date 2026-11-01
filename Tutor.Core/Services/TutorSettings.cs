@@ -338,6 +338,28 @@ public sealed class TutorSettingsSource
         store.Update(change);
     }
 
+    /// <summary>
+    /// Adds the Vault tree (<c>AddMindAtticVaultConfiguration</c>) just below the environment variables, so an env var or
+    /// App Service setting (<c>MindAttic__Settings__Tutor__*</c>) still overrides this machine's Vault file (TUT-T35).
+    /// Without an environment-variables source it is simply added last.
+    /// </summary>
+    public static IConfigurationBuilder AddVaultConfigurationBelowEnvironment(IConfigurationBuilder configuration,
+        Action<MindAttic.Vault.Configuration.VaultConfigurationSource>? configure = null)
+    {
+        var before = configuration.Sources.Count;
+        MindAttic.Vault.Configuration.VaultConfigurationExtensions.AddMindAtticVaultConfiguration(configuration, configure);
+        var sources = configuration.Sources;
+        if (sources.Count != before + 1) return configuration;
+        var env = -1;
+        for (var i = 0; i < before; i++)
+            if (sources[i].GetType().Name == "EnvironmentVariablesConfigurationSource") { env = i; break; }
+        if (env < 0) return configuration;
+        var vault = sources[before];
+        sources.RemoveAt(before);
+        sources.Insert(env, vault);
+        return configuration;
+    }
+
     /// <summary>What hosts call once at startup: imports today's values on first run, seeds, writes the manifest.</summary>
     public static TutorSettingsSource Open(IConfiguration? configuration = null, string? legacyDirectory = null)
     {

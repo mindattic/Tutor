@@ -55,8 +55,9 @@ builder.Services.AddMindAtticVault(builder.Configuration);
 var tutorSettings = TutorSettingsSource.Open(builder.Configuration);
 // After the one-time import: every Vault settings file and named key as one IConfiguration tree
 // (MindAttic:Settings:Tutor:*), reloaded when Vault.Desktop saves, so the auth stack below binds its
-// options from Tutor's Vault tab. A deployed host gets the same names from App Configuration.
-builder.Configuration.AddMindAtticVaultConfiguration(o => o.ReloadOnChange = true);
+// options from Tutor's Vault tab. A deployed host gets the same names from App Configuration. It sits below the
+// environment variables, so an env var / App Service setting still overrides the local Vault file (TUT-T35).
+TutorSettingsSource.AddVaultConfigurationBelowEnvironment(builder.Configuration, o => o.ReloadOnChange = true);
 StorageSettings.Source = tutorSettings;
 MindAttic.Vault.Credentials.KeyImporter.ImportAppScopedFor(TutorSettings.AppId);
 builder.Services.AddSingleton(tutorSettings);

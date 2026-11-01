@@ -192,6 +192,35 @@ public class TutorLampTests
     }
 
     [Test]
+    public void Environment_variable_overrides_the_local_Vault_file_in_the_hosts_configuration()
+    {
+        // TUT-T35: Program.cs adds the Vault tree after WebApplicationBuilder's environment variables.
+        const string envName = "MindAttic__Settings__Tutor__theme";
+        var store = JsonSettingsStore<TutorSettings>.ForSettingsApp(); // the temp local root (TestVaultRoots)
+        var before = File.Exists(store.FilePath) ? File.ReadAllBytes(store.FilePath) : null;
+        store.Save(new TutorSettings { Theme = "Dark" });
+        store.LoadOrSeed();
+        Environment.SetEnvironmentVariable(envName, "Summer");
+        try
+        {
+            var config = new ConfigurationManager();
+            config.AddEnvironmentVariables();
+            TutorSettingsSource.AddVaultConfigurationBelowEnvironment(config);
+            Assert.That(config[$"{Prefix}:theme"], Is.EqualTo("Summer"), "the env var wins over the Vault file");
+            Assert.That(config[$"{Prefix}:quizQuestionCount"], Is.EqualTo("3"), "the rest still comes from the Vault file");
+
+            var bare = new ConfigurationManager();
+            TutorSettingsSource.AddVaultConfigurationBelowEnvironment(bare);
+            Assert.That(bare[$"{Prefix}:theme"], Is.EqualTo("Dark"), "no env source: the Vault tree is just added");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(envName, null);
+            if (before is null) File.Delete(store.FilePath); else File.WriteAllBytes(store.FilePath, before);
+        }
+    }
+
+    [Test]
     public void Local_Vault_file_projected_into_configuration_later_stays_the_live_editable_source()
     {
         // TUT-T34: Program.cs opens the source with builder.Configuration, then adds AddMindAtticVaultConfiguration(),
