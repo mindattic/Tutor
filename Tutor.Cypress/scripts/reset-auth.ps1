@@ -6,7 +6,7 @@
 .DESCRIPTION
   AuthenticationService is a singleton that seeds itself from
   %LOCALAPPDATA%\Tutor\Settings\secure-preferences.json on first AuthGuard
-  navigation. Clearing the file alone is not enough — the in-memory currentUser
+  navigation. Clearing the file alone is not enough - the in-memory currentUser
   outlives the file edit. So this script also stops any running Tutor.Blazor
   process; you restart the app yourself afterwards (a single `dotnet run` from
   the project root), and Cypress will then see a clean logged-out state.
@@ -25,7 +25,7 @@ $ErrorActionPreference = 'Stop'
 $prefsPath = Join-Path $env:LOCALAPPDATA 'Tutor\Settings\secure-preferences.json'
 
 if (-not (Test-Path $prefsPath)) {
-    Write-Host "No secure-preferences.json at $prefsPath — nothing to clear."
+    Write-Host "No secure-preferences.json at $prefsPath - nothing to clear."
 } else {
     $json = Get-Content -LiteralPath $prefsPath -Raw | ConvertFrom-Json
     if ($json.PSObject.Properties.Name -contains 'CURRENT_USER') {
@@ -33,7 +33,7 @@ if (-not (Test-Path $prefsPath)) {
         $json | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $prefsPath -Encoding utf8
         Write-Host "Cleared CURRENT_USER from $prefsPath."
     } else {
-        Write-Host "CURRENT_USER not present in $prefsPath — already clear."
+        Write-Host "CURRENT_USER not present in $prefsPath - already clear."
     }
 }
 

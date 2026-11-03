@@ -37,6 +37,7 @@ public sealed class UserProgressService
         if (cachedProgress.TryGetValue(key, out var cached))
             return cached;
 
+        var loadFailed = false;
         try
         {
             var storageKey = GetStorageKey(courseId, userId);
@@ -54,7 +55,8 @@ public sealed class UserProgressService
         }
         catch
         {
-            // If loading fails, create new progress
+            // If loading fails, create new progress (in memory only - see below)
+            loadFailed = true;
         }
 
         // Create new progress
@@ -65,7 +67,12 @@ public sealed class UserProgressService
         };
 
         cachedProgress[key] = newProgress;
-        await SaveProgressAsync(newProgress);
+
+        // Persist the blank record only when nothing was stored. When the stored record failed
+        // to load (unreadable/corrupt/locked), saving here would overwrite the learner's real
+        // progress with an empty one.
+        if (!loadFailed)
+            await SaveProgressAsync(newProgress);
 
         return newProgress;
     }

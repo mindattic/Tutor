@@ -61,8 +61,12 @@ public abstract class ExternalToolBookParser : IBookParser
             using var process = Process.Start(psi)
                 ?? throw new InvalidOperationException($"Failed to start {ToolDisplayName} ({exe}).");
 
-            // Capture stderr so we can surface it as a warning.
+            // Capture stderr so we can surface it as a warning. stdout is drained concurrently:
+            // tools such as ebook-convert print progress there, and an unread redirected pipe
+            // fills up and blocks the child, which would hang this await forever.
+            var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
             var stderr = await process.StandardError.ReadToEndAsync(ct);
+            await stdoutTask;
             await process.WaitForExitAsync(ct);
 
             if (process.ExitCode != 0)

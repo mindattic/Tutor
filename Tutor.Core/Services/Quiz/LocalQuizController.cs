@@ -26,6 +26,11 @@ public class LocalQuizController : IQuizController
         WriteIndented = true
     };
 
+    private static readonly JsonSerializerOptions EvaluationJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public LocalQuizController(
         LlmServiceRouter openAI,
         CourseService courseService,
@@ -136,7 +141,9 @@ Respond with a JSON object:
             if (jsonStart >= 0 && jsonEnd > jsonStart)
             {
                 var json = response.Substring(jsonStart, jsonEnd - jsonStart + 1);
-                var result = JsonSerializer.Deserialize<EvaluationResult>(json);
+                // The prompt asks for camelCase ("isCorrect"); STJ is case-sensitive by default, which left
+                // IsCorrect false (every answer marked wrong) and Feedback null.
+                var result = JsonSerializer.Deserialize<EvaluationResult>(json, EvaluationJsonOptions);
                 
                 if (result != null)
                     return (result.IsCorrect, result.Feedback);

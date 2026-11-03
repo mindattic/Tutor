@@ -57,19 +57,31 @@
         
         // Panel drag/resize handling
         var panelDragDotNetRef = null;
+        var panelDragListenersAdded = false;
         function setupPanelDragHandler(dotNetRef) {
             panelDragDotNetRef = dotNetRef;
-            
+
+            // Each visit to the graph page calls this again: add the document listeners only once
+            // (they always target the latest ref), or every mousemove fans out one server call per
+            // past visit. A ref disposed with its component rejects - stop calling it then.
+            if (panelDragListenersAdded) return;
+            panelDragListenersAdded = true;
+
+            function invokePanel(method) {
+                var ref = panelDragDotNetRef;
+                if (!ref) return;
+                var args = Array.prototype.slice.call(arguments, 1);
+                ref.invokeMethodAsync.apply(ref, [method].concat(args)).catch(function () {
+                    if (panelDragDotNetRef === ref) panelDragDotNetRef = null;
+                });
+            }
+
             document.addEventListener('mousemove', function(e) {
-                if (panelDragDotNetRef) {
-                    panelDragDotNetRef.invokeMethodAsync('OnPanelMouseMove', e.clientX, e.clientY);
-                }
+                invokePanel('OnPanelMouseMove', e.clientX, e.clientY);
             });
-            
+
             document.addEventListener('mouseup', function(e) {
-                if (panelDragDotNetRef) {
-                    panelDragDotNetRef.invokeMethodAsync('OnPanelMouseUp');
-                }
+                invokePanel('OnPanelMouseUp');
             });
         }
         

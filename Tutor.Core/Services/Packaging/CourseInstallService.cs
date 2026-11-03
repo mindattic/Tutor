@@ -111,7 +111,11 @@ public sealed class CourseInstallService
         var plan = await deleteService.DeleteAsync(courseId, ct);
 
         var row = await registry.RemoveAsync(courseId, ct);
-        if (row != null)
+        // A side-by-side duplicate of the same key + version shares the one retained blob,
+        // so only delete it once no remaining installed course still points at it.
+        var blobStillShared = row != null && (await registry.GetByKeyAsync(row.CourseKey, ct))
+            .Any(c => c.CourseVersion == row.CourseVersion);
+        if (row != null && !blobStillShared)
         {
             try { blobStore.Delete(row.CourseKey, row.CourseVersion); }
             catch (Exception ex) { Log.Warn($"CourseInstallService: could not delete retained blob - {ex.Message}"); }

@@ -13,6 +13,11 @@ public class QuizService
     private readonly IHttpContextAccessor httpContextAccessor;
     private QuizSession? currentSession;
 
+    // The result saved when the current session completed. GetCurrentResult hands back this same
+    // instance: ToResult() mints a fresh Id on every call, so re-deriving it would give callers
+    // (final-exam completion, certificates) an Id that matches no saved result.
+    private QuizResult? currentResult;
+
     /// <summary>Event fired when quiz session state changes</summary>
     public event Action? OnQuizStateChanged;
 
@@ -52,6 +57,7 @@ public class QuizService
         if (questions.Count == 0)
             return null;
 
+        currentResult = null;
         currentSession = new QuizSession
         {
             UserId = userId,
@@ -97,6 +103,7 @@ public class QuizService
         {
             // Save the result
             var result = currentSession.ToResult();
+            currentResult = result;
             await quizController.SaveQuizResultAsync(result);
         }
 
@@ -117,7 +124,9 @@ public class QuizService
     /// </summary>
     public QuizResult? GetCurrentResult()
     {
-        return currentSession?.IsComplete == true ? currentSession.ToResult() : null;
+        if (currentSession?.IsComplete != true)
+            return null;
+        return currentResult ??= currentSession.ToResult();
     }
 
     /// <summary>
@@ -126,6 +135,7 @@ public class QuizService
     public void CancelQuiz()
     {
         currentSession = null;
+        currentResult = null;
         OnQuizStateChanged?.Invoke();
     }
 

@@ -101,17 +101,17 @@ public static class BackgroundQueueService
     /// <summary>
     /// Gets the number of active (non-terminal) tasks.
     /// </summary>
-    public static int ActiveCount => state.GetActiveItems().Count();
+    public static int ActiveCount { get { lock (itemsLock) return state.GetActiveItems().Count(); } }
 
     /// <summary>
     /// Gets the number of tasks currently being processed.
     /// </summary>
-    public static int InProgressCount => state.GetInProgressItems().Count();
+    public static int InProgressCount { get { lock (itemsLock) return state.GetInProgressItems().Count(); } }
 
     /// <summary>
     /// Gets the number of tasks waiting in queue.
     /// </summary>
-    public static int PendingCount => state.Items.Count(i => i.Status == BackgroundTaskStatus.Pending);
+    public static int PendingCount { get { lock (itemsLock) return state.Items.Count(i => i.Status == BackgroundTaskStatus.Pending); } }
 
     /// <summary>
     /// Initializes the background queue service.
@@ -325,7 +325,7 @@ public static class BackgroundQueueService
     /// </summary>
     public static IReadOnlyList<BackgroundQueueItem> GetActiveTasks()
     {
-        return state.GetActiveItems().ToList();
+        lock (itemsLock) return state.GetActiveItems().ToList();
     }
 
     /// <summary>
@@ -341,7 +341,7 @@ public static class BackgroundQueueService
     /// </summary>
     public static IReadOnlyList<BackgroundQueueItem> GetCompletedTasks(int limit = 50)
     {
-        return state.GetCompletedItems().Take(limit).ToList();
+        lock (itemsLock) return state.GetCompletedItems().Take(limit).ToList();
     }
 
     /// <summary>
@@ -410,7 +410,9 @@ public static class BackgroundQueueService
         state.Settings.IsPaused = false;
 
         // Signal all pending items
-        foreach (var item in state.GetReadyItems())
+        List<BackgroundQueueItem> ready;
+        lock (itemsLock) ready = state.GetReadyItems().ToList();
+        foreach (var item in ready)
         {
             processingChannel!.Writer.TryWrite(item.Id);
         }
@@ -567,7 +569,8 @@ public static class BackgroundQueueService
 
     private static async Task ResumePendingTasksAsync()
     {
-        var pendingItems = state.GetReadyItems().ToList();
+        List<BackgroundQueueItem> pendingItems;
+        lock (itemsLock) pendingItems = state.GetReadyItems().ToList();
         Log.Info($"BackgroundQueueService: Resuming {pendingItems.Count} pending tasks");
 
         foreach (var item in pendingItems)
@@ -822,7 +825,10 @@ public static class BackgroundQueueService
 
                 // Find items ready for retry
                 var now = DateTime.UtcNow;
-                var readyForRetry = state.Items
+                // Snapshot under the lock: EnqueueAsync/ClearHistory mutate state.Items concurrently,
+                // and a "collection was modified" here would kill this loop and stop all retries.
+                List<BackgroundQueueItem> readyForRetry;
+                lock (itemsLock) readyForRetry = state.Items
                     .Where(i => (i.Status == BackgroundTaskStatus.Failed || i.Status == BackgroundTaskStatus.RateLimited)
                                 && i.CanRetry
                                 && i.NextRetryAt != null

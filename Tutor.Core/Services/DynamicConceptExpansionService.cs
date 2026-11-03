@@ -491,9 +491,8 @@ public sealed class DynamicConceptExpansionService
         };
 
         // Build lookup for existing concepts
-        var existingLookup = existingConcepts.ToDictionary(
-            c => c.Title.ToLowerInvariant(),
-            c => c);
+        var existingLookup = existingConcepts.GroupBy(c => c.Title.ToLowerInvariant()) // duplicate titles must not throw
+            .ToDictionary(g => g.Key, g => g.First());
 
         // Find the primary ConceptMap to add new concepts to
         // Use the first resource that has a ConceptMap, or create a dynamic expansion map

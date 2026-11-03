@@ -331,8 +331,17 @@ public sealed class ConceptCorrelationService
                 return relationships;
 
             // Build lookup from term to concept
-            var termLookup = conceptLookup.Values
-                .ToDictionary(c => c.Term.ToLowerInvariant(), c => c, StringComparer.OrdinalIgnoreCase);
+            // Two graph nodes can share a term (e.g. the same term from two resources); ToDictionary
+            // threw on that, the catch below swallowed it, and every batch lost all its LLM-inferred
+            // relationships. Prefer the concepts of this batch's pairs, then fall back to the rest.
+            var termLookup = new Dictionary<string, ConceptNode>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in originalPairs)
+            {
+                if (conceptLookup.TryGetValue(pair.ConceptAId, out var pa)) termLookup.TryAdd(pa.Term.ToLowerInvariant(), pa);
+                if (conceptLookup.TryGetValue(pair.ConceptBId, out var pb)) termLookup.TryAdd(pb.Term.ToLowerInvariant(), pb);
+            }
+            foreach (var c in conceptLookup.Values)
+                termLookup.TryAdd(c.Term.ToLowerInvariant(), c);
 
             foreach (var item in relArray.EnumerateArray())
             {

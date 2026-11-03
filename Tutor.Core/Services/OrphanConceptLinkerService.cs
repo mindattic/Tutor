@@ -130,9 +130,8 @@ public sealed class OrphanConceptLinkerService
             }
 
             // Convert AI suggestions to actual ConceptRelationships
-            var conceptLookup = conceptMap.Concepts.ToDictionary(
-                c => c.Title.ToLowerInvariant(),
-                c => c);
+            var conceptLookup = conceptMap.Concepts.GroupBy(c => c.Title.ToLowerInvariant()) // duplicate titles must not throw
+                .ToDictionary(g => g.Key, g => g.First());
 
             var suggestedRelationships = new List<SuggestedLink>();
 
@@ -394,9 +393,8 @@ public sealed class OrphanConceptLinkerService
                 return new OrphanLinkingResult { Message = "No suggestions from AI" };
             }
 
-            var conceptLookup = conceptMap.Concepts.ToDictionary(
-                c => c.Title.ToLowerInvariant(),
-                c => c);
+            var conceptLookup = conceptMap.Concepts.GroupBy(c => c.Title.ToLowerInvariant()) // duplicate titles must not throw
+                .ToDictionary(g => g.Key, g => g.First());
 
             // Also build alias lookup
             foreach (var concept in conceptMap.Concepts)

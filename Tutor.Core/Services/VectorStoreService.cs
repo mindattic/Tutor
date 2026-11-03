@@ -16,6 +16,11 @@ public sealed class VectorStoreService
     private readonly SimHashService simHashService;
     private List<ContentChunk>? cachedChunks;
 
+    // Singleton shared by every circuit and the background queue: every read and write of
+    // cachedChunks goes through this gate so a search never enumerates the list while an
+    // upload mutates it, and two saves never write the file at once.
+    private readonly SemaphoreSlim gate = new(1, 1);
+
     // Default LSH threshold for candidate generation (max Hamming distance)
     private const int DefaultLshThreshold = 64;
 
@@ -42,18 +47,26 @@ public sealed class VectorStoreService
     public async Task StoreChunksAsync(string resourceId, string curriculumId, List<ContentChunk> chunks)
     {
         Log.Info($"VectorStore: Storing {chunks.Count} chunks for resource {resourceId}");
-        var allChunks = await LoadChunksAsync();
+        await gate.WaitAsync();
+        try
+        {
+            var allChunks = await LoadChunksAsync();
         
-        // Remove existing chunks for this resource
-        var removed = allChunks.RemoveAll(c => c.ResourceId == resourceId);
-        if (removed > 0)
-            Log.Debug($"VectorStore: Removed {removed} existing chunks for resource {resourceId}");
+            // Remove existing chunks for this resource
+            var removed = allChunks.RemoveAll(c => c.ResourceId == resourceId);
+            if (removed > 0)
+                Log.Debug($"VectorStore: Removed {removed} existing chunks for resource {resourceId}");
         
-        // Add new chunks
-        allChunks.AddRange(chunks);
+            // Add new chunks
+            allChunks.AddRange(chunks);
         
-        await SaveChunksAsync(allChunks);
-        Log.Debug($"VectorStore: Total chunks now: {allChunks.Count}");
+            await SaveChunksAsync(allChunks);
+            Log.Debug($"VectorStore: Total chunks now: {allChunks.Count}");
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>
@@ -62,10 +75,18 @@ public sealed class VectorStoreService
     public async Task RemoveChunksForResourceAsync(string resourceId)
     {
         Log.Debug($"VectorStore: Removing chunks for resource {resourceId}");
-        var allChunks = await LoadChunksAsync();
-        var removed = allChunks.RemoveAll(c => c.ResourceId == resourceId);
-        Log.Info($"VectorStore: Removed {removed} chunks for resource {resourceId}");
-        await SaveChunksAsync(allChunks);
+        await gate.WaitAsync();
+        try
+        {
+            var allChunks = await LoadChunksAsync();
+            var removed = allChunks.RemoveAll(c => c.ResourceId == resourceId);
+            Log.Info($"VectorStore: Removed {removed} chunks for resource {resourceId}");
+            await SaveChunksAsync(allChunks);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>
@@ -74,10 +95,18 @@ public sealed class VectorStoreService
     public async Task RemoveChunksForCurriculumAsync(string curriculumId)
     {
         Log.Debug($"VectorStore: Removing chunks for curriculum {curriculumId}");
-        var allChunks = await LoadChunksAsync();
-        var removed = allChunks.RemoveAll(c => c.CurriculumId == curriculumId);
-        Log.Info($"VectorStore: Removed {removed} chunks for curriculum {curriculumId}");
-        await SaveChunksAsync(allChunks);
+        await gate.WaitAsync();
+        try
+        {
+            var allChunks = await LoadChunksAsync();
+            var removed = allChunks.RemoveAll(c => c.CurriculumId == curriculumId);
+            Log.Info($"VectorStore: Removed {removed} chunks for curriculum {curriculumId}");
+            await SaveChunksAsync(allChunks);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>
@@ -91,7 +120,7 @@ public sealed class VectorStoreService
         float minSimilarity = 0.3f)
     {
         Log.Debug($"VectorStore: Searching curriculum {curriculumId} (topK={topK})");
-        var allChunks = await LoadChunksAsync();
+        var allChunks = await SnapshotChunksAsync();
         
         // Filter to curriculum and calculate similarities
         var results = allChunks
@@ -152,7 +181,7 @@ public sealed class VectorStoreService
         var querySemanticSig = lshService.GetSignature(queryEmbedding);
         var queryLexicalSig = simHashService.GetSignature64(query);
 
-        var allChunks = await LoadChunksAsync();
+        var allChunks = await SnapshotChunksAsync();
 
         // Filter to curriculum with valid embeddings
         var candidateChunks = allChunks
@@ -225,7 +254,7 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task<List<ContentChunk>> GetChunksForResourceAsync(string resourceId)
     {
-        var allChunks = await LoadChunksAsync();
+        var allChunks = await SnapshotChunksAsync();
         return [.. allChunks.Where(c => c.ResourceId == resourceId).OrderBy(c => c.ChunkIndex)];
     }
 
@@ -234,7 +263,7 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task<bool> HasChunksForResourceAsync(string resourceId)
     {
-        var allChunks = await LoadChunksAsync();
+        var allChunks = await SnapshotChunksAsync();
         return allChunks.Any(c => c.ResourceId == resourceId);
     }
 
@@ -243,12 +272,26 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task<(int TotalChunks, int ResourceCount, int CurriculumCount)> GetStatsAsync()
     {
-        var allChunks = await LoadChunksAsync();
+        var allChunks = await SnapshotChunksAsync();
         return (
             allChunks.Count,
             allChunks.Select(c => c.ResourceId).Distinct().Count(),
             allChunks.Select(c => c.CurriculumId).Distinct().Count()
         );
+    }
+
+    /// <summary>A private copy of the chunk list, taken under the gate, safe to enumerate.</summary>
+    private async Task<List<ContentChunk>> SnapshotChunksAsync()
+    {
+        await gate.WaitAsync();
+        try
+        {
+            return [.. await LoadChunksAsync()];
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task<List<ContentChunk>> LoadChunksAsync()
@@ -296,15 +339,19 @@ public sealed class VectorStoreService
     /// </summary>
     public async Task ClearAllAsync()
     {
-        cachedChunks = [];
+        await gate.WaitAsync();
         try
         {
+            cachedChunks = [];
             if (File.Exists(ChunksFilePath))
             {
                 File.Delete(ChunksFilePath);
             }
         }
         catch { }
-        await Task.CompletedTask;
+        finally
+        {
+            gate.Release();
+        }
     }
 }

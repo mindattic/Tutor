@@ -1026,15 +1026,27 @@ private string resourceContent = "";
         InvokeAsync(StateHasChanged);
     }
 
-    private async void OnQueueTaskCompleted(BackgroundQueueItem item)
+    private void OnQueueTaskCompleted(BackgroundQueueItem item)
     {
-        if (buildTaskId == null || item.Id != buildTaskId)
-            return;
-        buildTaskId = null;
-        isBuildingStructure = false;
-        buildProgressMessage = "";
-        await LoadData();
-        await InvokeAsync(StateHasChanged);
+        // Raised on the queue's worker thread: hop onto the renderer before touching component
+        // state, and never let a LoadData failure escape an event handler (it would crash the host).
+        _ = InvokeAsync(async () =>
+        {
+            if (buildTaskId == null || item.Id != buildTaskId)
+                return;
+            buildTaskId = null;
+            isBuildingStructure = false;
+            buildProgressMessage = "";
+            try
+            {
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"CourseManagement: Failed to reload after course build - {ex.Message}", ex);
+            }
+            StateHasChanged();
+        });
     }
 
     private void OnQueueTaskError(BackgroundQueueItem item, string error)
@@ -1050,19 +1062,34 @@ private string resourceContent = "";
 
     private void OnProcessingStatusChanged(ResourceProcessingStatus status)
     {
-        processingTasks[status.TaskId] = status;
-        InvokeAsync(StateHasChanged);
+        // Raised on a background thread; mutate processingTasks only on the renderer so a
+        // concurrent render never enumerates the dictionary while it changes.
+        _ = InvokeAsync(() =>
+        {
+            processingTasks[status.TaskId] = status;
+            StateHasChanged();
+        });
     }
 
-    private async void OnProcessingComplete(string taskId)
+    private void OnProcessingComplete(string taskId)
     {
-        // Refresh data when processing completes
-        await LoadData();
-        
-        // Remove from active tasks after a delay
-        await Task.Delay(2000);
-        processingTasks.Remove(taskId);
-        await InvokeAsync(StateHasChanged);
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                // Refresh data when processing completes
+                await LoadData();
+
+                // Remove from active tasks after a delay
+                await Task.Delay(2000);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"CourseManagement: Failed to reload after processing - {ex.Message}", ex);
+            }
+            processingTasks.Remove(taskId);
+            StateHasChanged();
+        });
     }
 
     private void OnProcessingError(string taskId, string error)

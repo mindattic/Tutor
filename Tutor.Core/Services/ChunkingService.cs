@@ -119,7 +119,15 @@ public sealed partial class ChunkingService
     {
         // Split on sentence-ending punctuation followed by space or end
         var sentences = SentenceEnd().Split(text);
-        return [.. sentences.Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
+        var result = new List<string>();
+        foreach (var s in sentences.Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+            // Text with no sentence punctuation (a book index, a table, OCR output) would otherwise
+            // be one "sentence" and so one chunk of unbounded size - past the embedding input limit.
+            for (var i = 0; i < s.Length; i += TargetChunkSize)
+                result.Add(s.Substring(i, Math.Min(TargetChunkSize, s.Length - i)));
+        }
+        return result;
     }
 
     private static string GetOverlapText(string text)

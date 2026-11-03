@@ -57,7 +57,9 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         await @lock.WaitAsync();
         try
         {
-            store[key] = value;
+            // Copy-on-write: GetAsync reads `store` without the lock, so never mutate the
+            // dictionary a concurrent reader may be enumerating - swap in a new one instead.
+            store = new Dictionary<string, string>(store) { [key] = value };
             await SaveAsync();
         }
         finally
@@ -74,7 +76,9 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         @lock.Wait();
         try
         {
-            store.Remove(key);
+            var next = new Dictionary<string, string>(store);
+            next.Remove(key);
+            store = next;
             SaveSync();
         }
         finally
@@ -118,6 +122,9 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[BlazorSecurePreferences] Failed to load preferences: {ex.Message}");
+            // The file also holds courses, resources and progress: keep the unreadable copy so the
+            // next save (which rewrites the whole file from this now-empty store) cannot erase it.
+            try { if (File.Exists(filePath)) File.Copy(filePath, $"{filePath}.unreadable-{DateTime.UtcNow:yyyyMMddHHmmss}", overwrite: true); } catch { }
             store = new();
         }
     }

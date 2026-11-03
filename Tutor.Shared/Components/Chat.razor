@@ -697,7 +697,7 @@ protected override async Task OnInitializedAsync()
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
             return text;
-        return text.Substring(0, maxLength - 1) + "�";
+        return text.Substring(0, maxLength - 1) + "…";
     }
 
     private async Task LoadLessonStateAsync()
@@ -1914,7 +1914,7 @@ Keep track of the running score.";
 
         // Try word overlap matching (find best match by common words)
         var targetWords = targetTopic.ToLowerInvariant()
-            .Split([' ', ',', ':', '-', '�', '�'], StringSplitOptions.RemoveEmptyEntries)
+            .Split([' ', ',', ':', '-', '–', '—'], StringSplitOptions.RemoveEmptyEntries)
             .Where(w => w.Length > 2)
             .ToHashSet();
 
@@ -1924,7 +1924,7 @@ Keep track of the running score.";
         for (int i = 0; i < lessonTopics.Count; i++)
         {
             var topicWords = lessonTopics[i].ToLowerInvariant()
-                .Split([' ', ',', ':', '-', '�', '�'], StringSplitOptions.RemoveEmptyEntries)
+                .Split([' ', ',', ':', '-', '–', '—'], StringSplitOptions.RemoveEmptyEntries)
                 .Where(w => w.Length > 2)
                 .ToHashSet();
 
@@ -2229,7 +2229,17 @@ Keep track of the running score.";
         text = Regex.Replace(text, @"`(.+?)`", "<code>$1</code>");
 
         // Links: [text](url) - must be processed BEFORE square bracket questions
-        text = Regex.Replace(text, @"\[(.+?)\]\((.+?)\)", "<a href=\"$2\" target=\"_blank\">$1</a>");
+        // Only web/mail targets become hrefs (no javascript: URLs from model output), and a " in the
+        // URL is encoded so it cannot break out of the href attribute.
+        text = Regex.Replace(text, @"\[(.+?)\]\((.+?)\)", match =>
+        {
+            var url = match.Groups[2].Value.Trim();
+            if (!(url.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                  || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                  || url.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase)))
+                return match.Groups[1].Value;
+            return $"<a href=\"{url.Replace("\"", "&quot;")}\" target=\"_blank\">{match.Groups[1].Value}</a>";
+        });
         
         // Suggested question link: [text?] - follow-up questions in square brackets ending with ?
         // This must come AFTER markdown link processing to avoid conflicts
@@ -2247,7 +2257,11 @@ Keep track of the running score.";
 
     private string EscapeJsString(string text)
     {
-        return text.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+        // Every caller drops the result inside an onclick="..." attribute, so after JS-escaping it
+        // must also be HTML-attribute-encoded: a bare " (e.g. a bold quotation) would otherwise end
+        // the attribute, breaking the link and letting the rest of the text inject attributes.
+        var js = text.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+        return System.Net.WebUtility.HtmlEncode(js);
     }
 
     [JSInvokable]

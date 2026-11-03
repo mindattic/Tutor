@@ -282,9 +282,8 @@ public sealed class CourseStructureService
         }
 
         var lessons = new List<Lesson>();
-        var conceptLookup = conceptMap.Concepts.ToDictionary(
-            c => c.Title.ToLowerInvariant(),
-            c => c.Id);
+        var conceptLookup = conceptMap.Concepts.GroupBy(c => c.Title.ToLowerInvariant()) // duplicate titles must not throw
+            .ToDictionary(g => g.Key, g => g.First().Id);
 
         foreach (var lessonDto in response.Lessons.OrderBy(l => l.Order))
         {

@@ -300,15 +300,9 @@ _ = settings.LoadLogSettingsAsync();
 
 _ = BackgroundQueueService.InitializeAsync(app.Services);
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-
 // Honor the reverse proxy's forwarded scheme/IP (secure cookie + real client IP) before auth.
+// Must run first: UseHttpsRedirection/UseHsts below read Request.Scheme, and behind a
+// TLS-terminating proxy the unforwarded scheme is http, which redirect-loops every request.
 var forwardedHeaders = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
@@ -316,6 +310,14 @@ var forwardedHeaders = new ForwardedHeadersOptions
 forwardedHeaders.KnownIPNetworks.Clear();
 forwardedHeaders.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeaders);
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 

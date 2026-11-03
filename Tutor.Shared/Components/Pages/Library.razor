@@ -7,6 +7,7 @@
 @using Tutor.Shared.Services
 @inject InstalledCourseRegistry Registry
 @inject LibraryAdminActions AdminActions
+@implements IDisposable
 
 <PageTitle>Course Library</PageTitle>
 
@@ -241,6 +242,9 @@
     }
 
     private void Fail(string message) { statusMessage = message; isError = true; }
+
+    // Leaving the page with a picked-but-unconfirmed bundle must not strand its (up to 512 MB) temp copy.
+    public void Dispose() => CleanupPendingBundle();
 
     private void CleanupPendingBundle()
     {

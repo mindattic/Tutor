@@ -657,9 +657,8 @@ public sealed class ConceptMapService
         Log.Info($"BuildRelationshipsAsync: Processing {concepts.Count} concepts");
 
         // Build concept lookup for converting responses
-        var conceptLookup = concepts.ToDictionary(
-            c => c.Title.ToLowerInvariant(),
-            c => c.Id);
+        var conceptLookup = concepts.GroupBy(c => c.Title.ToLowerInvariant()) // duplicate titles must not throw
+            .ToDictionary(g => g.Key, g => g.First().Id);
 
         // For small sets, process in one call
         if (concepts.Count <= MaxConceptsPerRelationshipChunk)

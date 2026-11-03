@@ -394,7 +394,7 @@ TEXT TO FORMAT:
         }
 
         // Bullet points
-        if (line.StartsWith("- ") || line.StartsWith("� ") || line.StartsWith("* "))
+        if (line.StartsWith("- ") || line.StartsWith("• ") || line.StartsWith("* "))
         {
             content = line[2..].Trim();
             return true;
