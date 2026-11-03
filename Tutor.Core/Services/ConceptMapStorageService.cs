@@ -20,7 +20,9 @@ public sealed class ConceptMapStorageService
     // Soft-bounded: drops the oldest-by-UpdatedAt once the cap is exceeded so a
     // long-running session with many maps doesn't grow memory unboundedly.
     private const int CacheCapacity = 64;
-    private readonly Dictionary<string, ConceptMap> cache = [];
+    // Concurrent: this service is a singleton shared by every Blazor circuit and the
+    // background queue, so the cache is read and written from several threads at once.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ConceptMap> cache = new();
 
     private void StoreInCache(ConceptMap map)
     {
@@ -28,8 +30,8 @@ public sealed class ConceptMapStorageService
         if (cache.Count <= CacheCapacity) return;
 
         // Evict the least-recently-updated entry. Linear scan is fine at this size.
-        var oldest = cache.Values.OrderBy(m => m.UpdatedAt).First();
-        cache.Remove(oldest.Id);
+        var oldest = cache.Values.OrderBy(m => m.UpdatedAt).FirstOrDefault();
+        if (oldest != null) cache.TryRemove(oldest.Id, out _);
     }
 
     /// <summary>
@@ -239,7 +241,7 @@ public sealed class ConceptMapStorageService
         }
 
         // Remove from cache
-        cache.Remove(conceptMapId);
+        cache.TryRemove(conceptMapId, out _);
 
         // Clean up backup file if exists
         var backupPath = filePath + ".bak";

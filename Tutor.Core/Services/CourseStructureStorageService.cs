@@ -15,8 +15,9 @@ public sealed class CourseStructureStorageService
     private readonly IAppDataPathProvider pathProvider;
     private readonly string storagePath;
 
-    // In-memory cache of loaded structures
-    private readonly Dictionary<string, CourseStructure> cache = [];
+    // In-memory cache of loaded structures. Concurrent: this service is a singleton
+    // shared by every Blazor circuit, so the cache is touched from several threads.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, CourseStructure> cache = new();
 
     /// <summary>
     /// Event fired when a course structure is saved.
@@ -171,7 +172,7 @@ public sealed class CourseStructureStorageService
             File.Delete(filePath);
         }
 
-        cache.Remove(structureId);
+        cache.TryRemove(structureId, out _);
 
         // Clean up backup file if exists
         var backupPath = filePath + ".bak";

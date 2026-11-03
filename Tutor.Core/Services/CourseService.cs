@@ -20,7 +20,13 @@ public sealed class CourseService
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
     private readonly ConceptMapCollectionService? conceptMapCollectionService;
+    private readonly Packaging.InstalledCourseRegistry? installedCourses;
 
+    // CourseService is a singleton shared by every Blazor circuit and the background
+    // queue. The cached lists are only touched under this gate, and callers get copies
+    // of them (never the live cache) so an enumeration on one thread can't be broken by
+    // a save on another, and read-modify-write saves can't lose each other's changes.
+    private readonly SemaphoreSlim gate = new(1, 1);
     private List<CourseResource>? cachedResources;
     private List<Course>? cachedCourses;
 
@@ -33,7 +39,8 @@ public sealed class CourseService
         FileResourceService fileResourceService,
         LSHService lshService,
         SimHashService simHashService,
-        ConceptMapCollectionService? conceptMapCollectionService = null)
+        ConceptMapCollectionService? conceptMapCollectionService = null,
+        Packaging.InstalledCourseRegistry? installedCourses = null)
     {
         this.securePreferences = securePreferences;
         this.chunkingService = chunkingService;
@@ -44,11 +51,22 @@ public sealed class CourseService
         this.lshService = lshService;
         this.simHashService = simHashService;
         this.conceptMapCollectionService = conceptMapCollectionService;
+        this.installedCourses = installedCourses;
         Log.Debug("CourseService initialized");
     }
 
     // Resource management
+
+    /// <summary>All resources (a copy of the list; the items are the cached instances).</summary>
     public async Task<List<CourseResource>> GetAllResourcesAsync()
+    {
+        await gate.WaitAsync();
+        try { return new List<CourseResource>(await LoadResourcesLockedAsync()); }
+        finally { gate.Release(); }
+    }
+
+    /// <summary>The live cached resource list. Call only while holding <see cref="gate"/>.</summary>
+    private async Task<List<CourseResource>> LoadResourcesLockedAsync()
     {
         if (cachedResources != null)
             return cachedResources;
@@ -84,18 +102,23 @@ public sealed class CourseService
     public async Task SaveResourceAsync(CourseResource resource)
     {
         Log.Info($"CourseService: Saving resource '{resource.Title}' (ID: {resource.Id})");
-        var resources = await GetAllResourcesAsync();
-        var existing = resources.FirstOrDefault(r => r.Id == resource.Id);
-
-        if (existing != null)
+        await gate.WaitAsync();
+        try
         {
-            resources.Remove(existing);
-            resource.UpdatedAt = DateTime.UtcNow;
-            Log.Debug($"CourseService: Updating existing resource '{resource.Title}'");
-        }
+            var resources = await LoadResourcesLockedAsync();
+            var existing = resources.FirstOrDefault(r => r.Id == resource.Id);
 
-        resources.Add(resource);
-        await SaveResourcesAsync(resources);
+            if (existing != null)
+            {
+                resources.Remove(existing);
+                resource.UpdatedAt = DateTime.UtcNow;
+                Log.Debug($"CourseService: Updating existing resource '{resource.Title}'");
+            }
+
+            resources.Add(resource);
+            await PersistResourcesLockedAsync(resources);
+        }
+        finally { gate.Release(); }
     }
 
     /// <summary>
@@ -260,25 +283,31 @@ public sealed class CourseService
 
     public async Task DeleteResourceAsync(string id)
     {
-        var resources = await GetAllResourcesAsync();
-        var resource = resources.FirstOrDefault(r => r.Id == id);
-
-        if (resource != null)
+        await gate.WaitAsync();
+        try
         {
-            resources.Remove(resource);
-            await SaveResourcesAsync(resources);
+            var resources = await LoadResourcesLockedAsync();
+            var resource = resources.FirstOrDefault(r => r.Id == id);
 
-            // Remove from all courses
-            var courses = await GetAllCoursesAsync();
-            foreach (var course in courses)
+            if (resource != null)
             {
-                course.ResourceIds.Remove(id);
+                resources.Remove(resource);
+                await PersistResourcesLockedAsync(resources);
+
+                // Remove from all courses
+                var courses = await LoadCoursesLockedAsync();
+                foreach (var course in courses)
+                {
+                    course.ResourceIds.Remove(id);
+                }
+                await PersistCoursesLockedAsync(courses);
             }
-            await SaveCoursesAsync(courses);
         }
+        finally { gate.Release(); }
     }
 
-    private async Task SaveResourcesAsync(List<CourseResource> resources)
+    /// <summary>Replace the cache and write it. Call only while holding <see cref="gate"/>.</summary>
+    private async Task PersistResourcesLockedAsync(List<CourseResource> resources)
     {
         cachedResources = resources;
         var json = JsonSerializer.Serialize(resources);
@@ -290,11 +319,24 @@ public sealed class CourseService
     /// </summary>
     public async Task SaveAllResourcesAsync(List<CourseResource> resources)
     {
-        await SaveResourcesAsync(resources);
+        await gate.WaitAsync();
+        // Copy: the caller keeps its list, the cache must not alias it.
+        try { await PersistResourcesLockedAsync(new List<CourseResource>(resources)); }
+        finally { gate.Release(); }
     }
 
     // Course management
+
+    /// <summary>All courses (a copy of the list; the items are the cached instances).</summary>
     public async Task<List<Course>> GetAllCoursesAsync()
+    {
+        await gate.WaitAsync();
+        try { return new List<Course>(await LoadCoursesLockedAsync()); }
+        finally { gate.Release(); }
+    }
+
+    /// <summary>The live cached course list. Call only while holding <see cref="gate"/>.</summary>
+    private async Task<List<Course>> LoadCoursesLockedAsync()
     {
         if (cachedCourses != null)
             return cachedCourses;
@@ -334,9 +376,14 @@ public sealed class CourseService
             ResourceIds = new List<string>()
         };
 
-        var courses = await GetAllCoursesAsync();
-        courses.Add(course);
-        await SaveCoursesAsync(courses);
+        await gate.WaitAsync();
+        try
+        {
+            var courses = await LoadCoursesLockedAsync();
+            courses.Add(course);
+            await PersistCoursesLockedAsync(courses);
+        }
+        finally { gate.Release(); }
         
         Log.Info($"CourseService: Course '{name}' created with ID: {course.Id}");
 
@@ -346,46 +393,64 @@ public sealed class CourseService
     public async Task SaveCourseAsync(Course course)
     {
         Log.Debug($"CourseService: Saving course '{course.Name}' (ID: {course.Id})");
-        var courses = await GetAllCoursesAsync();
-        var existing = courses.FirstOrDefault(c => c.Id == course.Id);
-
-        if (existing != null)
+        await gate.WaitAsync();
+        try
         {
-            courses.Remove(existing);
-        }
+            var courses = await LoadCoursesLockedAsync();
+            var existing = courses.FirstOrDefault(c => c.Id == course.Id);
 
-        courses.Add(course);
-        await SaveCoursesAsync(courses);
+            if (existing != null)
+            {
+                courses.Remove(existing);
+            }
+
+            courses.Add(course);
+            await PersistCoursesLockedAsync(courses);
+        }
+        finally { gate.Release(); }
     }
 
     public async Task RenameCourseAsync(string courseId, string newName)
     {
         Log.Info($"CourseService: Renaming course {courseId} to '{newName}'");
-        var courses = await GetAllCoursesAsync();
-        var course = courses.FirstOrDefault(c => c.Id == courseId);
-
-        if (course != null)
+        await gate.WaitAsync();
+        try
         {
-            var oldName = course.Name;
-            course.Name = newName;
-            await SaveCoursesAsync(courses);
-            Log.Info($"CourseService: Course renamed from '{oldName}' to '{newName}'");
+            var courses = await LoadCoursesLockedAsync();
+            var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+            if (course != null)
+            {
+                var oldName = course.Name;
+                course.Name = newName;
+                await PersistCoursesLockedAsync(courses);
+                Log.Info($"CourseService: Course renamed from '{oldName}' to '{newName}'");
+            }
         }
+        finally { gate.Release(); }
     }
 
     public async Task DeleteCourseAsync(string id)
     {
-        var courses = await GetAllCoursesAsync();
-        var course = courses.FirstOrDefault(c => c.Id == id);
+        Course? course;
+        await gate.WaitAsync();
+        try
+        {
+            var courses = await LoadCoursesLockedAsync();
+            course = courses.FirstOrDefault(c => c.Id == id);
+            if (course != null)
+            {
+                Log.Info($"CourseService: Deleting course '{course.Name}' (ID: {id})");
+                courses.Remove(course);
+                await PersistCoursesLockedAsync(courses);
+            }
+        }
+        finally { gate.Release(); }
 
         if (course != null)
         {
-            Log.Info($"CourseService: Deleting course '{course.Name}' (ID: {id})");
-            courses.Remove(course);
-            await SaveCoursesAsync(courses);
-
             // Clear active course if it was deleted
-            var activeId = await GetActiveCourseIdAsync();
+            var activeId = await GetStoredActiveCourseIdAsync();
             if (activeId == id)
             {
                 await ClearActiveCourseAsync();
@@ -394,7 +459,8 @@ public sealed class CourseService
         }
     }
 
-    private async Task SaveCoursesAsync(List<Course> courses)
+    /// <summary>Replace the cache and write it. Call only while holding <see cref="gate"/>.</summary>
+    private async Task PersistCoursesLockedAsync(List<Course> courses)
     {
         cachedCourses = courses;
         var json = JsonSerializer.Serialize(courses);
@@ -404,13 +470,24 @@ public sealed class CourseService
     // Course resource management
     public async Task AddResourceToCourseAsync(string courseId, string resourceId)
     {
-        var courses = await GetAllCoursesAsync();
-        var course = courses.FirstOrDefault(c => c.Id == courseId);
-
-        if (course != null && !course.ResourceIds.Contains(resourceId))
+        Course? course;
+        var added = false;
+        await gate.WaitAsync();
+        try
         {
-            course.ResourceIds.Add(resourceId);
-            await SaveCoursesAsync(courses);
+            var courses = await LoadCoursesLockedAsync();
+            course = courses.FirstOrDefault(c => c.Id == courseId);
+            if (course != null && !course.ResourceIds.Contains(resourceId))
+            {
+                course.ResourceIds.Add(resourceId);
+                await PersistCoursesLockedAsync(courses);
+                added = true;
+            }
+        }
+        finally { gate.Release(); }
+
+        if (added && course != null)
+        {
             
             
             // Chunk and embed the resource for RAG
@@ -514,13 +591,22 @@ public sealed class CourseService
 
     public async Task RemoveResourceFromCourseAsync(string courseId, string resourceId)
     {
-        var courses = await GetAllCoursesAsync();
-        var course = courses.FirstOrDefault(c => c.Id == courseId);
+        Course? course;
+        await gate.WaitAsync();
+        try
+        {
+            var courses = await LoadCoursesLockedAsync();
+            course = courses.FirstOrDefault(c => c.Id == courseId);
+            if (course != null)
+            {
+                course.ResourceIds.Remove(resourceId);
+                await PersistCoursesLockedAsync(courses);
+            }
+        }
+        finally { gate.Release(); }
 
         if (course != null)
         {
-            course.ResourceIds.Remove(resourceId);
-            await SaveCoursesAsync(courses);
             
             
             // Remove chunks for this resource
@@ -562,13 +648,18 @@ public sealed class CourseService
         if (course.ConceptMapCollectionId != collection.Id)
         {
             course.ConceptMapCollectionId = collection.Id;
-            var courses = await GetAllCoursesAsync();
-            var existingCourse = courses.FirstOrDefault(c => c.Id == course.Id);
-            if (existingCourse != null)
+            await gate.WaitAsync();
+            try
             {
-                existingCourse.ConceptMapCollectionId = collection.Id;
-                await SaveCoursesAsync(courses);
+                var courses = await LoadCoursesLockedAsync();
+                var existingCourse = courses.FirstOrDefault(c => c.Id == course.Id);
+                if (existingCourse != null)
+                {
+                    existingCourse.ConceptMapCollectionId = collection.Id;
+                    await PersistCoursesLockedAsync(courses);
+                }
             }
+            finally { gate.Release(); }
         }
         
         Log.Info($"CourseService: Rebuilt ConceptMap collection for '{course.Name}' with {collection.ConceptMapIds.Count} ConceptMaps");
@@ -603,7 +694,19 @@ public sealed class CourseService
         }
     }
 
+    /// <summary>The active course's id, after the same unloaded-course check as
+    /// <see cref="GetActiveCourseAsync"/> (so it never names an unloaded course).</summary>
     public async Task<string?> GetActiveCourseIdAsync()
+    {
+        var storedId = await GetStoredActiveCourseIdAsync();
+        if (string.IsNullOrEmpty(storedId) || installedCourses == null)
+            return storedId;
+        if (await installedCourses.IsEnabledAsync(storedId))
+            return storedId;
+        return (await GetActiveCourseAsync())?.Id;
+    }
+
+    private async Task<string?> GetStoredActiveCourseIdAsync()
     {
         try
         {
@@ -615,13 +718,27 @@ public sealed class CourseService
         }
     }
 
+    /// <summary>
+    /// The active course. An unloaded (soft-disabled) course is never active: if the stored
+    /// active course has been unloaded, this switches to another loaded course (or clears the
+    /// active course when none is loaded) and returns that, so Chat / LearnTabs / Learn stop
+    /// showing a course the library has hidden. The unloaded course's data is untouched.
+    /// </summary>
     public async Task<Course?> GetActiveCourseAsync()
     {
-        var activeId = await GetActiveCourseIdAsync();
+        var activeId = await GetStoredActiveCourseIdAsync();
         if (string.IsNullOrEmpty(activeId))
             return null;
 
-        return await GetCourseAsync(activeId);
+        var course = await GetCourseAsync(activeId);
+        if (course == null || installedCourses == null || await installedCourses.IsEnabledAsync(course.Id))
+            return course;
+
+        var disabled = await installedCourses.GetDisabledCourseIdsAsync();
+        var next = (await GetAllCoursesAsync()).FirstOrDefault(c => !disabled.Contains(c.Id));
+        await SetActiveCourseAsync(next?.Id);
+        Log.Info($"CourseService: active course '{course.Name}' is unloaded; switched to {(next == null ? "none" : $"'{next.Name}'")}");
+        return next;
     }
 
     public async Task ClearActiveCourseAsync()
@@ -636,7 +753,7 @@ public sealed class CourseService
         try
         {
             // Remove active course if it matches
-            var active = await GetActiveCourseIdAsync();
+            var active = await GetStoredActiveCourseIdAsync();
             if (active == courseId)
             {
                 await ClearActiveCourseAsync();
