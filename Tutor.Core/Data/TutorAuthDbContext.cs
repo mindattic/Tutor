@@ -37,7 +37,7 @@ public sealed class TutorAuthDbContextFactory : IDesignTimeDbContextFactory<Tuto
     {
         var conn = Environment.GetEnvironmentVariable("ConnectionStrings__TutorAuth")
                    ?? "Server=(localdb)\\MSSQLLocalDB;Database=TutorAuth;Trusted_Connection=True;TrustServerCertificate=True;";
-        var options = new DbContextOptionsBuilder<TutorAuthDbContext>().UseSqlServer(conn).Options;
+        var options = new DbContextOptionsBuilder<TutorAuthDbContext>().UseSqlServer(conn, sql => sql.EnableRetryOnFailure()).Options;
         return new TutorAuthDbContext(options);
     }
 }

@@ -225,7 +225,7 @@ var authConnectionString =
     builder.Configuration.GetConnectionString("TutorAuth")
     ?? Environment.GetEnvironmentVariable("ConnectionStrings__TutorAuth")
     ?? "Server=(localdb)\\MSSQLLocalDB;Database=TutorAuth;Trusted_Connection=True;TrustServerCertificate=True;";
-builder.Services.AddDbContext<TutorAuthDbContext>(o => o.UseSqlServer(authConnectionString));   // scoped IAuthDataContext
+builder.Services.AddDbContext<TutorAuthDbContext>(o => o.UseSqlServer(authConnectionString, sql => sql.EnableRetryOnFailure()));   // scoped IAuthDataContext
 builder.Services.AddMindAtticAuthentication<TutorAuthDbContext>(builder.Configuration, o =>
 {
     o.AppName = "Tutor";                                   // per-app Data Protection trust boundary
