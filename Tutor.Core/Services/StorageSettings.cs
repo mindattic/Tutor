@@ -49,6 +49,9 @@ public static class StorageSettings
 
     private static string GetDefaultDirectory()
     {
+        // A deployed host names its data root (TUT-T47): there is no project folder to find beside the binaries.
+        if (TutorDataRoot.Override is { } dataRoot) return Path.Combine(dataRoot, "Resources");
+
         // Try to find the project's LearningResources folder
         var baseDir = AppContext.BaseDirectory;
         
@@ -68,9 +71,7 @@ public static class StorageSettings
         }
 
         // Fallback to app data directory
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Tutor", "Resources");
+        return Path.Combine(TutorDataRoot.Path, "Resources");
     }
 
     private static void EnsureDirectoryExists(string dir)

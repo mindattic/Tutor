@@ -1,0 +1,119 @@
+name: Build and deploy Tutor to Azure App Service
+
+# Deploys the Blazor site (Tutor.Blazor); the CLI and MCP server are not hosted.
+#   build   restore, publish Tutor.Blazor as an artifact
+#   deploy  push the artifact to the `mindattic-tutor` App Service, restart it, and wait for
+#           /healthz, /healthz/db and the login page
+#
+# The App Service (resource group MyApps, Windows plan ASP-MyApps-99fe, .NET 10) runs from the
+# deployed package (WEBSITE_RUN_FROM_PACKAGE=1). Its managed identity reaches the Azure SQL
+# database `TutorAuth`, the Data Protection key ring (blob container `tutor-dp-keys`) and Key
+# Vault `kv-tutor-f65744` (auth secrets, key `dp-protect`); there is no password anywhere.
+# Course data lives under TUTOR_DATA_DIR (C:\home\data\Tutor), which survives deploys.
+#
+# Authentication is GitHub OIDC: the app registration `gh-mindattic-webapps-deploy` trusts
+# `repo:mindattic/Tutor:ref:refs/heads/main` and is Website Contributor on this one site.
+# Its ids are the repo secrets AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID.
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.agent/**'
+      - '.github/workflows/docs.yml'
+      - 'Tutor.Cypress/**'
+      - 'Tutor.Tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write          # required by azure/login's OIDC flow
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+env:
+  PUBLISH_PROJECT: Tutor.Blazor/Tutor.Blazor.csproj
+  AZURE_RESOURCE_GROUP: MyApps
+  APP: mindattic-tutor
+  DOTNET_VERSION: '10.x'
+
+jobs:
+  build:
+    runs-on: windows-2025
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # The MindAttic.* packages come from the git-tracked lib/local-packages feed. A GitHub runner
+      # has no C:\LocalNuGet; --ignore-failed-sources lets NuGet skip that source.
+      - name: Restore
+        run: dotnet restore ${{ env.PUBLISH_PROJECT }} --ignore-failed-sources
+
+      # Release: MindAttic.Authentication comes from its package, with the dev sign-in bypass
+      # compiled out (the Debug-only project reference in Tutor.Core.csproj is not used).
+      - name: Publish
+        run: dotnet publish ${{ env.PUBLISH_PROJECT }} -c Release -o publish --no-restore
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: tutor-app
+          path: publish/
+
+  deploy:
+    runs-on: windows-2025
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: tutor-app
+          path: publish/
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.APP }}
+          package: publish/
+
+      # The package is mounted, not copied, so the running process has to be replaced to pick it up.
+      - name: Restart onto the new build
+        shell: pwsh
+        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name $env:APP
+
+      # Startup reads the auth database before it listens, and that database auto-pauses: the first
+      # connection after a pause takes about a minute.
+      - name: Smoke-test health, the database and the login page
+        shell: pwsh
+        run: |
+          $base = "https://$env:APP.azurewebsites.net"
+          foreach ($path in '/healthz', '/healthz/db', '/login') {
+            $ok = $false
+            $deadline = (Get-Date).AddMinutes(12)
+            while (-not $ok -and (Get-Date) -lt $deadline) {
+              try {
+                $r = Invoke-WebRequest -Uri "$base$path" -UseBasicParsing -TimeoutSec 120
+                if ($r.StatusCode -eq 200) { $ok = $true; Write-Host "${path}: 200" }
+              } catch { Write-Host "${path}: $($_.Exception.Message)" }
+              if (-not $ok) { Start-Sleep -Seconds 15 }
+            }
+            if (-not $ok) { throw "$base$path never returned 200." }
+          }

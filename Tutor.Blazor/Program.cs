@@ -332,6 +332,22 @@ app.MapRazorComponents<App>()
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
 
+// Liveness and database checks for the App Service deploy (TUT-T47). Anonymous, and they return no data:
+// /healthz answers once startup is through; /healthz/db reads the auth database (503 when it cannot).
+app.MapGet("/healthz", () => Results.Text("ok"));
+app.MapGet("/healthz/db", async (TutorAuthDbContext db, CancellationToken ct) =>
+{
+    try
+    {
+        await db.AuthUsers.AnyAsync(ct);
+        return Results.Text("ok");
+    }
+    catch (Exception)
+    {
+        return Results.Text("database unavailable", statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
+
 // Re-share: download the verbatim .tutor a course was installed from (the blob
 // store keeps it byte-for-byte, so what you share is exactly what you received).
 app.MapGet("/api/library/{courseId}/bundle", async (

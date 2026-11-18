@@ -19,7 +19,7 @@ public static class StoragePaths
     /// App-local settings directory (not checked into GitHub).
     /// </summary>
     public static string SettingsDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName, "Settings");
+        Path.Combine(TutorDataRoot.Path, "Settings");
 
     /// <summary>
     /// Path to the storage settings file.

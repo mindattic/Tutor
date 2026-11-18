@@ -31,7 +31,7 @@ public static class DataStorageSettings
     /// Gets the base app data directory.
     /// </summary>
     public static string AppDataDirectory => 
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tutor");
+        TutorDataRoot.Path;
 
     /// <summary>
     /// Gets the resolved KnowledgeBases directory path.

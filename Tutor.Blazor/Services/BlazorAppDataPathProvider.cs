@@ -4,11 +4,11 @@ namespace Tutor.Blazor.Services;
 
 /// <summary>
 /// Blazor host implementation of <see cref="IAppDataPathProvider"/>. Resolves to
-/// %LocalAppData%\Tutor — the canonical on-disk root shared with the CLI.
+/// %LocalAppData%\Tutor (or TUTOR_DATA_DIR on a deployed host) — the canonical on-disk root shared with the CLI.
 /// </summary>
 public class BlazorAppDataPathProvider : IAppDataPathProvider
 {
     /// <inheritdoc />
     public string AppDataDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tutor");
+        Tutor.Core.Services.TutorDataRoot.Path;
 }

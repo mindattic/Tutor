@@ -31,9 +31,7 @@ public class BlazorSecurePreferences : ISecurePreferences, IDisposable
     public BlazorSecurePreferences(LlmCredentialResolver vault)
     {
         this.vault = vault;
-        var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Tutor", "Settings");
+        var dir = Path.Combine(Tutor.Core.Services.TutorDataRoot.Path, "Settings");
         Directory.CreateDirectory(dir);
         filePath = Path.Combine(dir, "secure-preferences.json");
         Load();
