@@ -229,7 +229,7 @@ builds also reference the sibling source project). The shape:
 
 - **Storage:** SQL Server (`TutorAuthDbContext`). `AuthUsers` (Argon2id + pepper)
   and `AuthSessions` (idle 30 min / absolute 8 h, IP+UA bound, revocable).
-  Connection string `TutorAuth`, LocalDB fallback in dev. SQL holds auth only;
+  Connection string `TutorAuth` (Azure SQL; no LocalDB). SQL holds auth only;
   courses and progress stay file‑based.
 - **Wiring:** `AddMindAtticAuthentication<TutorAuthDbContext>` +
   `UseMindAtticAuthentication()` + `MapMindAtticAuthEndpoints()` (`/_ma-auth/*`).

@@ -33,10 +33,19 @@ public sealed class TutorAuthDbContext(DbContextOptions<TutorAuthDbContext> opti
 /// <summary>Design-time factory so <c>dotnet ef migrations add … --context TutorAuthDbContext</c> works.</summary>
 public sealed class TutorAuthDbContextFactory : IDesignTimeDbContextFactory<TutorAuthDbContext>
 {
+    /// <summary>
+    /// The sign-in database when nothing else is configured: <c>TutorAuth</c> on the MindAttic Azure SQL
+    /// server, opened with the caller's own Azure identity (a developer's <c>az login</c>). No secret in
+    /// the string, no local SQL Server.
+    /// </summary>
+    public const string DefaultConnectionString =
+        "Server=tcp:sql-mindattic-f65744.database.windows.net,1433;Database=TutorAuth;" +
+        "Authentication=Active Directory Default;Encrypt=True;Connect Timeout=60;MultipleActiveResultSets=True;";
+
     public TutorAuthDbContext CreateDbContext(string[] args)
     {
         var conn = Environment.GetEnvironmentVariable("ConnectionStrings__TutorAuth")
-                   ?? "Server=(localdb)\\MSSQLLocalDB;Database=TutorAuth;Trusted_Connection=True;TrustServerCertificate=True;";
+                   ?? DefaultConnectionString;
         var options = new DbContextOptionsBuilder<TutorAuthDbContext>().UseSqlServer(conn, sql => sql.EnableRetryOnFailure()).Options;
         return new TutorAuthDbContext(options);
     }

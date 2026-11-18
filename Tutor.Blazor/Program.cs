@@ -224,7 +224,7 @@ builder.Services.AddSingleton<CourseStructureBuildTaskHandler>();
 var authConnectionString =
     builder.Configuration.GetConnectionString("TutorAuth")
     ?? Environment.GetEnvironmentVariable("ConnectionStrings__TutorAuth")
-    ?? "Server=(localdb)\\MSSQLLocalDB;Database=TutorAuth;Trusted_Connection=True;TrustServerCertificate=True;";
+    ?? TutorAuthDbContextFactory.DefaultConnectionString;
 builder.Services.AddDbContext<TutorAuthDbContext>(o => o.UseSqlServer(authConnectionString, sql => sql.EnableRetryOnFailure()));   // scoped IAuthDataContext
 builder.Services.AddMindAtticAuthentication<TutorAuthDbContext>(builder.Configuration, o =>
 {

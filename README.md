@@ -77,7 +77,7 @@ Tutor runs locally; there is no hosted demo. Ten ready-made courses ship in [Cou
 
 ## Quick start
 
-Prerequisites: the .NET 10 SDK, SQL Server LocalDB for sign-in (or another SQL Server via `ConnectionStrings:TutorAuth`), and at least one LLM API key. OpenAI is needed for embeddings. LibreOffice and Calibre are optional.
+Prerequisites: the .NET 10 SDK, the Azure CLI signed in (`az login`) with an account that can open the `TutorAuth` sign-in database on `sql-mindattic-f65744.database.windows.net` (or another SQL Server via `ConnectionStrings:TutorAuth`; no local SQL Server is needed), and at least one LLM API key. OpenAI is needed for embeddings. LibreOffice and Calibre are optional.
 
 ```powershell
 git clone https://github.com/mindattic/Tutor.git
@@ -197,7 +197,7 @@ tutor build-course <dir-or-zip> --export "Courses/My Course.tutor"
 ## Configuration
 
 - Course data is file-based under `%LocalAppData%\Tutor` (concept maps, knowledge graphs, vector store, LSH, course structures, logs). Individual folders can be redirected through `data-storage.settings.json` (`DataStorageSettings`). The CLI and the Blazor app share this folder.
-- The sign-in database connection string is read from `ConnectionStrings:TutorAuth` in configuration, then the `ConnectionStrings__TutorAuth` environment variable, then falls back to LocalDB (`(localdb)\MSSQLLocalDB`, database `TutorAuth`).
+- The sign-in database connection string is read from `ConnectionStrings:TutorAuth` in configuration, then the `ConnectionStrings__TutorAuth` environment variable, then falls back to the `TutorAuth` database in Azure SQL (`sql-mindattic-f65744.database.windows.net`), signed in with your `az login`.
 - LLM keys resolve through MindAttic.Vault: `%APPDATA%\MindAttic\LLM\providers.json` layered under environment variables (`MindAttic:Vault:LLM:*`), so the CLI uses the same keys as every other MindAttic app. Per-provider key pools are managed with `tutor keys`, the MCP server, or the Settings page.
 - In production the host stores Data Protection keys in Azure Blob Storage protected by Key Vault and requires `DataProtection:BlobUri` and `DataProtection:KeyVaultKeyId`.
 
