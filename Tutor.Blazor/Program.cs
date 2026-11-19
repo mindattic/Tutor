@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MindAttic.Authentication.Web;
 using MindAttic.Legion;
 using MindAttic.Vault.Configuration;
@@ -100,6 +101,10 @@ builder.Services.AddSingleton<GeminiService>();
 
 // LLM router - routes to the user's selected provider
 builder.Services.AddSingleton<LlmServiceRouter>();
+// Per-user LLM ceiling (TUT-T59): the router and EmbeddingService count every request against the signed-in
+// caller, who is set per circuit activity by LlmCallerCircuitHandler. Limits are Vault settings.
+builder.Services.AddSingleton<LlmUsageLimiter>();
+builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler, LlmCallerCircuitHandler>());
 builder.Services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
 
 // Embedding service for RAG — wire transport delegated to LegionClient.
@@ -221,7 +226,8 @@ builder.Services.AddSingleton<CourseStructureBuildTaskHandler>();
 
 // --- Auth: the unified, Vault-backed MindAttic.Authentication engine, replacing the interim
 //     in-memory LocalAuthController/AuthenticationService singletons. Tutor's FIRST SQL database
-//     (auth-only); courses/progress stay JSON. MFA off for now ⇒ MaPolicies.Admin = role-only. ---
+//     (auth-only); courses/progress stay JSON. MaPolicies.Admin = role, plus amr=mfa when Tutor's Vault setting
+//     auth.Mfa.RequireForAdmin is on (seed default off; /mfa and /account/mfa/setup exist, TUT-T59). ---
 var authConnectionString =
     builder.Configuration.GetConnectionString("TutorAuth")
     ?? Environment.GetEnvironmentVariable("ConnectionStrings__TutorAuth")
@@ -275,6 +281,11 @@ builder.Services.AddSingleton<CourseBlobStore>();
 builder.Services.AddSingleton<CourseInstallService>();
 // Library page actions, authorized against the Admin policy on the server (per circuit user).
 builder.Services.AddScoped<Tutor.Shared.Services.LibraryAdminActions>();
+// Course authoring actions, authorized against the Author policy on the server (TUT-T59).
+builder.Services.AddScoped<Tutor.Shared.Services.CourseAuthoringActions>();
+
+// Sign-in and bundle-download rate limits (TUT-T59); permits and windows are Vault settings.
+builder.Services.AddTutorRateLimits(tutorSettings);
 
 var app = builder.Build();
 
@@ -326,6 +337,8 @@ app.UseStaticFiles();
 
 // authn + authz + forced-step (MustChangePassword -> /account/change-password) + scoped CSP.
 app.UseMindAtticAuthentication();
+// After authentication so the bundle-download limit can partition by signed-in user.
+app.UseRateLimiter();
 app.UseAntiforgery();
 
 // Default-deny (TUT-T52): components, the Blazor hub, auth endpoints, health checks and the bundle

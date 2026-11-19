@@ -166,6 +166,28 @@ public sealed class EndpointAuthorizationTests
         Assert.That(missing, Is.Empty, "Pages the endpoint walk did not see: " + string.Join(", ", missing));
     }
 
+    // Author pages (TUT-T59, plan item 0.2(a)): a Student gets a 403 at the endpoint, not just a hidden link.
+    [TestCase("courses")]
+    [TestCase("instructions")]
+    [TestCase("knowledge-graph")]
+    [TestCase("knowledge-bases")]
+    public void AuthoringPages_RequireTheAuthorPolicy(string route)
+    {
+        var endpoint = _endpoints.First(e => Route(e).Equals(route, StringComparison.OrdinalIgnoreCase));
+        var policies = endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>().Select(a => a.Policy);
+
+        Assert.That(policies, Does.Contain(Tutor.Shared.Services.TutorPolicies.Author));
+        Assert.That(IsAnonymous(endpoint), Is.False);
+    }
+
+    [TestCase("_ma-auth/login")]
+    [TestCase("api/library/{courseId}/bundle")]
+    public void SignInAndBundleDownload_AreRateLimited(string route)
+    {
+        var endpoint = _endpoints.Single(e => Route(e) == route);
+        Assert.That(endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute>(), Is.Not.Null);
+    }
+
     [Test]
     public void AllowListedPages_AreActuallyAnonymous()
     {

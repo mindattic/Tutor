@@ -1,0 +1,25 @@
+@page "/mfa"
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication.Components
+@* Second sign-in step (TUT-T59). Reached signed out: the user holds only the 5-minute MFA-pending cookie
+   until /_ma-auth/mfa-challenge accepts the code. Static-SSR so the antiforgery POST validates. *@
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+
+<PageTitle>Two-factor sign-in</PageTitle>
+
+<div class="home-page">
+    <div class="auth-container">
+        <section class="auth-card" aria-labelledby="mfa-heading">
+            <h1 id="mfa-heading">Two-factor sign-in</h1>
+            <p>Enter the code from your authenticator app, or one of your recovery codes.</p>
+            <MaMfaChallenge ReturnUrl="@ReturnUrl" Error="@(Error == 1)" />
+            <p><a href="/login">Back to sign in</a></p>
+        </section>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] public int Error { get; set; }
+}

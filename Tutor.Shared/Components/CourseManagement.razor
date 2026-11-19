@@ -12,6 +12,8 @@
 @inject SettingsService Settings
 @inject IJSRuntime JS
 @inject IFilePickerService FilePickerService
+@inject Tutor.Shared.Services.CourseAuthoringActions Authoring
+@using Microsoft.AspNetCore.Components.Authorization
 @implements IDisposable
 
 <section class="resources-container" aria-labelledby="course-management-heading">
@@ -938,6 +940,17 @@ private string resourceContent = "";
     private string? cancelTaskTitle;
 
     private string statusMessage = "";
+
+    // Every change and paid build here is authorized on the server by CourseAuthoringActions (Author policy,
+    // TUT-T59), in addition to the /courses page's own policy.
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private async Task<bool> AuthorizedAsync()
+    {
+        if (await Authoring.IsAuthorAsync(AuthState is null ? null : (await AuthState).User)) return true;
+        statusMessage = "Error: " + Tutor.Shared.Services.CourseAuthoringActions.DeniedMessage;
+        return false;
+    }
     
     // Timer for updating processing time display
     private System.Threading.Timer? processingTimer;
@@ -986,6 +999,7 @@ private string resourceContent = "";
     /// </summary>
     private async Task BuildCourseStructureAsync()
     {
+        if (!await AuthorizedAsync()) return;
         if (string.IsNullOrEmpty(selectedCourseId) || isBuildingStructure)
             return;
 
@@ -1216,6 +1230,7 @@ private string resourceContent = "";
 
     private async Task ToggleResourceInCourse(string resourceId)
     {
+        if (!await AuthorizedAsync()) return;
         if (string.IsNullOrEmpty(selectedCourseId))
             return;
 
@@ -1349,8 +1364,9 @@ private string resourceContent = "";
         return ProcessingService.GetCumulativeProcessingTimeFormatted();
     }
 
-    private void QueueResource()
+    private async Task QueueResource()
     {
+        if (!await AuthorizedAsync()) return;
         if (string.IsNullOrWhiteSpace(resourceTitle))
         {
             statusMessage = "Title is required.";
@@ -1407,6 +1423,7 @@ private string resourceContent = "";
 
     private async Task RegenerateConceptMap(CourseResource resource)
     {
+        if (!await AuthorizedAsync()) return;
         if (regeneratingConceptMaps.Contains(resource.Id))
             return;
 
@@ -1681,6 +1698,7 @@ private string resourceContent = "";
 
     private async Task ExecuteDelete()
     {
+        if (!await AuthorizedAsync()) return;
         if (pendingDeleteAction != null)
         {
             await pendingDeleteAction();
@@ -1767,6 +1785,7 @@ private string resourceContent = "";
 
     private async Task CreateCourse()
     {
+        if (!await AuthorizedAsync()) return;
         if (string.IsNullOrWhiteSpace(newCourseName))
             return;
 
@@ -1782,6 +1801,7 @@ private string resourceContent = "";
 
     private async Task RenameCourse()
     {
+        if (!await AuthorizedAsync()) return;
         if (string.IsNullOrWhiteSpace(renameCourseName) || string.IsNullOrEmpty(selectedCourseId))
             return;
 
@@ -1951,6 +1971,7 @@ private string resourceContent = "";
     /// </summary>
     private async Task MergeDuplicatesAsync()
     {
+        if (!await AuthorizedAsync()) return;
         if (string.IsNullOrEmpty(selectedCourseId) || isMergingDuplicates)
             return;
 
@@ -2165,6 +2186,7 @@ private string resourceContent = "";
     /// </summary>
     private async Task ApplyApprovedMerges()
     {
+        if (!await AuthorizedAsync()) return;
         if (approvedMerges.Count == 0)
         {
             CloseSimilarConceptsModal();

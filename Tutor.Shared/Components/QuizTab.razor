@@ -7,6 +7,11 @@
 
 <section class="quiz-tab" aria-labelledby="quiz-region-label">
     <h2 id="quiz-region-label" class="sr-only">Quiz</h2>
+    @if (_limitMessage is not null)
+    {
+        @* Per-user AI limit reached (TUT-T59). *@
+        <p class="status-message error" role="alert">@_limitMessage</p>
+    }
     @if (string.IsNullOrEmpty(CourseId))
     {
         <div class="quiz-empty" role="status">
@@ -265,6 +270,7 @@ private bool _quizComplete;
 private bool _lastAnswerCorrect;
 private string _userAnswer = "";
 private string? _feedback;
+    private string? _limitMessage;
 private QuizQuestion? _currentQuestion;
 private QuizResult? _quizResult;
 private List<QuizResult> _quizHistory = [];
@@ -362,6 +368,7 @@ private async Task LoadDataAsync()
             return;
 
         _starting = true;
+        _limitMessage = null;
         _quizResult = null;
         _feedback = null;
         StateHasChanged();
@@ -373,6 +380,10 @@ private async Task LoadDataAsync()
             
             await QuizService.StartQuizAsync(CourseId, sectionIds, _conceptIds, questionCount);
             _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        catch (LlmLimitReachedException ex)
+        {
+            _limitMessage = ex.Message;
         }
         finally
         {
@@ -395,6 +406,10 @@ private async Task LoadDataAsync()
             _lastAnswerCorrect = isCorrect;
             _feedback = feedback;
             _quizComplete = complete;
+        }
+        catch (LlmLimitReachedException ex)
+        {
+            _limitMessage = ex.Message;
         }
         finally
         {

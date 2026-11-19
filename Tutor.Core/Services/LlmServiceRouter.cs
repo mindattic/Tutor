@@ -12,13 +12,16 @@ public sealed class LlmServiceRouter : ILlmService
 {
     private readonly TutorSettingsSource settings;
     private readonly IServiceProvider serviceProvider;
+    private readonly LlmUsageLimiter? limiter;
 
     public string ProviderName => "Router";
 
-    public LlmServiceRouter(TutorSettingsSource settings, IServiceProvider serviceProvider)
+    /// <param name="limiter">Per-user ceiling (TUT-T59); the web host registers one, Tutor.Cli runs without.</param>
+    public LlmServiceRouter(TutorSettingsSource settings, IServiceProvider serviceProvider, LlmUsageLimiter? limiter = null)
     {
         this.settings = settings;
         this.serviceProvider = serviceProvider;
+        this.limiter = limiter;
         Log.Debug("LlmServiceRouter initialized");
     }
 
@@ -30,6 +33,8 @@ public sealed class LlmServiceRouter : ILlmService
 
     public async Task<ChatReply> GetReplyAsync(IEnumerable<ChatMessage> messages, string? instructions = null, CancellationToken ct = default)
     {
+        // The one chat choke point: count the request against the signed-in caller's limits first.
+        limiter?.Acquire();
         var service = GetCurrentService();
         Log.Info($"LlmRouter: Routing to {service.ProviderName}");
 

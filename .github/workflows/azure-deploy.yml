@@ -137,6 +137,7 @@ jobs:
             @{ Method = 'GET';  Path = '/users' },
             @{ Method = 'GET';  Path = '/account' },
             @{ Method = 'GET';  Path = '/account/change-password' },
+            @{ Method = 'GET';  Path = '/account/mfa/setup' },
             @{ Method = 'GET';  Path = '/api/library/x/bundle' },
             @{ Method = 'GET';  Path = '/does-not-exist' },
             @{ Method = 'POST'; Path = '/_blazor/negotiate?negotiateVersion=1' },

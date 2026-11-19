@@ -1,0 +1,18 @@
+@page "/account/mfa/setup"
+@using Microsoft.AspNetCore.Authorization
+@using MindAttic.Authentication.Components
+@* Authenticator (TOTP) enrolment (TUT-T59). Interactive: MaMfaSetup confirms in the component and shows the
+   one-time recovery codes in place. When Mfa.RequireForAdmin is on, an Admin without MFA is sent here first. *@
+@attribute [Authorize]
+
+<PageTitle>Two-factor authentication</PageTitle>
+
+<div class="home-page">
+    <div class="auth-container">
+        <section class="auth-card" aria-labelledby="mfa-setup-heading">
+            <h1 id="mfa-setup-heading">Two-factor authentication</h1>
+            <MaMfaSetup />
+            <p><a href="/account">Back to account</a></p>
+        </section>
+    </div>
+</div>

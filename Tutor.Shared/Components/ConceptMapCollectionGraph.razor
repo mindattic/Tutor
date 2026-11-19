@@ -1,11 +1,12 @@
 ﻿@using Microsoft.JSInterop
 @using Tutor.Core.Models
 @using Tutor.Core.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject ConceptMapCollectionService ConceptMapCollectionService
 @inject CourseConceptMapService CourseConceptMapService
 @inject CourseService CourseService
-@inject OrphanConceptLinkerService OrphanLinkerService
+@inject Tutor.Shared.Services.CourseAuthoringActions AuthoringActions
 @inject ConceptAutoCompleteService AutoCompleteService
 @inject IJSRuntime JS
 @implements IDisposable
@@ -165,7 +166,7 @@ else
                     Analyzing connections...
                 </span>
             }
-            else
+            else if (isAuthor)
             {
                 <button class="btn-link-orphans"
                         type="button"
@@ -539,8 +540,15 @@ private bool showOrphanList;
     // Track external selection to prevent overriding manual selections
     private string? lastAppliedExternalSelection;
 
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Auto-Link Orphans writes the shared maps and spends on the LLM: authors only (TUT-T59).
+    private bool isAuthor;
+
     protected override async Task OnParametersSetAsync()
     {
+        isAuthor = AuthState is not null && await AuthoringActions.IsAuthorAsync((await AuthState).User);
+
         // Resolve legacy parameters
         var effectiveConceptMapId = ConceptMapId ?? KnowledgeBaseId;
         var effectiveCollectionId = ConceptMapCollectionId ?? KnowledgeBaseCollectionId;
@@ -832,48 +840,29 @@ private bool showOrphanList;
 
         try
         {
-            var totalApplied = 0;
+            // Authorized and run on the server by CourseAuthoringActions (Author policy, TUT-T59); the button
+            // is only shown to authors, but the check is the service's.
+            var user = AuthState is null ? null : (await AuthState).User;
+            int totalApplied;
 
-            // If we have a loadedCollection with multiple ConceptMaps, link each one
             if (loadedCollection != null && loadedCollection.ConceptMaps.Count > 0)
             {
-                foreach (var cm in loadedCollection.ConceptMaps)
+                totalApplied = await AuthoringActions.LinkOrphansAsync(user, loadedCollection.ConceptMaps, cm =>
                 {
                     linkingMessage = $"Linking concepts in '{cm.Name}'...";
                     StateHasChanged();
-
-                    var result = await OrphanLinkerService.LinkAllOrphansIterativelyAsync(
-                        cm, 
-                        maxIterations: 10, 
-                        minConfidence: 0.3f);
-
-                    if (result.AppliedLinkCount > 0)
-                    {
-                        await ConceptMapStorageService.SaveAsync(cm);
-                        totalApplied += result.AppliedLinkCount;
-                    }
-                }
+                });
 
                 // Refresh the aggregated view
                 concepts = loadedCollection.GetAllConcepts().ToList();
                 relationships = loadedCollection.GetAllRelations().ToList();
             }
-            // If we have a single conceptMap
             else if (conceptMap != null)
             {
                 linkingMessage = "Running iterative linking...";
                 StateHasChanged();
 
-                var result = await OrphanLinkerService.LinkAllOrphansIterativelyAsync(
-                    conceptMap, 
-                    maxIterations: 10, 
-                    minConfidence: 0.3f);
-
-                if (result.AppliedLinkCount > 0)
-                {
-                    await ConceptMapStorageService.SaveAsync(conceptMap);
-                    totalApplied = result.AppliedLinkCount;
-                }
+                totalApplied = await AuthoringActions.LinkOrphansAsync(user, [conceptMap]);
 
                 concepts = conceptMap.Concepts ?? [];
                 relationships = conceptMap.Relations ?? [];
@@ -906,6 +895,10 @@ private bool showOrphanList;
             {
                 linkingMessage = "No suitable connections could be found. Manual review may be needed.";
             }
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            linkingMessage = ex.Message;
         }
         catch (Exception ex)
         {

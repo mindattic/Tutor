@@ -202,6 +202,42 @@ public sealed class TutorSettings
     [SettingRange(0, 1000)]
     public double EstimateEmbeddingUsdPerMillionTokens { get; set; } = 0.02;
 
+    // ---- Usage limits (TUT-T59) ----------------------------------------------------------
+
+    [Setting("AI requests per minute, per user", Group = "Usage limits", Order = 1,
+        Help = "Most chat and embedding requests one signed-in user can make in any minute. 0 turns the limit off.")]
+    [SettingRange(0, 10000)]
+    public int LlmRequestsPerMinutePerUser { get; set; } = 20;
+
+    [Setting("AI requests per day, per user", Group = "Usage limits", Order = 2,
+        Help = "Most chat and embedding requests one signed-in user can make in a UTC day. 0 turns the limit off.")]
+    [SettingRange(0, 1000000)]
+    public int LlmRequestsPerDayPerUser { get; set; } = 400;
+
+    [Setting("Authors are exempt from the AI limits", Group = "Usage limits", Order = 3,
+        Help = "On: users who may author courses (Admin today) are not counted, so course builds and orphan linking run unthrottled.")]
+    public bool LlmLimitsExemptAuthors { get; set; } = true;
+
+    [Setting("Sign-in requests per window, per address", Group = "Usage limits", Order = 4,
+        Help = "Most sign-in, MFA, reset and sign-out posts one IP address can make per window before getting HTTP 429.")]
+    [SettingRange(1, 10000)]
+    public int SignInRateLimitPermits { get; set; } = 10;
+
+    [Setting("Sign-in window (seconds)", Group = "Usage limits", Order = 5,
+        Help = "Length of the sign-in rate-limit window.")]
+    [SettingRange(1, 3600)]
+    public int SignInRateLimitWindowSeconds { get; set; } = 60;
+
+    [Setting("Bundle downloads per window, per user", Group = "Usage limits", Order = 6,
+        Help = "Most course-bundle downloads one user can make per window before getting HTTP 429.")]
+    [SettingRange(1, 10000)]
+    public int BundleDownloadPermits { get; set; } = 10;
+
+    [Setting("Bundle download window (seconds)", Group = "Usage limits", Order = 7,
+        Help = "Length of the bundle-download rate-limit window.")]
+    [SettingRange(1, 86400)]
+    public int BundleDownloadWindowSeconds { get; set; } = 300;
+
     // ---- Logging ------------------------------------------------------------------------
 
     [Setting("Log trace", Group = "Logging", Order = 1, Help = "Capture detailed diagnostic messages.")]
@@ -231,7 +267,10 @@ public sealed class TutorSettings
     /// </summary>
     [Setting("Sign-in security", Group = "Sign-in security", Order = 1,
         Help = "MindAttic.Authentication options for Tutor's accounts. Secrets (pepper, reset-token key) are not here.")]
-    public MindAtticAuthSettings Auth { get; set; } = new() { Reset = { PublicBaseUrl = DefaultPublicBaseUrl } };
+    // Mfa.RequireForAdmin defaults OFF (owner directive, TUT-T59): the /mfa and /account/mfa/setup pages exist, so
+    // turning it on in Tutor's Vault tab makes every Admin enrol TOTP and sign in with it. A settings file that
+    // already holds a value keeps it; this default only seeds a new one.
+    public MindAtticAuthSettings Auth { get; set; } = new() { Reset = { PublicBaseUrl = DefaultPublicBaseUrl }, Mfa = { RequireForAdmin = false } };
 
     // ---- Loading ------------------------------------------------------------------------
 

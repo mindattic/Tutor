@@ -1,6 +1,10 @@
 @page "/instructions"
-@attribute [Authorize]
+@* Author policy (TUT-T59): these instructions go out with every learner's chat prompt. *@
+@attribute [Authorize(Policy = TutorPolicies.Author)]
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Tutor.Shared.Services
+@inject CourseAuthoringActions Authoring
 @inject NavigationManager Nav
 @inject ISecurePreferences SecurePreferences
 
@@ -48,6 +52,12 @@
     </div>
 </section>
 @code {
+    // Authoring is checked on the server for every change, not only by the page's Author policy (TUT-T59).
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private async Task<System.Security.Claims.ClaimsPrincipal?> CurrentUserAsync() =>
+        AuthState is null ? null : (await AuthState).User;
+
     private const string StorageKeyPrefix = "INSTRUCTION_";
     private const string CountKey = "INSTRUCTION_COUNT";
 
@@ -107,6 +117,7 @@
         isBusy = true;
         try
         {
+            await Authoring.EnsureAuthorAsync(await CurrentUserAsync());
             await SecurePreferences.SetAsync($"{StorageKeyPrefix}{index}", instructions[index]);
             await SecurePreferences.SetAsync(CountKey, instructions.Count.ToString());
             status = $"Instruction {index + 1} saved.";
@@ -128,6 +139,7 @@
         isBusy = true;
         try
         {
+            await Authoring.EnsureAuthorAsync(await CurrentUserAsync());
             instructions.RemoveAt(index);
 
             // Re-save all instructions with new indices

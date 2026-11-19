@@ -12,7 +12,19 @@
            except the [AllowAnonymous] pages on TutorAccess.AnonymousRoutes. *@
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
             <NotAuthorized>
-                <RedirectToLogin />
+                @if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    @* Signed in but missing the page's policy (e.g. a Student on an Author page, TUT-T59). *@
+                    <section role="alert" aria-labelledby="not-allowed-heading">
+                        <h1 id="not-allowed-heading">Not available</h1>
+                        <p>Your account does not have access to this page.</p>
+                        <p><a href="/">Return to the home page</a></p>
+                    </section>
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
             </NotAuthorized>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />

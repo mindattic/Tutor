@@ -4,6 +4,7 @@
 @using Tutor.Core.Services
 @using Tutor.Core.Services.Logging
 @using Tutor.Core.Models
+@using Microsoft.AspNetCore.Components.Authorization
 @inject LlmServiceRouter Ai
 @inject InstructionsService Instructions
 @inject SettingsService Settings
@@ -12,6 +13,7 @@
 @inject CourseStructureStorageService StructureStorage
 @inject ConceptMapStorageService ConceptMapStorageService
 @inject DynamicConceptExpansionService ConceptExpansionService
+@inject Tutor.Shared.Services.CourseAuthoringActions Authoring
 @inject UserProgressService ProgressService
 @implements IDisposable
 
@@ -463,6 +465,8 @@
 }
 
 @code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
 // Parameters from parent page
 [Parameter] public string? StartTopic { get; set; }
 [Parameter] public bool AutoStartLesson { get; set; }
@@ -1852,6 +1856,12 @@ Keep track of the running score.";
             Log.Warn("Chat: Request cancelled by user");
             tabMessages.Add(new ChatMessage("assistant", "Request cancelled.", "Request was cancelled by user."));
         }
+        catch (LlmLimitReachedException ex)
+        {
+            // Per-user AI limit (TUT-T59): a plain message, no "Error" and no stack trace.
+            Log.Info($"Chat: per-user AI limit reached - {ex.Message}");
+            tabMessages.Add(new ChatMessage("assistant", ex.Message, ex.Message));
+        }
         catch (Exception ex)
         {
             Log.Error($"Chat: Error during message send - {ex.Message}", ex);
@@ -1949,6 +1959,11 @@ Keep track of the running score.";
     private async Task TryExpandConceptsAsync(string userQuery, CancellationToken ct)
     {
         if (activeCourse == null || string.IsNullOrWhiteSpace(userQuery))
+            return;
+
+        // The course concept maps are shared by every learner: only an author's chat may expand them
+        // (TUT-T59, plan item 0.2(c)). A student's question never writes into them.
+        if (!await Authoring.CanExpandSharedConceptMapsAsync(AuthState is null ? null : (await AuthState).User))
             return;
 
         try

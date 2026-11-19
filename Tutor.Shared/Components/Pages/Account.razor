@@ -14,6 +14,7 @@
                 <p role="status">Your password was changed.</p>
             }
             <p><a href="/account/change-password">Change password</a></p>
+            <p><a href="/account/mfa/setup">Set up two-factor authentication</a></p>
             @* Logout is an antiforgery-protected POST owned by the library endpoint. *@
             <form method="post" action="/_ma-auth/logout">
                 <AntiforgeryToken />

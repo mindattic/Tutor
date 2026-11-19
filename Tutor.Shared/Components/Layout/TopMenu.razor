@@ -20,10 +20,13 @@
         </NavLink>
         <AuthorizeView>
             <Authorized>
-                <NavLink class="top-nav-link" href="courses" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Courses)">
-                    <span class="bi bi-book-fill" aria-hidden="true"></span>
-                    <span>Courses</span>
-                </NavLink>
+                @* Course authoring is for authors only (TUT-T59); the page enforces it, this just hides the link. *@
+                <AuthorizeView Policy="@Tutor.Shared.Services.TutorPolicies.Author" Context="authorCtx">
+                    <NavLink class="top-nav-link" href="courses" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Courses)">
+                        <span class="bi bi-book-fill" aria-hidden="true"></span>
+                        <span>Courses</span>
+                    </NavLink>
+                </AuthorizeView>
                 <NavLink class="top-nav-link" href="learn" Match="NavLinkMatch.Prefix" @onclick="() => OnTabSelected(TopTab.Learn)">
                     <span class="bi bi-mortarboard-fill" aria-hidden="true"></span>
                     <span>Learn</span>

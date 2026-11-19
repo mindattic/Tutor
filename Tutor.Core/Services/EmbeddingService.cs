@@ -27,10 +27,14 @@ public sealed class EmbeddingService
     // Rough estimate: 1 token ≈ 4 characters for English text
     private const int CharsPerToken = 4;
 
-    public EmbeddingService(LegionClient legion, TutorKeys keys)
+    private readonly LlmUsageLimiter? limiter;
+
+    /// <param name="limiter">Per-user ceiling (TUT-T59); the web host registers one, Tutor.Cli runs without.</param>
+    public EmbeddingService(LegionClient legion, TutorKeys keys, LlmUsageLimiter? limiter = null)
     {
         this.legion = legion;
         this.keys = keys;
+        this.limiter = limiter;
         Log.Debug("EmbeddingService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
@@ -43,6 +47,9 @@ public sealed class EmbeddingService
     public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, CancellationToken ct = default)
     {
         if (texts.Count == 0) return [];
+
+        // The one embedding choke point: one request counted per call against the signed-in caller's limits.
+        limiter?.Acquire();
 
         // Filter empties (OpenAI rejects with HTTP 400) and cap individual lengths.
         var validTexts = texts

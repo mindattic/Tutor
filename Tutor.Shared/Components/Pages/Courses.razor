@@ -1,6 +1,8 @@
 @page "/courses"
-@attribute [Authorize]
+@* Author policy (TUT-T59): course and resource changes and paid builds are for authors only. *@
+@attribute [Authorize(Policy = TutorPolicies.Author)]
 @using Microsoft.AspNetCore.Authorization
+@using Tutor.Shared.Services
 @using Tutor.Core.Services
 @inject AppUiState UiState
 

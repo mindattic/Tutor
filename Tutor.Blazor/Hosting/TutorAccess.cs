@@ -1,10 +1,15 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.EntityFrameworkCore;
+using MindAttic.Authentication;
 using MindAttic.Authentication.Web;
 using Tutor.Blazor.Components;
 using Tutor.Core.Data;
+using Tutor.Core.Services;
 using Tutor.Core.Services.Packaging;
+using Tutor.Shared.Services;
 
 namespace Tutor.Blazor.Hosting;
 
@@ -40,10 +45,57 @@ public static class TutorAccess
             || AnonymousRoutePrefixes.Any(p => route.StartsWith(p, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>Rate-limit policy on the /_ma-auth group: per client address (TUT-T59).</summary>
+    public const string SignInRateLimitPolicy = "tutor-sign-in";
+
+    /// <summary>Rate-limit policy on the bundle download: per signed-in user (TUT-T59).</summary>
+    public const string BundleDownloadRateLimitPolicy = "tutor-bundle-download";
+
     /// <summary>The app's authorization policies: the signed-in fallback plus Tutor's own named policies.</summary>
     public static void ConfigurePolicies(AuthorizationBuilder authz)
     {
         authz.SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
+        // Author (TUT-T59): course content changes and the spending that goes with them. Admin only to start.
+        authz.AddPolicy(TutorPolicies.Author, p => p.RequireAuthenticatedUser().RequireRole(TutorPolicies.AuthorRoles));
+    }
+
+    /// <summary>
+    /// ASP.NET rate limits (TUT-T59, plan item 0.2(d)) on sign-in and the bundle download. Permits and windows are
+    /// Vault settings, read when a client's window is first created. Rejections answer 429.
+    /// </summary>
+    public static IServiceCollection AddTutorRateLimits(this IServiceCollection services, TutorSettingsSource settings)
+    {
+        services.AddRateLimiter(o =>
+        {
+            o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            o.AddPolicy(SignInRateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+                http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ =>
+                {
+                    var s = settings.Current;
+                    return new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = Math.Max(1, s.SignInRateLimitPermits),
+                        Window = TimeSpan.FromSeconds(Math.Max(1, s.SignInRateLimitWindowSeconds)),
+                        QueueLimit = 0,
+                    };
+                }));
+            o.AddPolicy(BundleDownloadRateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+                http.User.FindFirst(MaClaims.UserId)?.Value ?? http.User.Identity?.Name
+                    ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ =>
+                {
+                    var s = settings.Current;
+                    return new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = Math.Max(1, s.BundleDownloadPermits),
+                        Window = TimeSpan.FromSeconds(Math.Max(1, s.BundleDownloadWindowSeconds)),
+                        QueueLimit = 0,
+                    };
+                }));
+        });
+        return services;
     }
 
     /// <summary>
@@ -95,11 +147,14 @@ public static class TutorAccess
                 return Results.NotFound();
 
             return Results.File(row.BlobPath, "application/zip", $"{row.CourseKey}-v{row.CourseVersion}.tutor");
-        }).RequireAuthorization();
+        }).RequireAuthorization().RequireRateLimiting(BundleDownloadRateLimitPolicy);
     }
 
     private static void ConfigureAuthGroup(RouteGroupBuilder group)
     {
+        // Sign-in, MFA, reset and sign-out posts: a per-address ceiling in front of the library's own backoff.
+        group.RequireRateLimiting(SignInRateLimitPolicy);
+
         // Finally runs after each endpoint's own conventions, so the route pattern is complete here.
         ((IEndpointConventionBuilder)group).Finally(endpoint =>
         {

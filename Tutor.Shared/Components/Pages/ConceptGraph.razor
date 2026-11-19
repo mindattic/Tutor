@@ -1,7 +1,11 @@
 @page "/knowledge-bases"
 @page "/knowledge-graph"
-@attribute [Authorize]
+@* Author policy (TUT-T59): building the knowledge graph spends on the LLM and rewrites shared data. *@
+@attribute [Authorize(Policy = TutorPolicies.Author)]
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Tutor.Shared.Services
+@inject CourseAuthoringActions Authoring
 @using Tutor.Core.Models
 @using Tutor.Core.Services
 @inject KnowledgeGraphService GraphService
@@ -319,6 +323,12 @@
     }
 </div>
 @code {
+    // Authoring is checked on the server for every change, not only by the page's Author policy (TUT-T59).
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private async Task<System.Security.Claims.ClaimsPrincipal?> CurrentUserAsync() =>
+        AuthState is null ? null : (await AuthState).User;
+
     private string? activeCourseId;
     private Course? activeCourse;
     private List<CourseResource> resources = [];
@@ -392,6 +402,11 @@
     {
         if (string.IsNullOrEmpty(activeCourseId) || resources.Count == 0)
             return;
+        if (!await Authoring.IsAuthorAsync(await CurrentUserAsync()))
+        {
+            buildProgress = new GraphBuildProgress { Message = CourseAuthoringActions.DeniedMessage };
+            return;
+        }
 
         isBuilding = true;
         buildProgress = new GraphBuildProgress { Message = "Initializing..." };

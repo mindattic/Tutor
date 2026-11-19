@@ -12,6 +12,11 @@
 
 <section class="final-exam-tab" aria-labelledby="final-exam-heading">
     <h2 id="final-exam-heading" class="sr-only">Final exam</h2>
+    @if (_limitMessage is not null)
+    {
+        @* Per-user AI limit reached (TUT-T59). *@
+        <p class="status-message error" role="alert">@_limitMessage</p>
+    }
 
     @if (string.IsNullOrEmpty(CourseId) || _course == null)
     {
@@ -148,6 +153,7 @@
     private bool _eligible;
     private string _userAnswer = "";
     private string? _feedback;
+    private string? _limitMessage;
     private Course? _course;
     private CourseStructure? _structure;
     private QuizQuestion? _currentQuestion;
@@ -207,6 +213,7 @@
     {
         if (_structure == null) return;
         _starting = true;
+        _limitMessage = null;
         _examResult = null;
         _certificate = null;
         _feedback = null;
@@ -215,6 +222,10 @@
         {
             await FinalExamService.StartAsync(_structure);
             _currentQuestion = QuizService.GetCurrentQuestion();
+        }
+        catch (LlmLimitReachedException ex)
+        {
+            _limitMessage = ex.Message;
         }
         finally
         {
@@ -234,6 +245,10 @@
             _lastAnswerCorrect = isCorrect;
             _feedback = feedback;
             _complete = complete;
+        }
+        catch (LlmLimitReachedException ex)
+        {
+            _limitMessage = ex.Message;
         }
         finally
         {
