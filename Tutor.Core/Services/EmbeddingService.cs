@@ -81,6 +81,7 @@ public sealed class EmbeddingService
                 Log.Debug($"EmbeddingService: Processing {batch.Count} texts");
 
             IReadOnlyList<float[]> batchEmbeddings;
+            var batchClock = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 // Keys from Vault's shared named lists (LAMP), failing over when one is refused.
@@ -102,6 +103,7 @@ public sealed class EmbeddingService
                 Log.Error($"[Tutor] EmbeddingService: Legion embed call failed (status={ex.StatusCode}) - {ex.Message}", ex);
                 throw;
             }
+            LlmUsage.RecordEmbedding(batch.Count, batch.Sum(t => (long)t.Length), batchClock.ElapsedMilliseconds);
             allEmbeddings.AddRange(batchEmbeddings);
 
             // Inter-batch pacing for very large documents.

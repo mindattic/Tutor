@@ -159,6 +159,7 @@ services.AddSingleton<CourseBlobStore>();
 services.AddSingleton<CourseInstallService>();
 services.AddSingleton<ImportGutenbergCommand>();
 services.AddSingleton<GutenbergTop10Command>();
+services.AddSingleton<GutenbergTopCommand>();
 services.AddSingleton<ImportFileCommand>();
 services.AddSingleton<BuildCourseCommand>();
 services.AddSingleton<ExportCommand>();
@@ -203,6 +204,7 @@ try
     {
         "gutenberg"     => await provider.GetRequiredService<ImportGutenbergCommand>().RunAsync(rest),
         "gutenberg-top10" => await provider.GetRequiredService<GutenbergTop10Command>().RunAsync(rest),
+        "gutenberg-top" => await provider.GetRequiredService<GutenbergTopCommand>().RunAsync(rest),
         "import"        => await provider.GetRequiredService<ImportFileCommand>().RunAsync(rest),
         "build-course"  => await provider.GetRequiredService<BuildCourseCommand>().RunAsync(rest),
         "export"        => await provider.GetRequiredService<ExportCommand>().RunAsync(rest),
@@ -240,6 +242,15 @@ static int PrintHelp()
               already exists, so re-running after a partial failure resumes naturally.
               With --export-dir, each course is written to <dir>/<Title>.tutor.
               Long-running: ~2 hours per book and meaningful API spend.
+
+          tutor gutenberg-top [--count N] [--only id,id] [--dry-run] [--allow-duplicate] [--quiz-mode ...] [--max-minutes M] [--report-dir <dir>]
+              Build a course from each of the first N books (default: the "Books to take
+              from the top list" setting) of Project Gutenberg's current "Top 100 EBooks
+              last 30 days" list, and write a report (.md and .json) of the time each
+              stage took per book, the LLM calls with estimated tokens and cost, and each
+              course's size. A book that is already a course is skipped. --max-minutes
+              stops new books from starting once the run is that old. Reports go to
+              <data folder>\Reports unless --report-dir is given.
 
           tutor import <path-to-file> --course "Name" [--description "..."] [--author "..."] [--title "..."] [--quiz-mode ...] [--allow-duplicate]
               Import a local file as a new course. The parser is picked from the

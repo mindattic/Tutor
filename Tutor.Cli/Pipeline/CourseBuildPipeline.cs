@@ -76,6 +76,12 @@ public sealed class CourseBuildPipeline
     }
 
     /// <summary>
+    /// The stages the latest <see cref="BuildAsync"/> call finished, so a caller can report how far a
+    /// build that threw got. The stage that failed is not in it.
+    /// </summary>
+    public IReadOnlyList<StageTiming> LastStages { get; private set; } = [];
+
+    /// <summary>
     /// Builds the course end-to-end. Throws <see cref="InvalidOperationException"/>
     /// when a same-named course already exists and <see cref="CourseBuildRequest.AllowDuplicate"/>
     /// is false, or when no concepts could be extracted from any resource.
@@ -86,6 +92,17 @@ public sealed class CourseBuildPipeline
             throw new InvalidOperationException("A course needs at least one item.");
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        // Wall-clock time per stage, summed across items (TUT-T50).
+        var stages = new List<StageTiming>();
+        LastStages = stages;
+        var stageClock = System.Diagnostics.Stopwatch.StartNew();
+        void EndStage(string name)
+        {
+            var at = stages.FindIndex(s => s.Name == name);
+            if (at < 0) stages.Add(new StageTiming(name, stageClock.Elapsed));
+            else stages[at] = stages[at] with { Elapsed = stages[at].Elapsed + stageClock.Elapsed };
+            stageClock.Restart();
+        }
 
         // Duplicate-name guard. Case-insensitive exact match on course name.
         if (!req.AllowDuplicate)
@@ -126,6 +143,7 @@ public sealed class CourseBuildPipeline
             };
             var resourceId = await courseService.SaveResourceCoreAsync(resource);
             resource.Id = resourceId;
+            EndStage(StageTiming.Save);
 
             Console.WriteLine($"[{label}] adding to course (chunk + embed for RAG)");
             try
@@ -143,6 +161,8 @@ public sealed class CourseBuildPipeline
                 Console.WriteLine("        (continuing; lessons, structure, and quizzes don't require embeddings)");
             }
 
+            EndStage(StageTiming.ChunkAndEmbed);
+
             Console.WriteLine($"[{label}] formatting content with AI");
             try
             {
@@ -157,6 +177,8 @@ public sealed class CourseBuildPipeline
             {
                 Console.WriteLine($"        WARN: formatting failed — {ex.Message} (continuing with raw content)");
             }
+
+            EndStage(StageTiming.Format);
 
             Console.WriteLine($"[{label}] building ConceptMap");
             var maxIters = resource.GetEffectiveMaxIterations(globalMaxIters);
@@ -173,6 +195,8 @@ public sealed class CourseBuildPipeline
             {
                 conceptMapService.OnProgressChanged -= OnConceptProgress;
             }
+
+            EndStage(StageTiming.ConceptMap);
 
             resource.ConceptMapId = conceptMap.Id;
             resource.ConceptMapStatus = conceptMap.Status;
@@ -209,6 +233,8 @@ public sealed class CourseBuildPipeline
         };
         await conceptMapStorageService.SaveAsync(mergedMap, ct);
 
+        EndStage(StageTiming.Save);
+
         Console.WriteLine($"Generating course structure from {allConcepts.Count} merged concepts (lessons → topics → sections → content)");
         void OnStructureProgress(CourseStructureProgress p) =>
             Console.WriteLine($"        [{p.Progress,3}%] {p.Message}");
@@ -223,9 +249,13 @@ public sealed class CourseBuildPipeline
             courseStructureService.OnProgressChanged -= OnStructureProgress;
         }
 
+        EndStage(StageTiming.Structure);
+
         course.CourseStructureId = structure.Id;
         course.UpdatedAt = DateTime.UtcNow;
         await courseService.SaveCourseAsync(course);
+
+        EndStage(StageTiming.Save);
 
         var bakedQuizCount = 0;
         if (req.QuizMode.ShouldBake())
@@ -254,7 +284,9 @@ public sealed class CourseBuildPipeline
         {
             Console.WriteLine("Skipping quiz pre-generation (--quiz-mode dynamic); quizzes generate at runtime from the bundled concept maps.");
         }
+        EndStage(StageTiming.Quizzes);
         await courseStructureStorageService.SaveAsync(structure, ct);
+        EndStage(StageTiming.Save);
 
         stopwatch.Stop();
         Console.WriteLine();
@@ -265,8 +297,9 @@ public sealed class CourseBuildPipeline
         Console.WriteLine($"  Lessons:       {structure.TotalLessons}");
         Console.WriteLine($"  Topics:        {structure.TotalTopics}");
         Console.WriteLine($"  Baked quizzes: {(req.QuizMode.ShouldBake() ? bakedQuizCount.ToString() : "0 (dynamic)")}");
+        Console.WriteLine($"  Stages:        {string.Join(", ", stages.Select(s => $"{s.Name} {s.Elapsed:hh\\:mm\\:ss}"))}");
 
-        return new CourseBuildResult(course, resources, structure, bakedQuizCount, stopwatch.Elapsed);
+        return new CourseBuildResult(course, resources, structure, bakedQuizCount, stopwatch.Elapsed, stages);
     }
 }
 
@@ -292,4 +325,20 @@ public sealed record CourseBuildResult(
     IReadOnlyList<CourseResource> Resources,
     CourseStructure Structure,
     int BakedQuizCount,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed,
+    IReadOnlyList<StageTiming> Stages);
+
+/// <summary>
+/// Wall-clock time one pipeline stage took, summed across a course's items. The names are the
+/// stages <see cref="CourseBuildPipeline.BuildAsync"/> runs.
+/// </summary>
+public sealed record StageTiming(string Name, TimeSpan Elapsed)
+{
+    public const string ChunkAndEmbed = "chunk+embed";
+    public const string Format = "format";
+    public const string ConceptMap = "concept map";
+    public const string Structure = "structure";
+    public const string Quizzes = "quizzes";
+    /// <summary>Everything written to disk outside the stages above (resource, collection, merged map, course, structure).</summary>
+    public const string Save = "save";
+}

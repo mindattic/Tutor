@@ -148,6 +148,60 @@ public sealed class TutorSettings
     [SettingRange(0, 1)]
     public double OrphanLinkingMinConfidence { get; set; } = 0.3;
 
+    // ---- Gutenberg import (Tutor.Cli, TUT-T50) -----------------------------------------
+
+    [Setting("Top-books page", Group = "Gutenberg import", Order = 1,
+        Help = "Project Gutenberg's most-downloaded page; `tutor gutenberg-top` reads its \"Top 100 EBooks last 30 days\" list.")]
+    public string GutenbergTopListUrl { get; set; } = "https://www.gutenberg.org/browse/scores/top";
+
+    [Setting("Top-books fallback (Gutendex)", Group = "Gutenberg import", Order = 2,
+        Help = "JSON list of the most popular books, used when the top-books page can't be read. Empty turns the fallback off.")]
+    public string GutenbergPopularFallbackUrl { get; set; } = "https://gutendex.com/books/?sort=popular";
+
+    [Setting("Book text address", Group = "Gutenberg import", Order = 3,
+        Help = "Where a book's UTF-8 plain text is downloaded from; {id} is the ebook number.")]
+    public string GutenbergTextUrlTemplate { get; set; } = "https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt";
+
+    [Setting("Book text mirror", Group = "Gutenberg import", Order = 4,
+        Help = "Tried when the book text address fails; {id} is the ebook number. Empty turns the mirror off.")]
+    public string GutenbergMirrorTextUrlTemplate { get; set; } = "https://gutenberg.pglaf.org/cache/epub/{id}/pg{id}.txt";
+
+    [Setting("Books to take from the top list", Group = "Gutenberg import", Order = 5,
+        Help = "How many books `tutor gutenberg-top` builds when --count isn't given.")]
+    [SettingRange(1, 100)]
+    public int GutenbergTopCount { get; set; } = 10;
+
+    [Setting("Pause between requests (ms)", Group = "Gutenberg import", Order = 6,
+        Help = "Wait before each request to Project Gutenberg or its mirror, so the CLI stays a polite client.")]
+    [SettingRange(0, 60000)]
+    public int GutenbergRequestDelayMs { get; set; } = 2000;
+
+    [Setting("User-Agent", Group = "Gutenberg import", Order = 7,
+        Help = "How the CLI names itself to Project Gutenberg. Keep it generic: no personal details.")]
+    public string GutenbergUserAgent { get; set; } = "Tutor-CLI/1.0 (book course builder)";
+
+    // ---- Cost estimate (Tutor.Cli run reports, TUT-T50) ---------------------------------
+
+    [Setting("Characters per token", Group = "Cost estimate", Order = 1,
+        Help = "Used to estimate tokens from the characters a run sent and received (providers' real counts aren't reported).")]
+    [SettingRange(1, 10)]
+    public double EstimateCharsPerToken { get; set; } = 4.0;
+
+    [Setting("Chat input price (USD per million tokens)", Group = "Cost estimate", Order = 2,
+        Help = "Price of the active chat model's input, for a run report's cost estimate.")]
+    [SettingRange(0, 1000)]
+    public double EstimateChatInputUsdPerMillionTokens { get; set; } = 3.0;
+
+    [Setting("Chat output price (USD per million tokens)", Group = "Cost estimate", Order = 3,
+        Help = "Price of the active chat model's output, for a run report's cost estimate.")]
+    [SettingRange(0, 1000)]
+    public double EstimateChatOutputUsdPerMillionTokens { get; set; } = 15.0;
+
+    [Setting("Embedding price (USD per million tokens)", Group = "Cost estimate", Order = 4,
+        Help = "Price of the embedding model's input, for a run report's cost estimate.")]
+    [SettingRange(0, 1000)]
+    public double EstimateEmbeddingUsdPerMillionTokens { get; set; } = 0.02;
+
     // ---- Logging ------------------------------------------------------------------------
 
     [Setting("Log trace", Group = "Logging", Order = 1, Help = "Capture detailed diagnostic messages.")]

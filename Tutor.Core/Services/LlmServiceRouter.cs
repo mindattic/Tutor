@@ -32,7 +32,22 @@ public sealed class LlmServiceRouter : ILlmService
     {
         var service = GetCurrentService();
         Log.Info($"LlmRouter: Routing to {service.ProviderName}");
-        return await service.GetReplyAsync(messages, instructions, ct);
+
+        // Usage counters for a pipeline run's report (TUT-T50): characters, since Legion returns no token counts.
+        var sent = messages as IReadOnlyCollection<ChatMessage> ?? messages.ToList();
+        long inputChars = (instructions?.Length ?? 0) + sent.Sum(m => (long)(m.Text?.Length ?? 0));
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            var reply = await service.GetReplyAsync(sent, instructions, ct);
+            LlmUsage.RecordChat(inputChars, reply.Text?.Length ?? 0, clock.ElapsedMilliseconds, failed: false);
+            return reply;
+        }
+        catch
+        {
+            LlmUsage.RecordChat(inputChars, 0, clock.ElapsedMilliseconds, failed: true);
+            throw;
+        }
     }
 
     /// <summary>The service the active model setting selects (OpenAI for ChatGPT or anything unknown).</summary>

@@ -16,6 +16,9 @@ public sealed class BookImportPipeline
         this.builder = builder;
     }
 
+    /// <summary>The stages the latest import finished (see <see cref="CourseBuildPipeline.LastStages"/>).</summary>
+    public IReadOnlyList<StageTiming> LastStages => builder.LastStages;
+
     /// <summary>
     /// Builds a one-resource course. Throws <see cref="InvalidOperationException"/>
     /// when a course of the same name already exists and
@@ -39,7 +42,7 @@ public sealed class BookImportPipeline
             AllowDuplicate: req.AllowDuplicate);
 
         var result = await builder.BuildAsync(buildRequest, ct);
-        return new ImportResult(result.Course, result.Resources[0], result.Structure, result.Elapsed);
+        return new ImportResult(result.Course, result.Resources[0], result.Structure, result.Elapsed, result.BakedQuizCount, result.Stages);
     }
 }
 
@@ -66,4 +69,6 @@ public sealed record ImportResult(
     Course Course,
     CourseResource Resource,
     CourseStructure Structure,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed,
+    int BakedQuizCount,
+    IReadOnlyList<StageTiming> Stages);
