@@ -7,7 +7,9 @@
         AdditionalAssemblies="new[] { typeof(Routes).Assembly }">
     <Found Context="routeData">
         @* AuthorizeRouteView so [Authorize] pages are enforced; anonymous hits route to the
-           MindAttic.Authentication login. Pages without [Authorize] render for everyone. *@
+           MindAttic.Authentication login. Default-deny (TUT-T52): the fallback policy in
+           Hosting/TutorAccess.cs already requires a signed-in user for every page and for the hub itself,
+           except the [AllowAnonymous] pages on TutorAccess.AnonymousRoutes. *@
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
             <NotAuthorized>
                 <RedirectToLogin />

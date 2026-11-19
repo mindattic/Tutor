@@ -1,4 +1,8 @@
 ﻿@page "/not-found"
+@using Microsoft.AspNetCore.Authorization
+@* Reachable signed out (TUT-T52 allow-list); static-SSR so a signed-out visitor never opens a hub circuit. *@
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
 @layout MainLayout
 
 <section aria-labelledby="not-found-heading" role="alert">

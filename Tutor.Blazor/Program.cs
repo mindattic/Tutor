@@ -13,6 +13,7 @@ using Tutor.Core.Services.Logging;
 using Tutor.Core.Services.Packaging;
 using Tutor.Core.Services.Queue;
 using Tutor.Blazor.Components;
+using Tutor.Blazor.Hosting;
 using Tutor.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -244,6 +245,8 @@ builder.Services.AddMindAtticAuthentication<TutorAuthDbContext>(builder.Configur
               .ProtectKeysWithAzureKeyVault(new Uri(kvKeyId), cred);
         };
     }
+    // Fallback policy: every endpoint and page needs a signed-in user unless it is on the allow-list.
+    o.ConfigureAdditionalPolicies = TutorAccess.ConfigurePolicies;
 });
 // Idempotent legacy Users.json (unsalted SHA256) -> AuthUser import (upgrade-on-login).
 builder.Services.AddScoped<AuthUserImportService>();
@@ -325,41 +328,8 @@ app.UseStaticFiles();
 app.UseMindAtticAuthentication();
 app.UseAntiforgery();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddAdditionalAssemblies(typeof(Tutor.Shared.Components.Pages.Home).Assembly);
-
-// MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
-app.MapMindAtticAuthEndpoints();
-
-// Liveness and database checks for the App Service deploy (TUT-T47). Anonymous, and they return no data:
-// /healthz answers once startup is through; /healthz/db reads the auth database (503 when it cannot).
-app.MapGet("/healthz", () => Results.Text("ok"));
-app.MapGet("/healthz/db", async (TutorAuthDbContext db, CancellationToken ct) =>
-{
-    try
-    {
-        await db.AuthUsers.AnyAsync(ct);
-        return Results.Text("ok");
-    }
-    catch (Exception)
-    {
-        return Results.Text("database unavailable", statusCode: StatusCodes.Status503ServiceUnavailable);
-    }
-});
-
-// Re-share: download the verbatim .tutor a course was installed from (the blob
-// store keeps it byte-for-byte, so what you share is exactly what you received).
-app.MapGet("/api/library/{courseId}/bundle", async (
-    string courseId,
-    InstalledCourseRegistry registry,
-    CancellationToken ct) =>
-{
-    var row = await registry.GetByCourseIdAsync(courseId, ct);
-    if (row?.BlobPath == null || !File.Exists(row.BlobPath))
-        return Results.NotFound();
-
-    return Results.File(row.BlobPath, "application/zip", $"{row.CourseKey}-v{row.CourseVersion}.tutor");
-}).RequireAuthorization();
+// Default-deny (TUT-T52): components, the Blazor hub, auth endpoints, health checks and the bundle
+// download, all behind the signed-in fallback policy except TutorAccess's explicit anonymous allow-list.
+app.MapTutorEndpoints();
 
 app.Run();

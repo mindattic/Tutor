@@ -15,13 +15,15 @@ namespace Tutor.Core.Services.Auth;
 /// table. The legacy unsalted-SHA256 hash (base64 of SHA256(utf8(password))) is carried verbatim with
 /// <c>LegacyHashScheme="sha256"</c>, so it transparently upgrades to Argon2id+pepper on next login.
 /// Tutor logs in by USERNAME (not email), so UserName = the legacy username. A profile with the Admin
-/// role maps to the canonical <c>Admin</c>; everyone else is <c>Student</c>. The well-known weak dev
-/// seeds (ryan/erin, password "aaa") are force-reset (MustChangePassword) rather than trusted.
-/// Idempotency key = NormalizedUserName.
+/// role maps to the canonical <c>Admin</c>; everyone else is <c>Student</c>. The legacy dev-seed
+/// accounts (<see cref="LegacyDevSeeds"/>) had a shared, publicly known password, so they are imported
+/// INACTIVE and must-change-password: they cannot sign in until an admin deliberately re-enables them on
+/// /users and their owner sets a new password (TUT-T52). Idempotency key = NormalizedUserName.
 /// </summary>
 public sealed class AuthUserImportService(IAppDataPathProvider paths, TutorAuthDbContext authDb)
 {
-    private static readonly HashSet<string> WellKnownWeak = new(StringComparer.OrdinalIgnoreCase) { "ryan", "erin" };
+    /// <summary>Legacy dev-seed usernames whose original password was a shared, known one; never imported active.</summary>
+    internal static readonly IReadOnlySet<string> LegacyDevSeeds = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "ryan", "erin" };
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public async Task<int> ImportAsync(CancellationToken ct = default)
@@ -50,6 +52,7 @@ public sealed class AuthUserImportService(IAppDataPathProvider paths, TutorAuthD
             if (await authDb.AuthUsers.AnyAsync(a => a.NormalizedUserName == normalized || a.Id == id, ct)) continue;
 
             var isAdmin = profile?.IsAdmin ?? false;
+            var isDevSeed = LegacyDevSeeds.Contains(username);
             var created = cred.CreatedAt == default ? DateTime.UtcNow : cred.CreatedAt;
 
             authDb.AuthUsers.Add(new AuthUser
@@ -67,9 +70,9 @@ public sealed class AuthUserImportService(IAppDataPathProvider paths, TutorAuthD
                 SecurityStamp = Guid.NewGuid().ToString("N"),
                 Role = isAdmin ? MaRoles.Admin : "Student",
                 MfaEnabled = false,
-                MustChangePassword = WellKnownWeak.Contains(username),   // decommission weak 'aaa' dev seeds
+                MustChangePassword = isDevSeed,         // dev seeds: a new password before any use
                 MustEnrollMfa = false,                  // MFA off for now (owner directive)
-                IsActive = true,
+                IsActive = !isDevSeed,                  // dev seeds: default-deny until an admin re-enables
                 LastLoginUtc = cred.LastLoginAt,
                 CreatedUtc = created,
             });

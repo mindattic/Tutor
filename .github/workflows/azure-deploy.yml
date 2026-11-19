@@ -117,3 +117,37 @@ jobs:
             }
             if (-not $ok) { throw "$base$path never returned 200." }
           }
+
+      # Default-deny (TUT-T52): signed out, every path that is not on the anonymous allow-list
+      # (Tutor.Blazor/Hosting/TutorAccess.cs) must be refused - a 302 to /login or a 401 - including
+      # the Blazor hub's negotiate, so an anonymous visitor can never open a circuit.
+      - name: Smoke-test that signed-out requests are refused
+        shell: pwsh
+        run: |
+          $base = "https://$env:APP.azurewebsites.net"
+          $probes = @(
+            @{ Method = 'GET';  Path = '/' },
+            @{ Method = 'GET';  Path = '/courses' },
+            @{ Method = 'GET';  Path = '/learn' },
+            @{ Method = 'GET';  Path = '/library' },
+            @{ Method = 'GET';  Path = '/knowledge-graph' },
+            @{ Method = 'GET';  Path = '/knowledge-bases' },
+            @{ Method = 'GET';  Path = '/instructions' },
+            @{ Method = 'GET';  Path = '/maintenance' },
+            @{ Method = 'GET';  Path = '/users' },
+            @{ Method = 'GET';  Path = '/account' },
+            @{ Method = 'GET';  Path = '/account/change-password' },
+            @{ Method = 'GET';  Path = '/api/library/x/bundle' },
+            @{ Method = 'GET';  Path = '/does-not-exist' },
+            @{ Method = 'POST'; Path = '/_blazor/negotiate?negotiateVersion=1' },
+            @{ Method = 'POST'; Path = '/_ma-auth/change-password' }
+          )
+          $failed = @()
+          foreach ($p in $probes) {
+            $r = Invoke-WebRequest -Uri "$base$($p.Path)" -Method $p.Method -MaximumRedirection 0 `
+                   -SkipHttpErrorCheck -UseBasicParsing -TimeoutSec 120 -ErrorAction SilentlyContinue
+            $code = [int]$r.StatusCode
+            Write-Host "$($p.Method) $($p.Path): $code"
+            if ($code -ne 302 -and $code -ne 401) { $failed += "$($p.Method) $($p.Path) = $code" }
+          }
+          if ($failed.Count -gt 0) { throw "Reachable without signing in: $($failed -join '; ')" }

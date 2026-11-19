@@ -55,7 +55,7 @@ public class AuthUserImportTests
     }
 
     [Test]
-    public async Task Ryan_ImportsAsAdmin_WithSha256_AndForceReset()
+    public async Task Ryan_ImportsAsAdmin_WithSha256_ForceReset_AndInactive()
     {
         WriteStore(SeedStore());
         using var db = NewDb();
@@ -66,8 +66,8 @@ public class AuthUserImportTests
         Assert.That(ryan.Role, Is.EqualTo(MaRoles.Admin));
         Assert.That(ryan.LegacyHashScheme, Is.EqualTo("sha256"));
         Assert.That(ryan.PasswordHash, Is.EqualTo("RYANHASH=="));   // carried verbatim
-        Assert.That(ryan.MustChangePassword, Is.True);              // well-known weak seed -> force reset
-        Assert.That(ryan.IsActive, Is.True);
+        Assert.That(ryan.MustChangePassword, Is.True);              // legacy dev seed -> force reset
+        Assert.That(ryan.IsActive, Is.False);                       // legacy dev seed -> cannot sign in (TUT-T52)
     }
 
     [Test]
@@ -80,6 +80,7 @@ public class AuthUserImportTests
         var erin = db.AuthUsers.Single(u => u.NormalizedUserName == "ERIN");
         Assert.That(erin.Role, Is.EqualTo("Student"));
         Assert.That(erin.MustChangePassword, Is.True);
+        Assert.That(erin.IsActive, Is.False);
     }
 
     [Test]
