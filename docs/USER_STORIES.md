@@ -263,3 +263,7 @@ Personas:
 | TUT-T43 | 2026-11-10 | chore | closed | Crash recovery / fleet sync: commit the regenerated docs/USER_STORIES.md left uncommitted after other tickets closed elsewhere | — |
 | TUT-T44 | 2026-11-10 | chore | closed | Adopt the shared docs-site pipeline: turn on GitHub Pages | — |
 | TUT-T45 | 2026-11-17 | docs | closed | Update USER_STORIES.md | — |
+| TUT-T46 | 2026-11-17 | chore | open | Azure SQL migration: connection resiliency and Entra auth so TutorAuth runs against the Azure SQL free-offer database | — |
+| TUT-T47 | 2026-11-17 | chore | open | Deploy Tutor.Blazor to Azure App Service through GitHub Actions (OIDC), on the Azure SQL TutorAuth database, restoring without C:\LocalNuGet | — |
+| TUT-T48 | 2026-11-18 | chore | open | Development defaults point at Azure SQL (sql-mindattic-f65744) instead of LocalDB, so no local SQL Server is needed to develop | — |
+| TUT-T49 | 2026-11-18 | docs | closed | Update USER_STORIES.md | — |
