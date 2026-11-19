@@ -669,14 +669,16 @@ protected override async Task OnInitializedAsync()
     {
         if (!hasStartedLearning || currentLessonIndex <= 0 || lessonTopics.Count == 0)
             return "";
-        return lessonTopics[currentLessonIndex - 1];
+        // Clamped: after the last topic the index sits one past the end (TUT-T60).
+        return lessonTopics[Math.Min(currentLessonIndex, lessonTopics.Count) - 1];
     }
 
     private string GetPreviousTopicTitle()
     {
         if (!hasStartedLearning || currentLessonIndex <= 0 || lessonTopics.Count == 0)
             return "No previous topic";
-        return lessonTopics[currentLessonIndex - 1];
+        // Clamped: after the last topic the index sits one past the end (TUT-T60).
+        return lessonTopics[Math.Min(currentLessonIndex, lessonTopics.Count) - 1];
     }
 
     private string GetNextTopicName()
@@ -988,7 +990,9 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
             await TrackEncounteredConcept(currentTopic);
         }
 
-        currentLessonIndex++;
+        // Stop one past the last topic: pressing Complete again must not run the index further, or the
+        // Previous button's topic lookup reads past the end and the circuit dies (TUT-T60).
+        if (currentLessonIndex < lessonTopics.Count) currentLessonIndex++;
 
         if (currentLessonIndex >= lessonTopics.Count)
         {
