@@ -238,6 +238,12 @@ public sealed class TutorSettings
     [SettingRange(1, 86400)]
     public int BundleDownloadWindowSeconds { get; set; } = 300;
 
+    // ---- Hosting (TUT-T60) ---------------------------------------------------------------
+
+    [Setting("Bundled courses to install at startup", Group = "Hosting", Order = 1,
+        Help = "Names of the .tutor bundles shipped with the web site (file name without extension), separated by |, or * for all. Each missing one is installed at startup; an installed one is skipped. Empty installs nothing.")]
+    public string SeedBundledCourses { get; set; } = "";
+
     // ---- Logging ------------------------------------------------------------------------
 
     [Setting("Log trace", Group = "Logging", Order = 1, Help = "Capture detailed diagnostic messages.")]

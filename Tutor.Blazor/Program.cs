@@ -314,6 +314,9 @@ _ = settings.LoadLogSettingsAsync();
 
 _ = BackgroundQueueService.InitializeAsync(app.Services);
 
+// Installs the bundled courses named in Tutor's SeedBundledCourses setting, idempotently (TUT-T60).
+BundledCourseSeeder.Start(app.Services, app.Environment.ContentRootPath);
+
 // Honor the reverse proxy's forwarded scheme/IP (secure cookie + real client IP) before auth.
 // Must run first: UseHttpsRedirection/UseHsts below read Request.Scheme, and behind a
 // TLS-terminating proxy the unforwarded scheme is http, which redirect-loops every request.

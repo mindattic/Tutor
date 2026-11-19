@@ -13,6 +13,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The repo's bundled courses, published with the site for BundledCourseSeeder (TUT-T60). -->
+        <None Include="..\Courses\*.tutor" LinkBase="BundledCourses" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- PROD Data Protection key-ring persistence + at-rest protection for
              MindAttic.Authentication (DefaultAzureCredential -> Blob + Key Vault).
              Only the production path uses these; dev persists to the file system. -->
