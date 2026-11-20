@@ -47,6 +47,7 @@ public sealed class DeleteCommand
         Console.WriteLine($"  concept maps:             {plan.ConceptMapCount}");
         Console.WriteLine($"  course structure:         {(plan.HasStructure ? "yes" : "no")}");
         Console.WriteLine($"  concept map collection:   {(plan.HasConceptMapCollection ? "yes" : "no")}");
+        Console.WriteLine($"  merged concept map:       {(plan.HasMergedConceptMap ? "yes" : "no")}");
 
         if (dryRun) return 0;
 

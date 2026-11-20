@@ -1,3 +1,4 @@
+using Tutor.Core.Models;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Packaging;
 
@@ -190,6 +191,36 @@ public class CourseLifecycleRegistryTests
         Assert.That(plan, Is.Not.Null);
         Assert.That(plan!.ResourceCount, Is.EqualTo(2));
         Assert.That(await host.Get<CourseService>().GetCourseAsync(courseId), Is.Not.Null);
+    }
+
+    [Test]
+    public async Task DeleteService_RemovesTheMergedConceptMapAndBackups()
+    {
+        // TUT-T63: the merged map saved under the collection id (and both .bak files) went unremoved.
+        var courseId = await ExportSeededAsync();
+        var course = await host.Get<CourseService>().GetCourseAsync(courseId);
+        var collectionId = course!.ConceptMapCollectionId ?? $"collection_{courseId}";
+        var maps = host.Get<ConceptMapStorageService>();
+        var collections = host.Get<ConceptMapCollectionService>();
+
+        // Saving each twice leaves a .bak beside each file.
+        for (var i = 0; i < 2; i++)
+        {
+            await maps.SaveAsync(new ConceptMap { Id = collectionId, Name = "merged", Status = ConceptMapStatus.Ready });
+            var collection = await collections.LoadAsync(collectionId) ?? new ConceptMapCollection { Id = collectionId, Name = "c" };
+            await collections.SaveAsync(collection);
+        }
+        Assert.That(maps.HasFile(collectionId), Is.True);
+        Assert.That(collections.HasFile(collectionId), Is.True);
+
+        var deleteService = host.Get<CourseDeleteService>();
+        var plan = await deleteService.PlanAsync(courseId);
+        Assert.That(plan!.HasMergedConceptMap, Is.True);
+
+        await deleteService.DeleteAsync(courseId);
+
+        Assert.That(maps.HasFile(collectionId), Is.False);
+        Assert.That(collections.HasFile(collectionId), Is.False);
     }
 
     [Test]

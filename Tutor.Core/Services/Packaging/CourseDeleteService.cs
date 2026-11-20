@@ -4,8 +4,9 @@ namespace Tutor.Core.Services.Packaging;
 
 /// <summary>
 /// The hard-remove cascade: deletes a course and every derivative it produced —
-/// resources, vector-store chunks, concept maps, course structure, and the
-/// per-course ConceptMapCollection file. This is the explicit "Remove" behind
+/// resources, vector-store chunks, concept maps, course structure, the
+/// per-course ConceptMapCollection file, and the merged concept map saved under
+/// the collection id (each with its .bak, TUT-T63). This is the explicit "Remove" behind
 /// the soft load/unload lifecycle; unloading a course never calls this.
 /// Shared verbatim by the CLI delete command and the Blazor course library.
 /// </summary>
@@ -15,17 +16,32 @@ public sealed class CourseDeleteService
     private readonly ConceptMapStorageService conceptMapStorage;
     private readonly CourseStructureStorageService structureStorage;
     private readonly VectorStoreService vectorStore;
+    private readonly ConceptMapCollectionService collectionService;
 
     public CourseDeleteService(
         CourseService courseService,
         ConceptMapStorageService conceptMapStorage,
         CourseStructureStorageService structureStorage,
-        VectorStoreService vectorStore)
+        VectorStoreService vectorStore,
+        ConceptMapCollectionService collectionService)
     {
         this.courseService = courseService;
         this.conceptMapStorage = conceptMapStorage;
         this.structureStorage = structureStorage;
         this.vectorStore = vectorStore;
+        this.collectionService = collectionService;
+    }
+
+    /// <summary>
+    /// The collection ids a course can own: its recorded ConceptMapCollectionId and the
+    /// <c>collection_&lt;courseId&gt;</c> name the builders and the bundle importer use.
+    /// </summary>
+    private static List<string> CollectionIdsFor(Tutor.Core.Models.Course course)
+    {
+        var ids = new List<string> { $"collection_{course.Id}" };
+        if (!string.IsNullOrWhiteSpace(course.ConceptMapCollectionId) && !ids.Contains(course.ConceptMapCollectionId))
+            ids.Add(course.ConceptMapCollectionId);
+        return ids;
     }
 
     /// <summary>
@@ -45,6 +61,7 @@ public sealed class CourseDeleteService
             .ToList();
 
         var structure = await structureStorage.LoadByCourseIdAsync(course.Id, ct);
+        var collectionIds = CollectionIdsFor(course);
 
         return new CourseDeletePlan(
             CourseId: course.Id,
@@ -52,7 +69,8 @@ public sealed class CourseDeleteService
             ResourceCount: resources.Count,
             ConceptMapCount: conceptMapIds.Count,
             HasStructure: structure != null,
-            HasConceptMapCollection: File.Exists(GetCollectionFilePath(course.Id)));
+            HasConceptMapCollection: collectionIds.Any(collectionService.HasFile),
+            HasMergedConceptMap: collectionIds.Any(conceptMapStorage.HasFile));
     }
 
     /// <summary>
@@ -61,8 +79,9 @@ public sealed class CourseDeleteService
     /// </summary>
     public async Task<CourseDeletePlan?> DeleteAsync(string courseId, CancellationToken ct = default)
     {
+        var course = await courseService.GetCourseAsync(courseId);
         var plan = await PlanAsync(courseId, ct);
-        if (plan == null) return null;
+        if (plan == null || course == null) return null;
 
         var resources = await courseService.GetCourseResourcesAsync(plan.CourseId);
         var conceptMapIds = resources
@@ -90,11 +109,15 @@ public sealed class CourseDeleteService
             await structureStorage.DeleteByCourseIdAsync(plan.CourseId, ct);
         }
 
-        var collectionFile = GetCollectionFilePath(plan.CourseId);
-        if (File.Exists(collectionFile))
+        // The collection file and the merged concept map saved under the collection id
+        // (CourseBuildPipeline / CourseStructureBuildTaskHandler), each with its .bak, through
+        // the services that own them (TUT-T63).
+        foreach (var collectionId in CollectionIdsFor(course))
         {
-            try { File.Delete(collectionFile); }
-            catch (Exception ex) { Log.Warn($"CourseDeleteService: could not delete {collectionFile} - {ex.Message}"); }
+            try { await collectionService.DeleteAsync(collectionId, ct); }
+            catch (Exception ex) { Log.Warn($"CourseDeleteService: could not delete collection {collectionId} - {ex.Message}"); }
+            try { await conceptMapStorage.DeleteAsync(collectionId, ct); }
+            catch (Exception ex) { Log.Warn($"CourseDeleteService: could not delete merged concept map {collectionId} - {ex.Message}"); }
         }
 
         await courseService.DeleteCourseAsync(plan.CourseId);
@@ -103,9 +126,6 @@ public sealed class CourseDeleteService
                  $"with {plan.ResourceCount} resources and {plan.ConceptMapCount} concept maps");
         return plan;
     }
-
-    private static string GetCollectionFilePath(string courseId) =>
-        Path.Combine(DataStorageSettings.GetKnowledgeBasesDirectory(), "collections", $"collection_{courseId}.json");
 }
 
 /// <summary>What a course delete removes (or would remove, for a dry run).</summary>
@@ -115,4 +135,5 @@ public sealed record CourseDeletePlan(
     int ResourceCount,
     int ConceptMapCount,
     bool HasStructure,
-    bool HasConceptMapCollection);
+    bool HasConceptMapCollection,
+    bool HasMergedConceptMap = false);

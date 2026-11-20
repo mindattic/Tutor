@@ -254,6 +254,15 @@ public sealed class ConceptMapStorageService
     }
 
     /// <summary>
+    /// True when the concept map's file is on disk (or only its .bak), without loading it.
+    /// </summary>
+    public bool HasFile(string conceptMapId)
+    {
+        var filePath = GetFilePath(conceptMapId);
+        return File.Exists(filePath) || File.Exists(filePath + ".bak");
+    }
+
+    /// <summary>
     /// Checks if a concept map exists.
     /// </summary>
     public async Task<bool> ExistsAsync(string conceptMapId, CancellationToken ct = default)

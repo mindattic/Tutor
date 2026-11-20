@@ -326,13 +326,25 @@ public sealed class ConceptMapCollectionService
     public async Task DeleteAsync(string collectionId, CancellationToken ct = default)
     {
         var filePath = GetFilePath(collectionId);
+        cache.Remove(collectionId);
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
-            cache.Remove(collectionId);
             Log.Info($"ConceptMapCollection: Deleted collection {collectionId}");
         }
+
+        // SaveAsync keeps the previous version as .bak; it goes too (TUT-T63).
+        var backupPath = filePath + ".bak";
+        if (File.Exists(backupPath))
+            File.Delete(backupPath);
         await Task.CompletedTask;
+    }
+
+    /// <summary>True when the collection's file (or only its .bak) is on disk, without loading it.</summary>
+    public bool HasFile(string collectionId)
+    {
+        var filePath = GetFilePath(collectionId);
+        return File.Exists(filePath) || File.Exists(filePath + ".bak");
     }
 
     private string GetFilePath(string collectionId)
