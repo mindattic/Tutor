@@ -202,6 +202,23 @@ public sealed class TutorSettings
     [SettingRange(0, 1000)]
     public double EstimateEmbeddingUsdPerMillionTokens { get; set; } = 0.02;
 
+    // ---- Embeddings (TUT-T61) -------------------------------------------------------------
+
+    [Setting("Tokens per embedding request", Group = "Embeddings", Order = 1,
+        Help = "Most estimated tokens sent in one embedding request. OpenAI refuses requests over 300,000 tokens, so keep a margin under that.")]
+    [SettingRange(1000, 300000)]
+    public int EmbeddingMaxTokensPerRequest { get; set; } = 200000;
+
+    [Setting("Characters per token (estimate)", Group = "Embeddings", Order = 2,
+        Help = "How many characters count as one token when sizing embedding requests. Lower is safer: dense text such as dictionaries tokenizes at well under 4.")]
+    [SettingRange(0.5, 10)]
+    public double EmbeddingCharsPerToken { get; set; } = 2.5;
+
+    [Setting("Texts per embedding request", Group = "Embeddings", Order = 3,
+        Help = "Most chunks sent in one embedding request (OpenAI allows up to 2,048).")]
+    [SettingRange(1, 2048)]
+    public int EmbeddingMaxInputsPerRequest { get; set; } = 1024;
+
     // ---- Usage limits (TUT-T59) ----------------------------------------------------------
 
     [Setting("AI requests per minute, per user", Group = "Usage limits", Order = 1,

@@ -7,7 +7,8 @@ namespace Tutor.Core.Services;
 /// Generates text embeddings via MindAttic.Legion. Wire transport (endpoint,
 /// auth, response parsing, retries with backoff, circuit breaker) is owned by
 /// Legion. This class keeps the Tutor-specific concerns: text validation,
-/// length capping, batching to respect token limits, and inter-batch pacing.
+/// length capping, batching under the Vault token budget (splitting a batch OpenAI still
+/// refuses as too large), and inter-batch pacing.
 /// </summary>
 public sealed class EmbeddingService
 {
@@ -17,24 +18,37 @@ public sealed class EmbeddingService
     private const string EmbeddingModel = "text-embedding-3-small";
     private const int EmbeddingDimensions = 1536;
 
-    // Maximum characters per text input (rough estimate: 8192 tokens * 4 chars/token,
-    // conservative for non-English text and tokenization variance)
-    private const int MaxTextLength = 30000;
-
-    // Maximum tokens per batch request (OpenAI limit is 300,000; safety margin to 250,000)
-    private const int MaxTokensPerBatch = 250000;
-
-    // Rough estimate: 1 token ≈ 4 characters for English text
-    private const int CharsPerToken = 4;
+    // text-embedding-3-small's per-input limit (a property of the model, not a tunable): each text is
+    // capped at this many estimated tokens, sized with the Vault chars-per-token estimate.
+    private const int ModelMaxTokensPerInput = 8191;
 
     private readonly LlmUsageLimiter? limiter;
+    private readonly TutorSettingsSource? settings;
+
+    /// <summary>The request-sizing numbers, from the Vault settings (TUT-T61).</summary>
+    public readonly record struct BatchLimits(int MaxTokensPerRequest, double CharsPerToken, int MaxInputsPerRequest)
+    {
+        /// <summary>Limits from <paramref name="s"/>, clamped to sane values.</summary>
+        public static BatchLimits From(TutorSettings s) => new(
+            Math.Max(1, s.EmbeddingMaxTokensPerRequest),
+            s.EmbeddingCharsPerToken > 0 ? s.EmbeddingCharsPerToken : 1,
+            Math.Max(1, s.EmbeddingMaxInputsPerRequest));
+
+        /// <summary>Estimated tokens in <paramref name="text"/> (rounded up).</summary>
+        public long EstimateTokens(string text) => (long)Math.Ceiling(text.Length / CharsPerToken);
+
+        /// <summary>Longest text sent as one input.</summary>
+        public int MaxTextLength => (int)Math.Clamp(Math.Floor(ModelMaxTokensPerInput * CharsPerToken), 1, int.MaxValue);
+    }
 
     /// <param name="limiter">Per-user ceiling (TUT-T59); the web host registers one, Tutor.Cli runs without.</param>
-    public EmbeddingService(LegionClient legion, TutorKeys keys, LlmUsageLimiter? limiter = null)
+    /// <param name="settings">Vault settings for request sizing (TUT-T61); the defaults are used when absent.</param>
+    public EmbeddingService(LegionClient legion, TutorKeys keys, LlmUsageLimiter? limiter = null, TutorSettingsSource? settings = null)
     {
         this.legion = legion;
         this.keys = keys;
         this.limiter = limiter;
+        this.settings = settings;
         Log.Debug("EmbeddingService initialized (delegating wire transport to MindAttic.Legion)");
     }
 
@@ -51,10 +65,13 @@ public sealed class EmbeddingService
         // The one embedding choke point: one request counted per call against the signed-in caller's limits.
         limiter?.Acquire();
 
+        var limits = BatchLimits.From(settings?.Current ?? new TutorSettings());
+        var maxTextLength = limits.MaxTextLength;
+
         // Filter empties (OpenAI rejects with HTTP 400) and cap individual lengths.
         var validTexts = texts
             .Where(t => !string.IsNullOrWhiteSpace(t))
-            .Select(t => t.Length > MaxTextLength ? t[..MaxTextLength] : t)
+            .Select(t => t.Length > maxTextLength ? t[..maxTextLength] : t)
             .ToList();
 
         if (validTexts.Count == 0)
@@ -64,18 +81,18 @@ public sealed class EmbeddingService
         }
 
         var filteredCount  = texts.Count(t => string.IsNullOrWhiteSpace(t));
-        var truncatedCount = texts.Count(t => !string.IsNullOrWhiteSpace(t) && t.Length > MaxTextLength);
+        var truncatedCount = texts.Count(t => !string.IsNullOrWhiteSpace(t) && t.Length > maxTextLength);
         if (filteredCount > 0)
             Log.Warn($"EmbeddingService: Filtered out {filteredCount} empty/whitespace texts");
         if (truncatedCount > 0)
-            Log.Warn($"EmbeddingService: Truncated {truncatedCount} texts exceeding {MaxTextLength} chars");
+            Log.Warn($"EmbeddingService: Truncated {truncatedCount} texts exceeding {maxTextLength} chars");
 
-        var batches = CreateBatches(validTexts);
+        var batches = CreateBatches(validTexts, limits);
         Log.Debug($"EmbeddingService: Processing {validTexts.Count} text(s) in {batches.Count} batch(es)");
 
         var allEmbeddings = new List<float[]>();
         if (batches.Count > 1)
-            Log.Info($"EmbeddingService: Large document — processing {validTexts.Count} texts in {batches.Count} batches");
+            Log.Info($"EmbeddingService: Large document - processing {validTexts.Count} texts in {batches.Count} batches");
 
         for (int batchIndex = 0; batchIndex < batches.Count; batchIndex++)
         {
@@ -87,31 +104,7 @@ public sealed class EmbeddingService
             else
                 Log.Debug($"EmbeddingService: Processing {batch.Count} texts");
 
-            IReadOnlyList<float[]> batchEmbeddings;
-            var batchClock = System.Diagnostics.Stopwatch.StartNew();
-            try
-            {
-                // Keys from Vault's shared named lists (LAMP), failing over when one is refused.
-                batchEmbeddings = await keys.ExecuteAsync("openai", (apiKey, callCt) => legion.EmbedAsync(
-                    providerId: "openai",
-                    apiKey: apiKey,
-                    model: EmbeddingModel,
-                    inputs: batch,
-                    dimensions: EmbeddingDimensions,
-                    ct: callCt), ct);
-            }
-            catch (CircuitBreakerOpenException ex)
-            {
-                Log.Warn($"[Tutor] EmbeddingService: Legion circuit breaker open for openai - {ex.Message}");
-                throw;
-            }
-            catch (HttpRequestException ex)
-            {
-                Log.Error($"[Tutor] EmbeddingService: Legion embed call failed (status={ex.StatusCode}) - {ex.Message}", ex);
-                throw;
-            }
-            LlmUsage.RecordEmbedding(batch.Count, batch.Sum(t => (long)t.Length), batchClock.ElapsedMilliseconds);
-            allEmbeddings.AddRange(batchEmbeddings);
+            allEmbeddings.AddRange(await EmbedBatchAsync(batch, ct));
 
             // Inter-batch pacing for very large documents.
             if (batchIndex < batches.Count - 1)
@@ -125,15 +118,79 @@ public sealed class EmbeddingService
         return allEmbeddings;
     }
 
-    private static List<List<string>> CreateBatches(List<string> texts)
+    /// <summary>
+    /// Embeds one batch. When OpenAI still refuses it as too large (the token estimate ran low for
+    /// this text), the batch is split in half and each half is sent on its own (TUT-T61).
+    /// </summary>
+    private async Task<List<float[]>> EmbedBatchAsync(List<string> batch, CancellationToken ct)
+    {
+        IReadOnlyList<float[]> batchEmbeddings;
+        var batchClock = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            // Keys from Vault's shared named lists (LAMP), failing over when one is refused.
+            batchEmbeddings = await keys.ExecuteAsync("openai", (apiKey, callCt) => legion.EmbedAsync(
+                providerId: "openai",
+                apiKey: apiKey,
+                model: EmbeddingModel,
+                inputs: batch,
+                dimensions: EmbeddingDimensions,
+                ct: callCt), ct);
+        }
+        catch (CircuitBreakerOpenException ex)
+        {
+            Log.Warn($"[Tutor] EmbeddingService: Legion circuit breaker open for openai - {ex.Message}");
+            throw;
+        }
+        catch (Exception ex) when (batch.Count > 1 && IsRequestTooLarge(ex))
+        {
+            var half = batch.Count / 2;
+            Log.Warn($"[Tutor] EmbeddingService: a request of {batch.Count} texts was refused as too large; splitting it into {half} + {batch.Count - half} - {ex.Message}");
+            var first = await EmbedBatchAsync(batch.GetRange(0, half), ct);
+            var second = await EmbedBatchAsync(batch.GetRange(half, batch.Count - half), ct);
+            first.AddRange(second);
+            return first;
+        }
+        catch (HttpRequestException ex)
+        {
+            Log.Error($"[Tutor] EmbeddingService: Legion embed call failed (status={ex.StatusCode}) - {ex.Message}", ex);
+            throw;
+        }
+        LlmUsage.RecordEmbedding(batch.Count, batch.Sum(t => (long)t.Length), batchClock.ElapsedMilliseconds);
+        return [.. batchEmbeddings];
+    }
+
+    /// <summary>
+    /// True for OpenAI refusing a request as over its size limit (HTTP 413, or a 400 such as "maximum
+    /// request size is 300000 tokens per request"), anywhere in the exception chain.
+    /// </summary>
+    public static bool IsRequestTooLarge(Exception ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+        {
+            if (e is not HttpRequestException hre) continue;
+            if (hre.StatusCode == System.Net.HttpStatusCode.RequestEntityTooLarge) return true;
+            if (hre.StatusCode == System.Net.HttpStatusCode.BadRequest
+                && (hre.Message.Contains("maximum request size", StringComparison.OrdinalIgnoreCase)
+                    || hre.Message.Contains("tokens per request", StringComparison.OrdinalIgnoreCase)))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Splits <paramref name="texts"/> into request batches, each within the estimated token budget and
+    /// the input-count cap of <paramref name="limits"/>. A text is never split across batches.
+    /// </summary>
+    public static List<List<string>> CreateBatches(IReadOnlyList<string> texts, BatchLimits limits)
     {
         var batches = new List<List<string>>();
         var current = new List<string>();
-        var tokens = 0;
+        long tokens = 0;
         foreach (var text in texts)
         {
-            var estimated = text.Length / CharsPerToken;
-            if (current.Count > 0 && tokens + estimated > MaxTokensPerBatch)
+            var estimated = limits.EstimateTokens(text);
+            if (current.Count > 0 && (tokens + estimated > limits.MaxTokensPerRequest || current.Count >= limits.MaxInputsPerRequest))
             {
                 batches.Add(current);
                 current = new List<string>();
