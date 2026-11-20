@@ -249,4 +249,39 @@ public class ChatMessageState
     public string Role { get; set; } = "";
     public string Text { get; set; } = "";
     public string FullJson { get; set; } = "";
+
+    /// <summary>
+    /// What the transcript shows for this message when it differs from <see cref="Text"/>
+    /// (a lesson's "Teach me about" turn sends a long internal prompt but shows one line).
+    /// Null for states saved before it was persisted (TUT-T62).
+    /// </summary>
+    public string? DisplayText { get; set; }
+
+    private static readonly System.Text.RegularExpressions.Regex TeachPrompt =
+        new(@"^Teach me about ""(?<topic>[^""\r\n]+)""", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static readonly System.Text.RegularExpressions.Regex TermPrompt =
+        new(@"^What is ""(?<term>[^""\r\n]+)""\?", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Recovers the short display line for a restored user message that was saved without one,
+    /// so the internal teaching prompt (spiral-learning context, suggestion instructions) is
+    /// never shown as what the student typed. Returns null when the text is already what the
+    /// student wrote.
+    /// </summary>
+    public static string? DeriveDisplayText(string role, string text)
+    {
+        if (role != "user" || string.IsNullOrEmpty(text) || !text.Contains('\n'))
+            return null;
+
+        var teach = TeachPrompt.Match(text);
+        if (teach.Success)
+            return $"Teach me about \"{teach.Groups["topic"].Value}\"";
+
+        var term = TermPrompt.Match(text);
+        if (term.Success)
+            return $"{term.Groups["term"].Value}?";
+
+        return null;
+    }
 }

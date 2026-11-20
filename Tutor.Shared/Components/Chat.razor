@@ -728,7 +728,10 @@ protected override async Task OnInitializedAsync()
         chatTabs[0].Messages.Clear();
         foreach (var msg in state.Messages)
         {
-            chatTabs[0].Messages.Add(new ChatMessage(msg.Role, msg.Text, msg.FullJson));
+            // DisplayText keeps the internal teaching prompt out of the transcript; states saved
+            // before it was persisted get one derived from the prompt itself (TUT-T62).
+            chatTabs[0].Messages.Add(new ChatMessage(msg.Role, msg.Text, msg.FullJson,
+                msg.DisplayText ?? ChatMessageState.DeriveDisplayText(msg.Role, msg.Text)));
         }
 
         // Notify parent of restored encountered concepts
@@ -756,7 +759,8 @@ protected override async Task OnInitializedAsync()
             {
                 Role = m.Role,
                 Text = m.Text,
-                FullJson = m.FullJson
+                FullJson = m.FullJson,
+                DisplayText = m.DisplayText
             }).ToList()
         };
 
@@ -1077,6 +1081,15 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
     /// When the unit carries baked content (a built course), that content is supplied as
     /// authoritative source material to ground the live explanation.
     /// </summary>
+    /// <summary>
+    /// How every teaching prompt asks for follow-up suggestions. It deliberately shows no
+    /// literal sample question: the old "__First specific question about X?__" template was
+    /// echoed back verbatim and rendered as clickable placeholders (TUT-T62).
+    /// </summary>
+    private const string SuggestionFormat =
+        "Put each question on its own line, wrapped in double underscores (two underscores before and two after the question text). " +
+        "Each must be a real, complete question about this material - never a placeholder such as \"First question\".";
+
     private string BuildTeachPrompt(TeachableUnit unit, int spiralLevel, int? lastQuizScore)
     {
         var topic = unit.Title;
@@ -1094,10 +1107,7 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
             return $@"Teach me about ""{topic}"" from the curriculum.
 Explain the key concepts clearly, as if you're a tutor.{grounding}
 
-At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
-__First specific question?__
-__Second specific question?__
-__Third specific question?__
+At the end, suggest THREE natural follow-up questions the student might be thinking. {SuggestionFormat}
 
 The questions should be specific to what you just taught, not generic.";
         }
@@ -1131,10 +1141,7 @@ IMPORTANT CONTEXT - SPIRAL LEARNING (depth level {spiralLevel}):
 
 {depthInstruction}{grounding}
 
-Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. Format each as a clickable link on its own line:
-__First specific question about {topic}?__
-__Second specific question about {topic}?__
-__Third specific question about {topic}?__";
+Explain clearly, then at the end suggest THREE natural follow-up questions the student might have. {SuggestionFormat}";
     }
 
     /// <summary>
@@ -1489,10 +1496,7 @@ __Third specific question about {topic}?__";
 
 {(string.IsNullOrEmpty(concept.Summary) ? "" : $"Context: {concept.Summary}")}
 
-Explain clearly, then at the end suggest THREE natural follow-up questions I might have. Format each as a clickable link on its own line:
-__First specific question about {concept.Title}?__
-__Second specific question about {concept.Title}?__
-__Third specific question about {concept.Title}?__";
+Explain clearly, then at the end suggest THREE natural follow-up questions I might have. {SuggestionFormat}";
 
         prompt = teachPrompt;
         pendingDisplayText = $"Teach me about \"{concept.Title}\"";
@@ -2222,6 +2226,8 @@ Keep track of the running score.";
         text = Regex.Replace(text, @"__(.+?)__", match =>
         {
             var question = match.Groups[1].Value;
+            if (SuggestedQuestions.IsPlaceholder(question))
+                return "";
             var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
             var escapedForJs = EscapeJsString(question);
             var escapedForAttr = System.Net.WebUtility.HtmlEncode(question);
@@ -2265,6 +2271,8 @@ Keep track of the running score.";
         text = Regex.Replace(text, @"\[([^\]\(]+\?)\]", match =>
         {
             var question = match.Groups[1].Value;
+            if (SuggestedQuestions.IsPlaceholder(question))
+                return "";
             var encodedQuestion = System.Net.WebUtility.HtmlEncode(question);
             var escapedForJs = EscapeJsString(question);
             var escapedForAttr = System.Net.WebUtility.HtmlEncode(question);
@@ -2320,10 +2328,7 @@ Keep track of the running score.";
 The student has already encountered these concepts: {encounteredList}
 Connect your explanation to these concepts where relevant.
 
-At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
-__First specific question?__
-__Second specific question?__
-__Third specific question?__
+At the end, suggest THREE natural follow-up questions the student might be thinking. {SuggestionFormat}
 
 The questions should be specific and relevant to what you just explained, not generic.";
         }
@@ -2331,10 +2336,7 @@ The questions should be specific and relevant to what you just explained, not ge
         {
             termPrompt = $@"What is ""{term}""? Please explain it in simple terms.
 
-At the end, suggest THREE natural follow-up questions the student might be thinking. Format each as a clickable link on its own line:
-__First specific question?__
-__Second specific question?__
-__Third specific question?__
+At the end, suggest THREE natural follow-up questions the student might be thinking. {SuggestionFormat}
 
 The questions should be specific and relevant to what you just explained, not generic.";
         }

@@ -79,23 +79,67 @@ public class LocalQuizController : IQuizController
         // Pre-generated questions live on the section. The import pipeline bakes
         // them in for every section with HasQuiz=true, and they ride along in the
         // .tutorcourse bundle, so re-imports never have to spend LLM tokens.
-        var preGenerated = await TryLoadPreGeneratedAsync(course, sectionIds, questionCount);
+        var preGenerated = await TryLoadPreGeneratedAsync(course, sectionIds, conceptIds, questionCount);
         if (preGenerated.Count > 0)
             return preGenerated;
 
-        return await quizGenerator.GenerateAsync(
-            course.ConceptMapCollectionId, conceptIds, sectionIds, questionCount);
+        // Live fallback. ConceptMapCollectionId names a ConceptMapCollection (a list of
+        // ConceptMap ids), not a ConceptMap, so resolve the concepts across the collection
+        // rather than loading the id as a single map (which never exists — TUT-T62).
+        var concepts = await LoadCourseConceptsAsync(course);
+        return await quizGenerator.GenerateFromConceptsAsync(
+            concepts, conceptIds, sectionIds, questionCount);
+    }
+
+    /// <summary>
+    /// Every concept the course owns: its ConceptMapCollection's maps first, then (for courses
+    /// whose collection is missing) a map stored under the collection id itself (legacy) and
+    /// the per-resource maps.
+    /// </summary>
+    private async Task<List<Concept>> LoadCourseConceptsAsync(Course course)
+    {
+        var loaded = await courseService.GetCourseConceptMapCollectionAsync(course.Id);
+        var concepts = loaded?.GetAllConcepts().ToList() ?? new List<Concept>();
+        if (concepts.Count > 0)
+            return concepts;
+
+        if (!string.IsNullOrEmpty(course.ConceptMapCollectionId))
+        {
+            var legacy = await conceptMapStorage.LoadAsync(course.ConceptMapCollectionId);
+            if (legacy != null) concepts.AddRange(legacy.Concepts);
+        }
+
+        foreach (var cmId in await courseService.GetResourceConceptMapIdsAsync(course.Id))
+        {
+            var cm = await conceptMapStorage.LoadAsync(cmId);
+            if (cm != null) concepts.AddRange(cm.Concepts);
+        }
+        return concepts;
     }
 
     private async Task<List<QuizQuestion>> TryLoadPreGeneratedAsync(
-        Course course, List<string> sectionIds, int questionCount)
+        Course course, List<string> sectionIds, List<string> conceptIds, int questionCount)
     {
-        if (sectionIds.Count == 0 || string.IsNullOrEmpty(course.CourseStructureId))
+        if (string.IsNullOrEmpty(course.CourseStructureId))
+            return new();
+        if (sectionIds.Count == 0 && conceptIds.Count == 0)
             return new();
 
         var structure = await structureStorage.LoadByCourseIdAsync(course.Id);
         if (structure == null) return new();
 
+        return sectionIds.Count > 0
+            ? PickPreGeneratedForSections(structure, sectionIds, questionCount)
+            : PickPreGeneratedForConcepts(structure, conceptIds, questionCount);
+    }
+
+    /// <summary>
+    /// A section quiz: the sections' own baked questions, in order, trimmed to the count.
+    /// Fewer is fine — the quiz UI handles short sets — but never more than asked.
+    /// </summary>
+    public static List<QuizQuestion> PickPreGeneratedForSections(
+        CourseStructure structure, List<string> sectionIds, int questionCount)
+    {
         var hits = new List<QuizQuestion>();
         foreach (var sid in sectionIds)
         {
@@ -103,10 +147,28 @@ public class LocalQuizController : IQuizController
             if (section == null || section.PreGeneratedQuestions.Count == 0) continue;
             hits.AddRange(section.PreGeneratedQuestions);
         }
-
-        // Deterministic order, then trim to the requested count. Fewer is fine —
-        // the quiz UI handles short sets — but never return more than asked.
         return hits.Take(questionCount).ToList();
+    }
+
+    /// <summary>
+    /// A learned-concepts quiz (the Quiz tab's own Start): baked questions from every section
+    /// that covers one of the concepts, shuffled and trimmed to the count. Costs no LLM tokens.
+    /// </summary>
+    public static List<QuizQuestion> PickPreGeneratedForConcepts(
+        CourseStructure structure, List<string> conceptIds, int questionCount)
+    {
+        if (conceptIds.Count == 0 || questionCount <= 0) return new();
+        var wanted = conceptIds.ToHashSet();
+        return structure.GetAllSectionsFlattened()
+            .Where(s => s.PreGeneratedQuestions.Count > 0
+                && (s.ConceptIds.Any(wanted.Contains)
+                    || s.PreGeneratedQuestions.Any(q => q.RelatedConceptIds.Any(wanted.Contains))))
+            .SelectMany(s => s.PreGeneratedQuestions)
+            .GroupBy(q => q.Id)
+            .Select(g => g.First())
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(questionCount)
+            .ToList();
     }
 
     public async Task<(bool isCorrect, string? feedback)> EvaluateAnswerAsync(

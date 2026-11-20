@@ -48,13 +48,47 @@ public sealed class QuizGenerationService
         if (string.IsNullOrEmpty(conceptMapCollectionId) || conceptIds.Count == 0 || questionCount <= 0)
             return new();
 
+        // Despite the parameter name, this overload takes a single ConceptMap id (the build
+        // pipelines pass the merged map). A course's ConceptMapCollectionId names a collection,
+        // not a map — callers holding one resolve its concepts and use GenerateFromConceptsAsync.
         var conceptMap = await conceptMapStorage.LoadAsync(conceptMapCollectionId, ct);
         if (conceptMap == null) return new();
 
-        var relevantConcepts = conceptMap.Concepts
-            .Where(c => conceptIds.Contains(c.Id))
+        return await GenerateFromConceptsAsync(conceptMap.Concepts, conceptIds, sectionIds, questionCount, ct);
+    }
+
+    /// <summary>
+    /// Most concepts sent to the LLM in one quiz prompt. A whole-course quiz can match hundreds
+    /// of concepts; a random sample keeps the prompt bounded and varies the quiz between runs.
+    /// </summary>
+    public const int MaxConceptsPerPrompt = 12;
+
+    /// <summary>
+    /// Generates questions from already-loaded concepts (e.g. every concept across a course's
+    /// ConceptMapCollection). Only concepts whose id is in <paramref name="conceptIds"/> are used.
+    /// Same empty-on-failure contract as <see cref="GenerateAsync"/>.
+    /// </summary>
+    public async Task<List<QuizQuestion>> GenerateFromConceptsAsync(
+        IEnumerable<Concept> concepts,
+        List<string> conceptIds,
+        List<string> sectionIds,
+        int questionCount,
+        CancellationToken ct = default)
+    {
+        if (conceptIds.Count == 0 || questionCount <= 0)
+            return new();
+
+        var wanted = conceptIds.ToHashSet();
+        var relevantConcepts = concepts
+            .Where(c => wanted.Contains(c.Id))
+            .GroupBy(c => c.Id)
+            .Select(g => g.First())
             .ToList();
         if (relevantConcepts.Count == 0) return new();
+
+        if (relevantConcepts.Count > MaxConceptsPerPrompt)
+            relevantConcepts = relevantConcepts.OrderBy(_ => Random.Shared.Next()).Take(MaxConceptsPerPrompt).ToList();
+        var usedConceptIds = relevantConcepts.Select(c => c.Id).ToList();
 
         var conceptContext = string.Join("\n\n", relevantConcepts.Select(c =>
             $"**{c.Title}**\n{c.Summary}\n{c.Content}"));
@@ -111,7 +145,7 @@ Generate exactly {questionCount} questions:";
                 Difficulty = q.Difficulty,
                 Points = q.Difficulty,
                 RelatedSectionIds = sectionIds,
-                RelatedConceptIds = conceptIds
+                RelatedConceptIds = usedConceptIds
             }).ToList();
         }
         catch

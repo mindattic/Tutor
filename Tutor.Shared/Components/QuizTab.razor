@@ -12,6 +12,11 @@
         @* Per-user AI limit reached (TUT-T59). *@
         <p class="status-message error" role="alert">@_limitMessage</p>
     }
+    @if (_startError is not null)
+    {
+        @* A start that produced no questions says so instead of silently doing nothing (TUT-T62). *@
+        <p class="status-message error" role="alert">@_startError</p>
+    }
     @if (string.IsNullOrEmpty(CourseId))
     {
         <div class="quiz-empty" role="status">
@@ -179,7 +184,7 @@
                 <ul class="quiz-info" aria-label="Quiz overview" style="list-style:none;padding:0;">
                     <li class="info-item">
                         <span class="bi bi-journal-check" aria-hidden="true"></span>
-                        <span>@(_isSectionQuiz ? $"{_conceptIds.Count} concepts in section" : $"{LearnedConcepts.Count} concepts learned")</span>
+                        <span>@(_isSectionQuiz ? $"{_conceptIds.Count} concepts in section" : _matchedLearned ? $"{_conceptIds.Count} concepts learned" : $"{_conceptIds.Count} concepts in this course")</span>
                     </li>
                     <li class="info-item">
                         <span class="bi bi-list-ol" aria-hidden="true"></span>
@@ -271,6 +276,10 @@ private bool _lastAnswerCorrect;
 private string _userAnswer = "";
 private string? _feedback;
     private string? _limitMessage;
+private string? _startError;
+// True when _conceptIds came from the learner's learned concepts; false when none of those
+// names matched a concept and the quiz covers the whole course instead.
+private bool _matchedLearned;
 private QuizQuestion? _currentQuestion;
 private QuizResult? _quizResult;
 private List<QuizResult> _quizHistory = [];
@@ -302,6 +311,7 @@ private async Task LoadDataAsync()
         if (SectionConceptIds != null && SectionConceptIds.Count > 0)
         {
             _conceptIds = SectionConceptIds.ToList();
+            _matchedLearned = false;
         }
         else if (LearnedConcepts.Count > 0)
         {
@@ -311,13 +321,19 @@ private async Task LoadDataAsync()
             {
                 // Try exact match first, then fuzzy (contains) match
                 _conceptIds = allConcepts
-                    .Where(c => LearnedConcepts.Any(lc =>
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Title) && LearnedConcepts.Any(lc =>
                         c.Title.Equals(lc, StringComparison.OrdinalIgnoreCase) ||
                         c.Title.Contains(lc, StringComparison.OrdinalIgnoreCase) ||
                         lc.Contains(c.Title, StringComparison.OrdinalIgnoreCase)))
                     .Select(c => c.Id)
                     .Distinct()
                     .ToList();
+                _matchedLearned = _conceptIds.Count > 0;
+
+                // Learned names are lesson/topic titles (e.g. "All Concepts") that often match no
+                // concept title; quiz the whole course rather than offering a Start that cannot start.
+                if (_conceptIds.Count == 0)
+                    _conceptIds = allConcepts.Select(c => c.Id).Distinct().ToList();
             }
         }
 
@@ -342,13 +358,12 @@ private async Task LoadDataAsync()
         var course = await CourseService.GetCourseAsync(CourseId!);
         if (course == null) return [];
 
-        // Try the aggregated collection first
-        if (!string.IsNullOrEmpty(course.ConceptMapCollectionId))
-        {
-            var conceptMap = await ConceptMapStorageService.LoadAsync(course.ConceptMapCollectionId);
-            if (conceptMap != null && conceptMap.Concepts.Count > 0)
-                return conceptMap.Concepts;
-        }
+        // Try the aggregated collection first. ConceptMapCollectionId names a collection of
+        // ConceptMaps, not a ConceptMap, so load it as a collection (TUT-T62).
+        var collection = await CourseService.GetCourseConceptMapCollectionAsync(CourseId!);
+        var collected = collection?.GetAllConcepts().ToList();
+        if (collected is { Count: > 0 })
+            return collected;
 
         // Fall back to individual resource concept maps
         var conceptMapIds = await CourseService.GetResourceConceptMapIdsAsync(CourseId!);
@@ -364,8 +379,15 @@ private async Task LoadDataAsync()
 
     private async Task StartQuiz()
     {
-        if (string.IsNullOrEmpty(CourseId) || _conceptIds.Count == 0)
+        _startError = null;
+        if (string.IsNullOrEmpty(CourseId))
             return;
+        if (_conceptIds.Count == 0)
+        {
+            _startError = NoQuizMessage;
+            StateHasChanged();
+            return;
+        }
 
         _starting = true;
         _limitMessage = null;
@@ -378,12 +400,19 @@ private async Task LoadDataAsync()
             var sectionIds = _isSectionQuiz ? [SectionId!] : new List<string>();
             var questionCount = GetQuestionCount();
             
-            await QuizService.StartQuizAsync(CourseId, sectionIds, _conceptIds, questionCount);
+            var session = await QuizService.StartQuizAsync(CourseId, sectionIds, _conceptIds, questionCount);
             _currentQuestion = QuizService.GetCurrentQuestion();
+            if (session == null)
+                _startError = NoQuizMessage;
         }
         catch (LlmLimitReachedException ex)
         {
             _limitMessage = ex.Message;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Error($"QuizTab: starting the quiz failed - {ex.Message}", ex);
+            _startError = NoQuizMessage;
         }
         finally
         {
@@ -391,6 +420,9 @@ private async Task LoadDataAsync()
             StateHasChanged();
         }
     }
+
+    private const string NoQuizMessage =
+        "Couldn't make a quiz for this course right now. Try again in a moment, or take a section quiz from a lesson.";
 
     private async Task SubmitAnswer()
     {
