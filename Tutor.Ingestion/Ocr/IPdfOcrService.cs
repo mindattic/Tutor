@@ -1,4 +1,4 @@
-namespace Tutor.Core.Services.Ocr;
+namespace Tutor.Ingestion.Ocr;
 
 /// <summary>
 /// Runs OCR on raw page-image bytes pulled from a PDF page that yielded little

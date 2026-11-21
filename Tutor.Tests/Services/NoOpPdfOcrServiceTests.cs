@@ -1,4 +1,4 @@
-using Tutor.Core.Services.Ocr;
+using Tutor.Ingestion.Ocr;
 
 namespace Tutor.Tests.Services;
 

@@ -10,7 +10,7 @@ namespace Tutor.Core.Services;
 /// length capping, batching under the Vault token budget (splitting a batch OpenAI still
 /// refuses as too large), and inter-batch pacing.
 /// </summary>
-public sealed class EmbeddingService
+public sealed class EmbeddingService : IEmbeddingProvider
 {
     private readonly LegionClient legion;
     private readonly TutorKeys keys;
@@ -207,18 +207,5 @@ public sealed class EmbeddingService
     /// Cosine similarity between two embedding vectors. Returns a value in [-1, 1];
     /// 1 = identical direction, 0 = orthogonal, -1 = opposite.
     /// </summary>
-    public static float CosineSimilarity(float[] a, float[] b)
-    {
-        if (a is null || b is null || a.Length == 0 || b.Length == 0 || a.Length != b.Length)
-            return 0f;
-        double dot = 0, normA = 0, normB = 0;
-        for (int i = 0; i < a.Length; i++)
-        {
-            dot   += a[i] * b[i];
-            normA += a[i] * a[i];
-            normB += b[i] * b[i];
-        }
-        if (normA == 0 || normB == 0) return 0f;
-        return (float)(dot / (Math.Sqrt(normA) * Math.Sqrt(normB)));
-    }
+    public static float CosineSimilarity(float[] a, float[] b) => EmbeddingMath.CosineSimilarity(a, b);
 }

@@ -1,4 +1,4 @@
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // Implementations are stateless and registered as singletons in DI. Extensions
 // are matched case-insensitively, with or without the leading dot.

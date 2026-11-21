@@ -115,6 +115,7 @@ builder.Services.AddSingleton<ContentFormatterService>();
 
 // Chunking service for splitting content
 builder.Services.AddSingleton<ChunkingService>();
+builder.Services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
 
 // LSH service for locality-sensitive hashing (semantic signatures)
 builder.Services.AddSingleton<LSHService>();

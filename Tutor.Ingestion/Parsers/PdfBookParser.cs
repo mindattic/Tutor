@@ -1,10 +1,10 @@
 using System.Text;
-using Tutor.Core.Services.Ocr;
+using Tutor.Ingestion.Ocr;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // PDF text extraction via PdfPig. PdfPig is pure-managed and Apache 2.0 — iText
 // is more capable but AGPL, so we stay on PdfPig. Pages that yield little or
@@ -19,10 +19,12 @@ public sealed class PdfBookParser : IBookParser
     private const int OcrThresholdChars = 50;
 
     private readonly IPdfOcrService ocr;
+    private readonly ParserLimits limits;
 
-    public PdfBookParser(IPdfOcrService ocr)
+    public PdfBookParser(IPdfOcrService ocr, ParserLimits? limits = null)
     {
         this.ocr = ocr;
+        this.limits = limits ?? ParserLimits.Unlimited;
     }
 
     public IReadOnlyCollection<string> SupportedExtensions { get; } = new[] { ".pdf" };
@@ -34,6 +36,7 @@ public sealed class PdfBookParser : IBookParser
 
         var sb = new StringBuilder();
         var warnings = new List<string>();
+        var sections = new List<ExtractedSection>();
         string title = Path.GetFileNameWithoutExtension(fileName);
         string author = "";
         var ocrPagesAttempted = 0;
@@ -50,6 +53,8 @@ public sealed class PdfBookParser : IBookParser
             catch { /* metadata is optional */ }
 
             var pageCount = doc.NumberOfPages;
+            if (pageCount > limits.MaxPages)
+                throw new DocumentLimitException($"The PDF has {pageCount:N0} pages, over the limit of {limits.MaxPages:N0}.");
             for (int i = 1; i <= pageCount; i++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -93,6 +98,8 @@ public sealed class PdfBookParser : IBookParser
                 {
                     sb.AppendLine(pageText);
                     sb.AppendLine();
+                    limits.CheckChars(sb.Length, "PDF");
+                    sections.Add(new ExtractedSection($"Page {i}", pageText.Trim(), i));
                 }
             }
 
@@ -116,7 +123,10 @@ public sealed class PdfBookParser : IBookParser
             Title: title,
             Author: author,
             SourceFormat: "pdf",
-            Warnings: warnings);
+            Warnings: warnings)
+        {
+            Sections = sections,
+        };
     }
 
     private async Task<string> TryOcrPageAsync(Page page, CancellationToken ct)

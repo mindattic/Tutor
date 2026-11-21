@@ -1,4 +1,4 @@
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // .mobi / .azw / .azw3 via Calibre's ebook-convert. There is no maintained
 // pure-managed C# library that can read modern MOBI/KFX formats reliably,

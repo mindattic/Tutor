@@ -55,6 +55,7 @@ public class DependencyInjectionTests
         // Core services (same registration order as MauiProgram)
         services.AddSingleton<ContentFormatterService>();
         services.AddSingleton<ChunkingService>();
+services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
         services.AddSingleton<LSHService>();
         services.AddSingleton<SimHashService>();
         services.AddSingleton<VectorStoreService>();

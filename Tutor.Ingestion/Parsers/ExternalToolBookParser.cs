@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // Shared base for parsers that delegate to an external CLI tool (Calibre's
 // ebook-convert for MOBI, LibreOffice's soffice for RTF/ODT). Each subclass

@@ -1,0 +1,11 @@
+<Project>
+    <!-- Copies the packaged OCR language data next to the consuming application (TesseractPdfOcrService looks
+         in tessdata/ beside the app). Opt out with <CopyTutorIngestionTessdata>false</CopyTutorIngestionTessdata>. -->
+    <ItemGroup Condition="'$(CopyTutorIngestionTessdata)' != 'false' And Exists('$(MSBuildThisFileDirectory)..\tessdata\eng.traineddata')">
+        <Content Include="$(MSBuildThisFileDirectory)..\tessdata\eng.traineddata" Condition="!Exists('$(MSBuildProjectDirectory)\tessdata\eng.traineddata')">
+            <Link>tessdata\eng.traineddata</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
+</Project>

@@ -7,12 +7,12 @@ using Tutor.Cli.Commands;
 using Tutor.Cli.Gutenberg;
 using Tutor.Cli.Pipeline;
 using Tutor.Cli.Services;
-using Tutor.Core.Parsers;
+using Tutor.Ingestion.Parsers;
 using Tutor.Core.Services;
 using Tutor.Core.Services.Abstractions;
 using Tutor.Core.Services.Packaging;
 using Tutor.Core.Services.Logging;
-using Tutor.Core.Services.Ocr;
+using Tutor.Ingestion.Ocr;
 
 // LAMP (TUT-T31): `--write-settings-manifest` seeds Tutor's Vault settings (importing today's values
 // once) and writes the manifest MindAttic.Vault.Desktop renders, then exits.
@@ -103,6 +103,7 @@ services.AddSingleton<KeysCommand>();
 services.AddSingleton<EmbeddingService>();
 services.AddSingleton<ContentFormatterService>();
 services.AddSingleton<ChunkingService>();
+services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
 services.AddSingleton<LSHService>();
 services.AddSingleton<SimHashService>();
 services.AddSingleton<VectorStoreService>();

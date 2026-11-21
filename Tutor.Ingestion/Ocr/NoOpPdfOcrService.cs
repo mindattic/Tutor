@@ -1,4 +1,4 @@
-namespace Tutor.Core.Services.Ocr;
+namespace Tutor.Ingestion.Ocr;
 
 /// <summary>
 /// No-op fallback used when Tesseract isn't wired up (e.g. Tutor.Tests, or a

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -28,52 +28,17 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
 
-        <!-- Phase A book parsers (PDF, EPUB, HTML, DOCX). All MIT/Apache, all
-             pure-managed C# so we keep the cross-platform story intact.
-             Note: PdfPig's package id is "PdfPig" but its root namespace is
-             "UglyToad.PdfPig" â€” that's intentional. -->
-        <PackageReference Include="PdfPig" Version="0.1.14" />
-        <PackageReference Include="VersOne.Epub" Version="3.3.6" />
-        <PackageReference Include="AngleSharp" Version="1.4.0" />
-        <PackageReference Include="SmartReader" Version="0.11.0" />
-        <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
-
-        <!-- OCR fallback for image-only / scanned PDFs. Tesseract wraps the
-             native libtesseract; PdfBookParser feeds it page images extracted
-             via PdfPig. eng.traineddata is fetched at build time below. -->
-        <PackageReference Include="Tesseract" Version="5.2.0" />
+        <!-- Book parsers (PDF + Tesseract OCR, EPUB, HTML, DOCX, TXT, MOBI, LibreOffice), chunking and the
+             embedding / vector-store abstractions live in the Tutor.Ingestion package (TUT-T64). It carries
+             PdfPig, VersOne.Epub, AngleSharp, SmartReader, OpenXml and Tesseract transitively, and its
+             buildTransitive targets copy tessdata/eng.traineddata to every host's output. -->
+        <PackageReference Include="Tutor.Ingestion" Version="1.0.0" />
 
         <!-- Phase B: .doc / .rtf / .odt all shell out to LibreOffice's headless
              converter. NPOI 2.8 stopped shipping HWPF for legacy .doc, so it
              can't help us here. .mobi/.azw/.azw3 shell out to Calibre's
              ebook-convert. No NuGet packages needed for Phase B. -->
 
-    </ItemGroup>
-
-    <!-- Tesseract English language data. The Tesseract NuGet ships native libs
-         but not traineddata, so we fetch eng.traineddata from the tessdata_fast
-         repo into Tutor.Core/tessdata/ on first build. The downloaded file is
-         copied alongside the assembly so the OCR service finds it via
-         AppContext.BaseDirectory at runtime. -->
-    <Target Name="DownloadTessdata" BeforeTargets="BeforeBuild">
-        <PropertyGroup>
-            <TessdataDir>$(MSBuildThisFileDirectory)tessdata</TessdataDir>
-            <TessdataFile>$(TessdataDir)\eng.traineddata</TessdataFile>
-            <TessdataUrl>https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata</TessdataUrl>
-        </PropertyGroup>
-        <MakeDir Directories="$(TessdataDir)" Condition="!Exists('$(TessdataDir)')" />
-        <DownloadFile
-            SourceUrl="$(TessdataUrl)"
-            DestinationFolder="$(TessdataDir)"
-            Condition="!Exists('$(TessdataFile)')"
-            SkipUnchangedFiles="true" />
-    </Target>
-
-    <ItemGroup>
-        <Content Include="tessdata\eng.traineddata" Condition="Exists('tessdata\eng.traineddata')">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>tessdata\eng.traineddata</Link>
-        </Content>
     </ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@ using System.Text;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // DOCX (Office Open XML) via DocumentFormat.OpenXml — Microsoft's official
 // library. We walk the body, emitting paragraphs separated by blank lines.
@@ -10,6 +10,13 @@ namespace Tutor.Core.Parsers;
 // expectation of plain prose intact.
 public sealed class DocxBookParser : IBookParser
 {
+    private readonly ParserLimits limits;
+
+    public DocxBookParser(ParserLimits? limits = null)
+    {
+        this.limits = limits ?? ParserLimits.Unlimited;
+    }
+
     public IReadOnlyCollection<string> SupportedExtensions { get; } = new[] { ".docx" };
 
     public Task<ExtractedBook> ParseAsync(Stream input, string fileName, CancellationToken ct = default)
@@ -18,12 +25,23 @@ public sealed class DocxBookParser : IBookParser
         // opens read-only by passing false, but still needs seek). Buffer to be safe.
         Stream docStream = input.CanSeek ? input : BufferToMemory(input);
 
+        limits.CheckZip(docStream, "DOCX");
         using var doc = WordprocessingDocument.Open(docStream, false);
         var body = doc.MainDocumentPart?.Document?.Body;
 
         var sb = new StringBuilder();
+        var sections = new List<ExtractedSection>();
+        var sectionSb = new StringBuilder();
+        string? sectionLabel = null;
         string title = Path.GetFileNameWithoutExtension(fileName);
         string author = "";
+
+        void FlushSection()
+        {
+            var text = sectionSb.ToString().Trim();
+            if (text.Length > 0) sections.Add(new ExtractedSection(sectionLabel ?? "Document start", text));
+            sectionSb.Clear();
+        }
 
         // Core properties may carry better metadata.
         try
@@ -39,8 +57,18 @@ public sealed class DocxBookParser : IBookParser
             foreach (var element in body.Elements())
             {
                 ct.ThrowIfCancellationRequested();
+                var before = sb.Length;
+                // A Title/Heading-styled paragraph starts a new located section.
+                if (element is Paragraph hp && HeadingLabel(hp) is { } heading)
+                {
+                    FlushSection();
+                    sectionLabel = heading;
+                }
                 AppendElementText(element, sb);
+                sectionSb.Append(sb.ToString(before, sb.Length - before));
+                limits.CheckChars(sb.Length, "DOCX");
             }
+            FlushSection();
         }
 
         if (docStream != input) docStream.Dispose();
@@ -49,7 +77,21 @@ public sealed class DocxBookParser : IBookParser
             PlainText: sb.ToString().Trim(),
             Title: title,
             Author: author,
-            SourceFormat: "docx"));
+            SourceFormat: "docx")
+        {
+            Sections = sections,
+        });
+    }
+
+    // The paragraph's text when its style is Title or Heading N, else null.
+    private static string? HeadingLabel(Paragraph p)
+    {
+        var style = p.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
+        if (style == null) return null;
+        var isHeading = style.StartsWith("Heading", StringComparison.OrdinalIgnoreCase)
+                        || style.Equals("Title", StringComparison.OrdinalIgnoreCase);
+        var text = p.InnerText?.Trim();
+        return isHeading && !string.IsNullOrEmpty(text) ? (text.Length > 120 ? text[..120] : text) : null;
     }
 
     private static void AppendElementText(DocumentFormat.OpenXml.OpenXmlElement element, StringBuilder sb)

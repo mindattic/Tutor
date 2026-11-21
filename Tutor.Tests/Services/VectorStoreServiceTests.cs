@@ -7,9 +7,9 @@ public class VectorStoreServiceTests
     [Test]
     public void Constructor_AcceptsDependencies()
     {
-        var lsh = new LSHService(embeddingDimension: 8, bitCount: 16, seed: 1);
+        var lsh = new LSHService(embeddingDimension: 8, bitCount: 16, seed: 1, paths: new TutorIngestionPaths());
         var simHash = new SimHashService();
-        var sut = new VectorStoreService(lsh, simHash);
+        var sut = new VectorStoreService(lsh, simHash, new TutorIngestionPaths());
         Assert.That(sut, Is.Not.Null);
     }
 }

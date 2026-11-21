@@ -1,4 +1,4 @@
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // .doc, .rtf, .odt — all routed through LibreOffice's headless converter.
 //   - .doc: legacy binary Word. NPOI 2.8 dropped HWPF; no maintained pure-managed

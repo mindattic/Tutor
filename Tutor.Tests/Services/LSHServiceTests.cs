@@ -7,7 +7,7 @@ public class LSHServiceTests
     [Test]
     public void Constructor_SetsProperties()
     {
-        var sut = new LSHService(embeddingDimension: 512, bitCount: 128, seed: 42);
+        var sut = new LSHService(embeddingDimension: 512, bitCount: 128, seed: 42, paths: new TutorIngestionPaths());
         Assert.That(sut.EmbeddingDimension, Is.EqualTo(512));
         Assert.That(sut.BitCount, Is.EqualTo(128));
         Assert.That(sut.Seed, Is.EqualTo(42));
@@ -16,7 +16,7 @@ public class LSHServiceTests
     [Test]
     public void DefaultConstructor_Uses1536Dims_256Bits()
     {
-        var sut = new LSHService();
+        var sut = new LSHService(paths: new TutorIngestionPaths());
         Assert.That(sut.EmbeddingDimension, Is.EqualTo(1536));
         Assert.That(sut.BitCount, Is.EqualTo(256));
         Assert.That(sut.Seed, Is.EqualTo(1337));
@@ -25,7 +25,7 @@ public class LSHServiceTests
     [Test]
     public void GetSignature_EmptyEmbedding_ReturnsEmpty()
     {
-        var sut = new LSHService();
+        var sut = new LSHService(paths: new TutorIngestionPaths());
         var sig = sut.GetSignature([]);
         Assert.That(sig, Is.Empty);
     }
@@ -33,7 +33,7 @@ public class LSHServiceTests
     [Test]
     public void GetSignature_NullEmbedding_ReturnsEmpty()
     {
-        var sut = new LSHService();
+        var sut = new LSHService(paths: new TutorIngestionPaths());
         var sig = sut.GetSignature(null!);
         Assert.That(sig, Is.Empty);
     }
@@ -41,7 +41,7 @@ public class LSHServiceTests
     [Test]
     public void GetSignature_ProducesCorrectLength()
     {
-        var sut = new LSHService(embeddingDimension: 8, bitCount: 16, seed: 1);
+        var sut = new LSHService(embeddingDimension: 8, bitCount: 16, seed: 1, paths: new TutorIngestionPaths());
         var embedding = new float[] { 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f };
         var sig = sut.GetSignature(embedding);
         Assert.That(sig.Length, Is.EqualTo(2)); // 16 bits = 2 bytes
@@ -50,7 +50,7 @@ public class LSHServiceTests
     [Test]
     public void GetSignature_IsDeterministic()
     {
-        var sut = new LSHService(embeddingDimension: 8, bitCount: 16, seed: 1);
+        var sut = new LSHService(embeddingDimension: 8, bitCount: 16, seed: 1, paths: new TutorIngestionPaths());
         var embedding = new float[] { 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f };
         var sig1 = sut.GetSignature(embedding);
         var sig2 = sut.GetSignature(embedding);
@@ -90,7 +90,7 @@ public class LSHServiceTests
     [Test]
     public void SimilarEmbeddings_ProduceLowHammingDistance()
     {
-        var sut = new LSHService(embeddingDimension: 8, bitCount: 64, seed: 42);
+        var sut = new LSHService(embeddingDimension: 8, bitCount: 64, seed: 42, paths: new TutorIngestionPaths());
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var b = new float[] { 1.01f, 2.01f, 3.01f, 4.01f, 5.01f, 6.01f, 7.01f, 8.01f };
         var c = new float[] { -8, -7, -6, -5, -4, -3, -2, -1 };

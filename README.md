@@ -128,7 +128,7 @@ A `Course` never embeds content. Content lives in resources, structure, concept 
 | LLM transport | MindAttic.Legion 25.0.0 |
 | Credentials | MindAttic.Vault 5.0.0 |
 | Parsing | PdfPig, VersOne.Epub, AngleSharp, SmartReader, DocumentFormat.OpenXml, plus LibreOffice and Calibre |
-| OCR | Tesseract 5.2.0, trained data in `Tutor.Core/tessdata` |
+| OCR | Tesseract 5.2.0, trained data in `Tutor.Ingestion/tessdata` |
 | RAG | In-process vector store plus LSH and SimHash |
 | Auth | MindAttic.Authentication 6.0.0 on SQL Server (`TutorAuthDbContext`); reset links and security alerts over SMTP from the Vault `Notifications` bucket when configured; self-service reset at `/forgot-password` → `/account/reset` |
 | Tests | NUnit (`Tutor.Tests`) and Cypress (`Tutor.Cypress`) |
@@ -239,7 +239,8 @@ A feature is done when `dotnet build Tutor.slnx` is clean, `Tutor.Tests` is gree
 
 | Project or folder | Purpose |
 | --- | --- |
-| `Tutor.Core` | Parsers, the pipeline, domain models and storage services. |
+| `Tutor.Ingestion` | NuGet package (`Tutor.Ingestion` 1.0.0, packed to `C:\LocalNuGet`): book parsers (PDF + OCR, EPUB, DOCX, HTML, TXT, MOBI, LibreOffice), `ChunkingService`, and the embedding and vector-store abstractions. No dependency on the app; paths, embedding provider and logging are injected. Gadfly consumes it too. See its [README](Tutor.Ingestion/README.md). |
+| `Tutor.Core` | The pipeline, domain models and storage services. |
 | `Tutor.Shared` | Razor components: layout, pages, quiz, exam and certificate tabs, chat. |
 | `Tutor.Blazor` | Blazor Server host: `Program.cs` composition root, middleware, `appsettings.json`. |
 | `Tutor.Cli` | The `tutor` command; mirrors the host's DI graph and owns bundle export, import and Gutenberg fetch. |

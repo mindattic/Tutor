@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // Plain-text passthrough. Auto-detects UTF-8 with/without BOM and falls back
 // to the system default for older files.

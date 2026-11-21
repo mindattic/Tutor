@@ -2,13 +2,20 @@ using System.Text;
 using AngleSharp;
 using VersOne.Epub;
 
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // EPUB 2 + 3 via VersOne.Epub. We concatenate every reading-order chapter's
 // text content (HTML stripped) so the AI pipeline sees the book as a single
 // continuous document — same shape it expects from PG plaintext.
 public sealed class EpubBookParser : IBookParser
 {
+    private readonly ParserLimits limits;
+
+    public EpubBookParser(ParserLimits? limits = null)
+    {
+        this.limits = limits ?? ParserLimits.Unlimited;
+    }
+
     public IReadOnlyCollection<string> SupportedExtensions { get; } = new[] { ".epub" };
 
     public async Task<ExtractedBook> ParseAsync(Stream input, string fileName, CancellationToken ct = default)
@@ -23,16 +30,27 @@ public sealed class EpubBookParser : IBookParser
                 await input.CopyToAsync(temp, ct);
             }
 
+            await using (var check = File.OpenRead(tempPath))
+                limits.CheckZip(check, "EPUB");
+
             var book = await EpubReader.ReadBookAsync(tempPath);
 
             var sb = new StringBuilder();
+            var sections = new List<ExtractedSection>();
+            var chapterNo = 0;
             foreach (var chapter in book.ReadingOrder)
             {
                 ct.ThrowIfCancellationRequested();
                 var html = chapter.Content;
                 if (string.IsNullOrWhiteSpace(html)) continue;
-                sb.AppendLine(HtmlToText(html));
+                var (text, heading) = HtmlToText(html);
+                sb.AppendLine(text);
                 sb.AppendLine();
+                limits.CheckChars(sb.Length, "EPUB");
+                chapterNo++;
+                if (!string.IsNullOrWhiteSpace(text))
+                    sections.Add(new ExtractedSection(
+                        string.IsNullOrWhiteSpace(heading) ? $"Chapter {chapterNo}" : $"Chapter {chapterNo}: {heading}", text));
             }
 
             var title = book.Title ?? Path.GetFileNameWithoutExtension(fileName);
@@ -44,7 +62,10 @@ public sealed class EpubBookParser : IBookParser
                 Title: title,
                 Author: author,
                 Description: description,
-                SourceFormat: "epub");
+                SourceFormat: "epub")
+            {
+                Sections = sections,
+            };
         }
         finally
         {
@@ -52,7 +73,7 @@ public sealed class EpubBookParser : IBookParser
         }
     }
 
-    private static string HtmlToText(string html)
+    private static (string Text, string Heading) HtmlToText(string html)
     {
         var ctx = AngleSharp.BrowsingContext.New(AngleSharp.Configuration.Default);
         var doc = ctx.OpenAsync(req => req.Content(html)).GetAwaiter().GetResult();
@@ -61,6 +82,8 @@ public sealed class EpubBookParser : IBookParser
             foreach (var el in doc.QuerySelectorAll(sel))
                 el.Remove();
         }
-        return doc.Body?.TextContent.Trim() ?? "";
+        var heading = doc.QuerySelector("h1, h2, h3")?.TextContent.Trim() ?? "";
+        if (heading.Length > 120) heading = heading[..120];
+        return (doc.Body?.TextContent.Trim() ?? "", heading);
     }
 }

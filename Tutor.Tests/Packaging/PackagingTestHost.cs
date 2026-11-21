@@ -56,6 +56,7 @@ public sealed class PackagingTestHost : IDisposable
         services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
         services.AddSingleton<ContentFormatterService>();
         services.AddSingleton<ChunkingService>();
+services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
         services.AddSingleton<LSHService>();
         services.AddSingleton<SimHashService>();
         services.AddSingleton<VectorStoreService>();

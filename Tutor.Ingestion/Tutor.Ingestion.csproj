@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>Tutor.Ingestion</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <!-- Package: whole-number versions only (TUT-T64). -->
+        <PackageId>Tutor.Ingestion</PackageId>
+        <Version>1.0.0</Version>
+        <Description>Document ingestion for Tutor and Gadfly: PDF (PdfPig + Tesseract OCR fallback), EPUB, DOCX, HTML, TXT, MOBI and LibreOffice parsers, chunking, and embedding / vector-store abstractions. No dependency on any app, UI, auth or storage path: the host injects them.</Description>
+        <Authors>MindAttic</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Pure-managed parsers; all MIT/Apache. PdfPig's package id is "PdfPig", its namespace "UglyToad.PdfPig". -->
+        <PackageReference Include="PdfPig" Version="0.1.14" />
+        <PackageReference Include="VersOne.Epub" Version="3.3.6" />
+        <PackageReference Include="AngleSharp" Version="1.4.0" />
+        <PackageReference Include="SmartReader" Version="0.11.0" />
+        <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+        <!-- OCR fallback for image-only / scanned PDFs (wraps native libtesseract). -->
+        <PackageReference Include="Tesseract" Version="5.2.0" />
+    </ItemGroup>
+
+    <!-- Tesseract English language data. The Tesseract NuGet ships native libs but not traineddata, so it is
+         fetched from tessdata_fast on first build if missing, packed into the nupkg, and copied next to every
+         consuming application's output by buildTransitive/Tutor.Ingestion.targets. -->
+    <Target Name="DownloadTessdata" BeforeTargets="BeforeBuild">
+        <PropertyGroup>
+            <TessdataDir>$(MSBuildThisFileDirectory)tessdata</TessdataDir>
+            <TessdataFile>$(TessdataDir)\eng.traineddata</TessdataFile>
+            <TessdataUrl>https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata</TessdataUrl>
+        </PropertyGroup>
+        <MakeDir Directories="$(TessdataDir)" Condition="!Exists('$(TessdataDir)')" />
+        <DownloadFile
+            SourceUrl="$(TessdataUrl)"
+            DestinationFolder="$(TessdataDir)"
+            Condition="!Exists('$(TessdataFile)')"
+            SkipUnchangedFiles="true" />
+    </Target>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="buildTransitive\Tutor.Ingestion.targets" Pack="true" PackagePath="buildTransitive\" />
+        <!-- Tessdata for the project's own output (its tests or samples). -->
+        <Content Include="tessdata\eng.traineddata" Condition="Exists('tessdata\eng.traineddata')" Pack="true" PackagePath="tessdata\">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>tessdata\eng.traineddata</Link>
+        </Content>
+    </ItemGroup>
+
+</Project>

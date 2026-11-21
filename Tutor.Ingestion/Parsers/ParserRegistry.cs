@@ -1,4 +1,4 @@
-namespace Tutor.Core.Parsers;
+namespace Tutor.Ingestion.Parsers;
 
 // Routes a file path or stream to the correct IBookParser based on its
 // extension. The registry is the single integration point between the CLI's

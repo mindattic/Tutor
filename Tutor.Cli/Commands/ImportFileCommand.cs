@@ -1,5 +1,5 @@
 using Tutor.Cli.Pipeline;
-using Tutor.Core.Parsers;
+using Tutor.Ingestion.Parsers;
 
 namespace Tutor.Cli.Commands;
 

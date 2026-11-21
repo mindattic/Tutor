@@ -1,4 +1,4 @@
-using Tutor.Core.Parsers;
+using Tutor.Ingestion.Parsers;
 
 namespace Tutor.Tests.Parsers;
 

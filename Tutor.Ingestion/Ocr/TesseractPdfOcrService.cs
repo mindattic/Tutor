@@ -1,20 +1,26 @@
 using Tesseract;
-using Tutor.Core.Services.Logging;
 
-namespace Tutor.Core.Services.Ocr;
+
+namespace Tutor.Ingestion.Ocr;
 
 /// <summary>
 /// Tesseract-backed OCR. Loads <c>eng.traineddata</c> from <c>tessdata/</c> next to
-/// the running assembly (the path the Tutor.Core.csproj build target populates),
-/// and falls back to <c>%LocalAppData%\Tutor\tessdata</c> for the case where the
-/// binary was deployed without the trained data and a previous run cached it
-/// there. Engine creation is deferred to first use so a missing native library
+/// the running assembly (the package ships it and copies it to the application output),
+/// and then searches the other folders the injected <see cref="IIngestionPaths"/> names.
+/// Engine creation is deferred to first use so a missing native library
 /// or traineddata file shows up as <see cref="IsAvailable"/> = false rather than
 /// a startup crash.
 /// </summary>
 public sealed class TesseractPdfOcrService : IPdfOcrService, IDisposable
 {
+    private readonly IIngestionPaths paths;
     private readonly object initLock = new();
+
+    /// <param name="paths">Folders searched for <c>eng.traineddata</c>; the application's <c>tessdata/</c> folder by default.</param>
+    public TesseractPdfOcrService(IIngestionPaths? paths = null)
+    {
+        this.paths = paths ?? new DefaultIngestionPaths();
+    }
     private TesseractEngine? engine;
     private bool initFailed;
     private string? resolvedTessdataDir;
@@ -45,7 +51,7 @@ public sealed class TesseractPdfOcrService : IPdfOcrService, IDisposable
         catch (Exception ex)
         {
             // OCR is a fallback. Log and return empty so the caller keeps moving.
-            Log.Warn($"Tesseract OCR failed on a page: {ex.Message}");
+            IngestionLog.Warn($"Tesseract OCR failed on a page: {ex.Message}");
             return Task.FromResult("");
         }
     }
@@ -62,9 +68,9 @@ public sealed class TesseractPdfOcrService : IPdfOcrService, IDisposable
                 if (resolvedTessdataDir == null)
                 {
                     initFailed = true;
-                    Log.Warn("Tesseract OCR disabled: eng.traineddata not found. " +
-                                "Build Tutor.Core (the build target downloads it) or place " +
-                                "eng.traineddata in %LocalAppData%\\Tutor\\tessdata.");
+                    IngestionLog.Warn("Tesseract OCR disabled: eng.traineddata not found. " +
+                                "Reinstall the Tutor.Ingestion package or place " +
+                                "eng.traineddata in a folder IIngestionPaths lists.");
                     return;
                 }
                 engine = new TesseractEngine(resolvedTessdataDir, "eng", EngineMode.Default);
@@ -72,19 +78,14 @@ public sealed class TesseractPdfOcrService : IPdfOcrService, IDisposable
             catch (Exception ex)
             {
                 initFailed = true;
-                Log.Warn($"Tesseract OCR disabled — engine init failed: {ex.Message}");
+                IngestionLog.Warn($"Tesseract OCR disabled — engine init failed: {ex.Message}");
             }
         }
     }
 
-    private static string? ResolveTessdataDir()
+    private string? ResolveTessdataDir()
     {
-        var candidates = new List<string>
-        {
-            Path.Combine(AppContext.BaseDirectory, "tessdata"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tutor", "tessdata"),
-        };
-        foreach (var dir in candidates)
+        foreach (var dir in paths.GetTessdataDirectories())
         {
             if (File.Exists(Path.Combine(dir, "eng.traineddata"))) return dir;
         }
