@@ -280,6 +280,12 @@ Respond with a JSON object:
         }
         catch
         {
+            // Keep the unreadable file aside so the next save does not destroy it.
+            try
+            {
+                File.Copy(filePath, $"{filePath}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}", overwrite: true);
+            }
+            catch { }
             return [];
         }
     }
