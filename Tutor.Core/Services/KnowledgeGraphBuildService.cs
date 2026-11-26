@@ -267,6 +267,10 @@ public sealed class KnowledgeGraphBuildService : IDisposable
             status.Progress = progress;
             status.CurrentOperation = message;
             status.LastUpdated = DateTime.UtcNow;
+            // Failed/cancelled builds never set CompletedAt, so ClearCompletedTasks (which
+            // needs it) would keep them in the tracker forever.
+            if (stage == GraphBuildStage.Failed && status.CompletedAt == null)
+                status.CompletedAt = DateTime.UtcNow;
             NotifyStatusChanged(status);
         }
     }
