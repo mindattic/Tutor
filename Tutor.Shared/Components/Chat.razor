@@ -647,6 +647,9 @@ protected override async Task OnInitializedAsync()
         await CourseService.SetActiveCourseAsync(newCourse.Id);
         activeCourse = newCourse;
 
+        // Book the old section's reading time before the lesson state resets
+        StopReadingTimer();
+
         // Reset lesson state for the new course
         isLessonMode = false;
         hasStartedLearning = false;
@@ -1331,6 +1334,9 @@ Explain clearly, then at the end suggest THREE natural follow-up questions the s
 
     private async Task RestartLesson()
     {
+        // Book the old section's reading time before the lesson state resets
+        StopReadingTimer();
+
         // Clear all lesson state
         isLessonMode = false;
         hasStartedLearning = false;
@@ -1503,6 +1509,8 @@ Explain clearly, then at the end suggest THREE natural follow-up questions I mig
 
         // Close the TOC modal
         showTableOfContents = false;
+
+        StopReadingTimer();
 
         // Mark current topic as learned if we've started learning
         if (hasStartedLearning && currentLessonIndex < lessonTopics.Count)
