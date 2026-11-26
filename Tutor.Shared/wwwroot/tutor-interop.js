@@ -888,9 +888,14 @@
                 if (!d) return;
                 
                 if (visibleSet.has(d.id)) {
-                    // VISIBLE NODE: Keep natural position, allow physics to adjust gently
-                    d.fx = null;
-                    d.fy = null;
+                    // VISIBLE NODE: Keep natural position, allow physics to adjust gently (pinned nodes stay fixed)
+                    if (pinnedNodes[d.id]) {
+                        d.fx = pinnedNodes[d.id].x;
+                        d.fy = pinnedNodes[d.id].y;
+                    } else {
+                        d.fx = null;
+                        d.fy = null;
+                    }
                 } else {
                     // HIDDEN NODE: Fix in place so it doesn't affect visible nodes
                     d.fx = d.x;
@@ -1013,10 +1018,15 @@
             forceGraphNodes.each(function() { totalNodeCount++; });
             var forceParams = calculateForceParams(totalNodeCount);
 
-            // Unfix ALL nodes (including any pinned primary node)
+            // Unfix every node except the ones the user pinned
             forceGraphNodes.each(function(d) {
-                d.fx = null;
-                d.fy = null;
+                if (pinnedNodes[d.id]) {
+                    d.fx = pinnedNodes[d.id].x;
+                    d.fy = pinnedNodes[d.id].y;
+                } else {
+                    d.fx = null;
+                    d.fy = null;
+                }
             });
             hiddenNodeIds.clear();
 
