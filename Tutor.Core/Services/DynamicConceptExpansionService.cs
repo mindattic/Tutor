@@ -508,8 +508,13 @@ public sealed class DynamicConceptExpansionService
 
         foreach (var dto in newConceptDtos)
         {
+            // The AI can return a null/blank term, or the same term twice in one batch
+            if (string.IsNullOrWhiteSpace(dto.Term))
+                continue;
+
             // Skip if concept already exists
-            if (existingLookup.ContainsKey(dto.Term.ToLowerInvariant()))
+            if (existingLookup.ContainsKey(dto.Term.ToLowerInvariant()) ||
+                newConceptLookup.ContainsKey(dto.Term.ToLowerInvariant()))
             {
                 Log.Debug($"DynamicExpansion: Skipping '{dto.Term}' - already exists");
                 continue;
@@ -544,7 +549,8 @@ public sealed class DynamicConceptExpansionService
             {
                 foreach (var relDto in dto.RelatedExistingConcepts)
                 {
-                    if (existingLookup.TryGetValue(relDto.ExistingConceptTitle.ToLowerInvariant(), out var existingConcept))
+                    if (!string.IsNullOrWhiteSpace(relDto.ExistingConceptTitle) &&
+                        existingLookup.TryGetValue(relDto.ExistingConceptTitle.ToLowerInvariant(), out var existingConcept))
                     {
                         var relationship = new ConceptRelationship
                         {
@@ -577,7 +583,7 @@ public sealed class DynamicConceptExpansionService
             if (!newConceptLookup.TryGetValue(targetKey, out targetConcept))
                 existingLookup.TryGetValue(targetKey, out targetConcept);
 
-            if (sourceConcept != null && targetConcept != null)
+            if (sourceConcept != null && targetConcept != null && sourceConcept.Id != targetConcept.Id)
             {
                 var relationship = new ConceptRelationship
                 {
