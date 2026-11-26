@@ -241,8 +241,9 @@
                 case 'copy':
                     // Copy node name to clipboard
                     if (navigator.clipboard && contextMenuNode.title) {
-                        navigator.clipboard.writeText(contextMenuNode.title).then(function() {
-                            console.log('[Context Menu] Copied to clipboard:', contextMenuNode.title);
+                        var copiedTitle = contextMenuNode.title;
+                        navigator.clipboard.writeText(copiedTitle).then(function() {
+                            console.log('[Context Menu] Copied to clipboard:', copiedTitle);
                         });
                     }
                     break;
