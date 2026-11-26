@@ -1711,6 +1711,7 @@ Please start with Question 1.";
     [JSInvokable]
     public async Task SendFromJs()
     {
+        if (isSending) return; // a send is already in flight (TUT-T112)
         await SendAsync();
         StateHasChanged();
     }
@@ -2294,6 +2295,9 @@ Keep track of the running score.";
     [JSInvokable]
     public async Task AskAboutTerm(string term)
     {
+        // A term click during a reply would start a second concurrent send and clobber cts/isSending (TUT-T112).
+        if (isSending) return;
+
         // Clean up the term for display
         var cleanTerm = term.TrimEnd(':', '-', '\u2014', '\u2013', ',', ';', '.', '!', '?', ' ');
 
