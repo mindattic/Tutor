@@ -584,11 +584,11 @@ private bool showOrphanList;
                 await Task.Delay(50);
 
                 dotNetRef ??= DotNetObjectReference.Create(this);
-                await InitializeGraph();
-                isInitialized = true;
+                isInitialized = await InitializeGraph();
 
                 // Setup panel drag handler
-                await JS.InvokeVoidAsync("setupPanelDragHandler", dotNetRef);
+                if (isInitialized)
+                    await JS.InvokeVoidAsync("setupPanelDragHandler", dotNetRef);
             }
             finally
             {
@@ -596,7 +596,7 @@ private bool showOrphanList;
             }
             
             // If a concept was selected externally, pan to it
-            if (!string.IsNullOrEmpty(SelectedConceptId) && SelectedConceptId != lastAppliedExternalSelection)
+            if (isInitialized && !string.IsNullOrEmpty(SelectedConceptId) && SelectedConceptId != lastAppliedExternalSelection)
             {
                 await SelectConceptByIdAsync(SelectedConceptId, smoothPan: true);
                 lastAppliedExternalSelection = SelectedConceptId;
@@ -922,9 +922,9 @@ private bool showOrphanList;
     }
 
 
-    private async Task InitializeGraph()
+    private async Task<bool> InitializeGraph()
     {
-        if (concepts.Count == 0) return;
+        if (concepts.Count == 0) return false;
 
         // Prepare data for D3.js force layout
         var nodes = concepts.Select(c => new
@@ -947,12 +947,12 @@ private bool showOrphanList;
         try
         {
             await JS.InvokeVoidAsync("initForceGraph", graphContainer, nodes, links, dotNetRef);
+            return true;
         }
         catch (JSException ex)
         {
             System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] JS Error initializing graph: {ex.Message}");
-            // Reset flag to allow retry on next render
-            isInitialized = false;
+            return false;
         }
     }
 
