@@ -12,7 +12,7 @@ namespace Tutor.Core.Services.Packaging;
 public static class CourseManifestValidator
 {
     /// <summary>Pattern a stable course key must match: lowercase slug, max 120 chars.</summary>
-    public static readonly Regex CourseKeyPattern = new("^[a-z0-9][a-z0-9._-]{0,119}$", RegexOptions.Compiled);
+    public static readonly Regex CourseKeyPattern = new("^[a-z0-9][a-z0-9._-]{0,119}\\z", RegexOptions.Compiled);
 
     public static ValidationResult Validate(
         BundleManifest? manifest,
