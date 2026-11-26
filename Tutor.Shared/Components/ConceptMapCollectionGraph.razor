@@ -494,6 +494,7 @@ private ElementReference graphContainer;
 private ElementReference detailPanelRef;
 private DotNetObjectReference<ConceptMapCollectionGraph>? dotNetRef;
 private bool isInitialized;
+private bool isInitializing;
 private bool isLoading = true;
 private string? errorMessage;
 private string graphTitle = "Concept Map Collection";
@@ -573,17 +574,26 @@ private bool showOrphanList;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (concepts.Count > 0 && !isInitialized && !isLoading)
+        if (concepts.Count > 0 && !isInitialized && !isLoading && !isInitializing)
         {
-            // Small delay to ensure the DOM element is fully rendered
-            await Task.Delay(50);
-            
-            dotNetRef = DotNetObjectReference.Create(this);
-            await InitializeGraph();
-            isInitialized = true;
-            
-            // Setup panel drag handler
-            await JS.InvokeVoidAsync("setupPanelDragHandler", dotNetRef);
+            // Another render can land during the delay below; isInitializing stops it starting a second init.
+            isInitializing = true;
+            try
+            {
+                // Small delay to ensure the DOM element is fully rendered
+                await Task.Delay(50);
+
+                dotNetRef ??= DotNetObjectReference.Create(this);
+                await InitializeGraph();
+                isInitialized = true;
+
+                // Setup panel drag handler
+                await JS.InvokeVoidAsync("setupPanelDragHandler", dotNetRef);
+            }
+            finally
+            {
+                isInitializing = false;
+            }
             
             // If a concept was selected externally, pan to it
             if (!string.IsNullOrEmpty(SelectedConceptId) && SelectedConceptId != lastAppliedExternalSelection)
@@ -884,12 +894,11 @@ private bool showOrphanList;
                         ? "🎉 All concepts are now connected!"
                         : $"{connectivityInfo?.OrphanedConceptCount ?? 0} concept(s) still need manual review.");
 
-                // Reinitialize the graph to show new connections
-                isInitialized = false;
+                // Reinitialize the graph to show new connections (isInitialized stays as is: flipping it
+                // made the render hook start a second, concurrent init)
                 StateHasChanged();
                 await Task.Delay(100);
                 await InitializeGraph();
-                isInitialized = true;
             }
             else
             {
