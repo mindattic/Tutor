@@ -60,39 +60,43 @@ public sealed class CoursePackage : IDisposable
         string baseDir;
         string? tempDir = null;
 
-        if (Directory.Exists(path))
+        // Any throw after the temp extraction starts (a bad archive, a malformed manifest.json)
+        // must remove the temp dir: the caller never gets a CoursePackage to dispose.
+        try
         {
-            baseDir = path;
-        }
-        else if (File.Exists(path))
-        {
-            tempDir = Path.Combine(Path.GetTempPath(), "tutor-pkg-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
-            ZipFile.ExtractToDirectory(path, tempDir);
-            // Some zips wrap everything in a single top-level folder; descend into it
-            // when that folder (not the archive root) holds the manifest.
-            baseDir = ResolveManifestRoot(tempDir);
-        }
-        else
-        {
-            throw new FileNotFoundException($"Course package not found: {path}");
-        }
+            if (Directory.Exists(path))
+            {
+                baseDir = path;
+            }
+            else if (File.Exists(path))
+            {
+                tempDir = Path.Combine(Path.GetTempPath(), "tutor-pkg-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(tempDir);
+                ZipFile.ExtractToDirectory(path, tempDir);
+                // Some zips wrap everything in a single top-level folder; descend into it
+                // when that folder (not the archive root) holds the manifest.
+                baseDir = ResolveManifestRoot(tempDir);
+            }
+            else
+            {
+                throw new FileNotFoundException($"Course package not found: {path}");
+            }
 
-        var manifestPath = Path.Combine(baseDir, "manifest.json");
-        if (!File.Exists(manifestPath))
+            var manifestPath = Path.Combine(baseDir, "manifest.json");
+            if (!File.Exists(manifestPath))
+                throw new FileNotFoundException($"manifest.json not found in package '{path}'.");
+
+            var manifest = JsonSerializer.Deserialize<CourseManifest>(File.ReadAllText(manifestPath), JsonOpts);
+            if (manifest == null || manifest.Items == null || manifest.Items.Count == 0)
+                throw new InvalidOperationException("manifest.json is empty or lists no items.");
+
+            return new CoursePackage(manifest, baseDir, tempDir);
+        }
+        catch
         {
             CleanupTemp(tempDir);
-            throw new FileNotFoundException($"manifest.json not found in package '{path}'.");
+            throw;
         }
-
-        var manifest = JsonSerializer.Deserialize<CourseManifest>(File.ReadAllText(manifestPath), JsonOpts);
-        if (manifest == null || manifest.Items.Count == 0)
-        {
-            CleanupTemp(tempDir);
-            throw new InvalidOperationException("manifest.json is empty or lists no items.");
-        }
-
-        return new CoursePackage(manifest, baseDir, tempDir);
     }
 
     /// <summary>Resolves an item's <c>File</c> to an absolute path; throws if it's missing.</summary>
