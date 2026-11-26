@@ -712,6 +712,7 @@ private bool showOrphanList;
             // Aggregate concepts and relationships from the loaded collection
             concepts = loadedCollection.GetAllConcepts().ToList();
             relationships = loadedCollection.GetAllRelations().ToList();
+            CalculateConnectivity();
             
             System.Diagnostics.Debug.WriteLine($"[ConceptMapCollectionGraph] Loaded collection with {concepts.Count} concepts, {relationships.Count} relationships from {conceptMapCount} ConceptMaps");
         }
