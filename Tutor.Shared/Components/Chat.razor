@@ -2383,36 +2383,41 @@ The questions should be specific and relevant to what you just explained, not ge
 
     private void StopReadingTimer()
     {
+        // Only a timer that was actually running has a real start time; a second stop (or a stop on
+        // restored state that never started one) must not record time again (TUT-T111).
+        var wasRunning = readingTimer?.Enabled == true;
         readingTimer?.Stop();
-        
-        // Record time spent and check if section should be marked as read
-        if (activeCourse != null && isLessonMode && hasStartedLearning && currentLessonIndex < lessonTopics.Count)
+
+        if (wasRunning && activeCourse != null && isLessonMode && hasStartedLearning && currentLessonIndex < lessonTopics.Count)
         {
-            var elapsedSeconds = (int)(DateTime.UtcNow - sectionStartTime).TotalSeconds;
-            currentSectionReadingSeconds += elapsedSeconds;
-            
+            // Wall-clock elapsed is the one source of truth; the per-second ticks only drive the display.
+            var elapsedSeconds = Math.Max(0, (int)(DateTime.UtcNow - sectionStartTime).TotalSeconds);
+            currentSectionReadingSeconds = elapsedSeconds;
+
+            var courseId = activeCourse.Id;
             // Section ID = the unit's stable id (real section id when the course is built)
             var sectionId = UnitAt(currentLessonIndex)?.Id ?? $"topic-{currentLessonIndex}";
-            
-            // Determine the target reading time
             var targetReadingTime = useCalculatedReadingTime ? calculatedReadingTimeSeconds : minimumReadingTimeSeconds;
-            
-            // Record reading time
+
             _ = InvokeAsync(async () =>
             {
-                var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
-                progress.RecordSectionTime(sectionId, currentSectionReadingSeconds);
-                
-                // Mark as read if spent enough time
-                if (currentSectionReadingSeconds >= targetReadingTime)
+                try
                 {
-                    progress.MarkSectionRead(sectionId);
+                    var progress = await ProgressService.GetProgressAsync(courseId);
+                    progress.RecordSectionTime(sectionId, elapsedSeconds);
+                    if (elapsedSeconds >= targetReadingTime)
+                    {
+                        progress.MarkSectionRead(sectionId);
+                    }
+                    await ProgressService.SaveProgressAsync(progress);
                 }
-                
-                await ProgressService.SaveProgressAsync(progress);
+                catch (Exception ex)
+                {
+                    Log.Warn($"Chat: Could not record reading time - {ex.Message}");
+                }
             });
         }
-        
+
         displayTimerSeconds = 0;
     }
 
