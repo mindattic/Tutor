@@ -329,7 +329,7 @@ public sealed class ConceptMergeService
             // Update the canonical's title if a new one was suggested
             if (!string.IsNullOrEmpty(merge.CanonicalTitle))
             {
-                canonical.Title = merge.CanonicalTitle;
+                RenameKeepingOldTitleAsAlias(canonical, merge.CanonicalTitle);
             }
 
             // If same map, merge directly
@@ -521,6 +521,21 @@ public sealed class ConceptMergeService
             .ThenByDescending(c => c.Aliases.Count)
             .ThenBy(c => c.CreatedAt)
             .First();
+    }
+
+    /// <summary>
+    /// Renames a concept but keeps its previous title as an alias so the old name still resolves.
+    /// </summary>
+    private static void RenameKeepingOldTitleAsAlias(Concept concept, string newTitle)
+    {
+        var oldTitle = concept.Title;
+        concept.Title = newTitle;
+        if (!string.IsNullOrWhiteSpace(oldTitle) &&
+            !oldTitle.Equals(newTitle, StringComparison.OrdinalIgnoreCase) &&
+            !concept.Aliases.Contains(oldTitle, StringComparer.OrdinalIgnoreCase))
+        {
+            concept.Aliases.Add(oldTitle);
+        }
     }
 
     private string NormalizeTitle(string title)
@@ -922,7 +937,7 @@ public sealed class ConceptMergeService
             // Update the canonical's title if a new one was suggested
             if (!string.IsNullOrEmpty(merge.CanonicalTitle))
             {
-                canonical.Title = merge.CanonicalTitle;
+                RenameKeepingOldTitleAsAlias(canonical, merge.CanonicalTitle);
             }
 
             // Merge the concepts
