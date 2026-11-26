@@ -20,6 +20,8 @@ public sealed class BundleImporter
     private readonly CourseStructureStorageService structureStorage;
     private readonly VectorStoreService vectorStore;
 
+    private const long MaxUncompressedBytes = 1L << 31; // 2 GiB
+
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNameCaseInsensitive = true
@@ -150,8 +152,8 @@ public sealed class BundleImporter
         // preserved as-is — only cross-entity IDs need rewriting.
         var newCourseId = Guid.NewGuid().ToString();
         var newStructureId = Guid.NewGuid().ToString();
-        var resourceIdMap = resources.ToDictionary(r => r.Id, _ => Guid.NewGuid().ToString());
-        var conceptMapIdMap = conceptMaps.ToDictionary(cm => cm.Id, _ => Guid.NewGuid().ToString());
+        var resourceIdMap = resources.GroupBy(r => r.Id).ToDictionary(g => g.Key, _ => Guid.NewGuid().ToString());
+        var conceptMapIdMap = conceptMaps.GroupBy(cm => cm.Id).ToDictionary(g => g.Key, _ => Guid.NewGuid().ToString());
 
         // --- Rewrite course ---
         course.Id = newCourseId;
@@ -263,13 +265,28 @@ public sealed class BundleImporter
     private static async Task<Dictionary<string, byte[]>> ReadAllEntriesAsync(ZipArchive archive, CancellationToken ct)
     {
         var entries = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        long total = 0;
         foreach (var entry in archive.Entries)
         {
             if (entry.FullName.EndsWith("/", StringComparison.Ordinal)) continue; // directory marker
 
+            // Zip-bomb guard: the declared size is attacker-controlled, so also cap the bytes actually read.
+            total += entry.Length;
+            if (total > MaxUncompressedBytes)
+                throw new InvalidOperationException("Bundle is too large to import (uncompressed size over limit).");
+
             using var stream = entry.Open();
             using var buffer = new MemoryStream();
-            await stream.CopyToAsync(buffer, ct);
+            var chunk = new byte[81920];
+            int n;
+            long read = 0;
+            while ((n = await stream.ReadAsync(chunk, ct)) > 0)
+            {
+                read += n;
+                if (read > entry.Length || read > MaxUncompressedBytes)
+                    throw new InvalidOperationException("Bundle entry exceeds its declared size.");
+                buffer.Write(chunk, 0, n);
+            }
             entries[entry.FullName] = buffer.ToArray();
         }
         return entries;
