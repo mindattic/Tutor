@@ -53,7 +53,12 @@ public class TutorLampTests
             foreach (var f in m.AllFields()) Assert.That(f.Label, Is.Not.Empty, f.Name);
         });
         Assert.That(m.Fields.Select(f => f.Group).Distinct(),
-            Is.EquivalentTo(new[] { "General", "Appearance", "Storage", "Learning", "Quiz", "Logging", "Sign-in security" }));
+            Is.EquivalentTo(new[]
+            {
+                "General", "Appearance", "Storage", "Learning", "Quiz",
+                "Gutenberg import", "Cost estimate", "Embeddings", "Usage limits", "Hosting",
+                "Logging", "Sign-in security",
+            }));
     }
 
     [Test]
