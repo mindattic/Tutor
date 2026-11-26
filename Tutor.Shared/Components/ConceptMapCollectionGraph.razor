@@ -148,6 +148,16 @@ else
     </div>
 }
 
+@if (!string.IsNullOrEmpty(linkingMessage))
+{
+    <div class="linking-message @(linkingSuccess ? "success" : "info")"
+         role="status"
+         aria-live="polite">
+        <span class="bi @(linkingSuccess ? "bi-check-circle" : "bi-info-circle")" aria-hidden="true"></span>
+        @linkingMessage
+    </div>
+}
+
 @if (connectivityInfo != null && !connectivityInfo.IsFullyConnected)
 {
     <div class="orphan-warning-banner" role="region" aria-label="Disconnected concepts">
@@ -215,15 +225,6 @@ else
                             <li><span class="more-concepts">+@(component.Concepts.Count - 10) more</span></li>
                         }
                     </ul>
-                </div>
-            }
-            @if (!string.IsNullOrEmpty(linkingMessage))
-            {
-                <div class="linking-message @(linkingSuccess ? "success" : "info")"
-                     role="status"
-                     aria-live="polite">
-                    <span class="bi @(linkingSuccess ? "bi-check-circle" : "bi-info-circle")" aria-hidden="true"></span>
-                    @linkingMessage
                 </div>
             }
         </div>
