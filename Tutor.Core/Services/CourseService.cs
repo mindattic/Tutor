@@ -71,26 +71,27 @@ public sealed class CourseService
         if (cachedResources != null)
             return cachedResources;
 
+        // A failed read propagates (nothing cached): returning an empty list here would let
+        // the next save overwrite the stored resources with it.
+        var json = await securePreferences.GetAsync(ResourcesKey);
+        if (string.IsNullOrEmpty(json))
+        {
+            cachedResources = new List<CourseResource>();
+            Log.Debug("CourseService: No resources found, returning empty list");
+            return cachedResources;
+        }
+
         try
         {
-            var json = await securePreferences.GetAsync(ResourcesKey);
-            if (string.IsNullOrEmpty(json))
-            {
-                cachedResources = new List<CourseResource>();
-                Log.Debug("CourseService: No resources found, returning empty list");
-                return cachedResources;
-            }
-
             cachedResources = JsonSerializer.Deserialize<List<CourseResource>>(json) ?? new List<CourseResource>();
             Log.Debug($"CourseService: Loaded {cachedResources.Count} resources from storage");
-            return cachedResources;
         }
         catch (Exception ex)
         {
-            Log.Error($"CourseService: Failed to load resources - {ex.Message}", ex);
+            Log.Error($"CourseService: Stored resources are unreadable - {ex.Message}", ex);
             cachedResources = new List<CourseResource>();
-            return cachedResources;
         }
+        return cachedResources;
     }
 
     public async Task<CourseResource?> GetResourceAsync(string id)
@@ -341,23 +342,24 @@ public sealed class CourseService
         if (cachedCourses != null)
             return cachedCourses;
 
-        try
-        {
-            var json = await securePreferences.GetAsync(CoursesKey);
-            if (string.IsNullOrEmpty(json))
-            {
-                cachedCourses = new List<Course>();
-                return cachedCourses;
-            }
-
-            cachedCourses = JsonSerializer.Deserialize<List<Course>>(json) ?? new List<Course>();
-            return cachedCourses;
-        }
-        catch
+        // A failed read propagates (nothing cached), see LoadResourcesLockedAsync.
+        var json = await securePreferences.GetAsync(CoursesKey);
+        if (string.IsNullOrEmpty(json))
         {
             cachedCourses = new List<Course>();
             return cachedCourses;
         }
+
+        try
+        {
+            cachedCourses = JsonSerializer.Deserialize<List<Course>>(json) ?? new List<Course>();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"CourseService: Stored courses are unreadable - {ex.Message}", ex);
+            cachedCourses = new List<Course>();
+        }
+        return cachedCourses;
     }
 
     public async Task<Course?> GetCourseAsync(string id)
