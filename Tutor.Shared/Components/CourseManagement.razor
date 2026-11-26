@@ -744,19 +744,19 @@
                         </button>
                     }
                 </div>
-
-                @if (!string.IsNullOrEmpty(statusMessage))
-                {
-                    <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "success")"
-                         role="@(statusMessage.StartsWith("Error") ? "alert" : "status")"
-                         aria-live="@(statusMessage.StartsWith("Error") ? "assertive" : "polite")"
-                         aria-atomic="true">
-                        @statusMessage
-                    </div>
-                }
             </div>
         }
     </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="status-message @(statusMessage.StartsWith("Error") ? "error" : "success")"
+             role="@(statusMessage.StartsWith("Error") ? "alert" : "status")"
+             aria-live="@(statusMessage.StartsWith("Error") ? "assertive" : "polite")"
+             aria-atomic="true">
+            @statusMessage
+        </div>
+    }
 </section>
 
 @* New Course Modal *@
