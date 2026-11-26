@@ -535,8 +535,9 @@ public sealed class ConceptMapService
             await semaphore.WaitAsync(ct);
             try
             {
-                // Small staggered delay to avoid burst requests
-                if (index > 0)
+                // Small staggered delay for the first wave only (later chunks are paced by the semaphore;
+                // sleeping index*delay while holding a slot would grow quadratically)
+                if (index > 0 && index < MaxConcurrentApiCalls)
                 {
                     await Task.Delay(index * ChunkDelayMs, ct);
                 }
@@ -680,7 +681,7 @@ public sealed class ConceptMapService
             await semaphore.WaitAsync(ct);
             try
             {
-                if (index > 0)
+                if (index > 0 && index < MaxConcurrentApiCalls)
                 {
                     await Task.Delay(index * ChunkDelayMs, ct);
                 }
