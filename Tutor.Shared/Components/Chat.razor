@@ -969,13 +969,10 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
             hasStartedLearning = true;
             visitedTopicIndices.Add(currentLessonIndex);
             
-            // Mark section as visited and record the spiral teaching (keyed by the unit's
-            // stable id, matching the section-quiz key) so revisits deepen.
+            // Mark section as visited; TeachCurrentTopic records the spiral teaching once.
             var sectionId = UnitAt(currentLessonIndex)?.Id ?? $"topic-{currentLessonIndex}";
-            var sectionTitle = currentLessonIndex < lessonTopics.Count ? lessonTopics[currentLessonIndex] : sectionId;
             var progress = await ProgressService.GetProgressAsync(activeCourse.Id);
             progress.MarkSectionVisited(sectionId);
-            progress.RecordTopicTaught(sectionId, sectionTitle);
             await ProgressService.SaveProgressAsync(progress);
             
             // Reading timer will be started after AI response in SendAsyncInternal
@@ -1009,13 +1006,10 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
         var enrichWithLearned = visitedTopicIndices.Contains(currentLessonIndex);
         visitedTopicIndices.Add(currentLessonIndex);
 
-        // Mark new section as visited and record the spiral teaching (keyed by the unit's
-        // stable id) so the spiral depth advances as the student returns to material.
+        // Mark new section as visited; TeachCurrentTopic records the spiral teaching once.
         var newSectionId = UnitAt(currentLessonIndex)?.Id ?? $"topic-{currentLessonIndex}";
-        var newSectionTitle = currentLessonIndex < lessonTopics.Count ? lessonTopics[currentLessonIndex] : newSectionId;
         var newProgress = await ProgressService.GetProgressAsync(activeCourse.Id);
         newProgress.MarkSectionVisited(newSectionId);
-        newProgress.RecordTopicTaught(newSectionId, newSectionTitle);
         await ProgressService.SaveProgressAsync(newProgress);
         
         // Reading timer will be started after AI response in SendAsyncInternal
