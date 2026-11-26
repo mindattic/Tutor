@@ -24,6 +24,10 @@ public sealed class ConceptMapStorageService
     // background queue, so the cache is read and written from several threads at once.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ConceptMap> cache = new();
 
+    // One write lock per map: SaveAsync stages through a shared "<id>.json.tmp", so two
+    // concurrent saves of the same map (UI circuit + background queue) would clobber that file.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> saveLocks = new();
+
     private void StoreInCache(ConceptMap map)
     {
         cache[map.Id] = map;
@@ -81,6 +85,8 @@ public sealed class ConceptMapStorageService
             WriteIndented = true
         });
 
+        var saveLock = saveLocks.GetOrAdd(conceptMap.Id, _ => new SemaphoreSlim(1, 1));
+        await saveLock.WaitAsync(ct);
         try
         {
             // Write to temp file first, then atomically swap. File.Replace performs
@@ -112,6 +118,10 @@ public sealed class ConceptMapStorageService
         {
             Log.Error($"ConceptMapStorage: Failed to save ConceptMap '{conceptMap.Name}' - {ex.Message}", ex);
             throw;
+        }
+        finally
+        {
+            saveLock.Release();
         }
     }
 
