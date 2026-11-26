@@ -518,9 +518,9 @@
                                                     <div class="settings-row">
                                                         <label>Min Confidence:</label>
                                                         <select class="theme-select small"
-                                                                value="@(item.OrphanLinkingMinConfidence?.ToString("0.0") ?? "")"
+                                                                value="@(item.OrphanLinkingMinConfidence?.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) ?? "")"
                                                                 @onchange="@(e => UpdateResourceMinConfidence(item, e))">
-                                                            <option value="">Use global (@globalMinConfidence.ToString("0.0"))</option>
+                                                            <option value="">Use global (@globalMinConfidence.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))</option>
                                                             <option value="0.1">0.1 (very permissive)</option>
                                                             <option value="0.2">0.2 (permissive)</option>
                                                             <option value="0.3">0.3</option>
@@ -1938,7 +1938,7 @@ private string resourceContent = "";
         {
             resource.OrphanLinkingMinConfidence = null; // Use global
         }
-        else if (float.TryParse(value, out var confidence))
+        else if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var confidence))
         {
             resource.OrphanLinkingMinConfidence = confidence;
         }
