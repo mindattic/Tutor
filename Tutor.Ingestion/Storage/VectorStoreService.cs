@@ -338,7 +338,9 @@ public sealed class VectorStoreService : IVectorStore
         try
         {
             var json = JsonSerializer.Serialize(chunks, new JsonSerializerOptions { WriteIndented = false });
-            await File.WriteAllTextAsync(ChunksFilePath, json);
+            var tempPath = ChunksFilePath + ".tmp";
+            await File.WriteAllTextAsync(tempPath, json);
+            File.Move(tempPath, ChunksFilePath, overwrite: true);
         }
         catch (Exception ex)
         {
