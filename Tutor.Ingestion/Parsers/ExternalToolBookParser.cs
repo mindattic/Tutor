@@ -127,7 +127,10 @@ public abstract class ExternalToolBookParser : IBookParser
                 using var proc = Process.Start(psi);
                 if (proc != null)
                 {
-                    proc.WaitForExit(5000);
+                    if (!proc.WaitForExit(5000))
+                    {
+                        try { proc.Kill(true); } catch { /* already gone */ }
+                    }
                     return candidate;
                 }
             }
