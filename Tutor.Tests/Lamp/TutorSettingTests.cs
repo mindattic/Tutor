@@ -88,7 +88,7 @@ public class TutorSettingTests
     {
         var tested = GetType().GetMethods().Select(m => m.Name).Where(n => n.StartsWith("Setting_")).ToList();
         var fields = SettingsManifestBuilder.Build<TutorSettings>().Fields;
-        Assert.That(fields, Has.Count.EqualTo(28), string.Join(", ", fields.Select(f => f.Property)));
+        Assert.That(fields, Has.Count.EqualTo(39), string.Join(", ", fields.Select(f => f.Property)));
         foreach (var field in fields)
         {
             var pascal = char.ToUpperInvariant(field.Property[0]) + field.Property[1..];
@@ -447,6 +447,121 @@ public class TutorSettingTests
         Assert.That(global, Is.EqualTo(0.5f));
         Assert.That(new Tutor.Core.Models.CourseResource().GetEffectiveMinConfidence(global), Is.EqualTo(0.5f), "a resource without an override uses it");
     }
+
+    // ---- Gutenberg import and cost estimate (TUT-T50) -------------------------------------
+
+    private sealed class RecordingHandler(string body) : HttpMessageHandler
+    {
+        public List<(string Url, string UserAgent)> Requests { get; } = [];
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Requests.Add((request.RequestUri!.ToString(), request.Headers.UserAgent.ToString()));
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(body) });
+        }
+    }
+
+    /// <summary>Stores the value through the store, checks settings.json holds it under the manifest name, and returns the reloaded settings.</summary>
+    private TutorSettings SetAndReload(string property, Action<TutorSettings> set, JsonNode? expected)
+    {
+        var store = Import();
+        store.Update(set);
+        return AssertStoredUnderManifestName(store, property, expected);
+    }
+
+    private static Tutor.Cli.Gutenberg.GutenbergFetcher Fetcher(JsonSettingsStore<TutorSettings> store, RecordingHandler handler) =>
+        new(new HttpClient(handler), new TutorSettingsSource(store));
+
+    [Test]
+    public async Task Setting_GutenbergTopListUrl_RoundTripsAndIsThePageTheTopListIsReadFrom()
+    {
+        var store = Import();
+        store.Update(s => { s.GutenbergTopListUrl = "https://example.test/top"; s.GutenbergRequestDelayMs = 0; });
+        AssertStoredUnderManifestName(store, "gutenbergTopListUrl", "https://example.test/top");
+        var handler = new RecordingHandler("<h2 id=\"books-last30\"></h2><ol><li><a href=\"/ebooks/1\">A by B (3)</a></li></ol>");
+        var (books, source) = await Fetcher(store, handler).FetchTopAsync(1);
+        Assert.That(source, Is.EqualTo("https://example.test/top"));
+        Assert.That(books.Single().Id, Is.EqualTo(1));
+        Assert.That(handler.Requests.Single().Url, Is.EqualTo("https://example.test/top"));
+    }
+
+    [Test]
+    public async Task Setting_GutenbergPopularFallbackUrl_RoundTripsAndIsTheListUsedWhenThePageHasNone()
+    {
+        var store = Import();
+        store.Update(s => { s.GutenbergTopListUrl = "https://example.test/top"; s.GutenbergPopularFallbackUrl = "https://example.test/popular"; s.GutenbergRequestDelayMs = 0; });
+        AssertStoredUnderManifestName(store, "gutenbergPopularFallbackUrl", "https://example.test/popular");
+        var handler = new RecordingHandler("{\"results\":[{\"id\":7,\"title\":\"T\",\"authors\":[{\"name\":\"Last, First\"}]}]}");
+        var (books, source) = await Fetcher(store, handler).FetchTopAsync(1);
+        Assert.That(source, Is.EqualTo("https://example.test/popular"));
+        Assert.That(books.Single().Id, Is.EqualTo(7));
+    }
+
+    [Test]
+    public async Task Setting_GutenbergTextUrlTemplate_RoundTripsAndIsWhereABooksTextIsDownloaded()
+    {
+        var store = Import();
+        store.Update(s => { s.GutenbergTextUrlTemplate = "https://example.test/{id}.txt"; s.GutenbergRequestDelayMs = 0; });
+        AssertStoredUnderManifestName(store, "gutenbergTextUrlTemplate", "https://example.test/{id}.txt");
+        var handler = new RecordingHandler("body");
+        var (_, url) = await Fetcher(store, handler).FetchRawAsync(42);
+        Assert.That(url, Is.EqualTo("https://example.test/42.txt"));
+    }
+
+    [Test]
+    public async Task Setting_GutenbergMirrorTextUrlTemplate_RoundTripsAndIsTriedWhenTheTextAddressFails()
+    {
+        var store = Import();
+        store.Update(s => { s.GutenbergTextUrlTemplate = ""; s.GutenbergMirrorTextUrlTemplate = "https://mirror.test/{id}.txt"; s.GutenbergRequestDelayMs = 0; });
+        AssertStoredUnderManifestName(store, "gutenbergMirrorTextUrlTemplate", "https://mirror.test/{id}.txt");
+        var (_, url) = await Fetcher(store, new RecordingHandler("body")).FetchRawAsync(5);
+        Assert.That(url, Is.EqualTo("https://mirror.test/5.txt"));
+    }
+
+    [Test]
+    public void Setting_GutenbergTopCount_RoundTripsAndIsHowManyBooksGutenbergTopBuilds()
+    {
+        var loaded = SetAndReload("gutenbergTopCount", s => s.GutenbergTopCount = 25, 25);
+        Assert.That(loaded.GutenbergTopCount, Is.EqualTo(25));
+        Assert.That(new TutorSettings().GutenbergTopCount, Is.EqualTo(10), "the default when --count isn't given");
+    }
+
+    [Test]
+    public async Task Setting_GutenbergRequestDelayMs_RoundTripsAndIsThePauseBeforeEachRequest()
+    {
+        var store = Import();
+        store.Update(s => { s.GutenbergRequestDelayMs = 300; s.GutenbergTextUrlTemplate = "https://example.test/{id}.txt"; });
+        AssertStoredUnderManifestName(store, "gutenbergRequestDelayMs", 300);
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        await Fetcher(store, new RecordingHandler("body")).FetchRawAsync(1);
+        Assert.That(started.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(250));
+    }
+
+    [Test]
+    public async Task Setting_GutenbergUserAgent_RoundTripsAndIsHowTheCliNamesItself()
+    {
+        var store = Import();
+        store.Update(s => { s.GutenbergUserAgent = "Test-Agent/9.0"; s.GutenbergRequestDelayMs = 0; s.GutenbergTextUrlTemplate = "https://example.test/{id}.txt"; });
+        AssertStoredUnderManifestName(store, "gutenbergUserAgent", "Test-Agent/9.0");
+        var handler = new RecordingHandler("body");
+        await Fetcher(store, handler).FetchRawAsync(1);
+        Assert.That(handler.Requests.Single().UserAgent, Is.EqualTo("Test-Agent/9.0"));
+    }
+
+    [Test]
+    public void Setting_EstimateCharsPerToken_RoundTripsAndIsWhatTokensAreEstimatedFrom() =>
+        Assert.That(SetAndReload("estimateCharsPerToken", s => s.EstimateCharsPerToken = 3.5, 3.5).EstimateCharsPerToken, Is.EqualTo(3.5));
+
+    [Test]
+    public void Setting_EstimateChatInputUsdPerMillionTokens_RoundTripsAndIsTheChatInputPrice() =>
+        Assert.That(SetAndReload("estimateChatInputUsdPerMillionTokens", s => s.EstimateChatInputUsdPerMillionTokens = 1.25, 1.25).EstimateChatInputUsdPerMillionTokens, Is.EqualTo(1.25));
+
+    [Test]
+    public void Setting_EstimateChatOutputUsdPerMillionTokens_RoundTripsAndIsTheChatOutputPrice() =>
+        Assert.That(SetAndReload("estimateChatOutputUsdPerMillionTokens", s => s.EstimateChatOutputUsdPerMillionTokens = 7.5, 7.5).EstimateChatOutputUsdPerMillionTokens, Is.EqualTo(7.5));
+
+    [Test]
+    public void Setting_EstimateEmbeddingUsdPerMillionTokens_RoundTripsAndIsTheEmbeddingPrice() =>
+        Assert.That(SetAndReload("estimateEmbeddingUsdPerMillionTokens", s => s.EstimateEmbeddingUsdPerMillionTokens = 0.5, 0.5).EstimateEmbeddingUsdPerMillionTokens, Is.EqualTo(0.5));
 
     // ---- Logging ------------------------------------------------------------------------
 
