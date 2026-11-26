@@ -282,6 +282,9 @@ public sealed class CourseStructureService
         }
 
         var lessons = new List<Lesson>();
+        // The prompt asks for each concept in exactly one topic, but the AI can repeat one;
+        // a concept must not appear twice in the structure (progress and nav would double-count it).
+        var assignedConceptIds = new HashSet<string>();
         var conceptLookup = conceptMap.Concepts.GroupBy(c => c.Title.ToLowerInvariant()) // duplicate titles must not throw
             .ToDictionary(g => g.Key, g => g.First().Id);
 
@@ -311,8 +314,12 @@ public sealed class CourseStructureService
                     {
                         foreach (var term in topicDto.ConceptTerms)
                         {
+                            if (string.IsNullOrWhiteSpace(term))
+                                continue;
+
                             var key = term.ToLowerInvariant();
-                            if (conceptLookup.TryGetValue(key, out var conceptId))
+                            if (conceptLookup.TryGetValue(key, out var conceptId) &&
+                                assignedConceptIds.Add(conceptId))
                             {
                                 topic.ConceptIds.Add(conceptId);
                             }
