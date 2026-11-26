@@ -257,7 +257,11 @@ public sealed class GutenbergTopCommand
 
     private static string ToMarkdown(RunReport r)
     {
-        static string T(double seconds) => TimeSpan.FromSeconds(seconds).ToString(@"h\:mm\:ss");
+        static string T(double seconds)
+        {
+            var ts = TimeSpan.FromSeconds(seconds);
+            return $"{(long)ts.TotalHours}:" + ts.ToString(@"mm\:ss"); // total hours: a 100-book run passes 24 h
+        }
         var sb = new StringBuilder();
         sb.AppendLine($"# Gutenberg top {r.Books.Count}: course build timings");
         sb.AppendLine();
