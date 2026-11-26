@@ -638,6 +638,23 @@ public static class BackgroundQueueService
         if (item.IsTerminal || item.Status == BackgroundTaskStatus.InProgress)
             return;
 
+        // Wait out a retry backoff before taking a slot so a sleeping retry does not starve other tasks.
+        try
+        {
+            if (item.NextRetryAt != null && DateTime.UtcNow < item.NextRetryAt)
+            {
+                var delay = item.NextRetryAt.Value - DateTime.UtcNow;
+                if (delay < TimeSpan.Zero) delay = TimeSpan.Zero;
+                await Task.Delay(delay, cts!.Token);
+                processingChannel!.Writer.TryWrite(taskId);
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
         // Acquire processing slot. Hold inside try/finally so the OperationCanceledException
         // from WaitAsync is observed by the outer handlers below rather than escaping
         // as an unobserved task exception.
@@ -650,17 +667,6 @@ public static class BackgroundQueueService
             // Double-check status after acquiring lock
             if (item.IsTerminal || item.Status == BackgroundTaskStatus.InProgress)
                 return;
-
-            // Check if we need to wait for retry
-            if (item.NextRetryAt != null && DateTime.UtcNow < item.NextRetryAt)
-            {
-                // Re-queue for later
-                var delay = item.NextRetryAt.Value - DateTime.UtcNow;
-                if (delay < TimeSpan.Zero) delay = TimeSpan.Zero;
-                await Task.Delay(delay, cts.Token);
-                processingChannel!.Writer.TryWrite(taskId);
-                return;
-            }
 
             // Get handler
             if (!handlers.TryGetValue(item.TaskType, out var handler))
