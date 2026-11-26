@@ -147,6 +147,9 @@ public sealed class OrphanConceptLinkerService
                     continue;
                 }
 
+                if (orphanConcept.Id == mainConcept.Id)
+                    continue;
+
                 var (sourceId, targetId) = link.Direction?.ToLowerInvariant() == "maintoorphan"
                     ? (mainConcept.Id, orphanConcept.Id)
                     : (orphanConcept.Id, mainConcept.Id);
@@ -417,19 +420,23 @@ public sealed class OrphanConceptLinkerService
                 var mainKey = link.MainConceptTerm?.ToLowerInvariant() ?? "";
 
                 // Try exact match first, then partial match
-                if (!conceptLookup.TryGetValue(orphanKey, out var orphanConcept))
+                // An empty term would "partially match" the first concept in the map, so skip the fallback for it
+                if (!conceptLookup.TryGetValue(orphanKey, out var orphanConcept) &&
+                    !string.IsNullOrWhiteSpace(link.OrphanConceptTerm))
                 {
                     orphanConcept = conceptMap.Concepts.FirstOrDefault(c => 
-                        c.Title.Contains(link.OrphanConceptTerm ?? "", StringComparison.OrdinalIgnoreCase));
+                        c.Title.Contains(link.OrphanConceptTerm, StringComparison.OrdinalIgnoreCase));
                 }
 
-                if (!conceptLookup.TryGetValue(mainKey, out var mainConcept))
+                if (!conceptLookup.TryGetValue(mainKey, out var mainConcept) &&
+                    !string.IsNullOrWhiteSpace(link.MainConceptTerm))
                 {
                     mainConcept = conceptMap.Concepts.FirstOrDefault(c => 
-                        c.Title.Contains(link.MainConceptTerm ?? "", StringComparison.OrdinalIgnoreCase));
+                        c.Title.Contains(link.MainConceptTerm, StringComparison.OrdinalIgnoreCase));
                 }
 
-                if (orphanConcept == null || mainConcept == null)
+                // Both terms may resolve to the same concept; a self-link would not connect anything
+                if (orphanConcept == null || mainConcept == null || orphanConcept.Id == mainConcept.Id)
                 {
                     continue;
                 }
