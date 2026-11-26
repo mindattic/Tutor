@@ -263,7 +263,7 @@
     {
         // Clear section quiz context when going back
         currentSection = null;
-        currentSectionConceptIds.Clear();
+        currentSectionConceptIds = []; // never Clear(): the list is the Section's own ConceptIds
         SwitchTab(LearnTab.Chat);
     }
 
@@ -324,7 +324,7 @@
 
         // Clear section quiz context
         currentSection = null;
-        currentSectionConceptIds.Clear();
+        currentSectionConceptIds = []; // never Clear(): the list is the Section's own ConceptIds
     }
 
     /// <summary>
