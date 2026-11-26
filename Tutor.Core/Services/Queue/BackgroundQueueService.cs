@@ -600,6 +600,7 @@ public static class BackgroundQueueService
                 {
                     // Re-queue for later
                     var delay = state.RateLimitState.RetryAfter?.Subtract(DateTime.UtcNow) ?? TimeSpan.FromSeconds(30);
+                    if (delay < TimeSpan.Zero) delay = TimeSpan.Zero; // RetryAfter may pass after the check above; Task.Delay rejects negatives
                     Log.Debug($"BackgroundQueueService: Rate limited, waiting {delay.TotalSeconds:F0}s");
                     await Task.Delay(delay, cts.Token);
                     processingChannel.Writer.TryWrite(taskId);
@@ -655,6 +656,7 @@ public static class BackgroundQueueService
             {
                 // Re-queue for later
                 var delay = item.NextRetryAt.Value - DateTime.UtcNow;
+                if (delay < TimeSpan.Zero) delay = TimeSpan.Zero;
                 await Task.Delay(delay, cts.Token);
                 processingChannel!.Writer.TryWrite(taskId);
                 return;
