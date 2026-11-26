@@ -1000,7 +1000,7 @@ Make sure to include ""{topicName}"" or a very similar topic name.";
 
         if (currentLessonIndex >= lessonTopics.Count)
         {
-            messages.Add(new ChatMessage("assistant", "?? **Congratulations!** You've completed all the topics in this lesson. You can use the **Previous** button to review any topic, or take a **Quiz** to test your knowledge!", "Lesson completed"));
+            messages.Add(new ChatMessage("assistant", "**Congratulations!** You've completed all the topics in this lesson. You can use the **Previous** button to review any topic, or take a **Quiz** to test your knowledge!", "Lesson completed"));
             StateHasChanged();
             return;
         }
@@ -2443,7 +2443,7 @@ The questions should be specific and relevant to what you just explained, not ge
         
         if (displayTimerSeconds >= targetTime)
         {
-            return "? Read";
+            return "Read";
         }
         
         var minutes = remaining / 60;
