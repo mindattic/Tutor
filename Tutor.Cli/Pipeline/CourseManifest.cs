@@ -102,7 +102,11 @@ public sealed class CoursePackage : IDisposable
     /// <summary>Resolves an item's <c>File</c> to an absolute path; throws if it's missing.</summary>
     public string ResolveItemPath(CourseManifestItem item)
     {
+        var root = Path.GetFullPath(BaseDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var full = Path.GetFullPath(Path.Combine(BaseDir, item.File));
+        // A manifest (often from a downloaded zip) must not point outside its own package.
+        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Item file escapes the package: {item.File}");
         if (!File.Exists(full))
             throw new FileNotFoundException($"Item file not found in package: {item.File}");
         return full;
