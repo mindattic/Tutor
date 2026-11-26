@@ -1143,8 +1143,11 @@ private string resourceContent = "";
     {
         foreach (var resource in resources.Where(r => r.IsProcessed && !string.IsNullOrEmpty(r.ConceptMapId)))
         {
-            // Skip if already cached
-            if (resourceKbDetailsCache.ContainsKey(resource.Id))
+            // Skip only a cache entry for this very map that was taken once it was Ready; an entry cached
+            // while the map was missing or still building (expanded mid-processing) must be refreshed.
+            if (resourceKbDetailsCache.TryGetValue(resource.Id, out var cached)
+                && cached.ConceptMapId == resource.ConceptMapId
+                && cached.ConceptMapStatus == ConceptMapStatus.Ready)
                 continue;
                 
             try
