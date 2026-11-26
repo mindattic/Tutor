@@ -67,7 +67,7 @@ public class TutorLampTests
         var m = SettingsManifestBuilder.Build<TutorSettings>();
         var secretish = new[] { "apikey", "password", "token", "secret", "pepper" };
 
-        Assert.That(m.AllFields().Where(f => f.Kind is not SettingKind.Object && f.Kind is not SettingKind.Integer
+        Assert.That(m.AllFields().Where(f => f.Kind is not SettingKind.Object && f.Kind is not SettingKind.Integer && f.Kind is not SettingKind.Decimal   // numbers (token counts, per-token prices) are never secrets
                                               && f.Property != "currentPepperKeyId"   // the pepper's id, not the pepper
                                               && secretish.Any(w => f.Property.Contains(w, StringComparison.OrdinalIgnoreCase))),
             Is.Empty);
