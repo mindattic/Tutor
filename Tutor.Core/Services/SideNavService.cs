@@ -83,8 +83,25 @@ public sealed class SideNavService
         }
 
         // Load ConceptMap collection and CourseStructure
-        var conceptMap = await conceptMapStorageService.LoadAsync(course.ConceptMapCollectionId!, ct);
+        // ConceptMapCollectionId names a collection, not a single ConceptMap, so it must be loaded
+        // through the collection (LoadAsync on the map store never finds it and the nav stayed "not ready").
+        var collection = await courseService.GetCourseConceptMapCollectionAsync(courseId, ct);
         var structure = await structureStorageService.LoadAsync(course.CourseStructureId!, ct);
+
+        // The nav only looks concepts up by ID, so one lookup map over every map in the collection is enough.
+        var conceptMap = collection == null || collection.ConceptMaps.Count == 0
+            ? null
+            : new ConceptMap
+            {
+                Id = collection.Collection.Id,
+                Name = collection.Collection.Name,
+                Concepts = collection.GetAllConcepts().ToList(),
+                Relations = collection.GetAllRelations().ToList(),
+                ComplexityOrder = collection.GetAllComplexityOrder().ToList(),
+                Status = collection.ConceptMaps.All(cm => cm.Status == ConceptMapStatus.Ready)
+                    ? ConceptMapStatus.Ready
+                    : ConceptMapStatus.NotStarted
+            };
 
         if (conceptMap == null || conceptMap.Status != ConceptMapStatus.Ready)
         {
