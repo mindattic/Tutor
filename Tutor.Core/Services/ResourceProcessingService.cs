@@ -482,6 +482,10 @@ public sealed class ResourceProcessingService : IDisposable
             status.Progress = progress;
             status.CurrentOperation = message;
             status.LastUpdated = DateTime.UtcNow;
+            // A failed/cancelled task never reaches the CompletedAt assignment, so its ElapsedTime
+            // would keep growing (and inflate the cumulative processing time) forever.
+            if (stage == ProcessingStage.Failed && status.CompletedAt == null)
+                status.CompletedAt = DateTime.UtcNow;
             NotifyStatusChanged(status);
         }
     }
