@@ -140,14 +140,30 @@ public class LocalQuizController : IQuizController
     public static List<QuizQuestion> PickPreGeneratedForSections(
         CourseStructure structure, List<string> sectionIds, int questionCount)
     {
-        var hits = new List<QuizQuestion>();
+        var perSection = new List<List<QuizQuestion>>();
         foreach (var sid in sectionIds)
         {
             var section = structure.FindSection(sid);
             if (section == null || section.PreGeneratedQuestions.Count == 0) continue;
-            hits.AddRange(section.PreGeneratedQuestions);
+            perSection.Add(section.PreGeneratedQuestions);
         }
-        return hits.Take(questionCount).ToList();
+
+        // Take round-robin across the sections: a whole-course pick (the final exam passes every
+        // section) must not fill its count from the first lesson alone. One section keeps its order.
+        var hits = new List<QuizQuestion>();
+        for (var round = 0; hits.Count < questionCount; round++)
+        {
+            var added = false;
+            foreach (var questions in perSection)
+            {
+                if (round >= questions.Count) continue;
+                hits.Add(questions[round]);
+                added = true;
+                if (hits.Count >= questionCount) break;
+            }
+            if (!added) break;
+        }
+        return hits;
     }
 
     /// <summary>
