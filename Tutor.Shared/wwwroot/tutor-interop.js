@@ -479,6 +479,9 @@
                 var targetNode = currentlyDraggedNode || selectedNode;
                 if (!targetNode) return;
 
+                var t = event.target;
+                if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+
                 // Only react to "p" or "P" key
                 var key = event.key || event.keyCode;
                 if (key === 'p' || key === 'P' || key === 80) {
