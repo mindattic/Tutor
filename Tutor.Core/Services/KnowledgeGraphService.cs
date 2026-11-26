@@ -20,7 +20,8 @@ public sealed class KnowledgeGraphService
     private readonly LSHService lshService;
     private readonly SimHashService simHashService;
 
-    private readonly Dictionary<string, KnowledgeGraph> loadedGraphs = [];
+    // Concurrent: the singleton is hit by the background build queue and every UI circuit.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, KnowledgeGraph> loadedGraphs = new();
 
     public event Action<string>? OnGraphUpdated;
 
@@ -517,7 +518,19 @@ public sealed class KnowledgeGraphService
     {
         var filePath = GetGraphFilePath(graph.Id);
         var json = JsonSerializer.Serialize(graph, new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(filePath, json, ct);
+        // Stage then swap so a crash mid-write cannot leave a truncated graph file
+        // (LoadGraphAsync swallows parse errors and would report the graph as missing).
+        var tempPath = $"{filePath}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            await File.WriteAllTextAsync(tempPath, json, ct);
+            File.Move(tempPath, filePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
         loadedGraphs[graph.Id] = graph;
     }
 
@@ -567,7 +580,7 @@ public sealed class KnowledgeGraphService
     /// </summary>
     public Task DeleteGraphAsync(string graphId, CancellationToken ct = default)
     {
-        loadedGraphs.Remove(graphId);
+        loadedGraphs.TryRemove(graphId, out _);
         
         var filePath = GetGraphFilePath(graphId);
         if (File.Exists(filePath))
