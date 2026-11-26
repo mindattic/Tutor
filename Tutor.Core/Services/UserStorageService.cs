@@ -57,6 +57,12 @@ public class UserStorageService
         }
         catch
         {
+            // Keep the unreadable file aside so a later save does not destroy it.
+            try
+            {
+                File.Copy(path, $"{path}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}", overwrite: true);
+            }
+            catch { }
             return null;
         }
         finally
