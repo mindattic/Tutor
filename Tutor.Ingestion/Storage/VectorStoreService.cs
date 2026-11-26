@@ -315,8 +315,16 @@ public sealed class VectorStoreService : IVectorStore
                 cachedChunks = [];
             }
         }
-        catch
+        catch (Exception ex)
         {
+            // Keep the unreadable file aside so the next save does not destroy it.
+            try
+            {
+                var backup = $"{ChunksFilePath}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}";
+                File.Copy(ChunksFilePath, backup, overwrite: true);
+                IngestionLog.Error($"VectorStore: unreadable chunks file kept as {backup} - {ex.Message}", ex);
+            }
+            catch { }
             cachedChunks = [];
         }
 
