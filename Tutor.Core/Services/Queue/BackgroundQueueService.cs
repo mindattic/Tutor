@@ -716,7 +716,8 @@ public static class BackgroundQueueService
         }
         catch (OperationCanceledException)
         {
-            item.Status = BackgroundTaskStatus.Pending;
+            if (!item.IsTerminal)
+                item.Status = BackgroundTaskStatus.Pending;
             item.UpdatedAt = DateTime.UtcNow;
             Log.Debug($"BackgroundQueueService: Task {taskId} cancelled");
         }
@@ -733,6 +734,11 @@ public static class BackgroundQueueService
 
     private static async Task HandleTaskResultAsync(BackgroundQueueItem item, BackgroundTaskResult result)
     {
+        // CancelTask can run while the handler is still working; its result must not
+        // overwrite (and so resurrect) a cancelled task.
+        if (item.Status == BackgroundTaskStatus.Cancelled)
+            return;
+
         item.UpdatedAt = DateTime.UtcNow;
 
         if (result.Success)
