@@ -50,7 +50,7 @@ public sealed class GutenbergFetcher
             {
                 return (await GetStringPolitelyAsync(url, s.GutenbergRequestDelayMs, ct), url);
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is HttpRequestException || (ex is TaskCanceledException && !ct.IsCancellationRequested))
             {
                 Console.Error.WriteLine($"  [GUTENBERG] {url} failed: {Describe(ex)}");
                 last = ex;
@@ -74,7 +74,7 @@ public sealed class GutenbergFetcher
             if (books.Count > 0) return (books, s.GutenbergTopListUrl);
             Console.Error.WriteLine($"  [GUTENBERG] {s.GutenbergTopListUrl} had no \"last 30 days\" list.");
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (ex is HttpRequestException || (ex is TaskCanceledException && !ct.IsCancellationRequested))
         {
             Console.Error.WriteLine($"  [GUTENBERG] {s.GutenbergTopListUrl} failed: {Describe(ex)}");
         }
