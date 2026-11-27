@@ -246,9 +246,15 @@ Respond with a JSON object:
             var filePath = GetUserQuizResultsPath(result.UserId);
             var results = await LoadQuizResultsAsync(result.UserId);
             results.Add(result);
-            
+
             var json = JsonSerializer.Serialize(results, JsonOptions);
-            await File.WriteAllTextAsync(filePath, json);
+            var tempPath = filePath + ".tmp";
+            await File.WriteAllTextAsync(tempPath, json);
+
+            if (File.Exists(filePath))
+                File.Replace(tempPath, filePath, filePath + ".bak");
+            else
+                File.Move(tempPath, filePath);
         }
         finally
         {
@@ -258,11 +264,20 @@ Respond with a JSON object:
 
     public async Task<List<QuizResult>> GetQuizResultsAsync(string userId, string? courseId = null)
     {
-        var results = await LoadQuizResultsAsync(userId);
-        
+        await fileLock.WaitAsync();
+        List<QuizResult> results;
+        try
+        {
+            results = await LoadQuizResultsAsync(userId);
+        }
+        finally
+        {
+            fileLock.Release();
+        }
+
         if (!string.IsNullOrEmpty(courseId))
             results = results.Where(r => r.CourseId == courseId).ToList();
-        
+
         return results.OrderByDescending(r => r.CompletedAt).ToList();
     }
 
