@@ -146,6 +146,37 @@ public class CourseManifestValidatorTests
         Assert.That(result.Warnings.Select(w => w.Code), Does.Contain(ValidationCodes.LegacyNoSha));
     }
 
+    [Test]
+    public void DuplicateResourceId_FailsWithDuplicateResourceId()
+    {
+        var result = CourseManifestValidator.Validate(ValidManifest(), ValidEntries,
+            resourceIds: ["res-1", "res-2", "res-1"]);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors.Select(e => e.Code), Does.Contain(ValidationCodes.DuplicateResourceId));
+    }
+
+    [Test]
+    public void DuplicateConceptMapId_FailsWithDuplicateConceptMapId()
+    {
+        var result = CourseManifestValidator.Validate(ValidManifest(), ValidEntries,
+            conceptMapIds: ["cm-1", "cm-1"]);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors.Select(e => e.Code), Does.Contain(ValidationCodes.DuplicateConceptMapId));
+    }
+
+    [Test]
+    public void DistinctResourceAndConceptMapIds_PassWithoutErrors()
+    {
+        var result = CourseManifestValidator.Validate(ValidManifest(), ValidEntries,
+            computedPayloadSha256: new string('a', 64),
+            resourceIds: ["res-1", "res-2"],
+            conceptMapIds: ["cm-1", "cm-2"]);
+
+        Assert.That(result.IsValid, Is.True);
+    }
+
     [TestCase("../escape.json")]
     [TestCase("/rooted.json")]
     [TestCase("C:/windows/evil.json")]

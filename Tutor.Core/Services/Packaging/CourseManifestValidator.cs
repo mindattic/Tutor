@@ -18,7 +18,9 @@ public static class CourseManifestValidator
         BundleManifest? manifest,
         IReadOnlyCollection<string> entryNames,
         int hostMaxFormat = BundleManifest.HostMaxFormatVersion,
-        string? computedPayloadSha256 = null)
+        string? computedPayloadSha256 = null,
+        IReadOnlyCollection<string>? resourceIds = null,
+        IReadOnlyCollection<string>? conceptMapIds = null)
     {
         var result = new ValidationResult();
 
@@ -74,8 +76,23 @@ public static class CourseManifestValidator
                 "Bundle payload does not match its manifest SHA-256 — the file is corrupted or has been tampered with.");
         }
 
+        foreach (var dup in DuplicateValues(resourceIds))
+            result.AddError(ValidationCodes.DuplicateResourceId,
+                $"Bundle has more than one resource with internal Id '{dup}'; the bundle is corrupt or tampered " +
+                "and importing it would silently overwrite one resource with another.");
+
+        foreach (var dup in DuplicateValues(conceptMapIds))
+            result.AddError(ValidationCodes.DuplicateConceptMapId,
+                $"Bundle has more than one concept map with internal Id '{dup}'; the bundle is corrupt or tampered " +
+                "and importing it would silently overwrite one concept map with another.");
+
         return result;
     }
+
+    private static List<string> DuplicateValues(IReadOnlyCollection<string>? ids) =>
+        ids == null
+            ? new List<string>()
+            : ids.GroupBy(id => id).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
 }
 
 public static class ValidationCodes
@@ -90,6 +107,8 @@ public static class ValidationCodes
     public const string UnsafeEntryPath = "UNSAFE_ENTRY_PATH";
     public const string LegacyNoKey = "LEGACY_NO_KEY";
     public const string LegacyNoSha = "LEGACY_NO_SHA";
+    public const string DuplicateResourceId = "DUPLICATE_RESOURCE_ID";
+    public const string DuplicateConceptMapId = "DUPLICATE_CONCEPT_MAP_ID";
 }
 
 public sealed class ValidationIssue

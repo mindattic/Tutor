@@ -63,8 +63,12 @@ public sealed class BundleImporter
             .ToList();
         var computedSha = BundleArchiveSafety.ComputePayloadSha256(payload);
 
+        var resourceIds = CollectEntityIds<CourseResource>(entries, "resources/", r => r.Id);
+        var conceptMapIds = CollectEntityIds<ConceptMap>(entries, "conceptMaps/", cm => cm.Id);
+
         var validation = CourseManifestValidator.Validate(
-            manifest, entries.Keys.ToList(), BundleManifest.HostMaxFormatVersion, computedSha);
+            manifest, entries.Keys.ToList(), BundleManifest.HostMaxFormatVersion, computedSha,
+            resourceIds, conceptMapIds);
 
         if (manifest != null && string.IsNullOrEmpty(manifest.CourseKey))
             manifest.CourseKey = CourseExporter.DeriveCourseKey(manifest.CourseName);
@@ -101,7 +105,9 @@ public sealed class BundleImporter
         var computedSha = BundleArchiveSafety.ComputePayloadSha256(payloadEntries);
 
         var validation = CourseManifestValidator.Validate(
-            manifest, entries.Keys.ToList(), BundleManifest.HostMaxFormatVersion, computedSha);
+            manifest, entries.Keys.ToList(), BundleManifest.HostMaxFormatVersion, computedSha,
+            CollectEntityIds<CourseResource>(entries, "resources/", r => r.Id),
+            CollectEntityIds<ConceptMap>(entries, "conceptMaps/", cm => cm.Id));
         if (!validation.IsValid)
             throw new InvalidOperationException(
                 "Bundle failed validation: " + string.Join("; ", validation.Errors));
@@ -294,6 +300,27 @@ public sealed class BundleImporter
 
     private static T? Deserialize<T>(Dictionary<string, byte[]> entries, string name) where T : class =>
         entries.TryGetValue(name, out var bytes) ? DeserializeBytes<T>(bytes) : null;
+
+    /// <summary>
+    /// Pulls the internal Id out of every "&lt;prefix&gt;*.json" entry, ahead of
+    /// validation, so a bundle with two resources or concept maps sharing an Id
+    /// can be rejected before anything is persisted (that collision would
+    /// otherwise collapse into one entry when the import's GroupBy/ToDictionary
+    /// remap builds its lookup).
+    /// </summary>
+    private static List<string> CollectEntityIds<T>(
+        Dictionary<string, byte[]> entries, string prefix, Func<T, string> idSelector) where T : class
+    {
+        var ids = new List<string>();
+        foreach (var name in entries.Keys.Where(n =>
+                     n.StartsWith(prefix, StringComparison.Ordinal) &&
+                     n.EndsWith(".json", StringComparison.Ordinal)))
+        {
+            var entity = Deserialize<T>(entries, name);
+            if (entity != null) ids.Add(idSelector(entity));
+        }
+        return ids;
+    }
 
     private static T? DeserializeBytes<T>(byte[] bytes) where T : class
     {
