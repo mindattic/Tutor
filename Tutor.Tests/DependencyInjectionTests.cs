@@ -73,7 +73,7 @@ services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
         services.AddSingleton<KnowledgeGraphService>();
         services.AddSingleton<UserProgressService>();
         services.AddSingleton<LearningPathService>();
-        services.AddSingleton<FinalExamService>();
+        services.AddScoped<FinalExamService>();
         services.AddSingleton<ICertificateAuthority, LocalCertificateAuthority>();
         services.AddSingleton<CertificateService>();
         services.AddSingleton<ConceptMapStorageService>();
@@ -111,7 +111,7 @@ services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
         // Quiz
         services.AddSingleton<QuizGenerationService>();
         services.AddSingleton<IQuizController, LocalQuizController>();
-        services.AddSingleton<QuizService>();
+        services.AddScoped<QuizService>();
 
         // Course packaging lifecycle — registered identically by Tutor.Blazor and Tutor.Cli.
         services.AddSingleton<CourseExporter>();
@@ -172,7 +172,6 @@ services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
     [TestCase(typeof(KnowledgeGraphService))]
     [TestCase(typeof(UserProgressService))]
     [TestCase(typeof(LearningPathService))]
-    [TestCase(typeof(FinalExamService))]
     [TestCase(typeof(CertificateService))]
     [TestCase(typeof(ConceptMapStorageService))]
     [TestCase(typeof(ConceptMapCollectionService))]
@@ -194,7 +193,6 @@ services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
     [TestCase(typeof(CourseStructureBuildTaskHandler))]
     [TestCase(typeof(UserStorageService))]
     [TestCase(typeof(NewsService))]
-    [TestCase(typeof(QuizService))]
     [TestCase(typeof(CourseExporter))]
     [TestCase(typeof(BundleImporter))]
     [TestCase(typeof(CourseDeleteService))]
@@ -215,6 +213,30 @@ services.AddSingleton<IIngestionPaths, TutorIngestionPaths>();
         var a = sp.GetRequiredService<SettingsService>();
         var b = sp.GetRequiredService<SettingsService>();
         Assert.That(b, Is.SameAs(a));
+    }
+
+    // QuizService and FinalExamService are scoped (one per circuit, TUT-T152): the in-progress
+    // quiz session lives in mutable instance fields, and a singleton let two concurrently-quizzing
+    // users stomp each other's session.
+    [TestCase(typeof(QuizService))]
+    [TestCase(typeof(FinalExamService))]
+    public void ScopedQuizService_ResolvesWithinScope(Type serviceType)
+    {
+        using var sp = BuildTestContainer();
+        using var scope = sp.CreateScope();
+        var instance = scope.ServiceProvider.GetRequiredService(serviceType);
+        Assert.That(instance, Is.Not.Null);
+    }
+
+    [Test]
+    public void QuizService_IsScopedNotSharedAcrossCircuits()
+    {
+        using var sp = BuildTestContainer();
+        using var scopeA = sp.CreateScope();
+        using var scopeB = sp.CreateScope();
+        var a = scopeA.ServiceProvider.GetRequiredService<QuizService>();
+        var b = scopeB.ServiceProvider.GetRequiredService<QuizService>();
+        Assert.That(b, Is.Not.SameAs(a));
     }
 
     [Test]

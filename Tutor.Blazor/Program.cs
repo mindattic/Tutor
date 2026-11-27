@@ -168,8 +168,9 @@ builder.Services.AddSingleton<UserProgressService>();
 // Learning path service (mastery-gated spiral progression + exam eligibility)
 builder.Services.AddSingleton<LearningPathService>();
 
-// Final exam service (comprehensive assessment + course completion)
-builder.Services.AddSingleton<FinalExamService>();
+// Final exam service (comprehensive assessment + course completion). Scoped because it
+// delegates to QuizService's circuit-scoped session (TUT-T152).
+builder.Services.AddScoped<FinalExamService>();
 
 // Certificate of completion (unsigned today; ICertificateAuthority is the signing seam)
 builder.Services.AddSingleton<ICertificateAuthority, LocalCertificateAuthority>();
@@ -270,7 +271,10 @@ builder.Services.AddSingleton<NewsService>();
 // Quiz services
 builder.Services.AddSingleton<QuizGenerationService>();
 builder.Services.AddSingleton<IQuizController, LocalQuizController>();
-builder.Services.AddSingleton<QuizService>();
+// Scoped (one instance per circuit): the in-progress session lives in mutable instance
+// fields, so a singleton let two concurrently-quizzing users stomp each other's session
+// (TUT-T152).
+builder.Services.AddScoped<QuizService>();
 
 // Course packaging lifecycle — identical registrations to Tutor.Cli so a bundle
 // built/installed by one front door is indistinguishable to the other.
